@@ -17,14 +17,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Assets/Bundle/Bundle.h"
-#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
-#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <miniz/miniz.h>
 #include <ranges>
 #include <string>
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
@@ -113,9 +113,10 @@ Bundle::Bundle( const BundleDirectoryDesc &directoryDesc ) : m_bundleFile( nullp
         const InteropString filePath( path.string( ).c_str( ) );
         if ( FileIO::FileExists( filePath ) )
         {
-            const InteropArray<Byte> fileData = FileIO::ReadFile( filePath );
-            const AssetUri           assetUri = AssetUri::Create( InteropString( relPathStr.c_str( ) ) );
-            AddAsset( assetUri, assetType, fileData );
+            ByteArray fileData = FileIO::ReadFile( filePath );
+            const AssetUri  assetUri = AssetUri::Create( InteropString( relPathStr.c_str( ) ) );
+            AddAsset( assetUri, assetType, ByteArrayView( fileData ) );
+            fileData.Dispose();
         }
         else
         {
@@ -165,12 +166,12 @@ BinaryReader *Bundle::OpenReader( const AssetUri &assetUri )
             m_bundleFile->seekg( it->second.Offset, std::ios::beg );
             BinaryReader fileReader( m_bundleFile );
 
-            const uint64_t     compressedSize = fileReader.ReadUInt64( );
-            InteropArray<Byte> compressedData = fileReader.ReadBytes( static_cast<uint32_t>( compressedSize ) );
+            const uint64_t  compressedSize = fileReader.ReadUInt64( );
+            const ByteArray compressedData = fileReader.ReadBytes( static_cast<uint32_t>( compressedSize ) );
 
-            InteropArray<Byte> decompressedData( it->second.NumBytes );
-            mz_ulong           decompressedSize = static_cast<mz_ulong>( it->second.NumBytes );
-            const int          result           = mz_uncompress( decompressedData.Data( ), &decompressedSize, compressedData.Data( ), static_cast<mz_ulong>( compressedSize ) );
+            std::vector<Byte> decompressedData( it->second.NumBytes );
+            mz_ulong          decompressedSize = static_cast<mz_ulong>( it->second.NumBytes );
+            const int         result           = mz_uncompress( decompressedData.data( ), &decompressedSize, compressedData.Elements, static_cast<mz_ulong>( compressedSize ) );
 
             if ( result != MZ_OK )
             {
@@ -178,14 +179,17 @@ BinaryReader *Bundle::OpenReader( const AssetUri &assetUri )
                 return nullptr;
             }
 
-            return new BinaryReader( decompressedData );
+            ByteArray decompressedDataArray{ };
+            decompressedDataArray.Elements    = decompressedData.data( );
+            decompressedDataArray.NumElements = decompressedSize;
+            return new BinaryReader( ByteArrayView( decompressedDataArray ) );
         }
 
         // Uncompressed data
         m_bundleFile->seekg( it->second.Offset, std::ios::beg );
-        BinaryReader             fileReader( m_bundleFile );
-        const InteropArray<Byte> buffer = fileReader.ReadBytes( static_cast<uint32_t>( it->second.NumBytes ) );
-        return new BinaryReader( buffer );
+        BinaryReader    fileReader( m_bundleFile );
+        const ByteArray buffer = fileReader.ReadBytes( static_cast<uint32_t>( it->second.NumBytes ) );
+        return new BinaryReader( ByteArrayView( buffer ) );
     }
 
     // If it's not in the bundle, check if we can find it in the filesystem, useful for dev mode
@@ -302,7 +306,7 @@ void Bundle::WriteEmptyHeader( ) const
     spdlog::info( "Created new empty bundle" );
 }
 
-void Bundle::AddAsset( const AssetUri &assetUri, const AssetType type, const InteropArray<Byte> &data )
+void Bundle::AddAsset( const AssetUri &assetUri, const AssetType type, const ByteArrayView &data )
 {
     if ( !m_bundleFile || !m_bundleFile->good( ) )
     {
@@ -318,7 +322,7 @@ void Bundle::AddAsset( const AssetUri &assetUri, const AssetType type, const Int
 
     m_bundleFile->seekp( 0, std::ios::end );
     const uint64_t assetOffset = m_bundleFile->tellp( );
-    const uint64_t numBytes    = data.NumElements( );
+    const uint64_t numBytes    = data.NumElements;
 
     const BinaryWriter writer( m_bundleFile );
     if ( m_isCompressed )
@@ -328,7 +332,7 @@ void Bundle::AddAsset( const AssetUri &assetUri, const AssetType type, const Int
         std::vector<Byte> compressedData( destSize );
 
         mz_ulong  compressedSize = destSize;
-        const int result         = mz_compress( compressedData.data( ), &compressedSize, data.Data( ), sourceSize );
+        const int result         = mz_compress( compressedData.data( ), &compressedSize, data.Elements, sourceSize );
 
         if ( result != MZ_OK )
         {
@@ -336,14 +340,17 @@ void Bundle::AddAsset( const AssetUri &assetUri, const AssetType type, const Int
             return;
         }
 
-        InteropArray<Byte> compressedInteropData( compressedSize );
+        std::vector<Byte> compressedInteropData( compressedSize );
         for ( size_t i = 0; i < compressedSize; ++i )
         {
-            compressedInteropData.SetElement( i, compressedData[ i ] );
+            compressedInteropData[ i ] = compressedData[ i ];
         }
 
         writer.WriteUInt64( compressedSize );
-        writer.WriteBytes( compressedInteropData );
+        ByteArrayView compressedDataArray{ };
+        compressedDataArray.Elements    = compressedInteropData.data( );
+        compressedDataArray.NumElements = compressedInteropData.size( );
+        writer.WriteBytes( compressedDataArray );
     }
     else
     {

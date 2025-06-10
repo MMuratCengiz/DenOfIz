@@ -18,8 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Utilities/Common.h"
 #include <sstream>
+#include "DenOfIzGraphics/Utilities/Common.h"
+
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 
 namespace DenOfIz
 {
@@ -33,7 +35,6 @@ namespace DenOfIz
     public:
         DZ_API explicit BinaryContainer( );
         DZ_API ~BinaryContainer( );
-        // Note this executes a copy operation
-        DZ_API [[nodiscard]] InteropArray<Byte> GetData( ) const;
+        DZ_API [[nodiscard]] ByteArrayView GetData( ) const;
     };
 } // namespace DenOfIz

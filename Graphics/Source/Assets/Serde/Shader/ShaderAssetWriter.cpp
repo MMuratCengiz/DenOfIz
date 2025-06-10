@@ -51,17 +51,17 @@ void ShaderAssetWriter::Write( const ShaderAsset &shaderAsset )
         m_writer->WriteUInt32( static_cast<uint32_t>( stage.Stage ) );
         m_writer->WriteString( stage.EntryPoint );
 
-        m_writer->WriteUInt64( stage.DXIL.NumElements( ) );
-        m_writer->WriteBytes( stage.DXIL );
+        m_writer->WriteUInt64( stage.DXIL.NumElements );
+        m_writer->WriteBytes( ByteArrayView( stage.DXIL ) );
 
-        m_writer->WriteUInt64( stage.MSL.NumElements( ) );
-        m_writer->WriteBytes( stage.MSL );
+        m_writer->WriteUInt64( stage.MSL.NumElements );
+        m_writer->WriteBytes( ByteArrayView( stage.MSL ) );
 
-        m_writer->WriteUInt64( stage.SPIRV.NumElements( ) );
-        m_writer->WriteBytes( stage.SPIRV );
+        m_writer->WriteUInt64( stage.SPIRV.NumElements );
+        m_writer->WriteBytes( ByteArrayView( stage.SPIRV ) );
 
-        m_writer->WriteUInt64( stage.Reflection.NumElements( ) );
-        m_writer->WriteBytes( stage.Reflection );
+        m_writer->WriteUInt64( stage.Reflection.NumElements );
+        m_writer->WriteBytes( ByteArrayView( stage.Reflection ) );
 
         const uint32_t numLocalBindings = stage.RayTracing.LocalBindings.NumElements;
         m_writer->WriteUInt32( numLocalBindings );
@@ -266,8 +266,7 @@ void ShaderAssetWriter::End( )
 
 ShaderAsset ShaderAssetWriter::CreateFromCompiledShader( const CompiledShader &compiledShader )
 {
-    ShaderAsset shaderAsset;
-
+    ShaderAsset shaderAsset{ };
     shaderAsset.RayTracing.MaxNumPayloadBytes   = compiledShader.RayTracing.MaxNumPayloadBytes;
     shaderAsset.RayTracing.MaxNumAttributeBytes = compiledShader.RayTracing.MaxNumAttributeBytes;
     shaderAsset.RayTracing.MaxRecursionDepth    = compiledShader.RayTracing.MaxRecursionDepth;
@@ -290,36 +289,31 @@ ShaderAsset ShaderAssetWriter::CreateFromCompiledShader( const CompiledShader &c
 
         if ( compiledStage->DXIL.NumElements > 0 )
         {
-            const void  *data = compiledStage->DXIL.Elements;
-            const size_t size = compiledStage->DXIL.NumElements;
-            stageAsset.DXIL.Resize( size );
-            memcpy( stageAsset.DXIL.Data( ), data, size );
+            stageAsset.DXIL.Elements    = static_cast<Byte *>( std::malloc( compiledStage->DXIL.NumElements ) );
+            stageAsset.DXIL.NumElements = compiledStage->DXIL.NumElements;
+            memcpy( &stageAsset.DXIL, &compiledStage->DXIL, sizeof( ByteArray ) );
         }
 
         if ( compiledStage->MSL.NumElements > 0 )
         {
-            const void  *data = compiledStage->MSL.Elements;
-            const size_t size = compiledStage->MSL.NumElements;
-            stageAsset.MSL.Resize( size );
-            memcpy( stageAsset.MSL.Data( ), data, size );
+            stageAsset.MSL.Elements    = static_cast<Byte *>( std::malloc( compiledStage->MSL.NumElements ) );
+            stageAsset.MSL.NumElements = compiledStage->MSL.NumElements;
+            memcpy( &stageAsset.MSL, &compiledStage->MSL, sizeof( ByteArray ) );
         }
 
         if ( compiledStage->SPIRV.NumElements > 0 )
         {
-            const void  *data = compiledStage->SPIRV.Elements;
-            const size_t size = compiledStage->SPIRV.NumElements;
-            stageAsset.SPIRV.Resize( size );
-            memcpy( stageAsset.SPIRV.Data( ), data, size );
+            stageAsset.SPIRV.Elements    = static_cast<Byte *>( std::malloc( compiledStage->SPIRV.NumElements ) );
+            stageAsset.SPIRV.NumElements = compiledStage->SPIRV.NumElements;
+            memcpy( &stageAsset.SPIRV, &compiledStage->SPIRV, sizeof( ByteArray ) );
         }
 
         if ( compiledStage->Reflection.NumElements > 0 )
         {
-            const void  *data = compiledStage->Reflection.Elements;
-            const size_t size = compiledStage->Reflection.NumElements;
-            stageAsset.Reflection.Resize( size );
-            memcpy( stageAsset.Reflection.Data( ), data, size );
+            stageAsset.Reflection.Elements    = static_cast<Byte *>( std::malloc( compiledStage->Reflection.NumElements ) );
+            stageAsset.Reflection.NumElements = compiledStage->Reflection.NumElements;
+            memcpy( &stageAsset.Reflection, &compiledStage->Reflection, sizeof( ByteArray ) );
         }
     }
-
     return shaderAsset;
 }

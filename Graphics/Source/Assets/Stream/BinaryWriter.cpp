@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <fstream>
 
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
@@ -73,7 +74,7 @@ void BinaryWriter::WriteByte( const Byte value ) const
     m_stream->put( static_cast<char>( value ) );
 }
 
-void BinaryWriter::Write( const InteropArray<Byte> &buffer, const uint32_t offset, const uint32_t count ) const
+void BinaryWriter::Write( const ByteArrayView &buffer, const uint32_t offset, const uint32_t count ) const
 {
     if ( !m_isStreamValid )
     {
@@ -83,15 +84,15 @@ void BinaryWriter::Write( const InteropArray<Byte> &buffer, const uint32_t offse
     std::vector<Byte> tempBuffer( count );
     for ( uint32_t i = 0; i < count; i++ )
     {
-        tempBuffer[ i ] = buffer.GetElement( offset + i );
+        tempBuffer[ i ] = buffer.Elements[ offset + i ];
     }
 
     m_stream->write( reinterpret_cast<const char *>( tempBuffer.data( ) ), count );
 }
 
-void BinaryWriter::WriteBytes( const InteropArray<Byte> &buffer ) const
+void BinaryWriter::WriteBytes( const ByteArrayView &buffer ) const
 {
-    Write( buffer, 0, buffer.NumElements( ) );
+    Write( buffer, 0, buffer.NumElements );
 }
 
 void BinaryWriter::WriteUInt16( const uint16_t value ) const

@@ -19,17 +19,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 // Include first because DirectXMath breaks NULL on third party libraries
-#include "DenOfIzGraphics/Assets/Import/AssimpImporter.h"
 #include "DenOfIzExamples/IExample.h"
 #include "DenOfIzGraphics/Animation/AnimationStateManager.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphics/Assets/Import/AssimpImporter.h"
 #include "DenOfIzGraphics/Assets/Serde/Animation/AnimationAsset.h"
 #include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAsset.h"
 #include "DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAsset.h"
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
-#include "DenOfIzGraphics/Utilities/StepTimer.h"
-#include <DirectXMath.h>
 
+#include <DirectXMath.h>
 
 namespace DenOfIz
 {
@@ -87,17 +86,18 @@ namespace DenOfIz
         std::unique_ptr<TextureAssetReader> m_textureAssetReader;
 
         std::vector<SkinnedVertex>             m_vertices;
-        InteropArray<uint32_t>                 m_indices;
+        UInt32Array                            m_indices{ };
         SkinnedModelConstantBuffer            *m_boneTransformsData = nullptr;
         PerFrameConstantBuffer                *m_perFrameData       = nullptr;
         MaterialConstantBuffer                *m_materialData       = nullptr;
         std::unique_ptr<AnimationStateManager> m_animationManager;
 
-        bool m_animPlaying = true;
+        bool          m_animPlaying = true;
         InteropString m_currentAnim = "Walk";
         float         m_animSpeed   = 1.0f;
 
     public:
+        ~AnimatedFoxExample( ) override;
         void Init( ) override;
         void ModifyApiPreferences( APIPreference &apiPreference ) override;
         void Update( ) override;

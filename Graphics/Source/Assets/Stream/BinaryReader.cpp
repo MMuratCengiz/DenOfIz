@@ -17,14 +17,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
-#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 
 using namespace DenOfIz;
 
@@ -58,14 +59,14 @@ BinaryReader::BinaryReader( const InteropString &filePath, const BinaryReaderDes
     m_isStreamValid = true;
 }
 
-BinaryReader::BinaryReader( const InteropArray<Byte> &data, const BinaryReaderDesc &desc ) : m_allowedNumBytes( desc.NumBytes )
+BinaryReader::BinaryReader( const ByteArrayView &data, const BinaryReaderDesc &desc ) : m_allowedNumBytes( desc.NumBytes )
 {
     m_isStreamOwned = true;
     auto *stream    = new std::stringstream( std::ios::in | std::ios::out | std::ios::binary );
 
-    if ( data.NumElements( ) > 0 )
+    if ( data.NumElements > 0 )
     {
-        stream->write( reinterpret_cast<const char *>( data.Data( ) ), data.NumElements( ) );
+        stream->write( reinterpret_cast<const char *>( data.Elements ), data.NumElements );
         stream->flush( );
         stream->seekg( 0, std::ios::beg );
     }
@@ -97,9 +98,9 @@ int BinaryReader::ReadByte( )
     return m_stream->get( );
 }
 
-int BinaryReader::Read( InteropArray<Byte> &buffer, const uint32_t offset, const uint32_t count )
+int BinaryReader::Read( const ByteArray &buffer, const uint32_t offset, const uint32_t count )
 {
-    if ( !IsStreamValid( ) || !TrackReadBytes( count ) )
+    if ( !IsStreamValid( ) || !TrackReadBytes( count ) || buffer.Elements == nullptr )
     {
         return -1;
     }
@@ -108,20 +109,19 @@ int BinaryReader::Read( InteropArray<Byte> &buffer, const uint32_t offset, const
     m_stream->read( reinterpret_cast<char *>( tempBuffer.data( ) ), count );
 
     const int bytesRead = static_cast<int>( m_stream->gcount( ) );
-
     for ( int i = 0; i < bytesRead; i++ )
     {
-        buffer.SetElement( offset + i, tempBuffer[ i ] );
+        buffer.Elements[ offset + i ] = tempBuffer[ i ];
     }
 
     return bytesRead;
 }
 
-InteropArray<Byte> BinaryReader::ReadAllBytes( )
+ByteArray BinaryReader::ReadAllBytes( )
 {
-    if ( !IsStreamValid( ))
+    if ( !IsStreamValid( ) )
     {
-        return 0.0f;
+        return { nullptr, 0 };
     }
 
     const std::streampos currentPos = m_stream->tellg( );
@@ -135,21 +135,21 @@ InteropArray<Byte> BinaryReader::ReadAllBytes( )
     return ReadBytes( numTotalBytes );
 }
 
-InteropArray<Byte> BinaryReader::ReadBytes( const uint32_t count )
+ByteArray BinaryReader::ReadBytes( const uint32_t count )
 {
     if ( !IsStreamValid( ) || !TrackReadBytes( count ) )
     {
-        return 0.0f;
+        return { nullptr, 0 };
     }
 
-    InteropArray<Byte> result( count );
+    ByteArray result{ };
+    result.Elements    = static_cast<Byte *>( std::malloc( count ) );
+    result.NumElements = count;
     if ( const int bytesRead = Read( result, 0, count ); bytesRead >= 0 && static_cast<uint32_t>( bytesRead ) < count )
     {
-        InteropArray<Byte> resized( bytesRead );
-        for ( int i = 0; i < bytesRead; i++ )
-        {
-            resized.SetElement( i, result.GetElement( i ) );
-        }
+        ByteArray resized{};
+        resized.Elements    = static_cast<Byte *>( std::realloc( result.Elements, bytesRead ) );
+        resized.NumElements = bytesRead;
         return resized;
     }
 

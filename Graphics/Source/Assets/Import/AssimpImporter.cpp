@@ -1128,12 +1128,13 @@ void AssimpImporter::Impl::WriteTextureAsset( ImportContext &context, const aiTe
 
     for ( uint32_t i = 0; i < mipDataArray.NumElements( ); ++i )
     {
-        const TextureMip &mipData = mipDataArray.GetElement( i );
-        const size_t mipSize   = mipData.SlicePitch;
-        const size_t mipOffset = mipData.DataOffset;
+        const TextureMip &mipData   = mipDataArray.GetElement( i );
+        const size_t      mipSize   = mipData.SlicePitch;
+        const size_t      mipOffset = mipData.DataOffset;
 
-        InteropArray<Byte> mipDataBuffer;
-        mipDataBuffer.MemCpy( sourceTexture->GetData( ).Data( ) + mipOffset, mipSize );
+        ByteArrayView mipDataBuffer{ };
+        mipDataBuffer.Elements    = sourceTexture->GetData( ).Data( ) + mipOffset;
+        mipDataBuffer.NumElements = mipSize;
         assetWriter.AddPixelData( mipDataBuffer, mipData.MipIndex, mipData.ArrayIndex );
     }
 

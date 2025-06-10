@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Assets/Stream/BinaryWriter.h"
-#include "DenOfIzGraphics/Backends/Interface/IBufferResource.h"
 
 namespace DenOfIz
 {
@@ -37,10 +36,7 @@ namespace DenOfIz
         DZ_API AlignedDataWriter( );
         DZ_API ~AlignedDataWriter( ) = default;
         /// Adds numBytes amount of (Byte) 0
-        DZ_API void AddPadding( const uint32_t &numBytes ) const;
-
-        DZ_API [[nodiscard]] InteropArray<Byte> Data( const uint32_t &totalAlignment = 256 ) const;
-        // IBufferResource* must be on CPU_GPU heap
-        DZ_API void WriteToBuffer( IBufferResource *buffer, const uint32_t &bufferOffset = 0 ) const;
+        DZ_API void                        AddPadding( const uint32_t &numBytes ) const;
+        DZ_API [[nodiscard]] ByteArrayView Data( ) const;
     };
 } // namespace DenOfIz

@@ -18,18 +18,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
-#include "MeshAsset.h"
 #include <cstdint>
+#include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
+#include "MeshAsset.h"
 
 namespace DenOfIz
 {
 
     struct DZ_API LoadToMemoryDesc
     {
-        AssetDataStream     Stream{ };
-        InteropArray<Byte> *Memory{ };
-        uint32_t            DstMemoryOffset{ };
+        AssetDataStream Stream{ };
+        ByteArray       Memory{ };
+        uint32_t        DstMemoryOffset{ };
     };
 
     struct DZ_API MeshAssetReaderDesc
@@ -57,17 +58,14 @@ namespace DenOfIz
         DZ_API MeshAsset                      Read( );
         [[nodiscard]] DZ_API const MeshAsset &GetMetadata( ) const;
 
-        // Load Raw Bytes
-        DZ_API void LoadStreamToMemory( const LoadToMemoryDesc &desc ) const;
+        DZ_API void LoadStreamToMemory( LoadToMemoryDesc &desc ) const;
 
-        // Read parsed
-        [[nodiscard]] DZ_API InteropArray<MeshVertex> ReadVertices( const AssetDataStream &stream ) const;
-        [[nodiscard]] DZ_API InteropArray<uint16_t> ReadIndices16( const AssetDataStream &stream ) const;
-        [[nodiscard]] DZ_API InteropArray<uint32_t> ReadIndices32( const AssetDataStream &stream ) const;
-        [[nodiscard]] DZ_API InteropArray<MorphTargetDelta> ReadMorphTargetDeltas( const AssetDataStream &stream ) const;
-        [[nodiscard]] DZ_API InteropArray<Byte> ReadConvexHullData( const AssetDataStream &stream ) const; // Todo maybe use proper types
+        [[nodiscard]] DZ_API MeshVertexArray       ReadVertices( const AssetDataStream &stream ) const;
+        [[nodiscard]] DZ_API UInt16Array           ReadIndices16( const AssetDataStream &stream ) const;
+        [[nodiscard]] DZ_API UInt32Array           ReadIndices32( const AssetDataStream &stream ) const;
+        [[nodiscard]] DZ_API MorphTargetDeltaArray ReadMorphTargetDeltas( const AssetDataStream &stream ) const;
+        [[nodiscard]] DZ_API ByteArray             ReadConvexHullData( const AssetDataStream &stream ) const; // Todo maybe use proper types
 
-        // Number of bytes of a single Vertex/MorphDelta
         [[nodiscard]] DZ_API uint32_t VertexEntryNumBytes( ) const;
         [[nodiscard]] DZ_API uint32_t MorphDeltaEntryNumBytes( ) const;
     };

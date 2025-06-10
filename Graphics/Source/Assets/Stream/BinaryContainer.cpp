@@ -23,10 +23,8 @@ using namespace DenOfIz;
 BinaryContainer::BinaryContainer( )  = default;
 BinaryContainer::~BinaryContainer( ) = default;
 
-InteropArray<Byte> BinaryContainer::GetData( ) const
+ByteArrayView BinaryContainer::GetData( ) const
 {
-    const size_t       len = m_stream.str( ).size( );
-    InteropArray<Byte> data( len );
-    data.MemCpy( m_stream.str( ).c_str( ), len );
-    return data;
+    const size_t len = m_stream.str( ).size( );
+    return ByteArrayView( reinterpret_cast<const Byte *>( m_stream.str( ).c_str( ) ), len );
 }

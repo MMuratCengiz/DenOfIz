@@ -223,7 +223,7 @@ void ClayTextCache::InitializeFontAtlas( ClayTextFontData *fontData )
     textureDesc.DebugName    = "ClayText Font Atlas Texture";
     fontData->Atlas          = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
 
-    if ( fontAsset->AtlasData.NumElements( ) > 0 )
+    if ( fontAsset->AtlasData.NumElements > 0 )
     {
         CommandQueueDesc commandQueueDesc{ };
         commandQueueDesc.QueueType = QueueType::Graphics;

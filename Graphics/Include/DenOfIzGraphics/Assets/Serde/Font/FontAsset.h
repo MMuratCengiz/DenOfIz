@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Assets/Serde/Asset.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 
 namespace DenOfIz
 {
@@ -65,7 +66,7 @@ namespace DenOfIz
         static constexpr uint32_t NumChannels = 4;
 
         uint64_t                   DataNumBytes = 0;
-        InteropArray<Byte>         Data;
+        ByteArray                  Data;
         uint32_t                   InitialFontSize;
         AntiAliasingMode           AntiAliasingMode;
         uint32_t                   AtlasWidth;
@@ -74,7 +75,7 @@ namespace DenOfIz
         InteropArray<FontGlyph>    Glyphs;
         InteropArray<UserProperty> UserProperties;
         uint64_t                   NumAtlasDataBytes = 0;
-        InteropArray<Byte>         AtlasData; // RGBA (MTSDF format)
+        ByteArray                  AtlasData; // RGBA (MTSDF format)
 
         FontAsset( ) : AssetHeader( 0x544E4F465A44 /*DZFONT*/, Latest, 0 )
         {
@@ -93,6 +94,13 @@ namespace DenOfIz
         static InteropString Extension( )
         {
             return "dzfont";
+        }
+        
+        void Dispose()
+        {
+            Data.Dispose();
+            AtlasData.Dispose();
+            // Glyphs and UserProperties use InteropArray which manages its own memory
         }
     };
 } // namespace DenOfIz

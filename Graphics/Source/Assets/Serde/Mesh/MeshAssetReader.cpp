@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h"
 #include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h"
+#include "DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
@@ -359,13 +359,13 @@ const MeshAsset &MeshAssetReader::GetMetadata( ) const
     return m_meshAsset;
 }
 
-void MeshAssetReader::LoadStreamToMemory( const LoadToMemoryDesc &desc ) const
+void MeshAssetReader::LoadStreamToMemory( LoadToMemoryDesc &desc ) const
 {
     if ( !m_metadataRead )
     {
         spdlog::critical( "ReadMetadata must be called first." );
     }
-    if ( !desc.Memory )
+    if ( !desc.Memory.Elements )
     {
         spdlog::critical( "Destination memory array cannot be null." );
         return;
@@ -376,16 +376,18 @@ void MeshAssetReader::LoadStreamToMemory( const LoadToMemoryDesc &desc ) const
     }
 
     m_reader->Seek( desc.Stream.Offset );
-    if ( desc.Memory->NumElements( ) < desc.DstMemoryOffset + desc.Stream.NumBytes )
+    if ( desc.Memory.NumElements < desc.DstMemoryOffset + desc.Stream.NumBytes )
     {
-        desc.Memory->Resize( desc.DstMemoryOffset + desc.Stream.NumBytes );
+        const auto newMemory    = static_cast<uint8_t *>( std::realloc( desc.Memory.Elements, desc.DstMemoryOffset + desc.Stream.NumBytes ) );
+        desc.Memory.Elements    = newMemory;
+        desc.Memory.NumElements = desc.DstMemoryOffset + desc.Stream.NumBytes;
     }
     uint64_t bytesCopied = 0;
     while ( bytesCopied < desc.Stream.NumBytes )
     {
         constexpr size_t chunkSize         = 65536;
         const uint64_t   bytesToRead       = std::min<uint32_t>( chunkSize, desc.Stream.NumBytes - bytesCopied );
-        const int        bytesActuallyRead = m_reader->Read( *desc.Memory, static_cast<uint32_t>( desc.DstMemoryOffset + bytesCopied ), static_cast<uint32_t>( bytesToRead ) );
+        const int        bytesActuallyRead = m_reader->Read( desc.Memory, static_cast<uint32_t>( desc.DstMemoryOffset + bytesCopied ), static_cast<uint32_t>( bytesToRead ) );
         if ( bytesActuallyRead != static_cast<int>( bytesToRead ) )
         {
             spdlog::critical( "Failed to read expected chunk size from mesh asset stream into memory." );
@@ -394,7 +396,7 @@ void MeshAssetReader::LoadStreamToMemory( const LoadToMemoryDesc &desc ) const
     }
 }
 
-InteropArray<MeshVertex> MeshAssetReader::ReadVertices( const AssetDataStream &stream ) const
+MeshVertexArray MeshAssetReader::ReadVertices( const AssetDataStream &stream ) const
 {
     if ( !m_metadataRead )
     {
@@ -412,15 +414,18 @@ InteropArray<MeshVertex> MeshAssetReader::ReadVertices( const AssetDataStream &s
     const uint64_t numVertices = stream.NumBytes / vertexSize;
 
     m_reader->Seek( stream.Offset );
-    InteropArray<MeshVertex> vertices( numVertices );
+    MeshVertexArray result{ };
+    result.Elements    = new MeshVertex[ numVertices ];
+    result.NumElements = static_cast<uint32_t>( numVertices );
     for ( uint64_t i = 0; i < numVertices; ++i )
     {
-        vertices.SetElement( i, ReadSingleVertex( ) );
+        result.Elements[ i ] = ReadSingleVertex( );
     }
-    return vertices;
+
+    return result;
 }
 
-InteropArray<uint16_t> MeshAssetReader::ReadIndices16( const AssetDataStream &stream ) const
+UInt16Array MeshAssetReader::ReadIndices16( const AssetDataStream &stream ) const
 {
     if ( !m_metadataRead )
     {
@@ -438,15 +443,17 @@ InteropArray<uint16_t> MeshAssetReader::ReadIndices16( const AssetDataStream &st
     }
     const uint64_t numIndices = stream.NumBytes / indexSize;
     m_reader->Seek( stream.Offset );
-    InteropArray<uint16_t> indices( numIndices );
+    UInt16Array result{ };
+    result.Elements    = static_cast<uint16_t *>( std::malloc( numIndices * sizeof( uint16_t ) ) );
+    result.NumElements = static_cast<uint32_t>( numIndices );
     for ( uint64_t i = 0; i < numIndices; ++i )
     {
-        indices.SetElement( i, m_reader->ReadUInt16( ) );
+        result.Elements[ i ] = m_reader->ReadUInt16( );
     }
-    return indices;
+    return result;
 }
 
-InteropArray<uint32_t> MeshAssetReader::ReadIndices32( const AssetDataStream &stream ) const
+UInt32Array MeshAssetReader::ReadIndices32( const AssetDataStream &stream ) const
 {
     if ( !m_metadataRead )
     {
@@ -464,15 +471,17 @@ InteropArray<uint32_t> MeshAssetReader::ReadIndices32( const AssetDataStream &st
     }
     const uint64_t numIndices = stream.NumBytes / indexSize;
     m_reader->Seek( stream.Offset );
-    InteropArray<uint32_t> indices( numIndices );
+    UInt32Array result{ };
+    result.Elements    = static_cast<uint32_t *>( std::malloc( numIndices * sizeof( uint32_t ) ) );
+    result.NumElements = static_cast<uint32_t>( numIndices );
     for ( uint64_t i = 0; i < numIndices; ++i )
     {
-        indices.SetElement( i, m_reader->ReadUInt32( ) );
+        result.Elements[ i ] = m_reader->ReadUInt32( );
     }
-    return indices;
+    return result;
 }
 
-InteropArray<MorphTargetDelta> MeshAssetReader::ReadMorphTargetDeltas( const AssetDataStream &stream ) const
+MorphTargetDeltaArray MeshAssetReader::ReadMorphTargetDeltas( const AssetDataStream &stream ) const
 {
     if ( !m_metadataRead )
     {
@@ -491,15 +500,17 @@ InteropArray<MorphTargetDelta> MeshAssetReader::ReadMorphTargetDeltas( const Ass
     const uint64_t numDeltas = stream.NumBytes / deltaSize;
 
     m_reader->Seek( stream.Offset );
-    InteropArray<MorphTargetDelta> deltas( numDeltas );
+    MorphTargetDeltaArray deltas{ };
+    deltas.Elements    = static_cast<MorphTargetDelta *>( std::malloc( numDeltas * sizeof( MorphTargetDelta ) ) );
+    deltas.NumElements = numDeltas;
     for ( uint64_t i = 0; i < numDeltas; ++i )
     {
-        deltas.SetElement( i, ReadSingleMorphTargetDelta( ) );
+        deltas.Elements[ i ] = ReadSingleMorphTargetDelta( );
     }
     return deltas;
 }
 
-InteropArray<Byte> MeshAssetReader::ReadConvexHullData( const AssetDataStream &stream ) const
+ByteArray MeshAssetReader::ReadConvexHullData( const AssetDataStream &stream ) const
 {
     if ( !m_metadataRead )
     {

@@ -123,7 +123,7 @@ BinaryWriter *BundleManager::OpenWriter( const AssetUri &path )
     return nullptr;
 }
 
-void BundleManager::AddAsset( Bundle *bundle, const AssetUri &path, AssetType type, const InteropArray<Byte> &data )
+void BundleManager::AddAsset( Bundle *bundle, const AssetUri &path, AssetType type, const ByteArrayView &data )
 {
     if ( !bundle )
     {

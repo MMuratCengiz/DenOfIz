@@ -366,13 +366,14 @@ void BatchResourceCopy::LoadAssetStreamToBuffer( const LoadAssetStreamToBufferDe
     const auto reader   = loadDesc.Reader;
     const auto position = reader->Position( ); // Todo is rollback necessary?
     reader->Seek( loadDesc.Stream.Offset );
-    InteropArray<Byte> fullData( loadDesc.Stream.NumBytes );
-    uint64_t           memBytesCopied = 0;
+    std::vector<Byte> fullData( loadDesc.Stream.NumBytes );
+    uint64_t          memBytesCopied = 0;
     while ( memBytesCopied < loadDesc.Stream.NumBytes )
     {
-        constexpr size_t chunkSize            = 65536;
-        const uint64_t   bytesToReadMem       = std::min<uint32_t>( chunkSize, loadDesc.Stream.NumBytes - memBytesCopied );
-        const int        bytesActuallyReadMem = reader->Read( fullData, static_cast<uint32_t>( memBytesCopied ), static_cast<uint32_t>( bytesToReadMem ) );
+        constexpr size_t chunkSize      = 65536;
+        const uint64_t   bytesToReadMem = std::min<uint32_t>( chunkSize, loadDesc.Stream.NumBytes - memBytesCopied );
+        const int        bytesActuallyReadMem =
+            reader->Read( ByteArray( fullData.data( ), fullData.size( ) ), static_cast<uint32_t>( memBytesCopied ), static_cast<uint32_t>( bytesToReadMem ) );
         if ( bytesActuallyReadMem != static_cast<int>( bytesToReadMem ) )
         {
             spdlog::critical( "Failed to read expected chunk size from mesh asset stream into memory." );
@@ -381,8 +382,8 @@ void BatchResourceCopy::LoadAssetStreamToBuffer( const LoadAssetStreamToBufferDe
     }
     CopyToGpuBufferDesc copyDesc;
     copyDesc.DstBuffer        = loadDesc.DstBuffer;
-    copyDesc.Data.Elements    = fullData.Data( );
-    copyDesc.Data.NumElements = fullData.NumElements( );
+    copyDesc.Data.Elements    = fullData.data( );
+    copyDesc.Data.NumElements = fullData.size( );
     if ( loadDesc.DstBufferOffset != 0 )
     {
         spdlog::warn( "LoadStreamToBuffer: DstBufferOffset ignored by CopyToGPUBuffer." );

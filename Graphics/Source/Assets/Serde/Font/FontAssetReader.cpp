@@ -104,7 +104,7 @@ void FontAssetReader::LoadAtlasIntoGpuTexture( const FontAsset &fontAsset, const
     const uint32_t rowPitch          = fontAsset.AtlasWidth * FontAsset::NumChannels;
     const uint32_t alignedRowPitch   = Utilities::Align( fontAsset.AtlasWidth * FontAsset::NumChannels, desc.Device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
 
-    const Byte *pSrcData = fontAsset.AtlasData.Data( );
+    const Byte *pSrcData = fontAsset.AtlasData.Elements;
     for ( uint32_t y = 0; y < fontAsset.AtlasHeight; ++y )
     {
         memcpy( mappedMemory + alignedRowPitch * y, pSrcData + rowPitch * y, rowPitch );

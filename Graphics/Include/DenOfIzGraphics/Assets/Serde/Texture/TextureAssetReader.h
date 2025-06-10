@@ -52,7 +52,7 @@ namespace DenOfIz
 
         DZ_API TextureAsset Read( );
         DZ_API void         LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc );
-        DZ_API InteropArray<Byte> ReadRaw( const uint32_t mipLevel = 0, const uint32_t arrayLayer = 0 );
-        DZ_API uint64_t           AlignedTotalNumBytes( const DeviceConstants &constants );
+        DZ_API ByteArray    ReadRaw( const uint32_t mipLevel = 0, const uint32_t arrayLayer = 0 );
+        DZ_API uint64_t     AlignedTotalNumBytes( const DeviceConstants &constants );
     };
 } // namespace DenOfIz

@@ -16,10 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h"
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h"
-#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
+#include "DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;
 
@@ -102,7 +102,7 @@ TextureAsset TextureAssetReader::Read( )
     return m_textureAsset;
 }
 
-InteropArray<Byte> TextureAssetReader::ReadRaw( const uint32_t mipLevel, const uint32_t arrayLayer )
+ByteArray TextureAssetReader::ReadRaw( const uint32_t mipLevel, const uint32_t arrayLayer )
 {
     if ( mipLevel >= m_textureAsset.MipLevels || arrayLayer >= m_textureAsset.ArraySize )
     {
@@ -114,8 +114,9 @@ InteropArray<Byte> TextureAssetReader::ReadRaw( const uint32_t mipLevel, const u
     const uint64_t   offset = m_textureAsset.Data.Offset + mip.DataOffset;
 
     m_reader->Seek( offset );
-    InteropArray<Byte> mipData( mip.SlicePitch );
-
+    ByteArray mipData{ };
+    mipData.Elements    = static_cast<Byte *>( std::malloc( mip.SlicePitch ) );
+    mipData.NumElements = mip.SlicePitch;
     if ( const uint32_t bytesRead = m_reader->Read( mipData, 0, mip.SlicePitch ); bytesRead != mip.SlicePitch )
     {
         spdlog::error( "Could not read complete mip data. Expected {} bytes, got {}", mip.SlicePitch, bytesRead );
@@ -133,7 +134,8 @@ void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc 
     }
 
     constexpr uint32_t batchSize = 1024;
-    InteropArray<Byte> buffer( batchSize );
+    std::vector<Byte>  buffer( batchSize );
+    const ByteArray    bufferArray{ buffer.data( ), buffer.size( ) };
 
     const auto stagingBuffer  = desc.StagingBuffer;
     uint64_t   remainingBytes = m_textureAsset.Data.NumBytes;
@@ -143,7 +145,7 @@ void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc 
     while ( remainingBytes > 0 )
     {
         const uint32_t bytesToRead = static_cast<uint32_t>( std::min( static_cast<uint64_t>( batchSize ), remainingBytes ) );
-        const uint32_t bytesRead   = m_reader->Read( buffer, 0, bytesToRead );
+        const uint32_t bytesRead   = m_reader->Read( bufferArray, 0, bytesToRead );
 
         if ( bytesRead != bytesToRead )
         {
@@ -151,8 +153,7 @@ void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc 
             break;
         }
 
-        memcpy( mappedMemory, buffer.Data( ), bytesRead );
-
+        memcpy( mappedMemory, buffer.data( ), bytesRead );
         mappedMemory += bytesRead;
         remainingBytes -= bytesRead;
     }

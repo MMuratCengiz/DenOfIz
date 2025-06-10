@@ -31,13 +31,7 @@ ByteArray InteropUtilities::StringToBytes( const char *str )
     ByteArray         result{ };
 
     const size_t size = stdStr.size( ) + 1;
-    result.Elements   = static_cast<Byte *>( std::malloc( size ) );
-
-    if ( !result.Elements )
-    {
-        result.NumElements = 0;
-        return result;
-    }
+    result.Elements = new Byte[size];
 
     result.NumElements = size;
     std::memcpy( result.Elements, stdStr.c_str( ), size );

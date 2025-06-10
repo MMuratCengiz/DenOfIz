@@ -67,7 +67,12 @@ namespace DenOfIz
         UInt32_4              BlendIndices{ };
         Float_4               BoneWeights{ };
     };
-    template class DZ_API InteropArray<MeshVertex>;
+
+    struct DZ_API MeshVertexArray
+    {
+        MeshVertex *Elements;
+        uint32_t    NumElements;
+    };
 
     struct DZ_API MorphTargetDeltaAttributes
     {
@@ -82,7 +87,12 @@ namespace DenOfIz
         Float_4 Normal;
         Float_4 Tangent;
     };
-    template class DZ_API InteropArray<MorphTargetDelta>;
+
+    struct DZ_API MorphTargetDeltaArray
+    {
+        MorphTargetDelta *Elements;
+        uint32_t          NumElements;
+    };
 
     struct DZ_API UVChannel
     {

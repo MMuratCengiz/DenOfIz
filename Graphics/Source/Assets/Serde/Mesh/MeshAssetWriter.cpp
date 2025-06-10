@@ -523,7 +523,7 @@ void MeshAssetWriter::AddIndex32( const uint32_t index )
     }
 }
 
-void MeshAssetWriter::AddConvexHullData( const uint32_t boundingVolumeIndex, const InteropArray<Byte> &vertexData )
+void MeshAssetWriter::AddConvexHullData( const uint32_t boundingVolumeIndex, const ByteArrayView &vertexData )
 {
     if ( m_state != State::ExpectingHulls && m_state != State::WritingHulls )
     {
@@ -544,7 +544,7 @@ void MeshAssetWriter::AddConvexHullData( const uint32_t boundingVolumeIndex, con
     BoundingVolume &bv                = currentSubMesh.BoundingVolumes.GetElement( boundingVolumeIndex );
     bv.ConvexHull.VertexStream.Offset = m_writer->Position( );
     m_writer->WriteBytes( vertexData );
-    bv.ConvexHull.VertexStream.NumBytes = vertexData.NumElements( );
+    bv.ConvexHull.VertexStream.NumBytes = vertexData.NumElements;
 
     m_currentBVIndex++;
 

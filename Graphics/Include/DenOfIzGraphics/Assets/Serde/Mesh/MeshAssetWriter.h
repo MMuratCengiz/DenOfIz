@@ -88,7 +88,7 @@ namespace DenOfIz
         DZ_API void AddVertex( const MeshVertex &vertex );
         DZ_API void AddIndex16( uint16_t index );
         DZ_API void AddIndex32( uint32_t index );
-        DZ_API void AddConvexHullData( uint32_t boundingVolumeIndex, const InteropArray<Byte> &vertexData );
+        DZ_API void AddConvexHullData( uint32_t boundingVolumeIndex, const ByteArrayView &vertexData );
         DZ_API void AddMorphTargetDelta( const MorphTargetDelta &delta );
 
         DZ_API void FinalizeAsset( );

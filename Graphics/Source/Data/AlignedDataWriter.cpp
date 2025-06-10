@@ -33,17 +33,7 @@ void AlignedDataWriter::AddPadding( const uint32_t &numBytes ) const
     }
 }
 
-InteropArray<Byte> AlignedDataWriter::Data( const uint32_t &totalAlignment ) const
+ByteArrayView AlignedDataWriter::Data( ) const
 {
-    InteropArray<Byte> result = m_container.GetData( );
-    for ( auto i = result.NumElements( ); i < totalAlignment; i++ )
-    {
-        result.AddElement( 0 );
-    }
-    return result;
-}
-
-void AlignedDataWriter::WriteToBuffer( IBufferResource *buffer, const uint32_t &bufferOffset ) const
-{
-    buffer->WriteData( Data(  ), bufferOffset );
+    return m_container.GetData( );
 }

@@ -44,7 +44,7 @@ namespace DenOfIz
 
         DZ_API BinaryReader *OpenReader( const AssetUri &path );
         DZ_API BinaryWriter *OpenWriter( const AssetUri &path );
-        DZ_API void          AddAsset( Bundle *bundle, const AssetUri &path, AssetType type, const InteropArray<Byte> &data );
+        DZ_API void          AddAsset( Bundle *bundle, const AssetUri &path, AssetType type, const ByteArrayView &data );
         DZ_API bool          Exists( const AssetUri &path );
 
         DZ_API void      InvalidateCache( );

@@ -69,6 +69,11 @@ namespace DenOfIz
             uint32_t RowHeight     = 0;
 
             msdfgen::FontHandle *MsdfFont = nullptr;
+
+            ~ImportContext( )
+            {
+                FontAsset.Dispose( );
+            }
         };
     };
 } // namespace DenOfIz
@@ -137,14 +142,14 @@ ImporterResult FontImporter::Import( const ImportJobDesc &desc )
     context.Result.ResultCode = ImporterResultCode::Success;
 
     // For MSDF, we need RGB data (3 bytes per pixel) instead of grayscale
-    context.FontAsset.AtlasData.Resize( context.Desc.AtlasWidth * context.Desc.AtlasHeight * FontAsset::NumChannels );
-    memset( context.FontAsset.AtlasData.Data( ), 0, context.FontAsset.AtlasData.NumElements( ) );
+    const size_t atlasSize      = context.Desc.AtlasWidth * context.Desc.AtlasHeight * FontAsset::NumChannels;
+    context.FontAsset.AtlasData = ByteArray::Create( atlasSize );
+    memset( context.FontAsset.AtlasData.Elements, 0, atlasSize );
 
     context.FontAsset.InitialFontSize   = context.Desc.InitialFontSize;
     context.FontAsset.AtlasWidth        = context.Desc.AtlasWidth;
     context.FontAsset.AtlasHeight       = context.Desc.AtlasHeight;
     context.FontAsset.NumAtlasDataBytes = context.Desc.AtlasWidth * context.Desc.AtlasHeight * FontAsset::NumChannels;
-    context.FontAsset.AtlasData.Resize( context.FontAsset.NumAtlasDataBytes );
 
     if ( const ImporterResultCode result = ImportFontInternal( *m_impl, context ); result != ImporterResultCode::Success )
     {
@@ -183,7 +188,7 @@ namespace
         context.FontAsset.Uri.Path = context.SourceFilePath;
 
         context.FontAsset.Data         = FileIO::ReadFile( InteropString( resolvedPath.c_str( ) ) );
-        context.FontAsset.DataNumBytes = context.FontAsset.Data.NumElements( );
+        context.FontAsset.DataNumBytes = context.FontAsset.Data.NumElements;
 
         FT_Error error = FT_New_Face( impl.m_ftLibrary, resolvedPath.c_str( ), 0, &face );
 
@@ -229,7 +234,7 @@ namespace
 
     void GenerateAtlas( const FontImporterImpl &impl, FontImporterImpl::ImportContext &context )
     {
-        const Byte          *data         = context.FontAsset.Data.Data( );
+        const Byte          *data         = context.FontAsset.Data.Elements;
         const uint64_t       dataNumBytes = context.FontAsset.DataNumBytes;
         msdfgen::FontHandle *msdfFont     = msdfgen::loadFontData( impl.m_msdfFtHandle, data, dataNumBytes );
         if ( !msdfFont )
@@ -275,28 +280,29 @@ namespace
         // Resize atlas if necessary
         if ( width != static_cast<int>( context.FontAsset.AtlasWidth ) || height != static_cast<int>( context.FontAsset.AtlasHeight ) )
         {
+            context.FontAsset.AtlasData.Dispose( );
             context.FontAsset.AtlasWidth        = width;
             context.FontAsset.AtlasHeight       = height;
             context.FontAsset.NumAtlasDataBytes = width * height * FontAsset::NumChannels;
-            context.FontAsset.AtlasData.Clear( );
-            context.FontAsset.AtlasData.Resize( context.FontAsset.NumAtlasDataBytes );
+            context.FontAsset.AtlasData         = ByteArray::Create( context.FontAsset.NumAtlasDataBytes );
+            memset( context.FontAsset.AtlasData.Elements, 0, context.FontAsset.NumAtlasDataBytes );
         }
 
         const msdfgen::BitmapConstRef<msdfgen::byte, 4> &bitmap    = atlasStorage;
         const msdfgen::byte                             *pixels    = bitmap.pixels;
-        auto                                            &atlasData = context.FontAsset.AtlasData;
+        Byte                                            *atlasData = context.FontAsset.AtlasData.Elements;
 
         for ( int y = 0; y < height; y++ )
         {
             int invertedY = height - 1 - y;
             for ( int x = 0; x < width; x++ )
             {
-                const int      srcIdx = 4 * ( invertedY * width + x );
-                const uint32_t dstIdx = FontAsset::NumChannels * ( y * width + x );
-                atlasData.SetElement( dstIdx, pixels[ srcIdx ] );
-                atlasData.SetElement( dstIdx + 1, pixels[ srcIdx + 1 ] );
-                atlasData.SetElement( dstIdx + 2, pixels[ srcIdx + 2 ] );
-                atlasData.SetElement( dstIdx + 3, pixels[ srcIdx + 3 ] );
+                const int      srcIdx   = 4 * ( invertedY * width + x );
+                const uint32_t dstIdx   = FontAsset::NumChannels * ( y * width + x );
+                atlasData[ dstIdx ]     = pixels[ srcIdx ];
+                atlasData[ dstIdx + 1 ] = pixels[ srcIdx + 1 ];
+                atlasData[ dstIdx + 2 ] = pixels[ srcIdx + 2 ];
+                atlasData[ dstIdx + 3 ] = pixels[ srcIdx + 3 ];
             }
         }
 

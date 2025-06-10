@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Assets/Stream/BinaryWriter.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 #include "TextureAsset.h"
 
 namespace DenOfIz
@@ -51,7 +52,7 @@ namespace DenOfIz
 
         DZ_API void Write( const TextureAsset &textureAsset );
         // Stream write bytes to a specific mip & array level, could be called multiple times for the same mip & array level
-        DZ_API void AddPixelData( const InteropArray<Byte> &bytes, uint32_t mipIndex = 0, uint32_t arrayLayer = 0 );
+        DZ_API void AddPixelData( const ByteArrayView &bytes, uint32_t mipIndex = 0, uint32_t arrayLayer = 0 );
         DZ_API void End( ) const;
     };
 } // namespace DenOfIz

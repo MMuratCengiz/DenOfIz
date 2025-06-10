@@ -33,7 +33,7 @@ namespace DenOfIz
         }
 
     private:
-        static const InteropArray<Byte> &GetInterData( );
-        static FontAsset                 GetInterVarInternal( );
+        static const std::vector<Byte> &GetInterData( );
+        static FontAsset                GetInterVarInternal( );
     };
 } // namespace DenOfIz

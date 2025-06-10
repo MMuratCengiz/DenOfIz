@@ -27,14 +27,14 @@ using namespace DenOfIz;
 class TextureAssetSerdeTest : public testing::Test
 {
 protected:
-    static InteropArray<Byte> CreateTestPixelData( const uint32_t width, const uint32_t height, const uint32_t mipLevel )
+    static std::vector<Byte> CreateTestPixelData( const uint32_t width, const uint32_t height, const uint32_t mipLevel )
     {
         constexpr uint32_t pixelSize = 4;
-        InteropArray<Byte> data( width * height * pixelSize );
+        std::vector<Byte>  data( width * height * pixelSize );
 
-        for ( uint32_t i = 0; i < data.NumElements( ); ++i )
+        for ( uint32_t i = 0; i < data.size( ); ++i )
         {
-            data.SetElement( i, static_cast<Byte>( ( i + mipLevel * 50 ) % 256 ) );
+            data[ i ] = static_cast<Byte>( ( i + mipLevel * 50 ) % 256 );
         }
 
         return data;
@@ -99,9 +99,11 @@ TEST_F( TextureAssetSerdeTest, WriteAndReadBack )
         uint32_t mipWidth  = sampleAsset.Width >> mip;
         uint32_t mipHeight = sampleAsset.Height >> mip;
 
-        InteropArray<Byte> pixelData = CreateTestPixelData( mipWidth, mipHeight, mip );
-
-        textureWriter.AddPixelData( pixelData, mip, 0 );
+        std::vector<Byte> pixelData = CreateTestPixelData( mipWidth, mipHeight, mip );
+        ByteArrayView     data{ };
+        data.Elements    = pixelData.data( );
+        data.NumElements = pixelData.size( );
+        textureWriter.AddPixelData( data, mip, 0 );
     }
 
     textureWriter.End( );
@@ -148,7 +150,8 @@ TEST_F( TextureAssetSerdeTest, WriteAndReadBack )
         if ( i > 0 )
         {
             ASSERT_GT( readMip.DataOffset, 0 );
-        } else
+        }
+        else
         {
             ASSERT_EQ( readMip.DataOffset, 0 );
         }
@@ -159,18 +162,20 @@ TEST_F( TextureAssetSerdeTest, WriteAndReadBack )
     for ( uint32_t mip = 0; mip < readAsset.MipLevels; ++mip )
     {
 
-        InteropArray<Byte> readMipData = textureReader.ReadRaw( mip, 0 );
+        ByteArray readMipData = textureReader.ReadRaw( mip, 0 );
 
         const TextureMip &mipDesc = readAsset.Mips.GetElement( mip );
-        ASSERT_EQ( readMipData.NumElements( ), mipDesc.SlicePitch );
+        ASSERT_EQ( readMipData.NumElements, mipDesc.SlicePitch );
 
-        InteropArray<Byte> expectedData = CreateTestPixelData( mipDesc.Width, mipDesc.Height, mip );
-
+        auto      expectedDataVec = CreateTestPixelData( mipDesc.Width, mipDesc.Height, mip );
+        ByteArray expectedData{ };
+        expectedData.Elements    = expectedDataVec.data( );
+        expectedData.NumElements = expectedDataVec.size( );
         for ( const size_t checkPoints[] = { 0, 16, 64, static_cast<size_t>( mipDesc.SlicePitch / 2 ), static_cast<size_t>( mipDesc.SlicePitch - 1 ) }; size_t point : checkPoints )
         {
-            if ( point < readMipData.NumElements( ) )
+            if ( point < readMipData.NumElements )
             {
-                ASSERT_EQ( readMipData.GetElement( point ), expectedData.GetElement( point ) ) << "Data mismatch at mip " << mip << " offset " << point;
+                ASSERT_EQ( readMipData.Elements[ point ], expectedData.Elements[ point ] ) << "Data mismatch at mip " << mip << " offset " << point;
             }
         }
     }

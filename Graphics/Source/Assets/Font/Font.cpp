@@ -24,7 +24,7 @@ using namespace DenOfIz;
 
 Font::Font( FT_Library ftLibrary, const FontDesc &desc ) : m_impl( std::make_unique<FontImpl>( ftLibrary ) ), m_desc( desc )
 {
-    const Byte    *data         = desc.FontAsset->Data.Data( );
+    const Byte    *data         = desc.FontAsset->Data.Elements;
     const uint64_t dataNumBytes = desc.FontAsset->DataNumBytes;
     if ( FT_New_Memory_Face( m_impl->m_ftLibrary, data, dataNumBytes, 0, &m_impl->m_face ) )
     {

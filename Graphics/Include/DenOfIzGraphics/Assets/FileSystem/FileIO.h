@@ -18,8 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Utilities/Common.h"
 #include <filesystem>
+#include "DenOfIzGraphics/Utilities/Common.h"
+
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 
 namespace DenOfIz
 {
@@ -38,7 +40,7 @@ namespace DenOfIz
          * @throws std::runtime_error if file cannot be read
          * @note For binary files. Does not add null termination.
          */
-        static InteropArray<Byte> ReadFile( const InteropString &path );
+        static ByteArray ReadFile( const InteropString &path );
 
         /**
          * @brief Read entire text file into a byte array
@@ -48,7 +50,7 @@ namespace DenOfIz
          * @note Specifically for text files. Ensures null termination for compatibility
          *       with text processing functions and shader compilers.
          */
-        static InteropArray<Byte> ReadTextFile( const InteropString &path );
+        static ByteArray ReadTextFile( const InteropString &path );
 
         /**
          * @brief Write byte array to file
@@ -56,7 +58,7 @@ namespace DenOfIz
          * @param data Byte array to write
          * @throws std::runtime_error if file cannot be written
          */
-        static void WriteFile( const InteropString &path, const InteropArray<Byte> &data );
+        static void WriteFile( const InteropString &path, const ByteArrayView &data );
 
         /**
          * @brief Check if file exists

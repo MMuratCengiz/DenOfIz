@@ -17,13 +17,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
-#include "DenOfIzGraphics/Utilities/Common.h"
 #include <fstream>
 #include "DenOfIzGraphics/Assets/FileSystem/FSConfig.h"
+#include "DenOfIzGraphics/Utilities/Common.h"
 
 using namespace DenOfIz;
 
-InteropArray<Byte> FileIO::ReadFile( const InteropString &path )
+ByteArray FileIO::ReadFile( const InteropString &path )
 {
     const std::string resolvedPath = PlatformResourcePath( path.Get( ) );
 
@@ -36,18 +36,17 @@ InteropArray<Byte> FileIO::ReadFile( const InteropString &path )
     const size_t fileSize = file.tellg( );
     file.seekg( 0, std::ios::beg );
 
-    InteropArray<Byte> buffer( fileSize );
-    file.read( reinterpret_cast<char *>( buffer.Data( ) ), fileSize );
-
+    const ByteArray buffer = ByteArray::Create( fileSize );
+    file.read( reinterpret_cast<char *>( buffer.Elements ), fileSize );
     if ( !file )
     {
-        throw std::runtime_error( "Failed to read file: " + resolvedPath );
+        buffer.Dispose( );
+        return { nullptr, 0 };
     }
-
     return buffer;
 }
 
-InteropArray<Byte> FileIO::ReadTextFile( const InteropString &path )
+ByteArray FileIO::ReadTextFile( const InteropString &path )
 {
     const std::string resolvedPath = PlatformResourcePath( path.Get( ) );
 
@@ -60,19 +59,20 @@ InteropArray<Byte> FileIO::ReadTextFile( const InteropString &path )
     const size_t fileSize = file.tellg( );
     file.seekg( 0, std::ios::beg );
 
-    InteropArray<Byte> buffer( fileSize + 1 ); // +1 = '/0'
-    file.read( reinterpret_cast<char *>( buffer.Data( ) ), fileSize );
+    const ByteArray buffer = ByteArray::Create( fileSize + 1 );
+    file.read( reinterpret_cast<char *>( buffer.Elements ), fileSize );
 
     if ( !file )
     {
-        throw std::runtime_error( "Failed to read file: " + resolvedPath );
+        buffer.Dispose( );
+        return { nullptr, 0 };
     }
 
-    buffer.GetElement( fileSize ) = '\0';
+    buffer.Elements[ fileSize ] = '\0';
     return buffer;
 }
 
-void FileIO::WriteFile( const InteropString &path, const InteropArray<Byte> &data )
+void FileIO::WriteFile( const InteropString &path, const ByteArrayView &data )
 {
     const std::string resolvedPath = PlatformResourcePath( path.Get( ) );
 
@@ -82,7 +82,7 @@ void FileIO::WriteFile( const InteropString &path, const InteropArray<Byte> &dat
         throw std::runtime_error( "Failed to create file: " + resolvedPath );
     }
 
-    file.write( reinterpret_cast<const char *>( data.Data( ) ), data.NumElements( ) );
+    file.write( reinterpret_cast<const char *>( data.Elements ), data.NumElements );
 
     if ( !file )
     {
@@ -160,7 +160,7 @@ InteropString FileIO::GetResourcePath( const InteropString &path )
 
 std::string FileIO::PlatformResourcePath( const std::string &resourcePath )
 {
-    auto assetPath = FSConfig::AssetPath( );
+    const auto assetPath = FSConfig::AssetPath( );
     if ( assetPath.NumChars( ) == 0 )
     {
         return resourcePath;

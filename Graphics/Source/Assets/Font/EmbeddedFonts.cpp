@@ -29,11 +29,11 @@ using namespace DenOfIz;
 extern const uint8_t g_InterFontCompressed[];
 extern const size_t  g_InterFontCompressedSize;
 
-static std::mutex         g_decompressionMutex;
-static InteropArray<Byte> g_decompressedData;
-static bool               g_isDecompressed = false;
+static std::mutex        g_decompressionMutex;
+static std::vector<Byte> g_decompressedData;
+static bool              g_isDecompressed = false;
 
-const InteropArray<Byte> &EmbeddedFonts::GetInterData( )
+const std::vector<Byte> &EmbeddedFonts::GetInterData( )
 {
     if ( g_isDecompressed )
     {
@@ -56,7 +56,7 @@ const InteropArray<Byte> &EmbeddedFonts::GetInterData( )
         {
             throw std::runtime_error( "Failed to decompress embedded font data" );
         }
-        g_decompressedData.MemCpy( decompressedBuffer.data( ), uncompressedSize );
+        std::memcpy( &g_decompressedData[ 0 ], decompressedBuffer.data( ), uncompressedSize );
         g_isDecompressed = true;
     }
     return g_decompressedData;
@@ -64,7 +64,12 @@ const InteropArray<Byte> &EmbeddedFonts::GetInterData( )
 
 FontAsset EmbeddedFonts::GetInterVarInternal( )
 {
-    BinaryReader    binaryReader( GetInterData( ) );
+    const auto &interData = GetInterData( );
+
+    ByteArrayView data{ };
+    data.Elements    = interData.data( );
+    data.NumElements = interData.size( );
+    BinaryReader    binaryReader( data );
     FontAssetReader reader( { &binaryReader } );
     return reader.Read( );
 }

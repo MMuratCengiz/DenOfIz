@@ -45,8 +45,9 @@ TextRenderer::TextRenderer( const TextRendererDesc &desc ) : m_desc( desc )
     constexpr bool debugShaders = false;
     if ( debugShaders )
     {
+        const auto &shaderAssetBytes = EmbeddedTextRendererShaders::ShaderAssetBytes;
         // ReSharper disable once CppDFAUnreachableCode
-        BinaryReader      binaryReader{ EmbeddedTextRendererShaders::ShaderAssetBytes };
+        BinaryReader      binaryReader{ ByteArrayView( shaderAssetBytes.data( ), shaderAssetBytes.size( ) ) };
         ShaderAssetReader assetReader{ { &binaryReader } };
         m_fontShaderProgram = std::make_unique<ShaderProgram>( assetReader.Read( ) );
     }

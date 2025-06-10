@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "gtest/gtest.h"
 
+#include "../../TestComparators.h"
 #include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAsset.h"
 #include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h"
 #include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetWriter.h"
-#include "../../TestComparators.h"
 
 using namespace DenOfIz;
 
@@ -128,7 +128,7 @@ protected:
 
     const std::vector<uint32_t> triIndices = { 0, 1, 2 };
 
-    InteropArray<Byte> convexHullData;
+    std::vector<Byte> convexHullData;
 
     const std::vector<MorphTargetDelta> smileDeltas = {
         { { 0.0f, 0.1f, 0.0f, 0.0f } }, { { 0.0f, 0.0f, 0.0f, 0.0f } }, { { 0.0f, 0.0f, 0.0f, 0.0f } }, { { 0.0f, 0.1f, 0.0f, 0.0f } }
@@ -138,7 +138,7 @@ protected:
     {
 
         constexpr float hullVerts[] = { 0.0f, 0.5f, 0.0f, -0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f };
-        convexHullData.MemCpy( hullVerts, sizeof( hullVerts ) );
+        std::memcpy( convexHullData.data( ), hullVerts, sizeof( hullVerts ) );
     }
 };
 
@@ -173,7 +173,7 @@ TEST_F( MeshAssetSerdeTest, WriteAndReadBack )
         }
 
         ASSERT_EQ( sampleAsset.SubMeshes.GetElement( 1 ).BoundingVolumes.GetElement( 0 ).Type, BoundingVolumeType::ConvexHull );
-        writer.AddConvexHullData( 0, convexHullData );
+        writer.AddConvexHullData( 0, ByteArrayView( convexHullData.data( ), convexHullData.size( ) ) );
         for ( const auto &d : smileDeltas )
         {
             writer.AddMorphTargetDelta( d );
@@ -246,48 +246,50 @@ TEST_F( MeshAssetSerdeTest, WriteAndReadBack )
     ASSERT_STREQ( readUP1.Name.Get( ), sampleUP1.Name.Get( ) );
     ASSERT_FLOAT_EQ( readUP1.FloatValue, sampleUP1.FloatValue );
 
-    InteropArray<MeshVertex> readVerts0 = meshReader.ReadVertices( readSM0.VertexStream );
-    ASSERT_EQ( readVerts0.NumElements( ), quadVertices.size( ) );
+    MeshVertexArray readVerts0 = meshReader.ReadVertices( readSM0.VertexStream );
+    ASSERT_EQ( readVerts0.NumElements, quadVertices.size( ) );
     for ( size_t i = 0; i < readVerts0.NumElements( ); ++i )
     {
-        ASSERT_FLOAT_EQ( readVerts0.GetElement( i ).Position.X, quadVertices[ i ].Position.X );
-        ASSERT_FLOAT_EQ( readVerts0.GetElement( i ).Position.Y, quadVertices[ i ].Position.Y );
-        ASSERT_FLOAT_EQ( readVerts0.GetElement( i ).Position.Z, quadVertices[ i ].Position.Z );
+        ASSERT_FLOAT_EQ( readVerts0.Elements[ i ].Position.X, quadVertices[ i ].Position.X );
+        ASSERT_FLOAT_EQ( readVerts0.Elements[ i ].Position.Y, quadVertices[ i ].Position.Y );
+        ASSERT_FLOAT_EQ( readVerts0.Elements[ i ].Position.Z, quadVertices[ i ].Position.Z );
 
-        ASSERT_FLOAT_EQ( readVerts0.GetElement( i ).Normal.X, quadVertices[ i ].Normal.X );
+        ASSERT_FLOAT_EQ( readVerts0.Elements[ i ].Normal.X, quadVertices[ i ].Normal.X );
 
-        ASSERT_EQ( readVerts0.GetElement( i ).UVs.NumElements( ), 1 );
-        ASSERT_FLOAT_EQ( readVerts0.GetElement( i ).UVs.GetElement( 0 ).X, quadVertices[ i ].UVs.GetElement( 0 ).X );
-        ASSERT_FLOAT_EQ( readVerts0.GetElement( i ).UVs.GetElement( 0 ).Y, quadVertices[ i ].UVs.GetElement( 0 ).Y );
+        ASSERT_EQ( readVerts0.Elements[ i ].UVs.NumElements( ), 1 );
+        ASSERT_FLOAT_EQ( readVerts0.Elements[ i ].UVs.GetElement( 0 ).X, quadVertices[ i ].UVs.GetElement( 0 ).X );
+        ASSERT_FLOAT_EQ( readVerts0.Elements[ i ].UVs.GetElement( 0 ).Y, quadVertices[ i ].UVs.GetElement( 0 ).Y );
     }
+    std::free( readVerts0.Elements );
 
-    InteropArray<uint16_t> readIndices0 = meshReader.ReadIndices16( readSM0.IndexStream );
-    ASSERT_EQ( readIndices0.NumElements( ), quadIndices.size( ) );
-    for ( size_t i = 0; i < readIndices0.NumElements( ); ++i )
+    UInt16Array readIndices0 = meshReader.ReadIndices16( readSM0.IndexStream );
+    ASSERT_EQ( readIndices0.NumElements, quadIndices.size( ) );
+    for ( size_t i = 0; i < readIndices0.NumElements; ++i )
     {
-        ASSERT_EQ( readIndices0.GetElement( i ), quadIndices[ i ] );
+        ASSERT_EQ( readIndices0.Elements[ i ], quadIndices[ i ] );
     }
+    std::free( readIndices0.Elements );
 
-    InteropArray<MeshVertex> readVerts1 = meshReader.ReadVertices( readSM1.VertexStream );
-    ASSERT_EQ( readVerts1.NumElements( ), triVertices.size( ) );
+    MeshVertexArray readVerts1 = meshReader.ReadVertices( readSM1.VertexStream );
+    ASSERT_EQ( readVerts1.NumElements, triVertices.size( ) );
 
-    InteropArray<uint32_t> readIndices1 = meshReader.ReadIndices32( readSM1.IndexStream );
+    UInt32Array readIndices1 = meshReader.ReadIndices32( readSM1.IndexStream );
     ASSERT_EQ( readIndices1.NumElements( ), triIndices.size( ) );
     for ( size_t i = 0; i < readIndices1.NumElements( ); ++i )
     {
-        ASSERT_EQ( readIndices1.GetElement( i ), triIndices[ i ] );
+        ASSERT_EQ( readIndices1.Elements[ i ], triIndices[ i ] );
     }
+    std::free( readIndices1.Elements );
 
-    InteropArray<Byte> readHullData = meshReader.ReadConvexHullData( readSM1.BoundingVolumes.GetElement( 0 ).ConvexHull.VertexStream );
-    AssertInteropArrayEq( readHullData, convexHullData );
+    ByteArray readHullData = meshReader.ReadConvexHullData( readSM1.BoundingVolumes.GetElement( 0 ).ConvexHull.VertexStream );
+    AssertArrayEq( readHullData.Elements, convexHullData.data( ), readHullData.NumElements );
 
-    InteropArray<MorphTargetDelta> readDeltas0 = meshReader.ReadMorphTargetDeltas( readMT0.VertexDeltaStream );
-    ASSERT_EQ( readDeltas0.NumElements( ), smileDeltas.size( ) );
+    MorphTargetDeltaArray readDeltas0 = meshReader.ReadMorphTargetDeltas( readMT0.VertexDeltaStream );
+    ASSERT_EQ( readDeltas0.NumElements, smileDeltas.size( ) );
     for ( size_t i = 0; i < readDeltas0.NumElements( ); ++i )
     {
-
-        ASSERT_FLOAT_EQ( readDeltas0.GetElement( i ).Position.X, smileDeltas[ i ].Position.X );
-        ASSERT_FLOAT_EQ( readDeltas0.GetElement( i ).Position.Y, smileDeltas[ i ].Position.Y );
-        ASSERT_FLOAT_EQ( readDeltas0.GetElement( i ).Position.Z, smileDeltas[ i ].Position.Z );
+        ASSERT_FLOAT_EQ( readDeltas0.Elements[ i ].Position.X, smileDeltas[ i ].Position.X );
+        ASSERT_FLOAT_EQ( readDeltas0.Elements[ i ].Position.Y, smileDeltas[ i ].Position.Y );
+        ASSERT_FLOAT_EQ( readDeltas0.Elements[ i ].Position.Z, smileDeltas[ i ].Position.Z );
     }
 }

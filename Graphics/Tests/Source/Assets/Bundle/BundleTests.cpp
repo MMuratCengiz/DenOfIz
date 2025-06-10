@@ -18,11 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "gtest/gtest.h"
 
+#include <filesystem>
+#include "../../TestComparators.h"
 #include "DenOfIzGraphics/Assets/Bundle/Bundle.h"
 #include "DenOfIzGraphics/Assets/Bundle/BundleManager.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
-#include <filesystem>
-#include "../../TestComparators.h"
 
 using namespace DenOfIz;
 
@@ -34,7 +34,7 @@ protected:
     void SetUp( ) override
     {
         // Create a unique temporary directory for test files
-        std::string uniqueTempPath =
+        const std::string uniqueTempPath =
             std::filesystem::temp_directory_path( ).string( ) + "/DenOfIzTest_" + std::to_string( std::chrono::system_clock::now( ).time_since_epoch( ).count( ) );
         tempDir = InteropString( uniqueTempPath.c_str( ) );
 
@@ -54,23 +54,23 @@ protected:
         return InteropString( path.c_str( ) );
     }
 
-    InteropArray<Byte> CreateTestData( const char *content ) const
+    ByteArray CreateTestData( const char *content ) const
     {
-        const std::string  str = content;
-        InteropArray<Byte> data( str.size( ) );
+        const std::string str  = content;
+        ByteArray         data = ByteArray::Create( str.size( ) );
         for ( size_t i = 0; i < str.size( ); ++i )
         {
-            data.SetElement( i, static_cast<Byte>( str[ i ] ) );
+            data.Elements[ i ] = static_cast<Byte>( str[ i ] );
         }
         return data;
     }
 
-    InteropString GetStringFromData( const InteropArray<Byte> &data ) const
+    InteropString GetStringFromData( const ByteArray &data ) const
     {
-        std::vector<char> buffer( data.NumElements( ) + 1, 0 );
-        for ( size_t i = 0; i < data.NumElements( ); ++i )
+        std::vector<char> buffer( data.NumElements + 1, 0 );
+        for ( size_t i = 0; i < data.NumElements; ++i )
         {
-            buffer[ i ] = static_cast<char>( data.GetElement( i ) );
+            buffer[ i ] = static_cast<char>( data.Elements[ i ] );
         }
         return InteropString( buffer.data( ) );
     }
@@ -82,10 +82,10 @@ TEST_F( BundleTest, CreateEmptyBundle )
     desc.Path              = GetTempPath( "test.dzbundle" );
     desc.CreateIfNotExists = true;
 
-    auto bundle = new Bundle( desc );
+    const auto bundle = new Bundle( desc );
     ASSERT_TRUE( FileIO::FileExists( desc.Path ) );
 
-    InteropArray<AssetUri> assets = bundle->GetAllAssets( );
+    const InteropArray<AssetUri> assets = bundle->GetAllAssets( );
     ASSERT_EQ( assets.NumElements( ), 0 );
 
     delete bundle;
@@ -101,14 +101,14 @@ TEST_F( BundleTest, AddAndRetrieveAssets )
 
     // Create and add a mesh asset
     // Note that AssetUri::Create adds the "asset://" prefix
-    const AssetUri           meshUri  = AssetUri::Create( "models/cube.dzmesh" );
-    const InteropArray<Byte> meshData = CreateTestData( "This is mesh data" );
-    bundle->AddAsset( meshUri, AssetType::Mesh, meshData );
+    const AssetUri meshUri  = AssetUri::Create( "models/cube.dzmesh" );
+    ByteArray      meshData = CreateTestData( "This is mesh data" );
+    bundle->AddAsset( meshUri, AssetType::Mesh, ByteArrayView( meshData ) );
 
     // Create and add a texture asset
-    const AssetUri           texUri  = AssetUri::Create( "textures/diffuse.dztex" );
-    const InteropArray<Byte> texData = CreateTestData( "This is texture data" );
-    bundle->AddAsset( texUri, AssetType::Texture, texData );
+    const AssetUri texUri  = AssetUri::Create( "textures/diffuse.dztex" );
+    ByteArray      texData = CreateTestData( "This is texture data" );
+    bundle->AddAsset( texUri, AssetType::Texture, ByteArrayView( texData ) );
 
     // Save the bundle
     ASSERT_TRUE( bundle->Save( ) );
@@ -120,29 +120,35 @@ TEST_F( BundleTest, AddAndRetrieveAssets )
     // Read the assets back
     BinaryReader *meshReader = bundle->OpenReader( meshUri );
     ASSERT_NE( meshReader, nullptr );
-    const InteropArray<Byte> readMeshData = meshReader->ReadBytes( static_cast<uint32_t>( meshData.NumElements( ) ) );
-    ASSERT_EQ( readMeshData.NumElements( ), meshData.NumElements( ) );
-    AssertInteropArrayEq( readMeshData, meshData );
+    const ByteArray readMeshData = meshReader->ReadBytes( static_cast<uint32_t>( meshData.NumElements ) );
+    ASSERT_EQ( readMeshData.NumElements, meshData.NumElements );
+    AssertArrayEq( readMeshData.Elements, meshData.Elements, meshData.NumElements );
+    readMeshData.Dispose( );
     delete meshReader;
 
     BinaryReader *texReader = bundle->OpenReader( texUri );
     ASSERT_NE( texReader, nullptr );
-    const InteropArray<Byte> readTexData = texReader->ReadBytes( static_cast<uint32_t>( texData.NumElements( ) ) );
-    ASSERT_EQ( readTexData.NumElements( ), texData.NumElements( ) );
-    AssertInteropArrayEq( readTexData, texData );
+    const ByteArray readTexData = texReader->ReadBytes( static_cast<uint32_t>( texData.NumElements ) );
+    ASSERT_EQ( readTexData.NumElements, texData.NumElements );
+    AssertArrayEq( readTexData.Elements, texData.Elements, texData.NumElements );
+    readTexData.Dispose( );
     delete texReader;
 
     delete bundle;
 
     // Test reopening the bundle and verifying contents
-    auto reopenedBundle = new Bundle( desc );
+    const auto reopenedBundle = new Bundle( desc );
     ASSERT_TRUE( reopenedBundle->Exists( meshUri ) );
     ASSERT_TRUE( reopenedBundle->Exists( texUri ) );
 
-    InteropArray<AssetUri> assets = reopenedBundle->GetAllAssets( );
+    const InteropArray<AssetUri> assets = reopenedBundle->GetAllAssets( );
     ASSERT_EQ( assets.NumElements( ), 2 );
 
     delete reopenedBundle;
+
+    // Clean up test data
+    meshData.Dispose( );
+    texData.Dispose( );
 }
 
 TEST_F( BundleTest, GetAssetsByType )
@@ -159,10 +165,20 @@ TEST_F( BundleTest, GetAssetsByType )
     const AssetUri texUri      = AssetUri::Create( "textures/diffuse.dztex" );
     const AssetUri materialUri = AssetUri::Create( "materials/standard.dzmat" );
 
-    bundle->AddAsset( meshUri1, AssetType::Mesh, CreateTestData( "Mesh 1 data" ) );
-    bundle->AddAsset( meshUri2, AssetType::Mesh, CreateTestData( "Mesh 2 data" ) );
-    bundle->AddAsset( texUri, AssetType::Texture, CreateTestData( "Texture data" ) );
-    bundle->AddAsset( materialUri, AssetType::Material, CreateTestData( "Material data" ) );
+    ByteArray mesh1Data    = CreateTestData( "Mesh 1 data" );
+    ByteArray mesh2Data    = CreateTestData( "Mesh 2 data" );
+    ByteArray texData      = CreateTestData( "Texture data" );
+    ByteArray materialData = CreateTestData( "Material data" );
+
+    bundle->AddAsset( meshUri1, AssetType::Mesh, ByteArrayView( mesh1Data ) );
+    bundle->AddAsset( meshUri2, AssetType::Mesh, ByteArrayView( mesh2Data ) );
+    bundle->AddAsset( texUri, AssetType::Texture, ByteArrayView( texData ) );
+    bundle->AddAsset( materialUri, AssetType::Material, ByteArrayView( materialData ) );
+
+    mesh1Data.Dispose( );
+    mesh2Data.Dispose( );
+    texData.Dispose( );
+    materialData.Dispose( );
 
     bundle->Save( );
 
@@ -229,10 +245,10 @@ TEST_F( BundleTest, BundleCompression )
         repeatData += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     }
 
-    const InteropArray<Byte> assetData = CreateTestData( repeatData.c_str( ) );
-    const AssetUri           assetUri  = AssetUri::Create( "test/compressible.dzanim" );
+    const ByteArray assetData = CreateTestData( repeatData.c_str( ) );
+    const AssetUri  assetUri  = AssetUri::Create( "test/compressible.dzanim" );
 
-    compressedBundle->AddAsset( assetUri, AssetType::Animation, assetData );
+    compressedBundle->AddAsset( assetUri, AssetType::Animation, ByteArrayView( assetData ) );
     compressedBundle->Save( );
 
     // We need to create a new bundle instance to properly test loading from disk
@@ -243,9 +259,10 @@ TEST_F( BundleTest, BundleCompression )
     BinaryReader *reader = compressedBundle->OpenReader( assetUri );
     ASSERT_NE( reader, nullptr );
 
-    InteropArray<Byte> readData = reader->ReadBytes( static_cast<uint32_t>( assetData.NumElements( ) ) );
-    ASSERT_EQ( readData.NumElements( ), assetData.NumElements( ) );
-    AssertInteropArrayEq( readData, assetData );
+    const ByteArray readData = reader->ReadBytes( static_cast<uint32_t>( assetData.NumElements ) );
+    ASSERT_EQ( readData.NumElements, assetData.NumElements );
+    AssertArrayEq( readData.Elements, assetData.Elements, assetData.NumElements );
+    readData.Dispose( );
 
     delete reader;
     delete compressedBundle;
@@ -259,7 +276,8 @@ TEST_F( BundleTest, BundleCompression )
     auto uncompressedBundle = new Bundle( uncompressedDesc );
     ASSERT_FALSE( uncompressedBundle->IsCompressed( ) );
 
-    uncompressedBundle->AddAsset( assetUri, AssetType::Animation, assetData );
+    uncompressedBundle->AddAsset( assetUri, AssetType::Animation, ByteArrayView( assetData ) );
+    assetData.Dispose( );
     uncompressedBundle->Save( );
 
     // Verify both bundles have the same data but different sizes
@@ -289,9 +307,17 @@ TEST_F( BundleTest, CreateFromDirectory )
     const auto meshFile2   = InteropString( ( std::string( meshDir.Get( ) ) + "/sphere.dzmesh" ).c_str( ) );
     const auto textureFile = InteropString( ( std::string( textureDir.Get( ) ) + "/diffuse.dztex" ).c_str( ) );
 
-    FileIO::WriteFile( meshFile1, CreateTestData( "Cube mesh data" ) );
-    FileIO::WriteFile( meshFile2, CreateTestData( "Sphere mesh data" ) );
-    FileIO::WriteFile( textureFile, CreateTestData( "Texture data" ) );
+    ByteArray cubeMeshData   = CreateTestData( "Cube mesh data" );
+    ByteArray sphereMeshData = CreateTestData( "Sphere mesh data" );
+    ByteArray textureData    = CreateTestData( "Texture data" );
+
+    FileIO::WriteFile( meshFile1, ByteArrayView( cubeMeshData ) );
+    FileIO::WriteFile( meshFile2, ByteArrayView( sphereMeshData ) );
+    FileIO::WriteFile( textureFile, ByteArrayView( textureData ) );
+
+    cubeMeshData.Dispose( );
+    sphereMeshData.Dispose( );
+    textureData.Dispose( );
 
     // Create a bundle from the directory
     BundleDirectoryDesc dirDesc;
@@ -346,9 +372,17 @@ TEST_F( BundleTest, BundleManager )
     const AssetUri texUri      = AssetUri::Create( "textures/diffuse.dztex" );
     const AssetUri materialUri = AssetUri::Create( "materials/standard.dzmat" );
 
-    bundle1->AddAsset( meshUri, AssetType::Mesh, CreateTestData( "Mesh data" ) );
-    bundle2->AddAsset( texUri, AssetType::Texture, CreateTestData( "Texture data" ) );
-    bundle1->AddAsset( materialUri, AssetType::Material, CreateTestData( "Material data" ) );
+    ByteArray meshData     = CreateTestData( "Mesh data" );
+    ByteArray texData      = CreateTestData( "Texture data" );
+    ByteArray materialData = CreateTestData( "Material data" );
+
+    bundle1->AddAsset( meshUri, AssetType::Mesh, ByteArrayView( meshData ) );
+    bundle2->AddAsset( texUri, AssetType::Texture, ByteArrayView( texData ) );
+    bundle1->AddAsset( materialUri, AssetType::Material, ByteArrayView( materialData ) );
+
+    meshData.Dispose( );
+    texData.Dispose( );
+    materialData.Dispose( );
 
     bundle1->Save( );
     bundle2->Save( );
@@ -367,28 +401,40 @@ TEST_F( BundleTest, BundleManager )
 
     BinaryReader *meshReader = manager->OpenReader( meshUri );
     ASSERT_NE( meshReader, nullptr );
-    const InteropString meshData = GetStringFromData( meshReader->ReadBytes( static_cast<uint32_t>( strlen( "Mesh data" ) ) ) );
-    ASSERT_STREQ( meshData.Get( ), "Mesh data" );
+    const ByteArray     meshDataRead = meshReader->ReadBytes( static_cast<uint32_t>( strlen( "Mesh data" ) ) );
+    const InteropString meshDataStr  = GetStringFromData( meshDataRead );
+    meshDataRead.Dispose( );
+    ASSERT_STREQ( meshDataStr.Get( ), "Mesh data" );
     delete meshReader;
 
-    InteropArray<Byte> newMaterialData = CreateTestData( "Updated material data" );
-    manager->AddAsset( bundle1, materialUri, AssetType::Material, newMaterialData );
+    ByteArray newMaterialData = CreateTestData( "Updated material data" );
+    manager->AddAsset( bundle1, materialUri, AssetType::Material, ByteArrayView( newMaterialData ) );
 
     BinaryReader *materialReader = manager->OpenReader( materialUri );
     ASSERT_NE( materialReader, nullptr );
-    const InteropArray<Byte> readMaterialData = materialReader->ReadBytes( static_cast<uint32_t>( newMaterialData.NumElements( ) ) );
-    AssertInteropArrayEq( readMaterialData, newMaterialData );
+    const ByteArray readMaterialData = materialReader->ReadBytes( static_cast<uint32_t>( newMaterialData.NumElements ) );
+    AssertArrayEq( readMaterialData.Elements, newMaterialData.Elements, newMaterialData.NumElements );
+    readMaterialData.Dispose( );
+    newMaterialData.Dispose( );
     delete materialReader;
 
-    const AssetUri sharedUri = AssetUri::Create( "shared/asset.dztex" );
-    bundle1->AddAsset( sharedUri, AssetType::Texture, CreateTestData( "High priority data" ) );
-    bundle2->AddAsset( sharedUri, AssetType::Texture, CreateTestData( "Low priority data" ) );
+    const AssetUri sharedUri        = AssetUri::Create( "shared/asset.dztex" );
+    ByteArray      highPriorityData = CreateTestData( "High priority data" );
+    ByteArray      lowPriorityData  = CreateTestData( "Low priority data" );
+
+    bundle1->AddAsset( sharedUri, AssetType::Texture, ByteArrayView( highPriorityData ) );
+    bundle2->AddAsset( sharedUri, AssetType::Texture, ByteArrayView( lowPriorityData ) );
+
+    highPriorityData.Dispose( );
+    lowPriorityData.Dispose( );
     bundle1->Save( );
     bundle2->Save( );
 
     BinaryReader *sharedReader = manager->OpenReader( sharedUri );
     ASSERT_NE( sharedReader, nullptr );
-    const InteropString sharedData = GetStringFromData( sharedReader->ReadBytes( static_cast<uint32_t>( strlen( "High priority data" ) ) ) );
+    const ByteArray     sharedDataRead = sharedReader->ReadBytes( static_cast<uint32_t>( strlen( "High priority data" ) ) );
+    const InteropString sharedData     = GetStringFromData( sharedDataRead );
+    sharedDataRead.Dispose( );
     ASSERT_STREQ( sharedData.Get( ), "High priority data" );
     delete sharedReader;
 
@@ -408,8 +454,10 @@ TEST_F( BundleTest, BundleManager )
 
     sharedReader = manager->OpenReader( sharedUri );
     ASSERT_NE( sharedReader, nullptr );
-    const InteropString lowPriorityData = GetStringFromData( sharedReader->ReadBytes( static_cast<uint32_t>( strlen( "Low priority data" ) ) ) );
-    ASSERT_STREQ( lowPriorityData.Get( ), "Low priority data" );
+    const ByteArray     lowPriorityDataRead = sharedReader->ReadBytes( static_cast<uint32_t>( strlen( "Low priority data" ) ) );
+    const InteropString lowPriorityDataStr  = GetStringFromData( lowPriorityDataRead );
+    lowPriorityDataRead.Dispose( );
+    ASSERT_STREQ( lowPriorityDataStr.Get( ), "Low priority data" );
     delete sharedReader;
 
     delete manager;

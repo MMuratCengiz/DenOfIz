@@ -297,10 +297,10 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
         compiledStage->EntryPoint = stageAsset.EntryPoint;
         compiledStage->RayTracing = stageAsset.RayTracing;
 
-        if ( stageAsset.DXIL.NumElements( ) > 0 )
+        if ( stageAsset.DXIL.NumElements > 0 )
         {
             IDxcBlobEncoding *blob = nullptr;
-            if ( SUCCEEDED( dxcLibrary->CreateBlobWithEncodingOnHeapCopy( stageAsset.DXIL.Data( ), stageAsset.DXIL.NumElements( ), DXC_CP_ACP, &blob ) ) )
+            if ( SUCCEEDED( dxcLibrary->CreateBlobWithEncodingOnHeapCopy( stageAsset.DXIL.Elements, stageAsset.DXIL.NumElements, DXC_CP_ACP, &blob ) ) )
             {
                 compiledStage->DXIL.Elements    = static_cast<Byte *>( std::malloc( blob->GetBufferSize( ) ) );
                 compiledStage->DXIL.NumElements = blob->GetBufferSize( );
@@ -309,10 +309,10 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
             }
         }
 
-        if ( stageAsset.MSL.NumElements( ) > 0 )
+        if ( stageAsset.MSL.NumElements > 0 )
         {
             IDxcBlobEncoding *blob = nullptr;
-            if ( SUCCEEDED( dxcLibrary->CreateBlobWithEncodingOnHeapCopy( stageAsset.MSL.Data( ), stageAsset.MSL.NumElements( ), DXC_CP_ACP, &blob ) ) )
+            if ( SUCCEEDED( dxcLibrary->CreateBlobWithEncodingOnHeapCopy( stageAsset.MSL.Elements, stageAsset.MSL.NumElements, DXC_CP_ACP, &blob ) ) )
             {
                 compiledStage->MSL.Elements    = static_cast<Byte *>( std::malloc( blob->GetBufferSize( ) ) );
                 compiledStage->MSL.NumElements = blob->GetBufferSize( );
@@ -321,10 +321,10 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
             }
         }
 
-        if ( stageAsset.SPIRV.NumElements( ) > 0 )
+        if ( stageAsset.SPIRV.NumElements > 0 )
         {
             IDxcBlobEncoding *blob = nullptr;
-            if ( SUCCEEDED( dxcLibrary->CreateBlobWithEncodingOnHeapCopy( stageAsset.SPIRV.Data( ), stageAsset.SPIRV.NumElements( ), DXC_CP_ACP, &blob ) ) )
+            if ( SUCCEEDED( dxcLibrary->CreateBlobWithEncodingOnHeapCopy( stageAsset.SPIRV.Elements, stageAsset.SPIRV.NumElements, DXC_CP_ACP, &blob ) ) )
             {
                 compiledStage->SPIRV.Elements    = static_cast<Byte *>( std::malloc( blob->GetBufferSize( ) ) );
                 compiledStage->SPIRV.NumElements = blob->GetBufferSize( );
@@ -333,10 +333,10 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
             }
         }
 
-        if ( stageAsset.Reflection.NumElements( ) > 0 )
+        if ( stageAsset.Reflection.NumElements > 0 )
         {
             IDxcBlobEncoding *blob = nullptr;
-            if ( SUCCEEDED( dxcLibrary->CreateBlobWithEncodingOnHeapCopy( stageAsset.Reflection.Data( ), stageAsset.Reflection.NumElements( ), DXC_CP_ACP, &blob ) ) )
+            if ( SUCCEEDED( dxcLibrary->CreateBlobWithEncodingOnHeapCopy( stageAsset.Reflection.Elements, stageAsset.Reflection.NumElements, DXC_CP_ACP, &blob ) ) )
             {
                 compiledStage->Reflection.Elements    = static_cast<Byte *>( std::malloc( blob->GetBufferSize( ) ) );
                 compiledStage->Reflection.NumElements = blob->GetBufferSize( );

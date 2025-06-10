@@ -34,6 +34,15 @@ void AssertInteropArrayEq( const InteropArray<T> &arr1, const InteropArray<T> &a
     }
 }
 
+template<typename T>
+void AssertArrayEq( const T* arr1, const T* arr2, size_t size )
+{
+    for ( size_t i = 0; i < size; ++i )
+    {
+        ASSERT_EQ( arr1[ i ], arr2[ i ] );
+    }
+}
+
 inline bool FloatEquals( const float a, const float b, const float epsilon = 0.00001f )
 {
     return std::abs( a - b ) < epsilon;

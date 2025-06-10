@@ -411,11 +411,7 @@ ByteArrayArray DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
         IterateBoundResources( dxilShader, processResources );
     }
 
-    ByteArrayArray result;
-    result.NumElements = desc.Shaders.NumElements;
-    result.Elements = static_cast<ByteArray *>( std::malloc( result.NumElements * sizeof( ByteArray ) ) );
-    
-    // Initialize all elements to empty in case of error
+    const ByteArrayArray result = ByteArrayArray::Create( desc.Shaders.NumElements );
     for ( uint32_t i = 0; i < result.NumElements; ++i )
     {
         result.Elements[ i ] = { nullptr, 0 };
@@ -454,7 +450,7 @@ ByteArrayArray DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
             dxcUtils->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &m_shaderReflection ) );
         }
 
-        auto mslBlob = Compile( compileDesc, dxilShader->DXIL, compileMslDesc, shader.RayTracing );
+        auto mslBlob                   = Compile( compileDesc, dxilShader->DXIL, compileMslDesc, shader.RayTracing );
         result.Elements[ shaderIndex ] = mslBlob;
     }
 

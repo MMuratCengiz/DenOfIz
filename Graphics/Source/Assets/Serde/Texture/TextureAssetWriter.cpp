@@ -16,8 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "DenOfIzGraphics/Assets/Serde/Common/AssetWriterHelpers.h"
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetWriter.h"
+#include "DenOfIzGraphics/Assets/Serde/Common/AssetWriterHelpers.h"
+
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
@@ -217,7 +219,7 @@ void TextureAssetWriter::Write( const TextureAsset &textureAsset )
     m_assetDataStreamPosition = m_writer->Position( );
 }
 
-void TextureAssetWriter::AddPixelData( const InteropArray<Byte> &bytes, const uint32_t mipIndex, const uint32_t arrayLayer )
+void TextureAssetWriter::AddPixelData( const ByteArrayView &bytes, const uint32_t mipIndex, const uint32_t arrayLayer )
 {
     ValidateMipRange( mipIndex, arrayLayer );
 

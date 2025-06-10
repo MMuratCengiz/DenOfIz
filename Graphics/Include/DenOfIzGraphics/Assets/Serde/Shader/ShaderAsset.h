@@ -19,8 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Assets/Serde/Asset.h"
 #include "DenOfIzGraphics/Assets/Shaders/ShaderReflectDesc.h"
-#include "DenOfIzGraphics/Utilities/Interop.h"
 #include "DenOfIzGraphics/Utilities/Common_Arrays.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
 
 namespace DenOfIz
 {
@@ -28,17 +28,34 @@ namespace DenOfIz
     {
         ShaderStage          Stage;
         InteropString        EntryPoint;
-        InteropArray<Byte>   DXIL;
-        InteropArray<Byte>   MSL;
-        InteropArray<Byte>   SPIRV;
-        InteropArray<Byte>   Reflection; // Generated Dxc reflection
+        ByteArray            DXIL;
+        ByteArray            MSL;
+        ByteArray            SPIRV;
+        ByteArray            Reflection; // Generated Dxc reflection
         RayTracingShaderDesc RayTracing;
+
+        void Dispose( ) const
+        {
+            DXIL.Dispose( );
+            MSL.Dispose( );
+            SPIRV.Dispose( );
+            Reflection.Dispose( );
+        }
     };
 
     struct DZ_API ShaderStageAssetArray
     {
         ShaderStageAsset *Elements;
         uint32_t          NumElements;
+
+        void Dispose( ) const
+        {
+            for ( uint32_t i = 0; i < NumElements; ++i )
+            {
+                Elements[ i ].Dispose( );
+            }
+            delete[] Elements;
+        }
     };
 
     struct DZ_API ShaderAsset : AssetHeader
@@ -57,6 +74,11 @@ namespace DenOfIz
         static InteropString Extension( )
         {
             return "dzshader";
+        }
+
+        void Dispose( ) const
+        {
+            Stages.Dispose( );
         }
     };
 } // namespace DenOfIz

@@ -16,14 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "DenOfIzGraphics/Assets/Import/VGImporter.h"
+#include <filesystem>
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/FileSystem/PathResolver.h"
 #include "DenOfIzGraphics/Assets/Import/AssetPathUtilities.h"
-#include "DenOfIzGraphics/Assets/Import/VGImporter.h"
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetWriter.h"
 #include "DenOfIzGraphics/Assets/Stream/BinaryWriter.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
-#include <filesystem>
 
 using namespace DenOfIz;
 
@@ -200,7 +200,10 @@ void VGImporter::WriteTextureAsset( const ImportContext &context, const TextureA
         textureData.SetElement( i * 4 + 3, a );
     }
 
-    textureWriter.AddPixelData( textureData, 0, 0 );
+    ByteArrayView dataView{ };
+    dataView.Elements    = textureData.Data( );
+    dataView.NumElements = textureData.NumElements( );
+    textureWriter.AddPixelData( dataView, 0, 0 );
     textureWriter.End( );
     writer.Flush( );
 

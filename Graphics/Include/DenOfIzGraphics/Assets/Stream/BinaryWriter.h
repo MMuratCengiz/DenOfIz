@@ -18,9 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Utilities/InteropMath.h"
 #include <ostream>
 #include "BinaryContainer.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
+#include "DenOfIzGraphics/Utilities/InteropMath.h"
 
 namespace DenOfIz
 {
@@ -43,8 +44,8 @@ namespace DenOfIz
         DZ_API ~BinaryWriter( );
 
         DZ_API void                   WriteByte( Byte value ) const;
-        DZ_API void                   Write( const InteropArray<Byte> &buffer, uint32_t offset, uint32_t count ) const;
-        DZ_API void                   WriteBytes( const InteropArray<Byte> &buffer ) const;
+        DZ_API void                   Write( const ByteArrayView &buffer, uint32_t offset, uint32_t count ) const;
+        DZ_API void                   WriteBytes( const ByteArrayView &buffer ) const;
         DZ_API void                   WriteUInt16( uint16_t value ) const;
         DZ_API void                   WriteUInt32( uint32_t value ) const;
         DZ_API void                   WriteUInt64( uint64_t value ) const;

@@ -39,7 +39,7 @@ void FontAssetWriter::Write( const FontAsset &fontAsset )
 
     AssetWriterHelpers::WriteProperties( m_writer, fontAsset.UserProperties );
     m_writer->WriteUInt64( fontAsset.NumAtlasDataBytes );
-    m_writer->WriteBytes( fontAsset.AtlasData );
+    m_writer->WriteBytes( ByteArrayView( fontAsset.AtlasData ) );
 }
 
 void FontAssetWriter::End( ) const
@@ -62,7 +62,7 @@ void FontAssetWriter::WriteHeader( const uint64_t totalNumBytes ) const
 void FontAssetWriter::WriteMetadata( const FontAsset &fontAsset ) const
 {
     m_writer->WriteUInt64( fontAsset.DataNumBytes );
-    m_writer->WriteBytes( fontAsset.Data );
+    m_writer->WriteBytes( ByteArrayView( fontAsset.Data ) );
 
     m_writer->WriteUInt32( fontAsset.InitialFontSize );
     m_writer->WriteUInt32( fontAsset.AtlasWidth );
