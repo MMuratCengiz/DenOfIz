@@ -49,6 +49,8 @@ namespace DenOfIz
     {
         TextureMip *Elements;
         uint32_t    NumElements;
+
+        DZ_ARRAY_METHODS( TextureMipArray, TextureMip )
     };
 
     struct DZ_API TextureAsset : AssetHeader
@@ -74,8 +76,8 @@ namespace DenOfIz
         uint32_t NumRows    = 0;
         uint32_t SlicePitch = 0;
 
-        TextureMipArray  Mips;
-        AssetDataStream  Data;
+        TextureMipArray Mips;
+        AssetDataStream Data;
 
         TextureAsset( ) : AssetHeader( 0x445A544558 /* 'DZTEX' */, Latest, 0 )
         {
@@ -84,6 +86,11 @@ namespace DenOfIz
         static InteropString Extension( )
         {
             return "dztex";
+        }
+
+        void Dispose( ) const
+        {
+            Mips.Dispose( );
         }
     };
 } // namespace DenOfIz

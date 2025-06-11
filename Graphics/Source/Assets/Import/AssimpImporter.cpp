@@ -47,7 +47,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
-// Include first due to DirectXMath breaking NULL on external libraries
+// Include last due to DirectXMath breaking NULL on external libraries
 #include <DirectXMath.h>
 
 using namespace DenOfIz;
@@ -81,28 +81,33 @@ public:
 
     explicit Impl( AssimpImporterDesc desc ) : m_desc( std::move( desc ) )
     {
-        m_importerInfo.Name = "Assimp Importer";
-        m_importerInfo.SupportedExtensions = InteropStringArray::Create( 20 );
-        m_importerInfo.SupportedExtensions.Elements[0] = ".fbx";
-        m_importerInfo.SupportedExtensions.Elements[1] = ".gltf";
-        m_importerInfo.SupportedExtensions.Elements[2] = ".glb";
-        m_importerInfo.SupportedExtensions.Elements[3] = ".obj";
-        m_importerInfo.SupportedExtensions.Elements[4] = ".dae";
-        m_importerInfo.SupportedExtensions.Elements[5] = ".blend";
-        m_importerInfo.SupportedExtensions.Elements[6] = ".3ds";
-        m_importerInfo.SupportedExtensions.Elements[7] = ".ase";
-        m_importerInfo.SupportedExtensions.Elements[8] = ".ifc";
-        m_importerInfo.SupportedExtensions.Elements[9] = ".xgl";
-        m_importerInfo.SupportedExtensions.Elements[10] = ".zgl";
-        m_importerInfo.SupportedExtensions.Elements[11] = ".ply";
-        m_importerInfo.SupportedExtensions.Elements[12] = ".dxf";
-        m_importerInfo.SupportedExtensions.Elements[13] = ".lwo";
-        m_importerInfo.SupportedExtensions.Elements[14] = ".lws";
-        m_importerInfo.SupportedExtensions.Elements[15] = ".lxo";
-        m_importerInfo.SupportedExtensions.Elements[16] = ".stl";
-        m_importerInfo.SupportedExtensions.Elements[17] = ".x";
-        m_importerInfo.SupportedExtensions.Elements[18] = ".ac";
-        m_importerInfo.SupportedExtensions.Elements[19] = ".ms3d";
+        m_importerInfo.Name                               = "Assimp Importer";
+        m_importerInfo.SupportedExtensions                = InteropStringArray::Create( 20 );
+        m_importerInfo.SupportedExtensions.Elements[ 0 ]  = ".fbx";
+        m_importerInfo.SupportedExtensions.Elements[ 1 ]  = ".gltf";
+        m_importerInfo.SupportedExtensions.Elements[ 2 ]  = ".glb";
+        m_importerInfo.SupportedExtensions.Elements[ 3 ]  = ".obj";
+        m_importerInfo.SupportedExtensions.Elements[ 4 ]  = ".dae";
+        m_importerInfo.SupportedExtensions.Elements[ 5 ]  = ".blend";
+        m_importerInfo.SupportedExtensions.Elements[ 6 ]  = ".3ds";
+        m_importerInfo.SupportedExtensions.Elements[ 7 ]  = ".ase";
+        m_importerInfo.SupportedExtensions.Elements[ 8 ]  = ".ifc";
+        m_importerInfo.SupportedExtensions.Elements[ 9 ]  = ".xgl";
+        m_importerInfo.SupportedExtensions.Elements[ 10 ] = ".zgl";
+        m_importerInfo.SupportedExtensions.Elements[ 11 ] = ".ply";
+        m_importerInfo.SupportedExtensions.Elements[ 12 ] = ".dxf";
+        m_importerInfo.SupportedExtensions.Elements[ 13 ] = ".lwo";
+        m_importerInfo.SupportedExtensions.Elements[ 14 ] = ".lws";
+        m_importerInfo.SupportedExtensions.Elements[ 15 ] = ".lxo";
+        m_importerInfo.SupportedExtensions.Elements[ 16 ] = ".stl";
+        m_importerInfo.SupportedExtensions.Elements[ 17 ] = ".x";
+        m_importerInfo.SupportedExtensions.Elements[ 18 ] = ".ac";
+        m_importerInfo.SupportedExtensions.Elements[ 19 ] = ".ms3d";
+    }
+
+    ~Impl( )
+    {
+        m_importerInfo.SupportedExtensions.Dispose( );
     }
 
     ImporterResultCode ImportSceneInternal( ImportContext &context );
@@ -144,9 +149,9 @@ ImporterDesc AssimpImporter::GetImporterInfo( ) const
 bool AssimpImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
     const InteropString lowerExt = extension.ToLower( );
-    for ( size_t i = 0; i < m_pImpl->m_importerInfo.SupportedExtensions.NumElements( ); ++i )
+    for ( size_t i = 0; i < m_pImpl->m_importerInfo.SupportedExtensions.NumElements; ++i )
     {
-        if ( m_pImpl->m_importerInfo.SupportedExtensions.GetElement( i ).Equals( lowerExt ) )
+        if ( m_pImpl->m_importerInfo.SupportedExtensions.Elements[ i ].Equals( lowerExt ) )
         {
             return true;
         }
@@ -273,7 +278,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
             return result;
         }
 
-        if ( skeletonAsset.Joints.NumElements( ) > 0 )
+        if ( skeletonAsset.Joints.NumElements > 0 )
         {
             WriteSkeletonAsset( context, skeletonAsset );
             meshAsset.SkeletonRef = context.SkeletonAssetUri;
@@ -307,7 +312,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
                 subMesh.Name = mesh->mName.C_Str( );
                 if ( subMesh.Name.IsEmpty( ) )
                 {
-                    subMesh.Name = InteropString( "SubMesh_" ).Append( std::to_string( meshAsset.SubMeshes.NumElements( ) ).c_str( ) );
+                    subMesh.Name = InteropString( "SubMesh_" ).Append( std::to_string( meshAsset.SubMeshes.NumElements ).c_str( ) );
                 }
 
                 subMesh.NumVertices = mesh->mNumVertices;
@@ -357,19 +362,19 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
         attributeConfig.NumUVAttributes       = firstMesh->GetNumUVChannels( );
         attributeConfig.MaxBoneInfluences     = context.Desc.MaxBoneWeightsPerVertex;
 
-        attributeConfig.UVChannels.Resize( firstMesh->GetNumUVChannels( ) );
+        attributeConfig.UVChannels = UVChannelArray::Create( firstMesh->GetNumUVChannels( ) );
         for ( uint32_t i = 0; i < firstMesh->GetNumUVChannels( ); ++i )
         {
             UVChannel config;
-            config.SemanticName = "TEXCOORD";
-            config.Index        = i;
-            attributeConfig.UVChannels.SetElement( i, config );
+            config.SemanticName                      = "TEXCOORD";
+            config.Index                             = i;
+            attributeConfig.UVChannels.Elements[ i ] = config;
         }
 
-        attributeConfig.ColorFormats.Resize( firstMesh->GetNumColorChannels( ) );
+        attributeConfig.ColorFormats = ColorFormatArray::Create( firstMesh->GetNumColorChannels( ) );
         for ( uint32_t i = 0; i < firstMesh->GetNumColorChannels( ); ++i )
         {
-            attributeConfig.ColorFormats.SetElement( i, ColorFormat::RGBA );
+            attributeConfig.ColorFormats.Elements[ i ] = ColorFormat::RGBA;
         }
 
         meshAsset.EnabledAttributes = attributes;
@@ -381,11 +386,12 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
     if ( context.Desc.ImportAnimations && context.Scene->HasAnimations( ) )
     {
         spdlog::info( "Phase 5: Processing {} animations...", context.Scene->mNumAnimations );
+        meshAsset.AnimationRefs = AssetUriArray::Create( context.Scene->mNumAnimations );
         for ( unsigned int i = 0; i < context.Scene->mNumAnimations; ++i )
         {
             AssetUri animUri;
             ProcessAnimation( context, context.Scene->mAnimations[ i ], animUri );
-            meshAsset.AnimationRefs.AddElement( animUri );
+            meshAsset.AnimationRefs.Elements[ i ] = animUri;
         }
     }
 
@@ -415,6 +421,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
 
         meshWriter.FinalizeAsset( );
         RegisterCreatedAsset( context, meshUri );
+        meshAsset.Dispose( );
         spdlog::info( "Successfully wrote Mesh asset: {}", meshUri.ToInteropString( ).Get( ) );
         if ( context.Desc.ImportAnimations && context.Scene->HasAnimations( ) )
         {
@@ -438,11 +445,11 @@ ImporterResultCode AssimpImporter::Impl::ProcessNode( ImportContext &context, co
     if ( const bool isKnownBone = context.BoneNameToIndexMap.contains( nodeNameStr ); meshWriter == nullptr && isKnownBone && context.Desc.ImportSkeletons )
     {
         bool alreadyAdded = false;
-        for ( size_t j = 0; j < skeletonAsset.Joints.NumElements( ); ++j )
+        for ( size_t j = 0; j < skeletonAsset.Joints.NumElements; ++j )
         {
-            if ( skeletonAsset.Joints.GetElement( j ).Name.Equals( nodeNameStr.c_str( ) ) )
+            if ( skeletonAsset.Joints.Elements[ j ].Name.Equals( nodeNameStr.c_str( ) ) )
             {
-                currentJointIndex = skeletonAsset.Joints.GetElement( j ).Index;
+                currentJointIndex = skeletonAsset.Joints.Elements[ j ].Index;
                 alreadyAdded      = true;
                 break;
             }
@@ -450,7 +457,7 @@ ImporterResultCode AssimpImporter::Impl::ProcessNode( ImportContext &context, co
 
         if ( !alreadyAdded )
         {
-            currentJointIndex = skeletonAsset.Joints.NumElements( );
+            currentJointIndex = skeletonAsset.Joints.NumElements;
             Joint joint;
             joint.Name        = nodeNameStr.c_str( );
             joint.Index       = currentJointIndex;
@@ -479,9 +486,9 @@ ImporterResultCode AssimpImporter::Impl::ProcessNode( ImportContext &context, co
                 spdlog::warn( "Inverse bind matrix not found in map for joint: {} . Using identity.", joint.Name.Get( ) ); /* Set identity */
             }
             skeletonAsset.Joints.AddElement( joint );
-            if ( parentJointIndex >= 0 && parentJointIndex < static_cast<int32_t>( skeletonAsset.Joints.NumElements( ) ) )
+            if ( parentJointIndex >= 0 && parentJointIndex < static_cast<int32_t>( skeletonAsset.Joints.NumElements ) )
             {
-                skeletonAsset.Joints.GetElement( parentJointIndex ).ChildIndices.AddElement( currentJointIndex );
+                skeletonAsset.Joints[ parentJointIndex ].ChildIndices.AddElement( currentJointIndex );
             }
             context.BoneNameToIndexMap[ nodeNameStr ]         = currentJointIndex;
             context.IndexToAssimpNodeMap[ currentJointIndex ] = node;
@@ -508,9 +515,9 @@ ImporterResultCode AssimpImporter::Impl::ProcessNode( ImportContext &context, co
         {
             for ( size_t j = 0; j < skeletonAsset.Joints.NumElements( ); ++j )
             {
-                if ( skeletonAsset.Joints.GetElement( j ).Name.Equals( nodeNameStr.c_str( ) ) )
+                if ( skeletonAsset.Joints.Elements[ j ].Name.Equals( nodeNameStr.c_str( ) ) )
                 {
-                    currentJointIndex                         = skeletonAsset.Joints.GetElement( j ).Index;
+                    currentJointIndex                         = skeletonAsset.Joints.Elements[ j ].Index;
                     context.BoneNameToIndexMap[ nodeNameStr ] = currentJointIndex; // Update map
                     if ( !context.IndexToAssimpNodeMap.contains( currentJointIndex ) )
                     {
@@ -647,30 +654,30 @@ ImporterResultCode AssimpImporter::Impl::ProcessMesh( ImportContext &context, co
             vertex.Bitangent = { mesh->mBitangents[ i ].x, mesh->mBitangents[ i ].y, mesh->mBitangents[ i ].z, 1.0f };
         }
 
-        vertex.UVs.Resize( attributeConfig.NumUVAttributes );
+        vertex.UVs = Float_2Array::Create( attributeConfig.NumUVAttributes );
         for ( uint32_t uvChan = 0; uvChan < attributeConfig.NumUVAttributes; ++uvChan )
         {
             if ( mesh->HasTextureCoords( uvChan ) )
             {
-                Float_2 uv                      = ConvertVector2( mesh->mTextureCoords[ uvChan ][ i ] );
-                vertex.UVs.GetElement( uvChan ) = uv;
+                Float_2 uv                    = ConvertVector2( mesh->mTextureCoords[ uvChan ][ i ] );
+                vertex.UVs.Elements[ uvChan ] = uv;
             }
             else
             {
-                vertex.UVs.GetElement( uvChan ) = { 0.0f, 0.0f };
+                vertex.UVs.Elements[ uvChan ] = { 0.0f, 0.0f };
             }
         }
 
-        vertex.Colors.Resize( attributeConfig.ColorFormats.NumElements( ) );
-        for ( uint32_t colChan = 0; colChan < attributeConfig.ColorFormats.NumElements( ); ++colChan )
+        vertex.Colors = Float_4Array::Create( attributeConfig.ColorFormats.NumElements );
+        for ( uint32_t colChan = 0; colChan < attributeConfig.ColorFormats.NumElements; ++colChan )
         {
             if ( mesh->HasVertexColors( colChan ) )
             {
-                vertex.Colors.SetElement( colChan, ConvertColor( mesh->mColors[ colChan ][ i ] ) );
+                vertex.Colors.Elements[ colChan ] = ConvertColor( mesh->mColors[ colChan ][ i ] );
             }
             else
             {
-                vertex.Colors.SetElement( colChan, { 1.0f, 1.0f, 1.0f, 1.0f } );
+                vertex.Colors.Elements[ colChan ] = { 1.0f, 1.0f, 1.0f, 1.0f };
             }
         }
 
@@ -834,7 +841,7 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
     InteropString     animName    = AssetPathUtilities::SanitizeAssetName( animNameStr.c_str( ) );
     if ( animName.IsEmpty( ) )
     {
-        animName = InteropString( "Animation_" ).Append( std::to_string( context.Result.CreatedAssets.NumElements( ) ).c_str( ) );
+        animName = InteropString( "Animation_" ).Append( std::to_string( context.Result.CreatedAssets.NumElements ).c_str( ) );
     }
     spdlog::info( "Processing animation: {} Duration: {} Ticks/Sec: {}", animName.Get( ), animation->mDuration, animation->mTicksPerSecond );
 
@@ -848,11 +855,11 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
     clip.Duration               = static_cast<float>( animation->mDuration / ticksPerSecond );
 
     spdlog::info( "Processing {} joint animation channels (raw keys).", animation->mNumChannels );
-    clip.Tracks.Resize( animation->mNumChannels );
+    clip.Tracks = JointAnimTrackArray::Create( animation->mNumChannels );
     for ( unsigned int i = 0; i < animation->mNumChannels; ++i )
     {
         const aiNodeAnim *nodeAnim = animation->mChannels[ i ];
-        JointAnimTrack   &track    = clip.Tracks.GetElement( i );
+        JointAnimTrack   &track    = clip.Tracks.Elements[ i ];
         track.JointName            = nodeAnim->mNodeName.C_Str( );
 
         if ( !context.BoneNameToIndexMap.contains( track.JointName.Get( ) ) )
@@ -861,10 +868,10 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
             continue;
         }
 
-        track.PositionKeys.Resize( nodeAnim->mNumPositionKeys );
+        track.PositionKeys = PositionKeyArray::Create( nodeAnim->mNumPositionKeys );
         for ( unsigned int k = 0; k < nodeAnim->mNumPositionKeys; ++k )
         {
-            PositionKey &key = track.PositionKeys.GetElement( k );
+            PositionKey &key = track.PositionKeys.Elements[ k ];
             key.Timestamp    = static_cast<float>( nodeAnim->mPositionKeys[ k ].mTime / ticksPerSecond );
             key.Value        = ConvertVector3( nodeAnim->mPositionKeys[ k ].mValue );
 
@@ -873,41 +880,43 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
             key.Value.Z *= context.Desc.ScaleFactor;
         }
 
-        track.RotationKeys.Resize( nodeAnim->mNumRotationKeys );
+        track.RotationKeys = RotationKeyArray::Create( nodeAnim->mNumRotationKeys );
         for ( unsigned int k = 0; k < nodeAnim->mNumRotationKeys; ++k )
         {
-            RotationKey &key = track.RotationKeys.GetElement( k );
+            RotationKey &key = track.RotationKeys.Elements[ k ];
             key.Timestamp    = static_cast<float>( nodeAnim->mRotationKeys[ k ].mTime / ticksPerSecond );
             key.Value        = ConvertQuaternion( nodeAnim->mRotationKeys[ k ].mValue );
         }
 
-        track.ScaleKeys.Resize( nodeAnim->mNumScalingKeys );
+        track.ScaleKeys = ScaleKeyArray::Create( nodeAnim->mNumScalingKeys );
         for ( unsigned int k = 0; k < nodeAnim->mNumScalingKeys; ++k )
         {
-            ScaleKey &key = track.ScaleKeys.GetElement( k );
+            ScaleKey &key = track.ScaleKeys.Elements[ k ];
             key.Timestamp = static_cast<float>( nodeAnim->mScalingKeys[ k ].mTime / ticksPerSecond );
             key.Value     = ConvertVector3( nodeAnim->mScalingKeys[ k ].mValue );
         }
     }
 
     spdlog::info( "Processing {} morph target animation channels.", animation->mNumMorphMeshChannels );
-    clip.MorphTracks.Resize( animation->mNumMorphMeshChannels );
+    clip.MorphTracks = MorphAnimTrackArray::Create( animation->mNumMorphMeshChannels );
     for ( unsigned int i = 0; i < animation->mNumMorphMeshChannels; ++i )
     {
         const aiMeshMorphAnim *morphAnim = animation->mMorphMeshChannels[ i ];
-        MorphAnimTrack        &track     = clip.MorphTracks.GetElement( i );
+        MorphAnimTrack        &track     = clip.MorphTracks.Elements[ i ];
         track.Name                       = morphAnim->mName.C_Str( );
-        track.Keyframes.Resize( morphAnim->mNumKeys );
+        track.Keyframes                  = MorphKeyframeArray::Create( morphAnim->mNumKeys );
         for ( unsigned int k = 0; k < morphAnim->mNumKeys; ++k )
         {
-            MorphKeyframe        &keyframe = track.Keyframes.GetElement( k );
+            MorphKeyframe        &keyframe = track.Keyframes.Elements[ k ];
             const aiMeshMorphKey &aiKey    = morphAnim->mKeys[ k ];
             keyframe.Timestamp             = static_cast<float>( aiKey.mTime / ticksPerSecond );
             keyframe.Weight                = aiKey.mNumValuesAndWeights > 0 ? static_cast<float>( aiKey.mWeights[ 0 ] ) : 0.0f;
         }
     }
 
-    animAsset.Animations.AddElement( clip );
+    // Todo this doesn't seem right
+    animAsset.Animations.Elements    = &clip;
+    animAsset.Animations.NumElements = 1;
     WriteAnimationAsset( context, animAsset, outAssetUri );
     spdlog::info( "Successfully wrote animation asset: {}", outAssetUri.ToInteropString( ).Get( ) );
 }
@@ -1069,7 +1078,7 @@ void AssimpImporter::Impl::WriteTextureAsset( ImportContext &context, const aiTe
         texName = AssetPathUtilities::SanitizeAssetName( texture->mFilename.length > 0 ? texture->mFilename.C_Str( ) : semanticName.Get( ) );
         if ( texName.IsEmpty( ) )
         {
-            texName = InteropString( semanticName ).Append( "_Tex_" ).Append( std::to_string( context.Result.CreatedAssets.NumElements( ) ).c_str( ) );
+            texName = InteropString( semanticName ).Append( "_Tex_" ).Append( std::to_string( context.Result.CreatedAssets.NumElements ).c_str( ) );
         }
     }
     else
@@ -1117,13 +1126,13 @@ void AssimpImporter::Impl::WriteTextureAsset( ImportContext &context, const aiTe
     texAsset.RowPitch     = sourceTexture->GetRowPitch( );
     texAsset.NumRows      = sourceTexture->GetNumRows( );
     texAsset.SlicePitch   = sourceTexture->GetSlicePitch( );
-    texAsset.Mips.Resize( sourceTexture->GetMipLevels( ) * sourceTexture->GetArraySize( ) );
+    texAsset.Mips         = TextureMipArray::Create( sourceTexture->GetMipLevels( ) * sourceTexture->GetArraySize( ) );
 
     // Have to double stream to write metadata correctly unfortunately
     const auto mipDataArray = sourceTexture->ReadMipData( );
     for ( uint32_t i = 0; i < mipDataArray.NumElements( ); ++i )
     {
-        texAsset.Mips.SetElement( i, mipDataArray.GetElement( i ) );
+        texAsset.Mips.Elements[ i ] = mipDataArray.GetElement( i );
     }
     assetWriter.Write( texAsset );
 
@@ -1140,6 +1149,7 @@ void AssimpImporter::Impl::WriteTextureAsset( ImportContext &context, const aiTe
     }
 
     assetWriter.End( );
+    texAsset.Dispose( );
     RegisterCreatedAsset( context, outAssetUri );
     context.TexturePathToAssetUriMap[ targetAssetPath.Get( ) ] = outAssetUri;
 }
@@ -1214,5 +1224,15 @@ Float_4 AssimpImporter::Impl::ConvertColor( const aiColor4D &color ) const
 
 void AssimpImporter::Impl::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri ) const
 {
-    context.Result.CreatedAssets.AddElement( assetUri );
+    // Todo inefficient, we allocate 100s and reduce NumElements after import is complete
+    AssetUri *newElements = new AssetUri[ context.Result.CreatedAssets.NumElements + 1 ];
+    for ( size_t i = 0; i < context.Result.CreatedAssets.NumElements; i++ )
+    {
+        newElements[ i ] = context.Result.CreatedAssets.Elements[ i ];
+    }
+    newElements[ context.Result.CreatedAssets.NumElements ] = assetUri;
+
+    delete[] context.Result.CreatedAssets.Elements;
+    context.Result.CreatedAssets.Elements = newElements;
+    context.Result.CreatedAssets.NumElements++;
 }
