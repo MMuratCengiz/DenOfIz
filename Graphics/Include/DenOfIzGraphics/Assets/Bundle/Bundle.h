@@ -18,12 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <fstream>
+#include <unordered_map>
 #include "DenOfIzGraphics/Assets/Serde/Asset.h"
 #include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
 #include "DenOfIzGraphics/Assets/Stream/BinaryWriter.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
-#include <fstream>
-#include <unordered_map>
 
 namespace DenOfIz
 {
@@ -39,7 +39,14 @@ namespace DenOfIz
         Shader,
         Font
     };
-    template class DZ_API InteropArray<AssetType>;
+
+    struct DZ_API AssetTypeArray
+    {
+        AssetType *Elements;
+        uint32_t   NumElements;
+
+        DZ_ARRAY_METHODS( AssetTypeArray, AssetType )
+    };
 
     struct DZ_API AssetEntry
     {
@@ -49,7 +56,14 @@ namespace DenOfIz
         InteropString Name;
         InteropString Path;
     };
-    template class DZ_API InteropArray<AssetEntry>;
+
+    struct DZ_API AssetEntryArray
+    {
+        AssetEntry *Elements;
+        uint32_t    NumElements;
+
+        DZ_ARRAY_METHODS( AssetEntryArray, AssetEntry )
+    };
 
     struct DZ_API BundleHeader : AssetHeader
     {
@@ -82,18 +96,18 @@ namespace DenOfIz
 
     struct DZ_API BundleDirectoryDesc
     {
-        InteropString           DirectoryPath;
-        InteropString           OutputBundlePath;
-        bool                    Recursive = true;
-        bool                    Compress  = false;
-        InteropArray<AssetType> AssetTypeFilter; // Empty means include all types
+        InteropString  DirectoryPath;
+        InteropString  OutputBundlePath;
+        bool           Recursive = true;
+        bool           Compress  = false;
+        AssetTypeArray AssetTypeFilter; // Empty/Null means include all types
     };
 
     struct DZ_API BundleAssetFilter
     {
-        InteropArray<AssetType> Types;
-        InteropString           ExtensionFilter; // Empty means include all extensions
-        InteropString           PathFilter;      // Empty means include all paths
+        AssetTypeArray Types;
+        InteropString  ExtensionFilter; // Empty means include all extensions
+        InteropString  PathFilter;      // Empty means include all paths
     };
 
     class Bundle
@@ -125,5 +139,5 @@ namespace DenOfIz
 
         DZ_API static Bundle *CreateFromDirectory( const BundleDirectoryDesc &directoryDesc );
     };
-    template class DZ_API InteropArray<Bundle*>;
+    template class DZ_API InteropArray<Bundle *>;
 } // namespace DenOfIz

@@ -93,12 +93,12 @@ Bundle::Bundle( const BundleDirectoryDesc &directoryDesc ) : m_bundleFile( nullp
             extension = extension.substr( 1 );
         }
         const AssetType assetType = DetermineAssetTypeFromExtension( InteropString( extension.c_str( ) ) );
-        if ( directoryDesc.AssetTypeFilter.NumElements( ) > 0 )
+        if ( directoryDesc.AssetTypeFilter.NumElements > 0 )
         {
             bool matchesFilter = false;
-            for ( size_t i = 0; i < directoryDesc.AssetTypeFilter.NumElements( ); ++i )
+            for ( size_t i = 0; i < directoryDesc.AssetTypeFilter.NumElements; ++i )
             {
-                if ( directoryDesc.AssetTypeFilter.GetElement( i ) == assetType )
+                if ( directoryDesc.AssetTypeFilter.Elements[ i ] == assetType )
                 {
                     matchesFilter = true;
                     break;
