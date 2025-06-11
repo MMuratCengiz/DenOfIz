@@ -91,8 +91,8 @@ ClayBoundingBox Widget::GetBoundingBox( ) const
 
 void Widget::AddRectangle( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const ClayColor &color, const ClayCornerRadius &cornerRadius ) const
 {
-    InteropArray<UIVertex> vertices;
-    InteropArray<uint32_t> indices;
+    std::vector<UIVertex> vertices;
+    std::vector<uint32_t> indices;
 
     if ( cornerRadius.TopLeft == 0 && cornerRadius.TopRight == 0 && cornerRadius.BottomLeft == 0 && cornerRadius.BottomRight == 0 )
     {
@@ -112,13 +112,20 @@ void Widget::AddRectangle( IRenderBatch *renderBatch, const ClayBoundingBox &bou
         UIShapes::GenerateRoundedRectangle( desc, &vertices, &indices, 0 );
     }
 
-    renderBatch->AddVertices( vertices, indices );
+    UIVertexArray vertexArray{ };
+    vertexArray.Elements    = vertices.data( );
+    vertexArray.NumElements = static_cast<uint32_t>( vertices.size( ) );
+
+    UInt32Array indexArray{ };
+    indexArray.Elements    = indices.data( );
+    indexArray.NumElements = static_cast<uint32_t>( indices.size( ) );
+    renderBatch->AddVertices( vertexArray, indexArray );
 }
 
 void Widget::AddBorder( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const ClayColor &color, const ClayBorderWidth &width, const ClayCornerRadius &cornerRadius ) const
 {
-    InteropArray<UIVertex> vertices;
-    InteropArray<uint32_t> indices;
+    std::vector<UIVertex> vertices;
+    std::vector<uint32_t> indices;
 
     UIShapes::GenerateBorderDesc desc;
     desc.Bounds       = Clay_BoundingBox{ bounds.X, bounds.Y, bounds.Width, bounds.Height };
@@ -127,5 +134,12 @@ void Widget::AddBorder( IRenderBatch *renderBatch, const ClayBoundingBox &bounds
     desc.CornerRadius = Clay_CornerRadius{ cornerRadius.TopLeft, cornerRadius.TopRight, cornerRadius.BottomLeft, cornerRadius.BottomRight };
     UIShapes::GenerateBorder( desc, &vertices, &indices, 0 );
 
-    renderBatch->AddVertices( vertices, indices );
+    UIVertexArray vertexArray{ };
+    vertexArray.Elements    = vertices.data( );
+    vertexArray.NumElements = static_cast<uint32_t>( vertices.size( ) );
+
+    UInt32Array indexArray{ };
+    indexArray.Elements    = indices.data( );
+    indexArray.NumElements = static_cast<uint32_t>( indices.size( ) );
+    renderBatch->AddVertices( vertexArray, indexArray );
 }

@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "UIShapes.h"
 #include <clay.h>
 #include <memory>
 #include <unordered_map>
+#include "UIShapes.h"
 
 namespace DenOfIz
 {
@@ -61,9 +61,9 @@ namespace DenOfIz
 
     struct CachedShape
     {
-        InteropArray<UIVertex> vertices;
-        InteropArray<uint32_t> indices;
-        uint32_t               lastUsedFrame = 0;
+        std::vector<UIVertex> vertices;
+        std::vector<uint32_t> indices;
+        uint32_t              lastUsedFrame = 0;
     };
 
     class UIShapeCache

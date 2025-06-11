@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct UIVertex
+    struct DZ_API UIVertex
     {
         Float_3  Position; // Z used for depth test
         Float_2  TexCoord;
@@ -31,11 +31,19 @@ namespace DenOfIz
         uint32_t TextureIndex; // For bindless textures
     };
 
+    struct DZ_API UIVertexArray
+    {
+        UIVertex *Elements;
+        uint64_t  NumElements;
+
+        DZ_ARRAY_METHODS( UIVertexArray, UIVertex )
+    };
+
     class IRenderBatch
     {
     public:
         virtual ~IRenderBatch( )                                                                                      = default;
-        virtual void     AddVertices( const InteropArray<UIVertex> &vertices, const InteropArray<uint32_t> &indices ) = 0;
+        virtual void     AddVertices( const UIVertexArray &vertices, const UInt32Array &indices ) = 0;
         virtual uint32_t GetCurrentVertexOffset( ) const                                                              = 0;
     };
 
@@ -47,12 +55,12 @@ namespace DenOfIz
         virtual void OpenElement( const ClayElementDeclaration &declaration ) const = 0;
         virtual void CloseElement( ) const                                          = 0;
 
-        virtual void           Text( const InteropString &text, const ClayTextDesc &desc ) const                            = 0;
-        virtual ClayDimensions MeasureText( const InteropString &text, uint16_t fontId, uint16_t fontSize ) const           = 0;
+        virtual void           Text( const InteropString &text, const ClayTextDesc &desc ) const                  = 0;
+        virtual ClayDimensions MeasureText( const InteropString &text, uint16_t fontId, uint16_t fontSize ) const = 0;
 
-        virtual uint32_t        HashString( const InteropString &str, uint32_t index = 0, uint32_t baseId = 0 ) const      = 0;
-        virtual bool            PointerOver( uint32_t id ) const                                                            = 0;
-        virtual ClayBoundingBox GetElementBoundingBox( uint32_t id ) const                                                 = 0;
+        virtual uint32_t        HashString( const InteropString &str, uint32_t index = 0, uint32_t baseId = 0 ) const = 0;
+        virtual bool            PointerOver( uint32_t id ) const                                                      = 0;
+        virtual ClayBoundingBox GetElementBoundingBox( uint32_t id ) const                                            = 0;
 
         virtual ClayDimensions GetViewportSize( ) const    = 0;
         virtual bool           IsDebugModeEnabled( ) const = 0;

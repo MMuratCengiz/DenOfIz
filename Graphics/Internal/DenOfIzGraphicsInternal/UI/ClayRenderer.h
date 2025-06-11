@@ -72,7 +72,7 @@ namespace DenOfIz
         {
         }
 
-        void     AddVertices( const InteropArray<UIVertex> &vertices, const InteropArray<uint32_t> &indices ) override;
+        void     AddVertices( const UIVertexArray &vertices, const UInt32Array &indices ) override;
         uint32_t GetCurrentVertexOffset( ) const override;
     };
 
@@ -116,8 +116,8 @@ namespace DenOfIz
         uint8_t                         *m_vertexBufferData = nullptr;
         uint8_t                         *m_indexBufferData  = nullptr;
 
-        InteropArray<UIVertex> m_batchedVertices;
-        InteropArray<uint32_t> m_batchedIndices;
+        std::vector<UIVertex>  m_batchedVertices;
+        std::vector<uint32_t>  m_batchedIndices;
         float                  m_currentDepth  = 0.9f;
         static constexpr float DEPTH_INCREMENT = -0.0001f;
         struct ScissorState
@@ -189,7 +189,7 @@ namespace DenOfIz
         void RegisterWidget( uint32_t id, Widget *widget );
         void UnregisterWidget( uint32_t id );
 
-        void     AddVerticesWithDepth( const InteropArray<UIVertex> &vertices, const InteropArray<uint32_t> &indices );
+        void     AddVerticesWithDepth( const UIVertexArray &vertices, const UInt32Array &indices );
         uint32_t GetCurrentVertexCount( ) const;
 
     private:
@@ -217,6 +217,7 @@ namespace DenOfIz
         uint32_t RegisterTexture( ITextureResource *texture );
         void     UpdateTextureBindings( uint32_t frameIndex ) const;
         void     SyncFontTexturesFromClayText( );
+        void     AddVerticesWithDepthVec( std::vector<UIVertex> &vertices, std::vector<uint32_t> &indices );
     };
 
 } // namespace DenOfIz

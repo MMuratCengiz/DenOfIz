@@ -53,10 +53,10 @@ namespace DenOfIz
         {
             const std::size_t h1 = std::hash<uint64_t>{ }( key.textHash );
             const std::size_t h2 = std::hash<uint16_t>{ }( key.fontId );
-            const std::size_t h3     = std::hash<uint32_t>{ }( key.fontSize );
-            const std::size_t h4     = std::hash<float>{ }( key.posX );
-            const std::size_t h5     = std::hash<float>{ }( key.posY );
-            const std::size_t h6     = std::hash<uint32_t>{ }( key.colorRGBA );
+            const std::size_t h3 = std::hash<uint32_t>{ }( key.fontSize );
+            const std::size_t h4 = std::hash<float>{ }( key.posX );
+            const std::size_t h5 = std::hash<float>{ }( key.posY );
+            const std::size_t h6 = std::hash<uint32_t>{ }( key.colorRGBA );
             const std::size_t h7 = std::hash<float>{}(key.effectiveScale);
             return h1 ^ h2 << 1 ^ h3 << 2 ^ h4 << 3 ^ h5 << 4 ^ h6 << 5 ^ h7 << 6;
         }
@@ -64,14 +64,16 @@ namespace DenOfIz
 
     struct CachedTextVertices
     {
-        InteropArray<UIVertex> vertices;
-        InteropArray<uint32_t> indices;
-        uint32_t               lastUsedFrame = 0;
+        std::vector<UIVertex> vertices{};
+        std::vector<uint32_t> indices{};
+        uint32_t              lastUsedFrame = 0;
     };
     // clang-format on
 
     class UITextVertexCache
     {
+        std::unordered_map<TextVertexCacheKey, std::unique_ptr<CachedTextVertices>, TextVertexCacheKeyHash> m_cache{ };
+
     public:
         UITextVertexCache( )  = default;
         ~UITextVertexCache( ) = default;
@@ -83,9 +85,6 @@ namespace DenOfIz
 
         static TextVertexCacheKey CreateTextVertexKey( const Clay_RenderCommand *command, float effectiveScale, float adjustedY, float dpiScale );
         static uint32_t           ColorToRGBA( const Clay_Color &color );
-
-    private:
-        std::unordered_map<TextVertexCacheKey, std::unique_ptr<CachedTextVertices>, TextVertexCacheKeyHash> m_cache;
     };
 
 } // namespace DenOfIz

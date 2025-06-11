@@ -16,12 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "DenOfIzGraphicsInternal/Assets/Font/TextLayoutCache.h"
 #include "DenOfIzGraphicsInternal/UI/UITextVertexCache.h"
+#include "DenOfIzGraphicsInternal/Assets/Font/TextLayoutCache.h"
 
 using namespace DenOfIz;
 
-CachedTextVertices *UITextVertexCache::GetOrCreateCachedTextVertices( const TextVertexCacheKey &key, uint32_t currentFrame )
+CachedTextVertices *UITextVertexCache::GetOrCreateCachedTextVertices( const TextVertexCacheKey &key, const uint32_t currentFrame )
 {
     const auto it = m_cache.find( key );
     if ( it != m_cache.end( ) )
@@ -37,7 +37,7 @@ CachedTextVertices *UITextVertexCache::GetOrCreateCachedTextVertices( const Text
     return std::move( cachedPtr );
 }
 
-void UITextVertexCache::Cleanup( uint32_t currentFrame, uint32_t maxAge )
+void UITextVertexCache::Cleanup( const uint32_t currentFrame, const uint32_t maxAge )
 {
     auto it = m_cache.begin( );
     while ( it != m_cache.end( ) )
@@ -63,7 +63,7 @@ size_t UITextVertexCache::GetCacheSize( ) const
     return m_cache.size( );
 }
 
-TextVertexCacheKey UITextVertexCache::CreateTextVertexKey( const Clay_RenderCommand *command, float effectiveScale, float adjustedY, float dpiScale )
+TextVertexCacheKey UITextVertexCache::CreateTextVertexKey( const Clay_RenderCommand *command, const float effectiveScale, const float adjustedY, const float dpiScale )
 {
     const auto &data   = command->renderData.text;
     const auto &bounds = command->boundingBox;

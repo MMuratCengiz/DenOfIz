@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <clay.h>
+#include <vector>
 #include "DenOfIzGraphics/UI/IClayContext.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
 
@@ -55,17 +56,17 @@ namespace DenOfIz
             uint32_t          SegmentsPerCorner = 8;
         };
 
-        static void GenerateRectangle( const GenerateRectangleDesc &desc, InteropArray<UIVertex> *outVertices, InteropArray<uint32_t> *outIndices, uint32_t baseVertex = 0 );
-        static void GenerateRoundedRectangle( const GenerateRoundedRectangleDesc &desc, InteropArray<UIVertex> *outVertices, InteropArray<uint32_t> *outIndices,
+        static void GenerateRectangle( const GenerateRectangleDesc &desc, std::vector<UIVertex> *outVertices, std::vector<uint32_t> *outIndices, uint32_t baseVertex = 0 );
+        static void GenerateRoundedRectangle( const GenerateRoundedRectangleDesc &desc, std::vector<UIVertex> *outVertices, std::vector<uint32_t> *outIndices,
                                               uint32_t baseVertex = 0 );
-        static void GenerateBorder( const GenerateBorderDesc &desc, InteropArray<UIVertex> *outVertices, InteropArray<uint32_t> *outIndices, uint32_t baseVertex = 0 );
+        static void GenerateBorder( const GenerateBorderDesc &desc, std::vector<UIVertex> *outVertices, std::vector<uint32_t> *outIndices, uint32_t baseVertex = 0 );
 
     private:
         static DirectX::XMFLOAT4 ClayColorToFloat4( const Clay_Color &color );
 
-        static void AddVertex( InteropArray<UIVertex> *vertices, float x, float y, float z, float u, float v, const DirectX::XMFLOAT4 &color, uint32_t textureIndex );
-        static void AddTriangle( InteropArray<uint32_t> *indices, uint32_t v0, uint32_t v1, uint32_t v2 );
-        static void AddQuad( InteropArray<uint32_t> *indices, uint32_t topLeft, uint32_t topRight, uint32_t bottomRight, uint32_t bottomLeft );
+        static void AddVertex( std::vector<UIVertex> *vertices, float x, float y, float z, float u, float v, const DirectX::XMFLOAT4 &color, uint32_t textureIndex );
+        static void AddTriangle( std::vector<uint32_t> *indices, uint32_t v0, uint32_t v1, uint32_t v2 );
+        static void AddQuad( std::vector<uint32_t> *indices, uint32_t topLeft, uint32_t topRight, uint32_t bottomRight, uint32_t bottomLeft );
     };
 
 } // namespace DenOfIz

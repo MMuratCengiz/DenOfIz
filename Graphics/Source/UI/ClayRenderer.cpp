@@ -363,11 +363,11 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
         }
     }
 
-    m_batchedVertices.Clear( );
-    m_batchedIndices.Clear( );
+    m_batchedVertices.clear( );
+    m_batchedIndices.clear( );
 
-    m_batchedVertices.Reserve( commands.length * 6 );
-    m_batchedIndices.Reserve( commands.length * 9 );
+    m_batchedVertices.reserve( commands.length * 6 );
+    m_batchedIndices.reserve( commands.length * 9 );
 
     m_currentDepth = 0.9f; // Depth starts from high goes low, lowest values are rendered
 
@@ -630,7 +630,7 @@ void ClayRenderer::RenderRectangle( const Clay_RenderCommand *command, ICommandL
     const ShapeCacheKey cacheKey = UIShapeCache::CreateRectangleKey( command );
     CachedShape        *cached   = m_shapeCache.GetOrCreateCachedShape( cacheKey, m_currentFrame );
 
-    if ( cached->vertices.NumElements( ) == 0 )
+    if ( cached->vertices.size( ) == 0 )
     {
         constexpr uint32_t currentVertexCount = 0;
 
@@ -656,9 +656,9 @@ void ClayRenderer::RenderRectangle( const Clay_RenderCommand *command, ICommandL
         }
     }
 
-    if ( cached->vertices.NumElements( ) > 0 && cached->indices.NumElements( ) > 0 )
+    if ( cached->vertices.size( ) > 0 && cached->indices.size( ) > 0 )
     {
-        AddVerticesWithDepth( cached->vertices, cached->indices );
+        AddVerticesWithDepthVec( cached->vertices, cached->indices );
     }
 }
 
@@ -670,7 +670,7 @@ void ClayRenderer::RenderBorder( const Clay_RenderCommand *command )
     const ShapeCacheKey cacheKey = UIShapeCache::CreateBorderKey( command );
     CachedShape        *cached   = m_shapeCache.GetOrCreateCachedShape( cacheKey, m_currentFrame );
 
-    if ( cached->vertices.NumElements( ) == 0 )
+    if ( cached->vertices.size( ) == 0 )
     {
         constexpr uint32_t currentVertexCount = 0;
 
@@ -684,9 +684,9 @@ void ClayRenderer::RenderBorder( const Clay_RenderCommand *command )
         UIShapes::GenerateBorder( desc, &cached->vertices, &cached->indices, currentVertexCount );
     }
 
-    if ( cached->vertices.NumElements( ) > 0 && cached->indices.NumElements( ) > 0 )
+    if ( cached->vertices.size( ) > 0 && cached->indices.size( ) > 0 )
     {
-        AddVerticesWithDepth( cached->vertices, cached->indices );
+        AddVerticesWithDepthVec( cached->vertices, cached->indices );
     }
 }
 
@@ -773,7 +773,7 @@ void ClayRenderer::RenderSingleLineText( const Clay_RenderCommand *command, cons
     const TextVertexCacheKey vertexCacheKey = UITextVertexCache::CreateTextVertexKey( command, effectiveScale, adjustedY, m_dpiScale );
     CachedTextVertices      *cachedVertices = m_clayText->GetOrCreateTextVertices( vertexCacheKey );
 
-    if ( cachedVertices->vertices.NumElements( ) == 0 )
+    if ( cachedVertices->vertices.size( ) == 0 )
     {
         InteropArray<GlyphVertex> glyphVertices;
         InteropArray<uint32_t>    glyphIndices;
@@ -794,24 +794,24 @@ void ClayRenderer::RenderSingleLineText( const Clay_RenderCommand *command, cons
             for ( uint32_t i = 0; i < glyphVertices.NumElements( ); ++i )
             {
                 const GlyphVertex glyph = glyphVertices.GetElement( i );
-                UIVertex          vertex;
+                UIVertex          vertex{ };
                 vertex.Position     = Float_3{ glyph.Position.X, glyph.Position.Y, 0.0f }; // Z will be set in AddVerticesWithDepth
                 vertex.TexCoord     = glyph.UV;
                 vertex.Color        = glyph.Color;
                 vertex.TextureIndex = m_clayText->GetFontTextureIndex( fontId );
-                cachedVertices->vertices.AddElement( vertex );
+                cachedVertices->vertices.push_back( vertex );
             }
 
             for ( uint32_t i = 0; i < glyphIndices.NumElements( ); ++i )
             {
-                cachedVertices->indices.AddElement( glyphIndices.GetElement( i ) );
+                cachedVertices->indices.push_back( glyphIndices.GetElement( i ) );
             }
         }
     }
 
-    if ( cachedVertices->vertices.NumElements( ) > 0 && cachedVertices->indices.NumElements( ) > 0 )
+    if ( cachedVertices->vertices.size( ) > 0 && cachedVertices->indices.size( ) > 0 )
     {
-        AddVerticesWithDepth( cachedVertices->vertices, cachedVertices->indices );
+        AddVerticesWithDepthVec( cachedVertices->vertices, cachedVertices->indices );
     }
 }
 
@@ -833,8 +833,8 @@ void ClayRenderer::RenderImage( const Clay_RenderCommand *command )
         m_imageTextureIndices[ data.imageData ] = textureIndex;
     }
 
-    InteropArray<UIVertex> vertices;
-    InteropArray<uint32_t> indices;
+    std::vector<UIVertex> vertices;
+    std::vector<uint32_t> indices;
 
     UIShapes::GenerateRectangleDesc desc{ };
     desc.Bounds       = bounds;
@@ -842,9 +842,9 @@ void ClayRenderer::RenderImage( const Clay_RenderCommand *command )
     desc.TextureIndex = textureIndex;
 
     UIShapes::GenerateRectangle( desc, &vertices, &indices, 0 );
-    if ( vertices.NumElements( ) > 0 && indices.NumElements( ) > 0 )
+    if ( vertices.size( ) > 0 && indices.size( ) > 0 )
     {
-        AddVerticesWithDepth( vertices, indices );
+        AddVerticesWithDepthVec( vertices, indices );
     }
 }
 
@@ -886,8 +886,8 @@ void ClayRenderer::RenderCustom( const Clay_RenderCommand *command, ICommandList
                 if ( widget->GetRenderTarget( m_currentFrameIndex ) && textureIndex > 0 )
                 {
 
-                    InteropArray<UIVertex> vertices;
-                    InteropArray<uint32_t> indices;
+                    std::vector<UIVertex> vertices;
+                    std::vector<uint32_t> indices;
 
                     UIShapes::GenerateRectangleDesc desc{ };
                     desc.Bounds       = command->boundingBox;
@@ -895,9 +895,9 @@ void ClayRenderer::RenderCustom( const Clay_RenderCommand *command, ICommandList
                     desc.TextureIndex = textureIndex;
 
                     UIShapes::GenerateRectangle( desc, &vertices, &indices, 0 );
-                    if ( vertices.NumElements( ) > 0 && indices.NumElements( ) > 0 )
+                    if ( vertices.size( ) > 0 && indices.size( ) > 0 )
                     {
-                        AddVerticesWithDepth( vertices, indices );
+                        AddVerticesWithDepthVec( vertices, indices );
                     }
                 }
             }
@@ -1010,19 +1010,31 @@ ClayDimensions ClayRenderer::MeasureText( const InteropString &text, const Clay_
     return m_clayText->MeasureText( text, desc );
 }
 
-void ClayRenderer::AddVerticesWithDepth( const InteropArray<UIVertex> &vertices, const InteropArray<uint32_t> &indices )
+void ClayRenderer::AddVerticesWithDepthVec( std::vector<UIVertex> &vertices, std::vector<uint32_t> &indices )
 {
-    const uint32_t baseVertexIndex = m_batchedVertices.NumElements( );
-    for ( uint32_t i = 0; i < vertices.NumElements( ); ++i )
+    UIVertexArray vertexArray{ };
+    vertexArray.Elements    = vertices.data( );
+    vertexArray.NumElements = static_cast<uint32_t>( vertices.size( ) );
+
+    UInt32Array indexArray{ };
+    indexArray.Elements    = indices.data( );
+    indexArray.NumElements = static_cast<uint32_t>( indices.size( ) );
+    AddVerticesWithDepth( vertexArray, indexArray );
+}
+
+void ClayRenderer::AddVerticesWithDepth( const UIVertexArray &vertices, const UInt32Array &indices )
+{
+    const uint32_t baseVertexIndex = m_batchedVertices.size( );
+    for ( uint32_t i = 0; i < vertices.NumElements; ++i )
     {
-        UIVertex vertex   = vertices.GetElement( i );
+        UIVertex vertex   = vertices.Elements[ i ];
         vertex.Position.Z = m_currentDepth;
-        m_batchedVertices.AddElement( vertex );
+        m_batchedVertices.push_back( vertex );
     }
 
-    for ( uint32_t i = 0; i < indices.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < indices.NumElements; ++i )
     {
-        m_batchedIndices.AddElement( indices.GetElement( i ) + baseVertexIndex );
+        m_batchedIndices.push_back( indices.Elements[ i ] + baseVertexIndex );
     }
 
     m_currentDepth += DEPTH_INCREMENT;
@@ -1031,7 +1043,7 @@ void ClayRenderer::AddVerticesWithDepth( const InteropArray<UIVertex> &vertices,
 void ClayRenderer::FlushCurrentBatch( )
 {
     // ReSharper disable once CppDFAConstantConditions
-    if ( m_batchedVertices.NumElements( ) == 0 || m_batchedIndices.NumElements( ) == 0 )
+    if ( m_batchedVertices.size( ) == 0 || m_batchedIndices.size( ) == 0 )
     {
         return;
     }
@@ -1043,27 +1055,27 @@ void ClayRenderer::FlushCurrentBatch( )
     const uint32_t alignedVertexOffset = ( m_totalVertexCount + vertexAlignment - 1 ) / vertexAlignment * vertexAlignment;
     const uint32_t alignedIndexOffset  = ( m_totalIndexCount + indexAlignment - 1 ) / indexAlignment * indexAlignment;
 
-    const size_t vertexDataSize = m_batchedVertices.NumElements( ) * sizeof( UIVertex );
-    const size_t indexDataSize  = m_batchedIndices.NumElements( ) * sizeof( uint32_t );
+    const size_t vertexDataSize = m_batchedVertices.size( ) * sizeof( UIVertex );
+    const size_t indexDataSize  = m_batchedIndices.size( ) * sizeof( uint32_t );
 
-    if ( alignedVertexOffset + m_batchedVertices.NumElements( ) > m_desc.MaxVertices || alignedIndexOffset + m_batchedIndices.NumElements( ) > m_desc.MaxIndices )
+    if ( alignedVertexOffset + m_batchedVertices.size( ) > m_desc.MaxVertices || alignedIndexOffset + m_batchedIndices.size( ) > m_desc.MaxIndices )
     {
         spdlog::error( "ClayRenderer: Geometry exceeds buffer limits" );
         return;
     }
 
-    memcpy( m_vertexBufferData + alignedVertexOffset * sizeof( UIVertex ), m_batchedVertices.Data( ), vertexDataSize );
+    memcpy( m_vertexBufferData + alignedVertexOffset * sizeof( UIVertex ), m_batchedVertices.data( ), vertexDataSize );
 
     const auto indexDst = reinterpret_cast<uint32_t *>( m_indexBufferData + alignedIndexOffset * sizeof( uint32_t ) );
-    for ( uint32_t i = 0; i < m_batchedIndices.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < m_batchedIndices.size( ); ++i )
     {
-        indexDst[ i ] = m_batchedIndices.GetElement( i ); // Don't add vertex offset here, use baseVertex instead
+        indexDst[ i ] = m_batchedIndices[ i ]; // Don't add vertex offset here, use baseVertex instead
     }
 
     DrawBatch batch;
     batch.VertexOffset = alignedVertexOffset;
     batch.IndexOffset  = alignedIndexOffset;
-    batch.IndexCount   = m_batchedIndices.NumElements( );
+    batch.IndexCount   = m_batchedIndices.size( );
 
     if ( !m_scissorStack.empty( ) )
     {
@@ -1080,11 +1092,11 @@ void ClayRenderer::FlushCurrentBatch( )
 
     m_drawBatches.push_back( batch );
 
-    m_totalVertexCount = alignedVertexOffset + m_batchedVertices.NumElements( );
-    m_totalIndexCount  = alignedIndexOffset + m_batchedIndices.NumElements( );
+    m_totalVertexCount = alignedVertexOffset + m_batchedVertices.size( );
+    m_totalIndexCount  = alignedIndexOffset + m_batchedIndices.size( );
 
-    m_batchedVertices.Clear( );
-    m_batchedIndices.Clear( );
+    m_batchedVertices.clear( );
+    m_batchedIndices.clear( );
 }
 
 void ClayRenderer::ExecuteDrawBatches( ICommandList *commandList ) const
@@ -1146,10 +1158,10 @@ void ClayRenderer::UnregisterWidget( const uint32_t id )
 
 uint32_t ClayRenderer::GetCurrentVertexCount( ) const
 {
-    return m_batchedVertices.NumElements( );
+    return m_batchedVertices.size( );
 }
 
-void ClayRenderBatch::AddVertices( const InteropArray<UIVertex> &vertices, const InteropArray<uint32_t> &indices )
+void ClayRenderBatch::AddVertices( const UIVertexArray &vertices, const UInt32Array &indices )
 {
     m_renderer->AddVerticesWithDepth( vertices, indices );
 }
