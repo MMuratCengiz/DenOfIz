@@ -99,10 +99,11 @@ FontImporter::FontImporter( const FontImporterDesc desc ) : m_desc( desc ), m_im
         spdlog::critical( "Failed to initialize MSDF Freetype library" );
     }
 
-    m_importerDesc.Name = "Font Importer";
-    m_importerDesc.SupportedExtensions.AddElement( "ttf" );
-    m_importerDesc.SupportedExtensions.AddElement( "otf" );
-    m_importerDesc.SupportedExtensions.AddElement( "ttc" );
+    m_importerDesc.Name                              = "Font Importer";
+    m_importerDesc.SupportedExtensions               = InteropStringArray::Create( 3 );
+    m_importerDesc.SupportedExtensions.Elements[ 0 ] = "ttf";
+    m_importerDesc.SupportedExtensions.Elements[ 1 ] = "otf";
+    m_importerDesc.SupportedExtensions.Elements[ 2 ] = "ttc";
 }
 
 FontImporter::~FontImporter( )
@@ -112,6 +113,7 @@ FontImporter::~FontImporter( )
         msdfgen::deinitializeFreetype( m_impl->m_msdfFtHandle );
         m_impl->m_msdfFtHandle = nullptr;
     }
+    m_importerDesc.SupportedExtensions.Dispose( );
 }
 
 ImporterDesc FontImporter::GetImporterInfo( ) const
@@ -122,9 +124,9 @@ ImporterDesc FontImporter::GetImporterInfo( ) const
 bool FontImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
     const std::string ext = extension.Get( );
-    for ( int i = 0; i < m_importerDesc.SupportedExtensions.NumElements( ); ++i )
+    for ( size_t i = 0; i < m_importerDesc.SupportedExtensions.NumElements; ++i )
     {
-        if ( strcmp( extension.Get( ), m_importerDesc.SupportedExtensions.GetElement( i ).Get( ) ) == 0 )
+        if ( strcmp( extension.Get( ), m_importerDesc.SupportedExtensions.Elements[ i ].Get( ) ) == 0 )
         {
             return true;
         }
@@ -160,7 +162,16 @@ ImporterResult FontImporter::Import( const ImportJobDesc &desc )
 
     AssetUri fontAssetUri;
     WriteFontAsset( context, fontAssetUri );
-    context.Result.CreatedAssets.AddElement( fontAssetUri );
+
+    const AssetUriArray newCreatedAssets = AssetUriArray::Create( context.Result.CreatedAssets.NumElements + 1 );
+    for ( size_t i = 0; i < context.Result.CreatedAssets.NumElements; ++i )
+    {
+        newCreatedAssets.Elements[ i ] = context.Result.CreatedAssets.Elements[ i ];
+    }
+    newCreatedAssets.Elements[ context.Result.CreatedAssets.NumElements ] = fontAssetUri;
+    context.Result.CreatedAssets.Dispose( );
+    context.Result.CreatedAssets = newCreatedAssets;
+
     return context.Result;
 }
 
@@ -319,6 +330,20 @@ namespace
         context.FontAsset.Metrics.LineHeight = static_cast<uint32_t>( lineHeight * scale );
         context.FontAsset.Metrics.LineGap    = context.FontAsset.Metrics.LineHeight - ( context.FontAsset.Metrics.Ascent + context.FontAsset.Metrics.Descent );
 
+        // Count non-whitespace glyphs first
+        size_t numNonWhitespaceGlyphs = 0;
+        for ( size_t i = 0; i < layout.size( ); i++ )
+        {
+            if ( !glyphs[ i ].isWhitespace( ) )
+            {
+                numNonWhitespaceGlyphs++;
+            }
+        }
+
+        // Allocate array for glyphs (including space glyph)
+        context.FontAsset.Glyphs = FontGlyphArray::Create( static_cast<uint32_t>( numNonWhitespaceGlyphs + 1 ) );
+
+        size_t glyphIndex = 0;
         for ( size_t i = 0; i < layout.size( ); i++ )
         {
             const auto &box   = layout[ i ];
@@ -328,7 +353,7 @@ namespace
                 continue;
             }
 
-            FontGlyph &glyphDesc = context.FontAsset.Glyphs.EmplaceElement( );
+            FontGlyph &glyphDesc = context.FontAsset.Glyphs.Elements[ glyphIndex++ ];
             glyphDesc.CodePoint  = glyph.getCodepoint( );
             glyphDesc.Width      = box.rect.w;
             glyphDesc.Height     = box.rect.h;
@@ -350,17 +375,17 @@ namespace
             glyphDesc.YAdvance = 0;
         }
 
-        FontGlyph spaceGlyph;
-        spaceGlyph.CodePoint = ' ';
-        spaceGlyph.Width     = 0;
-        spaceGlyph.Height    = 0;
-        spaceGlyph.BearingX  = 0;
-        spaceGlyph.BearingY  = 0;
-        spaceGlyph.XAdvance  = static_cast<uint32_t>( std::round( context.Desc.InitialFontSize * 0.3f ) );
-        spaceGlyph.YAdvance  = 0;
-        spaceGlyph.AtlasX    = 0;
-        spaceGlyph.AtlasY    = 0;
-        context.FontAsset.Glyphs.AddElement( spaceGlyph );
+        // Add space glyph at the end
+        FontGlyph &spaceGlyph = context.FontAsset.Glyphs.Elements[ glyphIndex ];
+        spaceGlyph.CodePoint  = ' ';
+        spaceGlyph.Width      = 0;
+        spaceGlyph.Height     = 0;
+        spaceGlyph.BearingX   = 0;
+        spaceGlyph.BearingY   = 0;
+        spaceGlyph.XAdvance   = static_cast<uint32_t>( std::round( context.Desc.InitialFontSize * 0.3f ) );
+        spaceGlyph.YAdvance   = 0;
+        spaceGlyph.AtlasX     = 0;
+        spaceGlyph.AtlasY     = 0;
 
         msdfgen::destroyFont( msdfFont );
     }

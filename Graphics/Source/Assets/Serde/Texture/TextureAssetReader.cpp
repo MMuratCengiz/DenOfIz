@@ -83,7 +83,7 @@ TextureAsset TextureAssetReader::Read( )
     m_textureAsset.SlicePitch   = m_reader->ReadUInt32( );
 
     const uint32_t numMips = m_reader->ReadUInt32( );
-    m_textureAsset.Mips.Resize( numMips );
+    m_textureAsset.Mips    = TextureMipArray::Create( numMips );
 
     for ( uint32_t i = 0; i < numMips; ++i )
     {
@@ -184,7 +184,7 @@ void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc 
 uint64_t TextureAssetReader::AlignedTotalNumBytes( const DeviceConstants &constants )
 {
     uint64_t totalNumBytes = 0;
-    for ( uint32_t i = 0; i < m_textureAsset.Mips.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < m_textureAsset.Mips.NumElements; ++i )
     {
         const TextureMip &mip               = m_textureAsset.Mips.Elements[ i ];
         const uint32_t    alignedRowPitch   = Utilities::Align( mip.RowPitch, constants.BufferTextureRowAlignment );

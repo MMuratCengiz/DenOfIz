@@ -17,9 +17,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Animation/AnimationStateManager.h"
+#include <ranges>
 #include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
-#include <ranges>
 
 using namespace DenOfIz;
 
@@ -212,18 +212,18 @@ bool AnimationStateManager::HasAnimation( const InteropString &animationName ) c
 
 void AnimationStateManager::GetModelSpaceTransforms( InteropArray<Float_4x4> &outTransforms ) const
 {
-    if ( m_modelTransforms.NumElements( ) == 0 )
+    if ( m_modelTransforms.NumElements == 0 )
     {
         outTransforms.Clear( );
         return;
     }
 
     outTransforms.Clear( );
-    outTransforms.Resize( m_modelTransforms.NumElements( ) );
+    outTransforms.Resize( m_modelTransforms.NumElements );
 
-    for ( size_t i = 0; i < m_modelTransforms.NumElements( ); ++i )
+    for ( size_t i = 0; i < m_modelTransforms.NumElements; ++i )
     {
-        outTransforms.GetElement( i ) = m_modelTransforms.GetElement( i );
+        outTransforms.GetElement( i ) = m_modelTransforms.Elements[ i ];
     }
 }
 
@@ -272,8 +272,8 @@ void AnimationStateManager::UpdateBlending( const float deltaTime )
         return;
     }
 
-    const InteropArray<Float_4x4> sourceTransforms = sourceResult.Transforms;
-    const InteropArray<Float_4x4> targetTransforms = targetResult.Transforms;
+    const Float_4x4Array sourceTransforms = sourceResult.Transforms;
+    const Float_4x4Array targetTransforms = targetResult.Transforms;
 
     BlendingJobDesc blendingDesc;
     blendingDesc.Context   = sourceAnim.Context; // Can use either context
@@ -287,9 +287,9 @@ void AnimationStateManager::UpdateBlending( const float deltaTime )
     targetLayer.Transforms = targetTransforms;
     targetLayer.Weight     = targetAnim.Weight;
 
-    blendingDesc.Layers.Resize( 2 );
-    blendingDesc.Layers.GetElement( 0 ) = sourceLayer;
-    blendingDesc.Layers.GetElement( 1 ) = targetLayer;
+    blendingDesc.Layers               = BlendingJobLayerDescArray::Create( 2 );
+    blendingDesc.Layers.Elements[ 0 ] = sourceLayer;
+    blendingDesc.Layers.Elements[ 1 ] = targetLayer;
 
     const BlendingJobResult result = m_ozzAnimation->RunBlendingJob( blendingDesc );
     if ( !result.Success )

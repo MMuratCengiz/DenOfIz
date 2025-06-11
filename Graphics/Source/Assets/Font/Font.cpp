@@ -31,9 +31,9 @@ Font::Font( FT_Library ftLibrary, const FontDesc &desc ) : m_impl( std::make_uni
         spdlog::error( "Failed to load font: {}", desc.FontAsset->Uri.Path.Get( ) );
     }
 
-    for ( int i = 0; i < m_desc.FontAsset->Glyphs.NumElements( ); i++ )
+    for ( int i = 0; i < m_desc.FontAsset->Glyphs.NumElements; i++ )
     {
-        const FontGlyph &glyph      = m_desc.FontAsset->Glyphs.GetElement( i );
+        const FontGlyph &glyph      = m_desc.FontAsset->Glyphs.Elements[ i ];
         m_glyphs[ glyph.CodePoint ] = glyph;
     }
 
@@ -60,7 +60,7 @@ hb_font_t *Font::GetHBFont( const uint32_t fontSize ) const
     hb_font_t *hbFont = nullptr;
     {
         std::lock_guard faceLock( m_impl->m_faceMutex );
-        const uint32_t              sizeIn26_6 = fontSize * 64;
+        const uint32_t  sizeIn26_6 = fontSize * 64;
         if ( const FT_Error error = FT_Set_Char_Size( m_impl->m_face, 0, sizeIn26_6, 0, 0 ) )
         {
             spdlog::error( "Failed to set font size: {}", FT_Error_String( error ) );

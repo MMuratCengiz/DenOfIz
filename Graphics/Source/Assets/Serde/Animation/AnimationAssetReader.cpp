@@ -38,52 +38,52 @@ void AnimationAssetReader::ReadAnimationClip( AnimationClip &animationClip ) con
     animationClip.Duration = m_reader->ReadFloat( );
 
     const uint32_t numJointTracks = m_reader->ReadUInt32( );
-    animationClip.Tracks.Resize( numJointTracks );
+    animationClip.Tracks          = JointAnimTrackArray::Create( numJointTracks );
     for ( uint32_t i = 0; i < numJointTracks; ++i )
     {
-        JointAnimTrack &track = animationClip.Tracks.GetElement( i );
+        JointAnimTrack &track = animationClip.Tracks.Elements[ i ];
         track.JointName       = m_reader->ReadString( );
 
         const uint32_t numPosKeys = m_reader->ReadUInt32( );
-        track.PositionKeys.Resize( numPosKeys );
+        track.PositionKeys        = PositionKeyArray::Create( numPosKeys );
         for ( uint32_t j = 0; j < numPosKeys; ++j )
         {
-            PositionKey &key = track.PositionKeys.GetElement( j );
+            PositionKey &key = track.PositionKeys.Elements[ j ];
             key.Timestamp    = m_reader->ReadFloat( ); // Already in seconds
             key.Value        = m_reader->ReadFloat_3( );
         }
 
         const uint32_t numRotKeys = m_reader->ReadUInt32( );
-        track.RotationKeys.Resize( numRotKeys );
+        track.RotationKeys        = RotationKeyArray::Create( numRotKeys );
         for ( uint32_t j = 0; j < numRotKeys; ++j )
         {
-            RotationKey &key = track.RotationKeys.GetElement( j );
+            RotationKey &key = track.RotationKeys.Elements[ j ];
             key.Timestamp    = m_reader->ReadFloat( );   // Already in seconds
             key.Value        = m_reader->ReadFloat_4( ); // Quaternion
         }
 
         const uint32_t numScaleKeys = m_reader->ReadUInt32( );
-        track.ScaleKeys.Resize( numScaleKeys );
+        track.ScaleKeys             = ScaleKeyArray::Create( numScaleKeys );
         for ( uint32_t j = 0; j < numScaleKeys; ++j )
         {
-            ScaleKey &key = track.ScaleKeys.GetElement( j );
+            ScaleKey &key = track.ScaleKeys.Elements[ j ];
             key.Timestamp = m_reader->ReadFloat( ); // Already in seconds
             key.Value     = m_reader->ReadFloat_3( );
         }
     }
 
     const uint32_t numMorphTracks = m_reader->ReadUInt32( );
-    animationClip.MorphTracks.Resize( numMorphTracks );
+    animationClip.MorphTracks     = MorphAnimTrackArray::Create( numMorphTracks );
     for ( uint32_t i = 0; i < numMorphTracks; ++i )
     {
-        MorphAnimTrack &track = animationClip.MorphTracks.GetElement( i );
+        MorphAnimTrack &track = animationClip.MorphTracks.Elements[ i ];
         track.Name            = m_reader->ReadString( );
 
         const uint32_t numKeyframes = m_reader->ReadUInt32( );
-        track.Keyframes.Resize( numKeyframes );
+        track.Keyframes             = MorphKeyframeArray::Create( numKeyframes );
         for ( uint32_t j = 0; j < numKeyframes; ++j )
         {
-            MorphKeyframe &keyframe = track.Keyframes.GetElement( j );
+            MorphKeyframe &keyframe = track.Keyframes.Elements[ j ];
             keyframe.Timestamp      = m_reader->ReadFloat( ); // Already in seconds
             keyframe.Weight         = m_reader->ReadFloat( );
         }
@@ -111,10 +111,10 @@ AnimationAsset AnimationAssetReader::Read( )
     m_animationAsset.SkeletonRef = AssetUri::Parse( m_reader->ReadString( ) );
 
     const uint32_t numAnimations = m_reader->ReadUInt32( );
-    m_animationAsset.Animations.Resize( numAnimations );
+    m_animationAsset.Animations  = AnimationClipArray::Create( numAnimations );
     for ( uint32_t i = 0; i < numAnimations; ++i )
     {
-        ReadAnimationClip( m_animationAsset.Animations.GetElement( i ) );
+        ReadAnimationClip( m_animationAsset.Animations.Elements[ i ] );
     }
 
     return m_animationAsset;

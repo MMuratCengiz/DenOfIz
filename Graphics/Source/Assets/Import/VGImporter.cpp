@@ -29,12 +29,14 @@ using namespace DenOfIz;
 
 VGImporter::VGImporter( const VGImporterDesc desc ) : m_desc( desc )
 {
-    m_importerInfo.Name = "Vector Graphics Importer (Simplified)";
-    m_importerInfo.SupportedExtensions.AddElement( ".svg" );
+    m_importerInfo.Name                              = "Vector Graphics Importer (Simplified)";
+    m_importerInfo.SupportedExtensions               = InteropStringArray::Create( 1 );
+    m_importerInfo.SupportedExtensions.Elements[ 0 ] = ".svg";
 }
 
 VGImporter::~VGImporter( )
 {
+    m_importerInfo.SupportedExtensions.Dispose( );
 }
 
 ImporterDesc VGImporter::GetImporterInfo( ) const
@@ -45,9 +47,9 @@ ImporterDesc VGImporter::GetImporterInfo( ) const
 bool VGImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
     const InteropString lowerExt = extension.ToLower( );
-    for ( size_t i = 0; i < m_importerInfo.SupportedExtensions.NumElements( ); ++i )
+    for ( size_t i = 0; i < m_importerInfo.SupportedExtensions.NumElements; ++i )
     {
-        if ( m_importerInfo.SupportedExtensions.GetElement( i ).Equals( lowerExt ) )
+        if ( m_importerInfo.SupportedExtensions.Elements[ i ].Equals( lowerExt ) )
         {
             return true;
         }
@@ -158,7 +160,8 @@ ImporterResultCode VGImporter::ImportVGInternal( ImportContext &context )
     mip.SlicePitch = mip.RowPitch * context.Desc.RenderHeight;
     mip.DataOffset = 0;
 
-    context.TextureAsset.Mips.AddElement( mip );
+    context.TextureAsset.Mips               = TextureMipArray::Create( 1 );
+    context.TextureAsset.Mips.Elements[ 0 ] = mip;
 
     AssetUri assetUri;
     WriteTextureAsset( context, context.TextureAsset, assetUri );
@@ -182,9 +185,8 @@ void VGImporter::WriteTextureAsset( const ImportContext &context, const TextureA
     TextureAssetWriter textureWriter( writerDesc );
     textureWriter.Write( textureAsset );
 
-    const uint32_t     pixelCount = context.Desc.RenderWidth * context.Desc.RenderHeight;
-    InteropArray<Byte> textureData;
-    textureData.Resize( pixelCount * 4 );
+    const uint32_t pixelCount  = context.Desc.RenderWidth * context.Desc.RenderHeight;
+    ByteArray      textureData = ByteArray::Create( pixelCount * 4 );
 
     for ( uint32_t i = 0; i < pixelCount; ++i )
     {
@@ -194,16 +196,17 @@ void VGImporter::WriteTextureAsset( const ImportContext &context, const TextureA
         const uint8_t  g    = argb >> 8 & 0xFF;
         const uint8_t  b    = argb & 0xFF;
 
-        textureData.SetElement( i * 4 + 0, r );
-        textureData.SetElement( i * 4 + 1, g );
-        textureData.SetElement( i * 4 + 2, b );
-        textureData.SetElement( i * 4 + 3, a );
+        textureData.Elements[ i * 4 + 0 ] = r;
+        textureData.Elements[ i * 4 + 1 ] = g;
+        textureData.Elements[ i * 4 + 2 ] = b;
+        textureData.Elements[ i * 4 + 3 ] = a;
     }
 
     ByteArrayView dataView{ };
-    dataView.Elements    = textureData.Data( );
-    dataView.NumElements = textureData.NumElements( );
+    dataView.Elements    = textureData.Elements;
+    dataView.NumElements = textureData.NumElements;
     textureWriter.AddPixelData( dataView, 0, 0 );
+    textureData.Dispose( );
     textureWriter.End( );
     writer.Flush( );
 
@@ -212,5 +215,13 @@ void VGImporter::WriteTextureAsset( const ImportContext &context, const TextureA
 
 void VGImporter::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri ) const
 {
-    context.Result.CreatedAssets.AddElement( assetUri );
+    // TODO: Cleaner growing mechanism
+    const AssetUriArray newCreatedAssets = AssetUriArray::Create( context.Result.CreatedAssets.NumElements + 1 );
+    for ( size_t i = 0; i < context.Result.CreatedAssets.NumElements; ++i )
+    {
+        newCreatedAssets.Elements[ i ] = context.Result.CreatedAssets.Elements[ i ];
+    }
+    newCreatedAssets.Elements[ context.Result.CreatedAssets.NumElements ] = assetUri;
+    context.Result.CreatedAssets.Dispose( );
+    context.Result.CreatedAssets = newCreatedAssets;
 }

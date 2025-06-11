@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "Interop.h"
-#include "InteropMath.h"
 #include <stdint.h>
 
 namespace DenOfIz
@@ -176,21 +175,5 @@ namespace DenOfIz
         uint32_t       NumElements;
 
         DZ_ARRAY_METHODS( InteropStringArray, InteropString )
-    };
-
-    struct DZ_API Float_2Array
-    {
-        Float_2 *Elements;
-        uint32_t NumElements;
-
-        DZ_ARRAY_METHODS( Float_2Array, Float_2 )
-    };
-
-    struct DZ_API Float_4Array
-    {
-        Float_4 *Elements;
-        uint32_t NumElements;
-
-        DZ_ARRAY_METHODS( Float_4Array, Float_4 )
     };
 } // namespace DenOfIz

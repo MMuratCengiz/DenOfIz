@@ -16,10 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Import/AssetScanner.h"
-#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include <filesystem>
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
@@ -129,7 +129,7 @@ void AssetScanner::Scan( const InteropString &directoryToScan, const InteropStri
                 }
                 else
                 {
-                    spdlog::info( "Successfully imported asset: {} Created {} assets", modifiedPath.Get( ), result.CreatedAssets.NumElements( ) );
+                    spdlog::info( "Successfully imported asset: {} Created {} assets", modifiedPath.Get( ), result.CreatedAssets.NumElements );
                 }
                 break;
             }

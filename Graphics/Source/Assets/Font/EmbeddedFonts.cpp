@@ -56,6 +56,7 @@ const std::vector<Byte> &EmbeddedFonts::GetInterData( )
         {
             throw std::runtime_error( "Failed to decompress embedded font data" );
         }
+        g_decompressedData.resize( uncompressedSize );
         std::memcpy( &g_decompressedData[ 0 ], decompressedBuffer.data( ), uncompressedSize );
         g_isDecompressed = true;
     }

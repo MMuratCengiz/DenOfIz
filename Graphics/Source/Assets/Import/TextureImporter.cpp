@@ -33,19 +33,23 @@ using namespace DenOfIz;
 
 TextureImporter::TextureImporter( const TextureImporterDesc desc ) : m_desc( desc )
 {
-    m_importerInfo.Name = "Texture Importer";
-    m_importerInfo.SupportedExtensions.AddElement( ".png" );
-    m_importerInfo.SupportedExtensions.AddElement( ".jpg" );
-    m_importerInfo.SupportedExtensions.AddElement( ".jpeg" );
-    m_importerInfo.SupportedExtensions.AddElement( ".bmp" );
-    m_importerInfo.SupportedExtensions.AddElement( ".tga" );
-    m_importerInfo.SupportedExtensions.AddElement( ".dds" );
-    m_importerInfo.SupportedExtensions.AddElement( ".hdr" );
-    m_importerInfo.SupportedExtensions.AddElement( ".gif" );
-    m_importerInfo.SupportedExtensions.AddElement( ".psd" );
+    m_importerInfo.Name                              = "Texture Importer";
+    m_importerInfo.SupportedExtensions               = InteropStringArray::Create( 9 );
+    m_importerInfo.SupportedExtensions.Elements[ 0 ] = ".png";
+    m_importerInfo.SupportedExtensions.Elements[ 1 ] = ".jpg";
+    m_importerInfo.SupportedExtensions.Elements[ 2 ] = ".jpeg";
+    m_importerInfo.SupportedExtensions.Elements[ 3 ] = ".bmp";
+    m_importerInfo.SupportedExtensions.Elements[ 4 ] = ".tga";
+    m_importerInfo.SupportedExtensions.Elements[ 5 ] = ".dds";
+    m_importerInfo.SupportedExtensions.Elements[ 6 ] = ".hdr";
+    m_importerInfo.SupportedExtensions.Elements[ 7 ] = ".gif";
+    m_importerInfo.SupportedExtensions.Elements[ 8 ] = ".psd";
 }
 
-TextureImporter::~TextureImporter( ) = default;
+TextureImporter::~TextureImporter( )
+{
+    m_importerInfo.SupportedExtensions.Dispose( );
+}
 
 ImporterDesc TextureImporter::GetImporterInfo( ) const
 {
@@ -55,9 +59,9 @@ ImporterDesc TextureImporter::GetImporterInfo( ) const
 bool TextureImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
     const InteropString lowerExt = extension.ToLower( );
-    for ( size_t i = 0; i < m_importerInfo.SupportedExtensions.NumElements( ); ++i )
+    for ( size_t i = 0; i < m_importerInfo.SupportedExtensions.NumElements; ++i )
     {
-        if ( m_importerInfo.SupportedExtensions.GetElement( i ).Equals( lowerExt ) )
+        if ( m_importerInfo.SupportedExtensions.Elements[ i ].Equals( lowerExt ) )
         {
             return true;
         }
@@ -146,9 +150,9 @@ void TextureImporter::WriteTextureAsset( const ImportContext &context, const Tex
     textureWriter.Write( textureAsset );
 
     const auto mipDataArray = m_texture->ReadMipData( );
-    for ( uint32_t i = 0; i < mipDataArray.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < mipDataArray.NumElements; ++i )
     {
-        const TextureMip &mipData   = mipDataArray.GetElement( i );
+        const TextureMip &mipData   = mipDataArray.Elements[ i ];
         const size_t      mipSize   = mipData.SlicePitch;
         const size_t      mipOffset = mipData.DataOffset;
 
@@ -166,6 +170,15 @@ void TextureImporter::WriteTextureAsset( const ImportContext &context, const Tex
 
 void TextureImporter::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri )
 {
-    context.Result.CreatedAssets.AddElement( assetUri );
+    // TODO: Cleaner growing mechanism
+    const AssetUriArray newCreatedAssets = AssetUriArray::Create( context.Result.CreatedAssets.NumElements + 1 );
+    for ( size_t i = 0; i < context.Result.CreatedAssets.NumElements; ++i )
+    {
+        newCreatedAssets.Elements[ i ] = context.Result.CreatedAssets.Elements[ i ];
+    }
+    newCreatedAssets.Elements[ context.Result.CreatedAssets.NumElements ] = assetUri;
+    context.Result.CreatedAssets.Dispose( );
+    context.Result.CreatedAssets = newCreatedAssets;
+
     spdlog::info( "Created texture asset: {}", assetUri.Path.Get( ) );
 }

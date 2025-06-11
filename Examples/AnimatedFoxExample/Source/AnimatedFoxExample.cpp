@@ -113,13 +113,13 @@ void AnimatedFoxExample::LoadFoxAssets( )
     m_runAnimation = runAnimAssetReader.Read( );
 
     const auto &subMeshes = m_foxMesh.SubMeshes;
-    if ( subMeshes.NumElements( ) == 0 )
+    if ( subMeshes.NumElements == 0 )
     {
         spdlog::critical( "Fox mesh has no sub-meshes." );
         return;
     }
 
-    const auto &subMesh = subMeshes.GetElement( 0 );
+    const auto &subMesh = subMeshes.Elements[ 0 ];
 
     m_vertices.clear( );
     if ( m_indices.Elements != nullptr )
@@ -142,9 +142,9 @@ void AnimatedFoxExample::LoadFoxAssets( )
         skinnedVertex.Normal.X   = mv.Normal.X;
         skinnedVertex.Normal.Y   = mv.Normal.Y;
         skinnedVertex.Normal.Z   = mv.Normal.Z;
-        if ( mv.UVs.NumElements( ) > 0 )
+        if ( mv.UVs.NumElements > 0 )
         {
-            const Float_2 &uv      = mv.UVs.GetElement( 0 );
+            const Float_2 &uv      = mv.UVs.Elements[ 0 ];
             skinnedVertex.TexCoord = { uv.X, uv.Y };
         }
         else
@@ -156,7 +156,6 @@ void AnimatedFoxExample::LoadFoxAssets( )
         skinnedVertex.BlendIndices = { mv.BlendIndices.X, mv.BlendIndices.Y, mv.BlendIndices.Z, mv.BlendIndices.W };
         skinnedVertex.BoneWeights  = { mv.BoneWeights.X, mv.BoneWeights.Y, mv.BoneWeights.Z, mv.BoneWeights.W };
     }
-    delete[] meshVertices.Elements;
     m_indices = meshAssetReader.ReadIndices32( subMesh.IndexStream );
 }
 
@@ -316,9 +315,9 @@ void AnimatedFoxExample::UpdateBoneTransforms( )
     for ( size_t i = 0; i < maxBones && i < boneTransforms.NumElements( ); ++i )
     {
         const Float_4x4 &modelMatrix = boneTransforms.GetElement( i );
-        if ( i < m_foxSkeleton.Joints.NumElements( ) )
+        if ( i < m_foxSkeleton.Joints.NumElements )
         {
-            const Joint &joint = m_foxSkeleton.Joints.GetElement( i );
+            const Joint &joint = m_foxSkeleton.Joints.Elements[ i ];
 
             auto           xmModelMatrix = InteropMathConverter::Float_4x4ToXMFLOAT4X4( modelMatrix );
             const XMMATRIX modelMat      = XMLoadFloat4x4( &xmModelMatrix );
@@ -473,9 +472,9 @@ bool AnimatedFoxExample::ImportFoxModel( const InteropString &gltfPath )
         return false;
     }
 
-    for ( size_t i = 0; i < result.CreatedAssets.NumElements( ); ++i )
+    for ( size_t i = 0; i < result.CreatedAssets.NumElements; ++i )
     {
-        AssetUri uri = result.CreatedAssets.GetElement( i );
+        AssetUri uri = result.CreatedAssets.Elements[ i ];
         spdlog::info( "Created asset: {}", uri.Path.Get( ) );
     }
 

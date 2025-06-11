@@ -18,11 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <string>
+#include <unordered_map>
 #include "DenOfIzGraphics/Animation/OzzAnimation.h"
 #include "DenOfIzGraphics/Assets/Serde/Animation/AnimationAsset.h"
 #include "DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAsset.h"
-#include <string>
-#include <unordered_map>
 
 namespace DenOfIz
 {
@@ -57,7 +57,7 @@ namespace DenOfIz
         std::unordered_map<std::string, AnimationState> m_animations;
         InteropString                                   m_currentAnimation;
         BlendingState                                   m_blendingState;
-        InteropArray<Float_4x4>                         m_modelTransforms;
+        Float_4x4Array                                  m_modelTransforms;
 
     public:
         DZ_API explicit AnimationStateManager( const AnimationStateManagerDesc &desc );

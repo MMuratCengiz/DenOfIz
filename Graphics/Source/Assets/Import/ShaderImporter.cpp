@@ -28,17 +28,21 @@ using namespace DenOfIz;
 
 ShaderImporter::ShaderImporter( )
 {
-    m_importerDesc.Name = "Shader Importer";
-    m_importerDesc.SupportedExtensions.AddElement( "hlsl" );
-    m_importerDesc.SupportedExtensions.AddElement( "vs.hlsl" );
-    m_importerDesc.SupportedExtensions.AddElement( "ps.hlsl" );
-    m_importerDesc.SupportedExtensions.AddElement( "gs.hlsl" );
-    m_importerDesc.SupportedExtensions.AddElement( "hs.hlsl" );
-    m_importerDesc.SupportedExtensions.AddElement( "ds.hlsl" );
-    m_importerDesc.SupportedExtensions.AddElement( "cs.hlsl" );
+    m_importerDesc.Name                              = "Shader Importer";
+    m_importerDesc.SupportedExtensions               = InteropStringArray::Create( 7 );
+    m_importerDesc.SupportedExtensions.Elements[ 0 ] = "hlsl";
+    m_importerDesc.SupportedExtensions.Elements[ 1 ] = "vs.hlsl";
+    m_importerDesc.SupportedExtensions.Elements[ 2 ] = "ps.hlsl";
+    m_importerDesc.SupportedExtensions.Elements[ 3 ] = "gs.hlsl";
+    m_importerDesc.SupportedExtensions.Elements[ 4 ] = "hs.hlsl";
+    m_importerDesc.SupportedExtensions.Elements[ 5 ] = "ds.hlsl";
+    m_importerDesc.SupportedExtensions.Elements[ 6 ] = "cs.hlsl";
 }
 
-ShaderImporter::~ShaderImporter( ) = default;
+ShaderImporter::~ShaderImporter( )
+{
+    m_importerDesc.SupportedExtensions.Dispose( );
+}
 
 ImporterDesc ShaderImporter::GetImporterInfo( ) const
 {
@@ -47,9 +51,9 @@ ImporterDesc ShaderImporter::GetImporterInfo( ) const
 
 bool ShaderImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
-    for ( int i = 0; i < m_importerDesc.SupportedExtensions.NumElements( ); ++i )
+    for ( int i = 0; i < m_importerDesc.SupportedExtensions.NumElements; ++i )
     {
-        if ( strcmp( extension.Get( ), m_importerDesc.SupportedExtensions.GetElement( i ).Get( ) ) == 0 )
+        if ( strcmp( extension.Get( ), m_importerDesc.SupportedExtensions.Elements[ i ].Get( ) ) == 0 )
         {
             return true;
         }
@@ -86,7 +90,17 @@ ImporterResult ShaderImporter::Import( const ImportJobDesc &desc )
 
     AssetUri shaderAssetUri;
     WriteShaderAsset( context, shaderAssetUri );
-    context.Result.CreatedAssets.AddElement( shaderAssetUri );
+
+    // TODO: Cleaner growing mechanism
+    const AssetUriArray newCreatedAssets = AssetUriArray::Create( context.Result.CreatedAssets.NumElements + 1 );
+    for ( size_t i = 0; i < context.Result.CreatedAssets.NumElements; ++i )
+    {
+        newCreatedAssets.Elements[ i ] = context.Result.CreatedAssets.Elements[ i ];
+    }
+    newCreatedAssets.Elements[ context.Result.CreatedAssets.NumElements ] = shaderAssetUri;
+    context.Result.CreatedAssets.Dispose( );
+    context.Result.CreatedAssets = newCreatedAssets;
+
     return context.Result;
 }
 

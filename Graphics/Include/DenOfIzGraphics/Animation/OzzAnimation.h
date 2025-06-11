@@ -20,17 +20,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Assets/Serde/Animation/AnimationAsset.h"
 #include "DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAsset.h"
+#include "DenOfIzGraphics/Utilities/InteropMath.h"
 
 namespace DenOfIz
 {
-    struct DZ_API OzzContext
-    {
-    };
+    struct DZ_API OzzContext{ };
 
     struct DZ_API SamplingJobResult
     {
-        bool                    Success{ false };
-        InteropArray<Float_4x4> Transforms{ };
+        bool           Success{ false };
+        Float_4x4Array Transforms{ };
     };
 
     struct DZ_API SamplingJobDesc
@@ -41,28 +40,35 @@ namespace DenOfIz
 
     struct DZ_API BlendingJobResult
     {
-        bool                    Success{ false };
-        InteropArray<Float_4x4> Transforms{ };
+        bool           Success{ false };
+        Float_4x4Array Transforms{ };
     };
 
     struct DZ_API BlendingJobLayerDesc
     {
-        InteropArray<Float_4x4> Transforms{ }; // Todo this could potentially be expensive copying
-        float                   Weight = 0.0f;
+        Float_4x4Array Transforms{ }; // Todo this could potentially be expensive copying
+        float          Weight = 0.0f;
     };
-    template class DZ_API InteropArray<BlendingJobLayerDesc>;
+
+    struct DZ_API BlendingJobLayerDescArray
+    {
+        BlendingJobLayerDesc *Elements;
+        uint32_t              NumElements;
+
+        DZ_ARRAY_METHODS( BlendingJobLayerDescArray, BlendingJobLayerDesc )
+    };
 
     struct DZ_API BlendingJobDesc
     {
-        OzzContext                        *Context = nullptr;
-        InteropArray<BlendingJobLayerDesc> Layers;
-        float                              Threshold = 0.1f;
+        OzzContext               *Context = nullptr;
+        BlendingJobLayerDescArray Layers;
+        float                     Threshold = 0.1f;
     };
 
     struct DZ_API LocalToModelJobResult
     {
-        bool                    Success{ false };
-        InteropArray<Float_4x4> Transforms{ };
+        bool           Success{ false };
+        Float_4x4Array Transforms{ };
     };
 
     struct DZ_API LocalToModelJobDesc
@@ -72,19 +78,19 @@ namespace DenOfIz
 
     struct DZ_API SkinningJobResult
     {
-        bool                   Success{ false };
-        InteropArray<float>    Vertices{ };
-        InteropArray<float>    Weights{ };
-        InteropArray<uint16_t> Indices{ };
+        bool        Success{ false };
+        FloatArray  Vertices{ };
+        FloatArray  Weights{ };
+        UInt16Array Indices{ };
     };
     struct DZ_API SkinningJobDesc
     {
-        OzzContext                   *Context = nullptr;
-        const InteropArray<Float_4x4> JointTransforms;
-        const InteropArray<float>     Vertices;
-        const InteropArray<float>     Weights;
-        const InteropArray<uint16_t>  Indices;
-        int                           InfluenceCount = 0;
+        OzzContext          *Context = nullptr;
+        const Float_4x4Array JointTransforms;
+        const FloatArray     Vertices;
+        const FloatArray     Weights;
+        const UInt16Array    Indices;
+        int                  InfluenceCount = 0;
     };
 
     struct DZ_API IkTwoBoneJobResult
@@ -152,8 +158,8 @@ namespace DenOfIz
 
     struct DZ_API TrackTriggeringResult
     {
-        bool                Success{ false };
-        InteropArray<float> Triggered;
+        bool       Success{ false };
+        FloatArray Triggered;
     };
 
     struct DZ_API TrackTriggeringJobDesc
@@ -179,10 +185,10 @@ namespace DenOfIz
         DZ_API void        LoadAnimation( const AnimationAsset *animation, OzzContext *context ) const;
         DZ_API static void UnloadAnimation( OzzContext *context );
 
-        DZ_API static void LoadTrack( const InteropArray<float> &keys, float duration, OzzContext *context );
-        DZ_API static void LoadTrack( const InteropArray<Float_2> &keys, const InteropArray<float> &timestamps, OzzContext *context );
-        DZ_API static void LoadTrack( const InteropArray<Float_3> &keys, const InteropArray<float> &timestamps, OzzContext *context );
-        DZ_API static void LoadTrack( const InteropArray<Float_4> &keys, const InteropArray<float> &timestamps, OzzContext *context );
+        DZ_API static void LoadTrack( const FloatArray &keys, float duration, OzzContext *context );
+        DZ_API static void LoadTrack( const Float_2Array &keys, const FloatArray &timestamps, OzzContext *context );
+        DZ_API static void LoadTrack( const Float_3Array &keys, const FloatArray &timestamps, OzzContext *context );
+        DZ_API static void LoadTrack( const Float_4Array &keys, const FloatArray &timestamps, OzzContext *context );
 
         DZ_API [[nodiscard]] SamplingJobResult     RunSamplingJob( const SamplingJobDesc &desc ) const;
         DZ_API [[nodiscard]] BlendingJobResult     RunBlendingJob( const BlendingJobDesc &desc ) const;
@@ -193,7 +199,7 @@ namespace DenOfIz
         DZ_API static TrackSamplingResult          RunTrackSamplingJob( const TrackSamplingJobDesc &desc );
         DZ_API static TrackTriggeringResult        RunTrackTriggeringJob( const TrackTriggeringJobDesc &desc );
 
-        DZ_API void              GetJointNames( InteropArray<InteropString> &outNames ) const;
+        DZ_API void              GetJointNames( InteropStringArray &outNames ) const;
         DZ_API [[nodiscard]] int GetJointCount( ) const;
         DZ_API static float      GetAnimationDuration( OzzContext *context );
     };

@@ -43,10 +43,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ozz/base/maths/simd_quaternion.h"
 #include "ozz/geometry/runtime/skinning_job.h"
 
+#include <ranges>
 #include "DenOfIzGraphics/Animation/OzzAnimation.h"
 #include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
-#include <ranges>
 
 namespace DenOfIz
 {
@@ -111,7 +111,7 @@ namespace DenOfIz
             }
 
             const auto  &joints    = skeletonAsset->Joints;
-            const size_t numJoints = joints.NumElements( );
+            const size_t numJoints = joints.NumElements;
 
             ozz::vector<int16_t> parents( numJoints );
 
@@ -254,7 +254,7 @@ namespace DenOfIz
                     rawTrack.rotations.push_back( rawKey );
                 }
 
-                const size_t numScaleKeys = track.ScaleKeys.NumElements( );
+                const size_t numScaleKeys = track.ScaleKeys.NumElements;
                 for ( size_t j = 0; j < numScaleKeys; ++j )
                 {
                     const ScaleKey                                 &key = track.ScaleKeys.Elements[ j ];
@@ -318,21 +318,25 @@ namespace DenOfIz
             return Float_3{ scale.x, scale.y, scale.z };
         }
 
-        static void CopyArrayToOzzVector( const InteropArray<Float_4x4> &src, ozz::vector<ozz::math::Float4x4> &dst )
+        static void CopyArrayToOzzVector( const Float_4x4Array &src, ozz::vector<ozz::math::Float4x4> &dst )
         {
-            dst.resize( src.NumElements( ) );
-            for ( size_t i = 0; i < src.NumElements( ); ++i )
+            dst.resize( src.NumElements );
+            for ( size_t i = 0; i < src.NumElements; ++i )
             {
-                dst[ i ] = ToOzzFloat4x4( src.GetElement( i ) );
+                dst[ i ] = ToOzzFloat4x4( src.Elements[ i ] );
             }
         }
 
-        static void CopyOzzVectorToArray( const ozz::vector<ozz::math::Float4x4> &src, InteropArray<Float_4x4> &dst )
+        static void CopyOzzVectorToArray( const ozz::vector<ozz::math::Float4x4> &src, Float_4x4Array &dst )
         {
-            dst.Resize( src.size( ) );
+            if ( dst.Elements )
+            {
+                dst.Dispose( );
+            }
+            dst = Float_4x4Array::Create( static_cast<uint32_t>( src.size( ) ) );
             for ( size_t i = 0; i < src.size( ); ++i )
             {
-                dst.GetElement( i ) = FromOzzFloat4x4( src[ i ] );
+                dst.Elements[ i ] = FromOzzFloat4x4( src[ i ] );
             }
         }
 
@@ -444,7 +448,7 @@ namespace DenOfIz
 
         auto *internalContext = reinterpret_cast<InternalContext *>( context );
 
-        if ( animation->Animations.NumElements( ) == 0 )
+        if ( animation->Animations.NumElements == 0 )
         {
             spdlog::warn( "Animation asset contains no animations" );
             return;
@@ -471,9 +475,9 @@ namespace DenOfIz
         internalContext->animation.reset( );
     }
 
-    void OzzAnimation::LoadTrack( const InteropArray<float> &keys, const float duration, OzzContext *context )
+    void OzzAnimation::LoadTrack( const FloatArray &keys, const float duration, OzzContext *context )
     {
-        if ( !context || keys.NumElements( ) == 0 )
+        if ( !context || keys.NumElements == 0 )
         {
             spdlog::error( "Invalid context or empty keys" );
             return;
@@ -482,14 +486,14 @@ namespace DenOfIz
         auto *internalContext = reinterpret_cast<InternalContext *>( context );
 
         ozz::animation::offline::RawFloatTrack rawTrack;
-        rawTrack.keyframes.resize( keys.NumElements( ) );
+        rawTrack.keyframes.resize( keys.NumElements );
 
-        const float step = duration / ( keys.NumElements( ) - 1 );
-        for ( size_t i = 0; i < keys.NumElements( ); ++i )
+        const float step = duration / ( keys.NumElements - 1 );
+        for ( size_t i = 0; i < keys.NumElements; ++i )
         {
             auto &keyframe         = rawTrack.keyframes[ i ];
             keyframe.ratio         = i * step;
-            keyframe.value         = keys.GetElement( i );
+            keyframe.value         = keys.Elements[ i ];
             keyframe.interpolation = ozz::animation::offline::RawTrackInterpolation::kLinear;
         }
 
@@ -500,9 +504,9 @@ namespace DenOfIz
         }
     }
 
-    void OzzAnimation::LoadTrack( const InteropArray<Float_2> &keys, const InteropArray<float> &timestamps, OzzContext *context )
+    void OzzAnimation::LoadTrack( const Float_2Array &keys, const FloatArray &timestamps, OzzContext *context )
     {
-        if ( !context || keys.NumElements( ) == 0 || timestamps.NumElements( ) != keys.NumElements( ) )
+        if ( !context || keys.NumElements == 0 || timestamps.NumElements != keys.NumElements )
         {
             spdlog::error( "Invalid context, empty keys, or mismatched timestamps" );
             return;
@@ -511,13 +515,13 @@ namespace DenOfIz
         auto *internalContext = reinterpret_cast<InternalContext *>( context );
 
         ozz::animation::offline::RawFloat2Track rawTrack;
-        rawTrack.keyframes.resize( keys.NumElements( ) );
+        rawTrack.keyframes.resize( keys.NumElements );
 
-        for ( size_t i = 0; i < keys.NumElements( ); ++i )
+        for ( size_t i = 0; i < keys.NumElements; ++i )
         {
-            const Float_2 &key      = keys.GetElement( i );
+            const Float_2 &key      = keys.Elements[ i ];
             auto          &keyframe = rawTrack.keyframes[ i ];
-            keyframe.ratio          = timestamps.GetElement( i );
+            keyframe.ratio          = timestamps.Elements[ i ];
             keyframe.value          = ozz::math::Float2( key.X, key.Y );
             keyframe.interpolation  = ozz::animation::offline::RawTrackInterpolation::kLinear;
         }
@@ -529,9 +533,9 @@ namespace DenOfIz
         }
     }
 
-    void OzzAnimation::LoadTrack( const InteropArray<Float_3> &keys, const InteropArray<float> &timestamps, OzzContext *context )
+    void OzzAnimation::LoadTrack( const Float_3Array &keys, const FloatArray &timestamps, OzzContext *context )
     {
-        if ( !context || keys.NumElements( ) == 0 || timestamps.NumElements( ) != keys.NumElements( ) )
+        if ( !context || keys.NumElements == 0 || timestamps.NumElements != keys.NumElements )
         {
             spdlog::error( "Invalid context, empty keys, or mismatched timestamps" );
             return;
@@ -540,13 +544,13 @@ namespace DenOfIz
         auto *internalContext = reinterpret_cast<InternalContext *>( context );
 
         ozz::animation::offline::RawFloat3Track rawTrack;
-        rawTrack.keyframes.resize( keys.NumElements( ) );
+        rawTrack.keyframes.resize( keys.NumElements );
 
-        for ( size_t i = 0; i < keys.NumElements( ); ++i )
+        for ( size_t i = 0; i < keys.NumElements; ++i )
         {
-            const Float_3 &key      = keys.GetElement( i );
+            const Float_3 &key      = keys.Elements[ i ];
             auto          &keyframe = rawTrack.keyframes[ i ];
-            keyframe.ratio          = timestamps.GetElement( i );
+            keyframe.ratio          = timestamps.Elements[ i ];
             keyframe.value          = OzzUtils::ToOzzTranslation( key );
             keyframe.interpolation  = ozz::animation::offline::RawTrackInterpolation::kLinear;
         }
@@ -558,9 +562,9 @@ namespace DenOfIz
         }
     }
 
-    void OzzAnimation::LoadTrack( const InteropArray<Float_4> &keys, const InteropArray<float> &timestamps, OzzContext *context )
+    void OzzAnimation::LoadTrack( const Float_4Array &keys, const FloatArray &timestamps, OzzContext *context )
     {
-        if ( !context || keys.NumElements( ) == 0 || timestamps.NumElements( ) != keys.NumElements( ) )
+        if ( !context || keys.NumElements == 0 || timestamps.NumElements != keys.NumElements )
         {
             spdlog::error( "Invalid context, empty keys, or mismatched timestamps" );
             return;
@@ -569,13 +573,13 @@ namespace DenOfIz
         auto *internalContext = reinterpret_cast<InternalContext *>( context );
 
         ozz::animation::offline::RawFloat4Track rawTrack;
-        rawTrack.keyframes.resize( keys.NumElements( ) );
+        rawTrack.keyframes.resize( keys.NumElements );
 
-        for ( size_t i = 0; i < keys.NumElements( ); ++i )
+        for ( size_t i = 0; i < keys.NumElements; ++i )
         {
-            const Float_4 &key      = keys.GetElement( i );
+            const Float_4 &key      = keys.Elements[ i ];
             auto          &keyframe = rawTrack.keyframes[ i ];
-            keyframe.ratio          = timestamps.GetElement( i );
+            keyframe.ratio          = timestamps.Elements[ i ];
             keyframe.value          = ozz::math::Float4( key.X, key.Y, key.Z, key.W );
             keyframe.interpolation  = ozz::animation::offline::RawTrackInterpolation::kLinear;
         }
@@ -633,12 +637,12 @@ namespace DenOfIz
         }
 
         using namespace DirectX;
-        result.Transforms.Resize( internalContext->modelTransforms.size( ) );
+        result.Transforms                      = Float_4x4Array::Create( static_cast<uint32_t>( internalContext->modelTransforms.size( ) ) );
         static const XMMATRIX correctionMatrix = XMMatrixRotationX( XM_PIDIV2 );
         for ( size_t i = 0; i < internalContext->modelTransforms.size( ); ++i )
         {
             const ozz::math::Float4x4 &ozzMat = internalContext->modelTransforms[ i ];
-            Float_4x4                 &out    = result.Transforms.GetElement( i );
+            Float_4x4                 &out    = result.Transforms.Elements[ i ];
             ozz::math::Float3          ozzTranslation;
             ozz::math::Quaternion      ozzQuat;
             ozz::math::Float3          ozzScale;
@@ -665,7 +669,7 @@ namespace DenOfIz
     BlendingJobResult OzzAnimation::RunBlendingJob( const BlendingJobDesc &desc ) const
     {
         BlendingJobResult result{ };
-        if ( !desc.Context || desc.Layers.NumElements( ) == 0 )
+        if ( !desc.Context || desc.Layers.NumElements == 0 )
         {
             spdlog::error( "Invalid blending job parameters" );
             return result;
@@ -673,15 +677,15 @@ namespace DenOfIz
 
         auto *internalContext = reinterpret_cast<InternalContext *>( desc.Context );
 
-        const size_t                                      numLayers = desc.Layers.NumElements( );
+        const size_t                                      numLayers = desc.Layers.NumElements;
         std::vector<ozz::animation::BlendingJob::Layer>   ozzLayers( numLayers );
         std::vector<ozz::vector<ozz::math::SoaTransform>> layerTransforms( numLayers );
 
         const size_t numSoaJoints = m_impl->skeleton->num_soa_joints( );
         for ( size_t i = 0; i < numLayers; ++i )
         {
-            const auto &layer = desc.Layers.GetElement( i );
-            if ( layer.Transforms.NumElements( ) == 0 )
+            const auto &layer = desc.Layers.Elements[ i ];
+            if ( layer.Transforms.NumElements == 0 )
             {
                 spdlog::error( "Invalid transforms in layer {}", i );
                 return result;
@@ -766,34 +770,34 @@ namespace DenOfIz
     SkinningJobResult OzzAnimation::RunSkinningJob( const SkinningJobDesc &desc )
     {
         SkinningJobResult result{ };
-        if ( !desc.Context || desc.JointTransforms.NumElements( ) == 0 || desc.Vertices.NumElements( ) == 0 || desc.Weights.NumElements( ) == 0 ||
-             !desc.Indices.NumElements( ) == 0 || desc.InfluenceCount <= 0 )
+        if ( !desc.Context || desc.JointTransforms.NumElements == 0 || desc.Vertices.NumElements == 0 || desc.Weights.NumElements == 0 || desc.Indices.NumElements == 0 ||
+             desc.InfluenceCount <= 0 )
         {
             spdlog::error( "Invalid skinning job parameters" );
             return result;
         }
 
-        const size_t                     numJoints = desc.JointTransforms.NumElements( );
+        const size_t                     numJoints = desc.JointTransforms.NumElements;
         ozz::vector<ozz::math::Float4x4> jointMatrices( numJoints );
 
         for ( size_t i = 0; i < numJoints; ++i )
         {
-            jointMatrices[ i ] = OzzUtils::ToOzzFloat4x4( desc.JointTransforms.GetElement( i ) );
+            jointMatrices[ i ] = OzzUtils::ToOzzFloat4x4( desc.JointTransforms.Elements[ i ] );
         }
 
-        const uint32_t numVertices = desc.Vertices.NumElements( );
+        const uint32_t numVertices = desc.Vertices.NumElements;
 
         ozz::geometry::SkinningJob skinningJob;
-        skinningJob.vertex_count     = desc.Vertices.NumElements( );
+        skinningJob.vertex_count     = desc.Vertices.NumElements;
         skinningJob.influences_count = desc.InfluenceCount;
         skinningJob.joint_matrices   = ozz::make_span( jointMatrices );
 
-        skinningJob.in_positions  = ozz::span( desc.Vertices.Data( ), numVertices * 3 );
-        skinningJob.joint_weights = ozz::span( desc.Weights.Data( ), numVertices * desc.InfluenceCount );
-        skinningJob.joint_indices = ozz::span( desc.Indices.Data( ), numVertices * desc.InfluenceCount );
+        skinningJob.in_positions  = ozz::span( desc.Vertices.Elements, numVertices * 3 );
+        skinningJob.joint_weights = ozz::span( desc.Weights.Elements, numVertices * desc.InfluenceCount );
+        skinningJob.joint_indices = ozz::span( desc.Indices.Elements, numVertices * desc.InfluenceCount );
 
-        result.Vertices.Resize( numVertices * 3 );
-        skinningJob.out_positions = ozz::span( result.Vertices.Data( ), numVertices * 3 ); // Todo validate result
+        result.Vertices           = FloatArray::Create( numVertices * 3 );
+        skinningJob.out_positions = ozz::span( result.Vertices.Elements, numVertices * 3 ); // Todo validate result
 
         if ( !skinningJob.Run( ) )
         {
@@ -1073,13 +1077,13 @@ namespace DenOfIz
             ++it;
         }
 
-        result.Triggered.Resize( edgeCount );
-        edgeCount = 0;
-        it        = job.iterator;
+        result.Triggered = FloatArray::Create( static_cast<uint32_t>( edgeCount ) );
+        edgeCount        = 0;
+        it               = job.iterator;
         while ( it && *it != job.end( ) )
         {
-            const auto &edge = *it;
-            result.Triggered.SetElement( edgeCount, edge->ratio );
+            const auto &edge                       = *it;
+            result.Triggered.Elements[ edgeCount ] = edge->ratio;
             ++edgeCount;
             ++it;
         }
@@ -1089,7 +1093,7 @@ namespace DenOfIz
         return result;
     }
 
-    void OzzAnimation::GetJointNames( InteropArray<InteropString> &outNames ) const
+    void OzzAnimation::GetJointNames( InteropStringArray &outNames ) const
     {
         if ( !m_impl->skeleton )
         {
@@ -1098,11 +1102,15 @@ namespace DenOfIz
         }
 
         const int numJoints = m_impl->skeleton->num_joints( );
-        outNames.Resize( numJoints );
+        if ( outNames.Elements )
+        {
+            outNames.Dispose( );
+        }
+        outNames = InteropStringArray::Create( numJoints );
 
         for ( int i = 0; i < numJoints; ++i )
         {
-            outNames.GetElement( i ) = InteropString( m_impl->skeleton->joint_names( )[ i ] );
+            outNames.Elements[ i ] = InteropString( m_impl->skeleton->joint_names( )[ i ] );
         }
     }
 

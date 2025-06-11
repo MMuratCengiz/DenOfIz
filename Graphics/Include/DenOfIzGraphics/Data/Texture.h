@@ -71,8 +71,8 @@ namespace DenOfIz
     public:
         DZ_API explicit Texture( const InteropString &path );
         DZ_API explicit Texture( const InteropArray<Byte> &data, TextureExtension extension = TextureExtension::DDS );
-        DZ_API static TextureExtension                IdentifyTextureFormat( const InteropArray<Byte> &data );
-        DZ_API [[nodiscard]] InteropArray<TextureMip> ReadMipData( ) const;
+        DZ_API static TextureExtension       IdentifyTextureFormat( const InteropArray<Byte> &data );
+        DZ_API [[nodiscard]] TextureMipArray ReadMipData( ) const;
 
         DZ_API [[nodiscard]] uint32_t                  GetWidth( ) const;
         DZ_API [[nodiscard]] uint32_t                  GetHeight( ) const;

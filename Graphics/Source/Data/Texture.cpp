@@ -492,38 +492,42 @@ const InteropArray<Byte> &Texture::GetData( ) const
     return m_data;
 }
 
-InteropArray<TextureMip> Texture::ReadMipData( ) const
+TextureMipArray Texture::ReadMipData( ) const
 {
-    InteropArray<TextureMip> mipData;
-    
+    TextureMipArray mipData;
+
     switch ( m_extension )
     {
     case TextureExtension::DDS:
-        // Inline StreamMipDataDDS logic
-        for ( uint32_t array = 0; array < m_arraySize; ++array )
         {
-            for ( uint32_t mip = 0; mip < m_mipLevels; ++mip )
+            const uint32_t totalMips = m_arraySize * m_mipLevels;
+            mipData = TextureMipArray::Create( totalMips );
+            
+            uint32_t mipIndex = 0;
+            for ( uint32_t array = 0; array < m_arraySize; ++array )
             {
-                // this.Data already skips the data_offset() but mip_offset() includes it
-                const auto externalOffset = m_ddsHeader->mip_offset( mip, array ) - m_ddsHeader->data_offset( );
+                for ( uint32_t mip = 0; mip < m_mipLevels; ++mip )
+                {
+                    // this.Data already skips the data_offset() but mip_offset() includes it
+                    const auto externalOffset = m_ddsHeader->mip_offset( mip, array ) - m_ddsHeader->data_offset( );
 
-                TextureMip mipInfo{ };
-                mipInfo.Width      = m_ddsHeader->width( ) >> mip;
-                mipInfo.Height     = m_ddsHeader->height( ) >> mip;
-                mipInfo.MipIndex   = mip;
-                mipInfo.ArrayIndex = array;
-                mipInfo.RowPitch   = m_ddsHeader->row_pitch( mip );
-                mipInfo.NumRows    = m_numRows >> mip;
-                mipInfo.SlicePitch = m_ddsHeader->slice_pitch( mip );
-                mipInfo.DataOffset = externalOffset;
-
-                mipData.AddElement( mipInfo );
+                    TextureMip &mipInfo = mipData.Elements[ mipIndex++ ];
+                    mipInfo.Width      = m_ddsHeader->width( ) >> mip;
+                    mipInfo.Height     = m_ddsHeader->height( ) >> mip;
+                    mipInfo.MipIndex   = mip;
+                    mipInfo.ArrayIndex = array;
+                    mipInfo.RowPitch   = m_ddsHeader->row_pitch( mip );
+                    mipInfo.NumRows    = m_numRows >> mip;
+                    mipInfo.SlicePitch = m_ddsHeader->slice_pitch( mip );
+                    mipInfo.DataOffset = externalOffset;
+                }
             }
         }
         break;
     default:
-        // Inline StreamMipDataSTB logic
-        TextureMip mipInfo{ };
+        mipData = TextureMipArray::Create( 1 );
+        
+        TextureMip &mipInfo = mipData.Elements[ 0 ];
         mipInfo.Width      = m_width;
         mipInfo.Height     = m_height;
         mipInfo.MipIndex   = 0;
@@ -532,11 +536,9 @@ InteropArray<TextureMip> Texture::ReadMipData( ) const
         mipInfo.NumRows    = m_numRows;
         mipInfo.SlicePitch = m_slicePitch;
         mipInfo.DataOffset = 0;
-
-        mipData.AddElement( mipInfo );
         break;
     }
-    
+
     return mipData;
 }
 

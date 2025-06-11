@@ -288,6 +288,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
     spdlog::info( "Phase 4: Collecting meshes and preparing submesh metadata..." );
     std::vector<const aiMesh *> uniqueMeshes;
     std::set<unsigned int>      processedMeshIndices;
+    std::vector<SubMeshData>    collectedSubMeshes;
 
     std::function<void( const aiNode * )> collectMeshes = [ & ]( const aiNode *node )
     {
@@ -312,7 +313,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
                 subMesh.Name = mesh->mName.C_Str( );
                 if ( subMesh.Name.IsEmpty( ) )
                 {
-                    subMesh.Name = InteropString( "SubMesh_" ).Append( std::to_string( meshAsset.SubMeshes.NumElements ).c_str( ) );
+                    subMesh.Name = InteropString( "SubMesh_" ).Append( std::to_string( collectedSubMeshes.size( ) ).c_str( ) );
                 }
 
                 subMesh.NumVertices = mesh->mNumVertices;
@@ -333,7 +334,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
                         subMesh.MaterialRef = context.MaterialNameToAssetUriMap[ matNameStr ];
                     }
                 }
-                meshAsset.SubMeshes.AddElement( subMesh );
+                collectedSubMeshes.push_back( subMesh );
             }
         }
 
@@ -344,6 +345,15 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
     };
 
     collectMeshes( context.Scene->mRootNode );
+    if ( !collectedSubMeshes.empty( ) )
+    {
+        meshAsset.SubMeshes = SubMeshDataArray::Create( static_cast<uint32_t>( collectedSubMeshes.size( ) ) );
+        for ( size_t i = 0; i < collectedSubMeshes.size( ); ++i )
+        {
+            meshAsset.SubMeshes.Elements[ i ] = collectedSubMeshes[ i ];
+        }
+    }
+
     if ( !uniqueMeshes.empty( ) )
     {
         const aiMesh           *firstMesh = uniqueMeshes[ 0 ];
@@ -397,7 +407,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
 
     if ( !uniqueMeshes.empty( ) )
     {
-        spdlog::info( "Phase 6: Writing mesh asset with {} submeshes...", meshAsset.SubMeshes.NumElements( ) );
+        spdlog::info( "Phase 6: Writing mesh asset with {} submeshes...", meshAsset.SubMeshes.NumElements );
         const InteropString meshAssetFilename = AssetPathUtilities::CreateAssetFileName( context.AssetNamePrefix, meshAsset.Name, "Mesh", MeshAsset::Extension( ) );
         InteropString       meshTargetPath    = context.TargetDirectory.Append( "/" ).Append( meshAssetFilename.Get( ) );
         meshTargetPath                        = FileIO::GetAbsolutePath( meshTargetPath );
@@ -485,10 +495,28 @@ ImporterResultCode AssimpImporter::Impl::ProcessNode( ImportContext &context, co
             {
                 spdlog::warn( "Inverse bind matrix not found in map for joint: {} . Using identity.", joint.Name.Get( ) ); /* Set identity */
             }
-            skeletonAsset.Joints.AddElement( joint );
+            // TODO: Cleaner growing mechanism
+            JointArray newJoints = JointArray::Create( skeletonAsset.Joints.NumElements + 1 );
+            for ( size_t i = 0; i < skeletonAsset.Joints.NumElements; ++i )
+            {
+                newJoints.Elements[ i ] = skeletonAsset.Joints.Elements[ i ];
+            }
+            newJoints.Elements[ skeletonAsset.Joints.NumElements ] = joint;
+            skeletonAsset.Joints.Dispose( );
+            skeletonAsset.Joints = newJoints;
+
             if ( parentJointIndex >= 0 && parentJointIndex < static_cast<int32_t>( skeletonAsset.Joints.NumElements ) )
             {
-                skeletonAsset.Joints[ parentJointIndex ].ChildIndices.AddElement( currentJointIndex );
+                // TODO: Cleaner growing mechanism
+                UInt32Array &parentChildIndices = skeletonAsset.Joints.Elements[ parentJointIndex ].ChildIndices;
+                UInt32Array  newChildIndices    = UInt32Array::Create( parentChildIndices.NumElements + 1 );
+                for ( size_t i = 0; i < parentChildIndices.NumElements; ++i )
+                {
+                    newChildIndices.Elements[ i ] = parentChildIndices.Elements[ i ];
+                }
+                newChildIndices.Elements[ parentChildIndices.NumElements ] = currentJointIndex;
+                parentChildIndices.Dispose( );
+                parentChildIndices = newChildIndices;
             }
             context.BoneNameToIndexMap[ nodeNameStr ]         = currentJointIndex;
             context.IndexToAssimpNodeMap[ currentJointIndex ] = node;
@@ -513,7 +541,7 @@ ImporterResultCode AssimpImporter::Impl::ProcessNode( ImportContext &context, co
         }
         else
         {
-            for ( size_t j = 0; j < skeletonAsset.Joints.NumElements( ); ++j )
+            for ( size_t j = 0; j < skeletonAsset.Joints.NumElements; ++j )
             {
                 if ( skeletonAsset.Joints.Elements[ j ].Name.Equals( nodeNameStr.c_str( ) ) )
                 {
@@ -563,7 +591,7 @@ ImporterResultCode AssimpImporter::Impl::ProcessMesh( ImportContext &context, co
     }
 
     const uint32_t submeshIndex = context.CurrentSubMeshIndex;
-    if ( submeshIndex >= context.MeshAsset.SubMeshes.NumElements( ) )
+    if ( submeshIndex >= context.MeshAsset.SubMeshes.NumElements )
     {
         spdlog::error( "ProcessMesh: Invalid submesh index {}", submeshIndex );
         return ImporterResultCode::InvalidParameters;
@@ -1130,15 +1158,15 @@ void AssimpImporter::Impl::WriteTextureAsset( ImportContext &context, const aiTe
 
     // Have to double stream to write metadata correctly unfortunately
     const auto mipDataArray = sourceTexture->ReadMipData( );
-    for ( uint32_t i = 0; i < mipDataArray.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < mipDataArray.NumElements; ++i )
     {
-        texAsset.Mips.Elements[ i ] = mipDataArray.GetElement( i );
+        texAsset.Mips.Elements[ i ] = mipDataArray.Elements[ i ];
     }
     assetWriter.Write( texAsset );
 
-    for ( uint32_t i = 0; i < mipDataArray.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < mipDataArray.NumElements; ++i )
     {
-        const TextureMip &mipData   = mipDataArray.GetElement( i );
+        const TextureMip &mipData   = mipDataArray.Elements[ i ];
         const size_t      mipSize   = mipData.SlicePitch;
         const size_t      mipOffset = mipData.DataOffset;
 
@@ -1224,8 +1252,8 @@ Float_4 AssimpImporter::Impl::ConvertColor( const aiColor4D &color ) const
 
 void AssimpImporter::Impl::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri ) const
 {
-    // Todo inefficient, we allocate 100s and reduce NumElements after import is complete
-    AssetUri *newElements = new AssetUri[ context.Result.CreatedAssets.NumElements + 1 ];
+    // TODO: Cleaner growing mechanism
+    auto newElements = new AssetUri[ context.Result.CreatedAssets.NumElements + 1 ];
     for ( size_t i = 0; i < context.Result.CreatedAssets.NumElements; i++ )
     {
         newElements[ i ] = context.Result.CreatedAssets.Elements[ i ];

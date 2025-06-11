@@ -463,9 +463,9 @@ void BatchResourceCopy::LoadTextureInternal( const Texture &texture, ITextureRes
     const auto stagingMappedMemory = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
 
     const auto mipDataArray = texture.ReadMipData( );
-    for ( uint32_t i = 0; i < mipDataArray.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < mipDataArray.NumElements; ++i )
     {
-        const TextureMip &mipData = mipDataArray.GetElement( i );
+        const TextureMip &mipData = mipDataArray.Elements[ i ];
         CopyTextureToMemoryAligned( texture, mipData, stagingMappedMemory + mipData.DataOffset );
 
         CopyBufferToTextureDesc copyBufferToTextureDesc{ };

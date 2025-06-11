@@ -126,7 +126,7 @@ void RenderTargetExample::Render( const uint32_t frameIndex, ICommandList *comma
     quadAttachmentDesc.Resource = renderTarget;
 
     RenderingDesc quadRenderingDesc;
-    quadRenderingDesc.RTAttachments.Elements = &quadAttachmentDesc;
+    quadRenderingDesc.RTAttachments.Elements    = &quadAttachmentDesc;
     quadRenderingDesc.RTAttachments.NumElements = 1;
 
     commandList->BeginRendering( quadRenderingDesc );
@@ -159,8 +159,10 @@ void RenderTargetExample::Update( )
     const uint64_t frameIndex = m_frameSync->NextFrame( );
     RenderDeferredImage( frameIndex );
     Render( frameIndex, m_frameSync->GetCommandList( frameIndex ) );
-    InteropArray<ISemaphore *> additionalSemaphores{ };
-    additionalSemaphores.AddElement( m_deferredSemaphores[ frameIndex ].get( ) );
+    auto            deferredSemaphore = m_deferredSemaphores[ frameIndex ].get( );
+    ISemaphoreArray additionalSemaphores{ };
+    additionalSemaphores.Elements    = &deferredSemaphore;
+    additionalSemaphores.NumElements = 1;
     m_frameSync->ExecuteCommandList( frameIndex, additionalSemaphores );
     Present( frameIndex );
 }

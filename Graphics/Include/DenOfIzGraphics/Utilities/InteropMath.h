@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "Interop.h"
 #include <cstdint>
+#include "Common_Arrays.h"
 
 /*
  * NOTE:
@@ -33,6 +33,15 @@ namespace DenOfIz
         float X;
         float Y;
     };
+
+    struct DZ_API Float_2Array
+    {
+        Float_2 *Elements;
+        uint32_t NumElements;
+
+        DZ_ARRAY_METHODS( Float_2Array, Float_2 )
+    };
+
     template class DZ_API InteropArray<Float_2>;
 
     struct DZ_API Float_3
@@ -41,6 +50,15 @@ namespace DenOfIz
         float Y;
         float Z;
     };
+
+    struct DZ_API Float_3Array
+    {
+        Float_3 *Elements;
+        uint32_t NumElements;
+
+        DZ_ARRAY_METHODS( Float_3Array, Float_3 )
+    };
+
     template class DZ_API InteropArray<Float_3>;
 
     struct DZ_API Float_4
@@ -50,6 +68,15 @@ namespace DenOfIz
         float Z;
         float W;
     };
+
+    struct DZ_API Float_4Array
+    {
+        Float_4 *Elements;
+        uint32_t NumElements;
+
+        DZ_ARRAY_METHODS( Float_4Array, Float_4 )
+    };
+
     template class DZ_API InteropArray<Float_4>;
 
     struct DZ_API Int16_2
@@ -176,6 +203,14 @@ namespace DenOfIz
             float *base               = &_11;
             base[ major * 4 + minor ] = value;
         }
+    };
+
+    struct DZ_API Float_4x4Array
+    {
+        Float_4x4 *Elements;
+        uint32_t   NumElements;
+
+        DZ_ARRAY_METHODS( Float_4x4Array, Float_4x4 )
     };
     template class DZ_API InteropArray<Float_4x4>;
 } // namespace DenOfIz

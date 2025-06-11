@@ -191,7 +191,7 @@ void TextureAssetWriter::Write( const TextureAsset &textureAsset )
         mip.SlicePitch = m_textureAsset.SlicePitch;
         mip.DataOffset = 0;
 
-        m_textureAsset.Mips.Resize( 1 );
+        m_textureAsset.Mips               = TextureMipArray::Create( 1 );
         m_textureAsset.Mips.Elements[ 0 ] = mip;
     }
 
@@ -277,7 +277,15 @@ void TextureAssetWriter::AddPixelData( const ByteArrayView &bytes, const uint32_
         newMip.NumRows    = mipNumRows;
         newMip.SlicePitch = mipSlicePitch;
         newMip.DataOffset = currentDataOffset;
-        m_textureAsset.Mips.AddElement( newMip );
+        // TODO: Cleaner growing mechanism
+        const TextureMipArray newMips = TextureMipArray::Create( m_textureAsset.Mips.NumElements + 1 );
+        for ( size_t j = 0; j < m_textureAsset.Mips.NumElements; ++j )
+        {
+            newMips.Elements[ j ] = m_textureAsset.Mips.Elements[ j ];
+        }
+        newMips.Elements[ m_textureAsset.Mips.NumElements ] = newMip;
+        m_textureAsset.Mips.Dispose( );
+        m_textureAsset.Mips = newMips;
         m_textureMipPositions.push_back( m_writer->Position( ) );
         WriteMipInfo( newMip );
     }
