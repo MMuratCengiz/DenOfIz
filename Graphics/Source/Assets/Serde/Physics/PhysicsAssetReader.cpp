@@ -52,11 +52,11 @@ PhysicsAsset PhysicsAssetReader::Read( )
     m_physicsAsset.Name     = m_reader->ReadString( );
 
     const uint32_t numColliders = m_reader->ReadUInt32( );
-    m_physicsAsset.Colliders.Resize( numColliders );
+    m_physicsAsset.Colliders = PhysicsColliderArray::Create( numColliders );
 
     for ( uint32_t i = 0; i < numColliders; ++i )
     {
-        PhysicsCollider &collider = m_physicsAsset.Colliders.GetElement( i );
+        PhysicsCollider &collider = m_physicsAsset.Colliders.Elements[ i ];
 
         collider.Type        = static_cast<PhysicsColliderType>( m_reader->ReadUInt32( ) );
         collider.Name        = m_reader->ReadString( );

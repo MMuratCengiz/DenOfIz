@@ -35,9 +35,9 @@ TextureAssetReader::~TextureAssetReader( ) = default;
 
 TextureMip TextureAssetReader::FindMip( const uint32_t mipLevel, const uint32_t arrayLayer )
 {
-    for ( uint32_t i = 0; i < m_textureAsset.Mips.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < m_textureAsset.Mips.NumElements; ++i )
     {
-        if ( const TextureMip &mip = m_textureAsset.Mips.GetElement( i ); mip.MipIndex == mipLevel && mip.ArrayIndex == arrayLayer )
+        if ( const TextureMip &mip = m_textureAsset.Mips.Elements[ i ]; mip.MipIndex == mipLevel && mip.ArrayIndex == arrayLayer )
         {
             return mip;
         }
@@ -87,7 +87,7 @@ TextureAsset TextureAssetReader::Read( )
 
     for ( uint32_t i = 0; i < numMips; ++i )
     {
-        TextureMip &mip = m_textureAsset.Mips.GetElement( i );
+        TextureMip &mip = m_textureAsset.Mips.Elements[ i ];
         mip.Width       = m_reader->ReadUInt32( );
         mip.Height      = m_reader->ReadUInt32( );
         mip.MipIndex    = m_reader->ReadUInt32( );
@@ -162,7 +162,7 @@ void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc 
 
     for ( uint32_t i = 0; i < m_textureAsset.Mips.NumElements( ); ++i )
     {
-        const TextureMip mip = m_textureAsset.Mips.GetElement( i );
+        const TextureMip mip = m_textureAsset.Mips.Elements[ i ];
 
         CopyBufferToTextureDesc copyDesc{ };
         copyDesc.DstTexture = desc.Texture;
@@ -186,7 +186,7 @@ uint64_t TextureAssetReader::AlignedTotalNumBytes( const DeviceConstants &consta
     uint64_t totalNumBytes = 0;
     for ( uint32_t i = 0; i < m_textureAsset.Mips.NumElements( ); ++i )
     {
-        const TextureMip &mip               = m_textureAsset.Mips.GetElement( i );
+        const TextureMip &mip               = m_textureAsset.Mips.Elements[ i ];
         const uint32_t    alignedRowPitch   = Utilities::Align( mip.RowPitch, constants.BufferTextureRowAlignment );
         const uint32_t    alignedSlicePitch = Utilities::Align( alignedRowPitch * mip.NumRows, constants.BufferTextureAlignment );
         totalNumBytes += alignedSlicePitch;

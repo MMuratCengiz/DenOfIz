@@ -45,7 +45,7 @@ namespace DenOfIz
         bool AlphaBlend  = false;
         bool DoubleSided = false;
 
-        InteropArray<UserProperty> Properties;
+        UserPropertyArray Properties;
         MaterialAsset( ) : AssetHeader( 0x445A4D4154 /*DZMAT*/, Latest, 0 )
         {
         }

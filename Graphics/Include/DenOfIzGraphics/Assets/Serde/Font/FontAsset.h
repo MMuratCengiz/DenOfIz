@@ -48,7 +48,14 @@ namespace DenOfIz
         uint32_t    AtlasX    = 0;
         uint32_t    AtlasY    = 0;
     };
-    template class DZ_API InteropArray<FontGlyph>;
+
+    struct DZ_API FontGlyphArray
+    {
+        FontGlyph *Elements;
+        uint32_t   NumElements;
+
+        DZ_ARRAY_METHODS( FontGlyphArray, FontGlyph )
+    };
 
     struct DZ_API FontMetrics
     {
@@ -65,17 +72,17 @@ namespace DenOfIz
         static constexpr uint32_t Latest      = 1;
         static constexpr uint32_t NumChannels = 4;
 
-        uint64_t                   DataNumBytes = 0;
-        ByteArray                  Data;
-        uint32_t                   InitialFontSize;
-        AntiAliasingMode           AntiAliasingMode;
-        uint32_t                   AtlasWidth;
-        uint32_t                   AtlasHeight;
-        FontMetrics                Metrics;
-        InteropArray<FontGlyph>    Glyphs;
-        InteropArray<UserProperty> UserProperties;
-        uint64_t                   NumAtlasDataBytes = 0;
-        ByteArray                  AtlasData; // RGBA (MTSDF format)
+        uint64_t          DataNumBytes = 0;
+        ByteArray         Data;
+        uint32_t          InitialFontSize;
+        AntiAliasingMode  AntiAliasingMode;
+        uint32_t          AtlasWidth;
+        uint32_t          AtlasHeight;
+        FontMetrics       Metrics;
+        FontGlyphArray    Glyphs;
+        UserPropertyArray UserProperties;
+        uint64_t          NumAtlasDataBytes = 0;
+        ByteArray         AtlasData; // RGBA (MTSDF format)
 
         FontAsset( ) : AssetHeader( 0x544E4F465A44 /*DZFONT*/, Latest, 0 )
         {
@@ -95,12 +102,13 @@ namespace DenOfIz
         {
             return "dzfont";
         }
-        
-        void Dispose()
+
+        void Dispose( ) const
         {
-            Data.Dispose();
-            AtlasData.Dispose();
-            // Glyphs and UserProperties use InteropArray which manages its own memory
+            Data.Dispose( );
+            AtlasData.Dispose( );
+            Glyphs.Dispose( );
+            UserProperties.Dispose( );
         }
     };
 } // namespace DenOfIz

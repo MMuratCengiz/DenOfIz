@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Assets/Serde/Asset.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 
 namespace DenOfIz
 {
@@ -38,7 +39,7 @@ namespace DenOfIz
     {
         ImporterResultCode     ResultCode = ImporterResultCode::Success;
         InteropString          ErrorMessage;
-        InteropArray<AssetUri> CreatedAssets;
+        AssetUriArray          CreatedAssets;
     };
 
     struct DZ_API ImportDesc
@@ -48,13 +49,13 @@ namespace DenOfIz
         bool     ImportAnimations      = true;
         bool     ImportSkeletons       = true;
 
-        InteropArray<InteropString> AdditionalOptions;
+        InteropStringArray AdditionalOptions;
     };
 
     struct DZ_API ImporterDesc
     {
         InteropString               Name;
-        InteropArray<InteropString> SupportedExtensions;
+        InteropStringArray          SupportedExtensions;
     };
 
     struct DZ_API ImportJobDesc

@@ -29,61 +29,153 @@ namespace DenOfIz
         float   Timestamp; // Time in seconds
         Float_3 Value;
     };
-    template class DZ_API InteropArray<PositionKey>;
+
+    struct DZ_API PositionKeyArray
+    {
+        PositionKey *Elements;
+        uint32_t     NumElements;
+
+        DZ_ARRAY_METHODS( PositionKeyArray, PositionKey )
+    };
 
     struct DZ_API RotationKey
     {
         float   Timestamp; // Time in seconds
         Float_4 Value;     // Quaternion
     };
-    template class DZ_API InteropArray<RotationKey>;
+
+    struct DZ_API RotationKeyArray
+    {
+        RotationKey *Elements;
+        uint32_t     NumElements;
+
+        DZ_ARRAY_METHODS( RotationKeyArray, RotationKey )
+    };
 
     struct DZ_API ScaleKey
     {
         float   Timestamp;
         Float_3 Value;
     };
-    template class DZ_API InteropArray<ScaleKey>;
+
+    struct DZ_API ScaleKeyArray
+    {
+        ScaleKey *Elements;
+        uint32_t  NumElements;
+
+        DZ_ARRAY_METHODS( ScaleKeyArray, ScaleKey )
+    };
 
     struct DZ_API MorphKeyframe
     {
         float Timestamp;
         float Weight;
     };
-    template class DZ_API InteropArray<MorphKeyframe>;
+
+    struct DZ_API MorphKeyframeArray
+    {
+        MorphKeyframe *Elements;
+        uint32_t       NumElements;
+
+        DZ_ARRAY_METHODS( MorphKeyframeArray, MorphKeyframe )
+    };
 
     struct DZ_API MorphAnimTrack
     {
-        InteropString               Name;
-        InteropArray<MorphKeyframe> Keyframes;
+        InteropString      Name;
+        MorphKeyframeArray Keyframes;
     };
-    template class DZ_API InteropArray<MorphAnimTrack>;
+
+    struct DZ_API MorphAnimTrackArray
+    {
+        MorphAnimTrack *Elements;
+        uint32_t        NumElements;
+
+        DZ_ARRAY_METHODS( MorphAnimTrackArray, MorphAnimTrack )
+    };
 
     struct DZ_API JointAnimTrack
     {
-        InteropString             JointName;
-        InteropArray<PositionKey> PositionKeys;
-        InteropArray<RotationKey> RotationKeys;
-        InteropArray<ScaleKey>    ScaleKeys;
+        InteropString    JointName;
+        PositionKeyArray PositionKeys;
+        RotationKeyArray RotationKeys;
+        ScaleKeyArray    ScaleKeys;
+
+        void Dispose( ) const
+        {
+            PositionKeys.Dispose( );
+            RotationKeys.Dispose( );
+            ScaleKeys.Dispose( );
+        }
     };
-    template class DZ_API InteropArray<JointAnimTrack>;
+
+    struct DZ_API JointAnimTrackArray
+    {
+        JointAnimTrack *Elements;
+        uint32_t        NumElements;
+
+        static JointAnimTrackArray Create( const size_t numElements )
+        {
+            JointAnimTrackArray Array{ };
+            Array.Elements    = new JointAnimTrack[ numElements ];
+            Array.NumElements = numElements;
+            return Array;
+        }
+
+        void Dispose( ) const
+        {
+            for ( uint32_t i = 0; i < NumElements; ++i )
+            {
+                Elements[ i ].Dispose( );
+            }
+            delete[] Elements;
+        }
+    };
 
     struct DZ_API AnimationClip
     {
-        InteropString                Name;
-        float                        Duration{ };
-        InteropArray<JointAnimTrack> Tracks;
-        InteropArray<MorphAnimTrack> MorphTracks;
+        InteropString       Name;
+        float               Duration{ };
+        JointAnimTrackArray Tracks;
+        MorphAnimTrackArray MorphTracks;
+
+        void Dispose( ) const
+        {
+            Tracks.Dispose( );
+            MorphTracks.Dispose( );
+        }
     };
-    template class DZ_API InteropArray<AnimationClip>;
+
+    struct DZ_API AnimationClipArray
+    {
+        AnimationClip *Elements;
+        uint32_t       NumElements;
+
+        static AnimationClipArray Create( const size_t numElements )
+        {
+            AnimationClipArray Array{ };
+            Array.Elements    = new AnimationClip[ numElements ];
+            Array.NumElements = numElements;
+            return Array;
+        }
+
+        void Dispose( ) const
+        {
+            for ( uint32_t i = 0; i < NumElements; ++i )
+            {
+                Elements[ i ].Dispose( );
+            }
+            delete[] Elements;
+        }
+    };
 
     struct DZ_API AnimationAsset : AssetHeader
     {
         static constexpr uint32_t Latest = 1;
 
-        InteropString               Name;
-        AssetUri                    SkeletonRef;
-        InteropArray<AnimationClip> Animations;
+        InteropString      Name;
+        AssetUri           SkeletonRef;
+        AnimationClipArray Animations;
 
         AnimationAsset( ) : AssetHeader( 0x445A414E494D /*DZANIM*/, Latest, 0 )
         {

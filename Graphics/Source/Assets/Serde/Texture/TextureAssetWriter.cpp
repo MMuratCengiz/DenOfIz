@@ -192,7 +192,7 @@ void TextureAssetWriter::Write( const TextureAsset &textureAsset )
         mip.DataOffset = 0;
 
         m_textureAsset.Mips.Resize( 1 );
-        m_textureAsset.Mips.SetElement( 0, mip );
+        m_textureAsset.Mips.Elements[ 0 ] = mip;
     }
 
     m_writer->WriteUInt32( std::max( 1u, m_textureAsset.Width ) );
@@ -212,7 +212,7 @@ void TextureAssetWriter::Write( const TextureAsset &textureAsset )
     for ( int i = 0; i < m_textureAsset.Mips.NumElements( ); ++i )
     {
         m_textureMipPositions[ i ] = m_writer->Position( );
-        WriteMipInfo( m_textureAsset.Mips.GetElement( i ) );
+        WriteMipInfo( m_textureAsset.Mips.Elements[ i ] );
     }
 
     AssetWriterHelpers::WriteAssetDataStream( m_writer, { 0, 0 } );
@@ -228,7 +228,7 @@ void TextureAssetWriter::AddPixelData( const ByteArrayView &bytes, const uint32_
 
     for ( size_t i = 0; i < m_textureAsset.Mips.NumElements( ); ++i )
     {
-        if ( TextureMip &mip = m_textureAsset.Mips.GetElement( i ); mip.MipIndex == mipIndex && mip.ArrayIndex == arrayLayer )
+        if ( TextureMip &mip = m_textureAsset.Mips.Elements[ i ]; mip.MipIndex == mipIndex && mip.ArrayIndex == arrayLayer )
         {
             if ( mip.DataOffset == 0 )
             {

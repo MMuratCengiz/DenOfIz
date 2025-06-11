@@ -82,26 +82,27 @@ public:
     explicit Impl( AssimpImporterDesc desc ) : m_desc( std::move( desc ) )
     {
         m_importerInfo.Name = "Assimp Importer";
-        m_importerInfo.SupportedExtensions.AddElement( ".fbx" );
-        m_importerInfo.SupportedExtensions.AddElement( ".gltf" );
-        m_importerInfo.SupportedExtensions.AddElement( ".glb" );
-        m_importerInfo.SupportedExtensions.AddElement( ".obj" );
-        m_importerInfo.SupportedExtensions.AddElement( ".dae" );
-        m_importerInfo.SupportedExtensions.AddElement( ".blend" );
-        m_importerInfo.SupportedExtensions.AddElement( ".3ds" );
-        m_importerInfo.SupportedExtensions.AddElement( ".ase" );
-        m_importerInfo.SupportedExtensions.AddElement( ".ifc" );
-        m_importerInfo.SupportedExtensions.AddElement( ".xgl" );
-        m_importerInfo.SupportedExtensions.AddElement( ".zgl" );
-        m_importerInfo.SupportedExtensions.AddElement( ".ply" );
-        m_importerInfo.SupportedExtensions.AddElement( ".dxf" );
-        m_importerInfo.SupportedExtensions.AddElement( ".lwo" );
-        m_importerInfo.SupportedExtensions.AddElement( ".lws" );
-        m_importerInfo.SupportedExtensions.AddElement( ".lxo" );
-        m_importerInfo.SupportedExtensions.AddElement( ".stl" );
-        m_importerInfo.SupportedExtensions.AddElement( ".x" );
-        m_importerInfo.SupportedExtensions.AddElement( ".ac" );
-        m_importerInfo.SupportedExtensions.AddElement( ".ms3d" );
+        m_importerInfo.SupportedExtensions = InteropStringArray::Create( 20 );
+        m_importerInfo.SupportedExtensions.Elements[0] = ".fbx";
+        m_importerInfo.SupportedExtensions.Elements[1] = ".gltf";
+        m_importerInfo.SupportedExtensions.Elements[2] = ".glb";
+        m_importerInfo.SupportedExtensions.Elements[3] = ".obj";
+        m_importerInfo.SupportedExtensions.Elements[4] = ".dae";
+        m_importerInfo.SupportedExtensions.Elements[5] = ".blend";
+        m_importerInfo.SupportedExtensions.Elements[6] = ".3ds";
+        m_importerInfo.SupportedExtensions.Elements[7] = ".ase";
+        m_importerInfo.SupportedExtensions.Elements[8] = ".ifc";
+        m_importerInfo.SupportedExtensions.Elements[9] = ".xgl";
+        m_importerInfo.SupportedExtensions.Elements[10] = ".zgl";
+        m_importerInfo.SupportedExtensions.Elements[11] = ".ply";
+        m_importerInfo.SupportedExtensions.Elements[12] = ".dxf";
+        m_importerInfo.SupportedExtensions.Elements[13] = ".lwo";
+        m_importerInfo.SupportedExtensions.Elements[14] = ".lws";
+        m_importerInfo.SupportedExtensions.Elements[15] = ".lxo";
+        m_importerInfo.SupportedExtensions.Elements[16] = ".stl";
+        m_importerInfo.SupportedExtensions.Elements[17] = ".x";
+        m_importerInfo.SupportedExtensions.Elements[18] = ".ac";
+        m_importerInfo.SupportedExtensions.Elements[19] = ".ms3d";
     }
 
     ImporterResultCode ImportSceneInternal( ImportContext &context );

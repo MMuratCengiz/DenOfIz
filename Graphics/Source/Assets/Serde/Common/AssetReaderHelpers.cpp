@@ -30,13 +30,13 @@ AssetDataStream AssetReaderHelpers::ReadAssetDataStream( BinaryReader *reader )
     return stream;
 }
 
-InteropArray<UserProperty> AssetReaderHelpers::ReadUserProperties( BinaryReader *reader )
+UserPropertyArray AssetReaderHelpers::ReadUserProperties( BinaryReader *reader )
 {
-    InteropArray<UserProperty> properties;
-    const uint32_t             numProperties = reader->ReadUInt32( );
+    const uint32_t          numProperties = reader->ReadUInt32( );
+    const UserPropertyArray properties    = UserPropertyArray::Create( numProperties );
     for ( uint32_t i = 0; i < numProperties; ++i )
     {
-        properties.AddElement( ReadUserProperty( reader ) );
+        properties.Elements[ i ] = ReadUserProperty( reader );
     }
     return properties;
 }
@@ -53,6 +53,7 @@ UserProperty AssetReaderHelpers::ReadUserProperty( BinaryReader *reader )
         break;
     case UserProperty::Type::Int:
         property.IntValue = reader->ReadInt32( );
+        break;
     case UserProperty::Type::Float:
         property.FloatValue = reader->ReadFloat( );
         break;

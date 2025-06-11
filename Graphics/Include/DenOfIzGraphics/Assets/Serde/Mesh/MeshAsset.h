@@ -33,7 +33,14 @@ namespace DenOfIz
         RG,
         R,
     };
-    template class DZ_API InteropArray<ColorFormat>;
+
+    struct DZ_API ColorFormatArray
+    {
+        ColorFormat *Elements;
+        uint32_t     NumElements;
+
+        DZ_ARRAY_METHODS( ColorFormatArray, ColorFormat )
+    };
     /// The data will be structured in the following way:
     /// if Position is true => VertexAttributeConfig.NumPositionComponents x float
     /// if Normal is true => 3 x floats
@@ -58,20 +65,35 @@ namespace DenOfIz
     // Not all the fields here have values, it is configured VertexEnabledAttributes
     struct DZ_API MeshVertex
     {
-        Float_4               Position{ };
-        Float_4               Normal{ };
-        InteropArray<Float_2> UVs;
-        InteropArray<Float_4> Colors;
-        Float_4               Tangent{ };
-        Float_4               Bitangent{ };
-        UInt32_4              BlendIndices{ };
-        Float_4               BoneWeights{ };
+        Float_4      Position{ };
+        Float_4      Normal{ };
+        Float_2Array UVs;
+        Float_4Array Colors;
+        Float_4      Tangent{ };
+        Float_4      Bitangent{ };
+        UInt32_4     BlendIndices{ };
+        Float_4      BoneWeights{ };
+
+        void Dispose( ) const
+        {
+            UVs.Dispose( );
+            Colors.Dispose( );
+        }
     };
 
     struct DZ_API MeshVertexArray
     {
         MeshVertex *Elements;
         uint32_t    NumElements;
+
+        void Dispose( ) const
+        {
+            for ( uint32_t i = 0; i < NumElements; ++i )
+            {
+                Elements[ i ].Dispose( );
+            }
+            delete[] Elements;
+        }
     };
 
     struct DZ_API MorphTargetDeltaAttributes
@@ -99,15 +121,22 @@ namespace DenOfIz
         InteropString SemanticName; // e.g. "DIFFUSE", "LIGHTMAP", "DETAIL"
         uint32_t      Index{ };
     };
-    template class DZ_API InteropArray<UVChannel>;
+
+    struct DZ_API UVChannelArray
+    {
+        UVChannel *Elements;
+        uint32_t   NumElements;
+
+        DZ_ARRAY_METHODS( UVChannelArray, UVChannel )
+    };
 
     struct DZ_API VertexAttributeConfig
     {
-        uint32_t                  NumPositionComponents = 4; // TODO not yet implemented
-        uint32_t                  NumUVAttributes       = 2;
-        InteropArray<UVChannel>   UVChannels;
-        InteropArray<ColorFormat> ColorFormats;
-        uint32_t                  MaxBoneInfluences = 4;
+        uint32_t         NumPositionComponents = 4; // TODO not yet implemented
+        uint32_t         NumUVAttributes       = 2;
+        UVChannelArray   UVChannels;
+        ColorFormatArray ColorFormats;
+        uint32_t         MaxBoneInfluences = 4;
     };
 
     struct DZ_API BoxBoundingVolume
@@ -152,7 +181,14 @@ namespace DenOfIz
         CapsuleBoundingVolume    Capsule{ };
         ConvexHullBoundingVolume ConvexHull;
     };
-    template class DZ_API InteropArray<BoundingVolume>;
+
+    struct DZ_API BoundingVolumeArray
+    {
+        BoundingVolume *Elements;
+        uint32_t        NumElements;
+
+        DZ_ARRAY_METHODS( BoundingVolumeArray, BoundingVolume )
+    };
 
     struct DZ_API MorphTarget
     {
@@ -160,33 +196,72 @@ namespace DenOfIz
         AssetDataStream VertexDeltaStream;
         float           DefaultWeight = 0.0f;
     };
-    template class DZ_API InteropArray<MorphTarget>;
+
+    struct DZ_API MorphTargetArray
+    {
+        MorphTarget *Elements;
+        uint32_t     NumElements;
+
+        DZ_ARRAY_METHODS( MorphTargetArray, MorphTarget )
+    };
 
     struct DZ_API SubMeshData
     {
-        InteropString                Name;
-        PrimitiveTopology            Topology    = PrimitiveTopology::Triangle;
-        uint64_t                     NumVertices = 0;
-        AssetDataStream              VertexStream{ };
-        uint64_t                     NumIndices = 0;
-        IndexType                    IndexType  = IndexType::Uint32;
-        AssetDataStream              IndexStream{ };
-        Float_3                      MinBounds{ 0.0f, 0.0f, 0.0f };
-        Float_3                      MaxBounds{ 0.0f, 0.0f, 0.0f };
-        AssetUri                     MaterialRef{ };
-        uint32_t                     LODLevel = 0;
-        InteropArray<BoundingVolume> BoundingVolumes;
+        InteropString       Name;
+        PrimitiveTopology   Topology    = PrimitiveTopology::Triangle;
+        uint64_t            NumVertices = 0;
+        AssetDataStream     VertexStream{ };
+        uint64_t            NumIndices = 0;
+        IndexType           IndexType  = IndexType::Uint32;
+        AssetDataStream     IndexStream{ };
+        Float_3             MinBounds{ 0.0f, 0.0f, 0.0f };
+        Float_3             MaxBounds{ 0.0f, 0.0f, 0.0f };
+        AssetUri            MaterialRef{ };
+        uint32_t            LODLevel = 0;
+        BoundingVolumeArray BoundingVolumes;
+
+        void Dispose( ) const
+        {
+            BoundingVolumes.Dispose( );
+        }
     };
-    template class DZ_API InteropArray<SubMeshData>;
+
+    struct DZ_API SubMeshDataArray
+    {
+        SubMeshData *Elements;
+        uint32_t     NumElements;
+
+        static SubMeshDataArray Create( uint32_t NumElements )
+        {
+            SubMeshDataArray Result;
+            Result.Elements    = new SubMeshData[ NumElements ];
+            Result.NumElements = NumElements;
+            return Result;
+        }
+
+        void Dispose( ) const
+        {
+            for ( uint32_t i = 0; i < NumElements; ++i )
+            {
+                Elements[ i ].Dispose( );
+            }
+            delete[] Elements;
+        }
+    };
 
     struct DZ_API JointData
     {
-        InteropString          Name;
-        Float_4x4              InverseBindMatrix;
-        Float_4x4              LocalTransform;
-        Float_4x4              GlobalTransform;
-        int32_t                ParentIndex = -1;
-        InteropArray<uint32_t> ChildIndices;
+        InteropString Name;
+        Float_4x4     InverseBindMatrix;
+        Float_4x4     LocalTransform;
+        Float_4x4     GlobalTransform;
+        int32_t       ParentIndex = -1;
+        UInt32Array   ChildIndices;
+
+        void Dispose( ) const
+        {
+            ChildIndices.Dispose( );
+        }
     };
 
     struct DZ_API MeshAsset : AssetHeader
@@ -197,12 +272,12 @@ namespace DenOfIz
         uint32_t                   NumLODs = 1;
         VertexEnabledAttributes    EnabledAttributes{ };
         VertexAttributeConfig      AttributeConfig{ };
-        InteropArray<SubMeshData>  SubMeshes;
+        SubMeshDataArray           SubMeshes;
         MorphTargetDeltaAttributes MorphTargetDeltaAttributes{ };
-        InteropArray<MorphTarget>  MorphTargets;
-        InteropArray<AssetUri>     AnimationRefs; // Array of all available animations for this mesh
+        MorphTargetArray           MorphTargets;
+        AssetUriArray              AnimationRefs; // Array of all available animations for this mesh
         AssetUri                   SkeletonRef{ };
-        InteropArray<UserProperty> UserProperties;
+        UserPropertyArray          UserProperties;
 
         MeshAsset( ) : AssetHeader( 0x445A4D455348 /*DZMESH*/, Latest, 0 )
         {
@@ -211,6 +286,14 @@ namespace DenOfIz
         static InteropString Extension( )
         {
             return "dzmesh";
+        }
+
+        void Dispose( ) const
+        {
+            SubMeshes.Dispose( );
+            MorphTargets.Dispose( );
+            AnimationRefs.Dispose( );
+            UserProperties.Dispose( );
         }
     };
 } // namespace DenOfIz

@@ -78,11 +78,11 @@ void FontAssetWriter::WriteMetadata( const FontAsset &fontAsset ) const
 
 void FontAssetWriter::WriteGlyph( const FontAsset &fontAsset ) const
 {
-    const uint32_t numGlyphs = fontAsset.Glyphs.NumElements( );
+    const uint32_t numGlyphs = fontAsset.Glyphs.NumElements;
     m_writer->WriteUInt32( numGlyphs );
     for ( uint32_t i = 0; i < numGlyphs; ++i )
     {
-        const FontGlyph &glyph = fontAsset.Glyphs.GetElement( i );
+        const FontGlyph &glyph = fontAsset.Glyphs.Elements[ i ];
         m_writer->WriteUInt32( glyph.CodePoint );
         m_writer->WriteDouble( glyph.Bounds.XMin );
         m_writer->WriteDouble( glyph.Bounds.YMin );

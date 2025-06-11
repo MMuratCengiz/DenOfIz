@@ -39,10 +39,10 @@ void SkeletonAssetWriter::Write( const SkeletonAsset &skeletonAsset ) const
     m_writer->WriteString( skeletonAsset.Uri.ToInteropString( ) );
     m_writer->WriteString( skeletonAsset.Name );
 
-    m_writer->WriteUInt32( skeletonAsset.Joints.NumElements( ) );
-    for ( size_t i = 0; i < skeletonAsset.Joints.NumElements( ); ++i )
+    m_writer->WriteUInt32( skeletonAsset.Joints.NumElements );
+    for ( size_t i = 0; i < skeletonAsset.Joints.NumElements; ++i )
     {
-        const Joint &joint = skeletonAsset.Joints.GetElement( i );
+        const Joint &joint = skeletonAsset.Joints.Elements[ i ];
 
         m_writer->WriteString( joint.Name );
         m_writer->WriteFloat_4x4( joint.InverseBindMatrix );
@@ -51,11 +51,11 @@ void SkeletonAssetWriter::Write( const SkeletonAsset &skeletonAsset ) const
         m_writer->WriteFloat_3( joint.LocalScale );
         m_writer->WriteUInt32( joint.Index );
         m_writer->WriteInt32( joint.ParentIndex );
-        m_writer->WriteUInt32( joint.ChildIndices.NumElements( ) );
+        m_writer->WriteUInt32( joint.ChildIndices.NumElements );
 
-        for ( size_t j = 0; j < joint.ChildIndices.NumElements( ); ++j )
+        for ( size_t j = 0; j < joint.ChildIndices.NumElements; ++j )
         {
-            m_writer->WriteUInt32( joint.ChildIndices.GetElement( j ) );
+            m_writer->WriteUInt32( joint.ChildIndices.Elements[ j ] );
         }
     }
 

@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Serde/Asset.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
 #include "DenOfIzGraphics/Utilities/InteropMath.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 
 namespace DenOfIz
 {
@@ -32,18 +33,23 @@ namespace DenOfIz
         Float_4                LocalRotationQuat;
         Float_3                LocalScale;
         Float_4x4              GlobalTransform;
-        uint32_t               Index       = 0;
-        int32_t                ParentIndex = 0;
-        InteropArray<uint32_t> ChildIndices;
+        uint32_t     Index       = 0;
+        int32_t      ParentIndex = 0;
+        UInt32Array  ChildIndices;
     };
-    template class DZ_API InteropArray<Joint>;
+
+    struct DZ_API JointArray
+    {
+        Joint   *Elements;
+        uint32_t NumElements;
+    };
 
     struct DZ_API SkeletonAsset : AssetHeader
     {
         static constexpr uint32_t Latest = 1;
 
-        InteropString       Name;
-        InteropArray<Joint> Joints;
+        InteropString  Name;
+        JointArray     Joints;
 
         // Reference pose can be computed from joint local transforms
         SkeletonAsset( ) : AssetHeader( 0x445A534B454C /* DZSKEL */, Latest, 0 )

@@ -62,10 +62,10 @@ namespace DenOfIz
     {
         static constexpr uint32_t Latest = 1;
 
-        ShaderStageAssetArray      Stages;
-        ShaderReflectDesc          ReflectDesc;
-        ShaderRayTracingDesc       RayTracing;
-        InteropArray<UserProperty> UserProperties;
+        ShaderStageAssetArray  Stages;
+        ShaderReflectDesc      ReflectDesc;
+        ShaderRayTracingDesc   RayTracing;
+        UserPropertyArray      UserProperties;
 
         ShaderAsset( ) : AssetHeader( 0x44414853445A /*DZSHAD*/, Latest, 0 )
         {
@@ -79,6 +79,7 @@ namespace DenOfIz
         void Dispose( ) const
         {
             Stages.Dispose( );
+            delete[] UserProperties.Elements;
         }
     };
 } // namespace DenOfIz

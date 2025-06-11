@@ -28,12 +28,12 @@ void AssetWriterHelpers::WriteAssetDataStream( const BinaryWriter *writer, const
     writer->WriteUInt64( stream.NumBytes );
 }
 
-void AssetWriterHelpers::WriteProperties( const BinaryWriter *writer, const InteropArray<UserProperty> &properties )
+void AssetWriterHelpers::WriteProperties( const BinaryWriter *writer, const UserPropertyArray &properties )
 {
-    writer->WriteUInt32( properties.NumElements( ) );
-    for ( size_t i = 0; i < properties.NumElements( ); ++i )
+    writer->WriteUInt32( properties.NumElements );
+    for ( uint32_t i = 0; i < properties.NumElements; ++i )
     {
-        const UserProperty &prop = properties.GetElement( i );
+        const UserProperty &prop = properties.Elements[ i ];
         WriteUserProperty( writer, prop );
     }
 }

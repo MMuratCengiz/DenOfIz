@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Backends/Interface/CommonData.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 #include "DenOfIzGraphics/Utilities/InteropMath.h"
 
 namespace DenOfIz
@@ -36,7 +37,14 @@ namespace DenOfIz
         [[nodiscard]] InteropString ToInteropString( ) const; // Not using ToString() intentionally to avoid conflict with bindings
         [[nodiscard]] bool          Equals( const AssetUri &other ) const;
     };
-    template class DZ_API InteropArray<AssetUri>;
+
+    struct DZ_API AssetUriArray
+    {
+        AssetUri *Elements;
+        uint32_t  NumElements;
+
+        DZ_ARRAY_METHODS( AssetUriArray, AssetUri )
+    };
 
     struct DZ_API AssetHeader
     {
@@ -83,5 +91,11 @@ namespace DenOfIz
         Float_4       ColorValue{ };
         Float_4x4     TransformValue;
     };
-    template class DZ_API InteropArray<UserProperty>;
+
+    struct DZ_API UserPropertyArray
+    {
+        UserProperty *Elements;
+        uint32_t      NumElements;
+        DZ_ARRAY_METHODS( UserPropertyArray, UserProperty )
+    };
 } // namespace DenOfIz

@@ -50,9 +50,9 @@ AnimationStateManager::~AnimationStateManager( )
 
 void AnimationStateManager::AddAnimation( const AnimationAsset &animationAsset )
 {
-    for ( size_t i = 0; i < animationAsset.Animations.NumElements( ); ++i )
+    for ( size_t i = 0; i < animationAsset.Animations.NumElements; ++i )
     {
-        const AnimationClip &clip     = animationAsset.Animations.GetElement( i );
+        const AnimationClip &clip     = animationAsset.Animations.Elements[ i ];
         InteropString        animName = clip.Name;
 
         if ( animName.NumChars( ) == 0 )

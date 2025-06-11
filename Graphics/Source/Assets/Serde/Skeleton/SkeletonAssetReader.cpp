@@ -55,11 +55,11 @@ SkeletonAsset SkeletonAssetReader::Read( )
     m_skeletonAsset.Name = m_reader->ReadString( );
 
     const uint32_t numJoints = m_reader->ReadUInt32( );
-    m_skeletonAsset.Joints.Resize( numJoints );
+    m_skeletonAsset.Joints = JointArray::Create( numJoints );
 
     for ( uint32_t i = 0; i < numJoints; ++i )
     {
-        Joint &joint = m_skeletonAsset.Joints.GetElement( i );
+        Joint &joint = m_skeletonAsset.Joints.Elements[ i ];
 
         joint.Name              = m_reader->ReadString( );
         joint.InverseBindMatrix = m_reader->ReadFloat_4x4( );
@@ -70,11 +70,11 @@ SkeletonAsset SkeletonAssetReader::Read( )
         joint.ParentIndex       = m_reader->ReadInt32( );
 
         const uint32_t numChildren = m_reader->ReadUInt32( );
-        joint.ChildIndices.Resize( numChildren );
+        joint.ChildIndices = UInt32Array::Create( numChildren );
 
         for ( uint32_t j = 0; j < numChildren; ++j )
         {
-            joint.ChildIndices.SetElement( j, m_reader->ReadUInt32( ) );
+            joint.ChildIndices.Elements[ j ] = m_reader->ReadUInt32( );
         }
     }
 

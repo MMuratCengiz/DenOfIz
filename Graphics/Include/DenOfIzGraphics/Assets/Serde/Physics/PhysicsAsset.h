@@ -58,7 +58,7 @@ namespace DenOfIz
     {
         PhysicsColliderType Type = PhysicsColliderType::Box;
         InteropString       Name;
-        Float_4x4            Transform;
+        Float_4x4           Transform;
         float               Friction    = 0.5f;
         float               Restitution = 0.0f;
         bool                IsTrigger   = false; // Is it just a trigger volume?
@@ -70,15 +70,22 @@ namespace DenOfIz
         MeshCollider    Mesh; // Used for both ConvexHull and TriangleMesh
         // --
     };
-    template class DZ_API InteropArray<PhysicsCollider>;
+
+    struct DZ_API PhysicsColliderArray
+    {
+        PhysicsCollider *Elements;
+        uint32_t         NumElements;
+
+        DZ_ARRAY_METHODS( PhysicsColliderArray, PhysicsCollider )
+    };
 
     struct DZ_API PhysicsAsset : AssetHeader
     {
         static constexpr uint32_t Latest = 1;
 
-        InteropString                 Name;
-        InteropArray<PhysicsCollider> Colliders;
-        InteropArray<UserProperty>    UserProperties;
+        InteropString        Name;
+        PhysicsColliderArray Colliders;
+        UserPropertyArray    UserProperties;
 
         PhysicsAsset( ) : AssetHeader( 0x445A50585953 /*DZPHYS*/, Latest, 0 )
         {
@@ -87,6 +94,12 @@ namespace DenOfIz
         static InteropString Extension( )
         {
             return "dzphys";
+        }
+
+        void Dispose( ) const
+        {
+            Colliders.Dispose( );
+            UserProperties.Dispose( );
         }
     };
 } // namespace DenOfIz

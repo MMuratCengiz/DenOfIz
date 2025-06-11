@@ -27,7 +27,7 @@ namespace DenOfIz
     {
     public:
         static AssetDataStream            ReadAssetDataStream( BinaryReader *reader );
-        static InteropArray<UserProperty> ReadUserProperties( BinaryReader *reader );
+        static UserPropertyArray          ReadUserProperties( BinaryReader *reader );
         static UserProperty               ReadUserProperty( BinaryReader *reader );
     };
 } // namespace DenOfIz

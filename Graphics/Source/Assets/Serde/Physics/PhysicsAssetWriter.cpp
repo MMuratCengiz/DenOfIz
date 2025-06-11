@@ -39,11 +39,11 @@ void PhysicsAssetWriter::Write( const PhysicsAsset &physicsAsset ) const
     m_writer->WriteUInt64( physicsAsset.NumBytes );
     m_writer->WriteString( physicsAsset.Uri.ToInteropString( ) );
     m_writer->WriteString( physicsAsset.Name );
-    m_writer->WriteUInt32( physicsAsset.Colliders.NumElements( ) );
+    m_writer->WriteUInt32( physicsAsset.Colliders.NumElements );
 
-    for ( size_t i = 0; i < physicsAsset.Colliders.NumElements( ); ++i )
+    for ( size_t i = 0; i < physicsAsset.Colliders.NumElements; ++i )
     {
-        const PhysicsCollider &collider = physicsAsset.Colliders.GetElement( i );
+        const PhysicsCollider &collider = physicsAsset.Colliders.Elements[ i ];
 
         m_writer->WriteUInt32( static_cast<uint32_t>( collider.Type ) );
         m_writer->WriteString( collider.Name );

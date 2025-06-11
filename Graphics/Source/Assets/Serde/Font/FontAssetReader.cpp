@@ -62,11 +62,11 @@ FontAsset FontAssetReader::Read( )
     m_fontAsset.Metrics.UnderlineThickness = m_reader->ReadUInt32( );
 
     const uint32_t numGlyphs = m_reader->ReadUInt32( );
-    m_fontAsset.Glyphs.Resize( numGlyphs );
+    m_fontAsset.Glyphs = FontGlyphArray::Create( numGlyphs );
 
     for ( uint32_t i = 0; i < numGlyphs; ++i )
     {
-        FontGlyph &glyph  = m_fontAsset.Glyphs.GetElement( i );
+        FontGlyph &glyph  = m_fontAsset.Glyphs.Elements[ i ];
         glyph.CodePoint   = m_reader->ReadUInt32( );
         glyph.Bounds.XMin = m_reader->ReadDouble( );
         glyph.Bounds.YMin = m_reader->ReadDouble( );

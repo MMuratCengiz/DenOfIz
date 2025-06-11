@@ -118,7 +118,7 @@ namespace DenOfIz
             ozz::animation::offline::RawSkeleton rawSkeleton;
             for ( size_t i = 0; i < numJoints; ++i )
             {
-                const Joint &joint = joints.GetElement( i );
+                const Joint &joint = joints.Elements[ i ];
                 parents[ i ]       = joint.ParentIndex;
 
                 if ( joint.ParentIndex == -1 )
@@ -143,7 +143,7 @@ namespace DenOfIz
                 {
                     for ( auto &child : children )
                     {
-                        if ( child.name == joints.GetElement( targetIdx ).Name.Get( ) )
+                        if ( child.name == joints.Elements[ targetIdx ].Name.Get( ) )
                         {
                             return &child;
                         }
@@ -159,7 +159,7 @@ namespace DenOfIz
                 ozz::animation::offline::RawSkeleton::Joint *parentJoint = nullptr;
                 for ( auto &root : rawSkeleton.roots )
                 {
-                    if ( root.name == joints.GetElement( parents[ i ] ).Name.Get( ) )
+                    if ( root.name == joints.Elements[ parents[ i ] ].Name.Get( ) )
                     {
                         parentJoint = &root;
                         break;
@@ -174,7 +174,7 @@ namespace DenOfIz
 
                 if ( parentJoint )
                 {
-                    const Joint &joint = joints.GetElement( i );
+                    const Joint &joint = joints.Elements[ i ];
 
                     ozz::animation::offline::RawSkeleton::Joint childJoint;
                     childJoint.name      = joint.Name.Get( );
@@ -216,9 +216,9 @@ namespace DenOfIz
             rawAnimation.duration = duration;
             rawAnimation.tracks.resize( numJoints );
 
-            for ( size_t i = 0; i < clip.Tracks.NumElements( ); ++i )
+            for ( size_t i = 0; i < clip.Tracks.NumElements; ++i )
             {
-                const JointAnimTrack &track      = clip.Tracks.GetElement( i );
+                const JointAnimTrack &track      = clip.Tracks.Elements[ i ];
                 const std::string     jointName  = track.JointName.Get( );
                 int                   jointIndex = -1;
                 if ( auto it = jointNameToIndexMap.find( jointName ); it != jointNameToIndexMap.end( ) )
@@ -234,20 +234,20 @@ namespace DenOfIz
 
                 ozz::animation::offline::RawAnimation::JointTrack &rawTrack = rawAnimation.tracks[ jointIndex ];
 
-                const size_t numPosKeys = track.PositionKeys.NumElements( );
+                const size_t numPosKeys = track.PositionKeys.NumElements;
                 for ( size_t j = 0; j < numPosKeys; ++j )
                 {
-                    const PositionKey                                    &key = track.PositionKeys.GetElement( j );
+                    const PositionKey                                    &key = track.PositionKeys.Elements[ j ];
                     ozz::animation::offline::RawAnimation::TranslationKey rawKey;
                     rawKey.time  = key.Timestamp;
                     rawKey.value = OzzUtils::ToOzzTranslation( key.Value );
                     rawTrack.translations.push_back( rawKey );
                 }
 
-                const size_t numRotKeys = track.RotationKeys.NumElements( );
+                const size_t numRotKeys = track.RotationKeys.NumElements;
                 for ( size_t j = 0; j < numRotKeys; ++j )
                 {
-                    const RotationKey                                 &key = track.RotationKeys.GetElement( j );
+                    const RotationKey                                 &key = track.RotationKeys.Elements[ j ];
                     ozz::animation::offline::RawAnimation::RotationKey rawKey;
                     rawKey.time  = key.Timestamp;
                     rawKey.value = OzzUtils::ToOzzRotation( key.Value );
@@ -257,7 +257,7 @@ namespace DenOfIz
                 const size_t numScaleKeys = track.ScaleKeys.NumElements( );
                 for ( size_t j = 0; j < numScaleKeys; ++j )
                 {
-                    const ScaleKey                                 &key = track.ScaleKeys.GetElement( j );
+                    const ScaleKey                                 &key = track.ScaleKeys.Elements[ j ];
                     ozz::animation::offline::RawAnimation::ScaleKey rawKey;
                     rawKey.time  = key.Timestamp;
                     rawKey.value = OzzUtils::ToOzzScale( key.Value );
@@ -451,7 +451,7 @@ namespace DenOfIz
         }
 
         // Use the first animation clip
-        const AnimationClip &clip  = animation->Animations.GetElement( 0 );
+        const AnimationClip &clip  = animation->Animations.Elements[ 0 ];
         internalContext->animation = m_impl->ConvertToOzzAnimation( clip );
 
         if ( !internalContext->animation )
