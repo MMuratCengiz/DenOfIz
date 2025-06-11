@@ -42,6 +42,8 @@ namespace DenOfIz
     {
         Joint   *Elements;
         uint32_t NumElements;
+
+        DZ_ARRAY_METHODS( JointArray, Joint )
     };
 
     struct DZ_API SkeletonAsset : AssetHeader

@@ -53,9 +53,9 @@ void MeshAssetWriter::CalculateStrides( )
     }
     if ( attributes.Color )
     {
-        for ( size_t i = 0; i < config.ColorFormats.NumElements( ); ++i )
+        for ( size_t i = 0; i < config.ColorFormats.NumElements; ++i )
         {
-            switch ( config.ColorFormats.GetElement( i ) )
+            switch ( config.ColorFormats.Elements[ i ] )
             {
             case ColorFormat::RGBA:
                 m_vertexStride += 4 * sizeof( float );
@@ -143,10 +143,10 @@ void MeshAssetWriter::WriteSubMeshData( const SubMeshData &data ) const
     m_writer->WriteFloat_3( data.MaxBounds );
     m_writer->WriteString( data.MaterialRef.ToInteropString( ) );
     m_writer->WriteUInt32( data.LODLevel );
-    m_writer->WriteUInt32( data.BoundingVolumes.NumElements( ) );
-    for ( size_t j = 0; j < data.BoundingVolumes.NumElements( ); ++j )
+    m_writer->WriteUInt32( data.BoundingVolumes.NumElements );
+    for ( size_t j = 0; j < data.BoundingVolumes.NumElements; ++j )
     {
-        WriteBoundingVolume( data.BoundingVolumes.GetElement( j ) );
+        WriteBoundingVolume( data.BoundingVolumes.Elements[ j ] );
     }
 }
 
@@ -211,17 +211,17 @@ void MeshAssetWriter::WriteTopLevelMetadata( )
     m_writer->WriteUInt32( enabledFlags );
     m_writer->WriteUInt32( m_meshAsset.AttributeConfig.NumPositionComponents );
     m_writer->WriteUInt32( m_meshAsset.AttributeConfig.NumUVAttributes );
-    m_writer->WriteUInt32( m_meshAsset.AttributeConfig.UVChannels.NumElements( ) );
-    for ( size_t i = 0; i < m_meshAsset.AttributeConfig.UVChannels.NumElements( ); ++i )
+    m_writer->WriteUInt32( m_meshAsset.AttributeConfig.UVChannels.NumElements );
+    for ( size_t i = 0; i < m_meshAsset.AttributeConfig.UVChannels.NumElements; ++i )
     {
-        const auto &channel = m_meshAsset.AttributeConfig.UVChannels.GetElement( i );
+        const auto &channel = m_meshAsset.AttributeConfig.UVChannels.Elements[ i ];
         m_writer->WriteString( channel.SemanticName );
         m_writer->WriteUInt32( channel.Index );
     }
-    m_writer->WriteUInt32( m_meshAsset.AttributeConfig.ColorFormats.NumElements( ) );
-    for ( size_t i = 0; i < m_meshAsset.AttributeConfig.ColorFormats.NumElements( ); ++i )
+    m_writer->WriteUInt32( m_meshAsset.AttributeConfig.ColorFormats.NumElements );
+    for ( size_t i = 0; i < m_meshAsset.AttributeConfig.ColorFormats.NumElements; ++i )
     {
-        m_writer->WriteUInt32( static_cast<uint32_t>( m_meshAsset.AttributeConfig.ColorFormats.GetElement( i ) ) );
+        m_writer->WriteUInt32( static_cast<uint32_t>( m_meshAsset.AttributeConfig.ColorFormats.Elements[ i ] ) );
     }
     m_writer->WriteUInt32( m_meshAsset.AttributeConfig.MaxBoneInfluences );
 
@@ -239,26 +239,26 @@ void MeshAssetWriter::WriteTopLevelMetadata( )
         morphFlags |= 1 << 2;
     }
     m_writer->WriteUInt32( morphFlags );
-    m_writer->WriteUInt32( m_meshAsset.AnimationRefs.NumElements( ) );
-    for ( size_t i = 0; i < m_meshAsset.AnimationRefs.NumElements( ); ++i )
+    m_writer->WriteUInt32( m_meshAsset.AnimationRefs.NumElements );
+    for ( size_t i = 0; i < m_meshAsset.AnimationRefs.NumElements; ++i )
     {
-        m_writer->WriteString( m_meshAsset.AnimationRefs.GetElement( i ).ToInteropString( ) );
+        m_writer->WriteString( m_meshAsset.AnimationRefs.Elements[ i ].ToInteropString( ) );
     }
     m_writer->WriteString( m_meshAsset.SkeletonRef.ToInteropString( ) );
 }
 
 void MeshAssetWriter::WriteMetadataArrays( )
 {
-    m_writer->WriteUInt32( m_meshAsset.SubMeshes.NumElements( ) );
-    for ( size_t i = 0; i < m_meshAsset.SubMeshes.NumElements( ); ++i )
+    m_writer->WriteUInt32( m_meshAsset.SubMeshes.NumElements );
+    for ( size_t i = 0; i < m_meshAsset.SubMeshes.NumElements; ++i )
     {
-        WriteSubMeshData( m_meshAsset.SubMeshes.GetElement( i ) );
+        WriteSubMeshData( m_meshAsset.SubMeshes.Elements[ i ] );
     }
 
-    m_writer->WriteUInt32( m_meshAsset.MorphTargets.NumElements( ) );
-    for ( size_t i = 0; i < m_meshAsset.MorphTargets.NumElements( ); ++i )
+    m_writer->WriteUInt32( m_meshAsset.MorphTargets.NumElements );
+    for ( size_t i = 0; i < m_meshAsset.MorphTargets.NumElements; ++i )
     {
-        WriteMorphTargetData( m_meshAsset.MorphTargets.GetElement( i ) );
+        WriteMorphTargetData( m_meshAsset.MorphTargets.Elements[ i ] );
     }
 
     AssetWriterHelpers::WriteProperties( m_writer, m_meshAsset.UserProperties );
@@ -281,9 +281,9 @@ void MeshAssetWriter::WriteVertexInternal( const MeshVertex &vertex ) const
     {
         for ( size_t i = 0; i < config.NumUVAttributes; ++i )
         {
-            if ( i < vertex.UVs.NumElements( ) )
+            if ( i < vertex.UVs.NumElements )
             {
-                m_writer->WriteFloat_2( vertex.UVs.GetElement( i ) );
+                m_writer->WriteFloat_2( vertex.UVs.Elements[ i ] );
             }
             else
             {
@@ -294,14 +294,14 @@ void MeshAssetWriter::WriteVertexInternal( const MeshVertex &vertex ) const
     }
     if ( attributes.Color )
     {
-        for ( size_t i = 0; i < config.ColorFormats.NumElements( ); ++i )
+        for ( size_t i = 0; i < config.ColorFormats.NumElements; ++i )
         {
             Float_4 colorToWrite = { 0.0f, 0.0f, 0.0f, 1.0f };
-            if ( i < vertex.Colors.NumElements( ) )
+            if ( i < vertex.Colors.NumElements )
             {
-                colorToWrite = vertex.Colors.GetElement( i );
+                colorToWrite = vertex.Colors.Elements[ i ];
             }
-            switch ( config.ColorFormats.GetElement( i ) )
+            switch ( config.ColorFormats.Elements[ i ] )
             {
             case ColorFormat::RGBA:
                 m_writer->WriteFloat_4( colorToWrite );
@@ -361,8 +361,8 @@ void MeshAssetWriter::Write( const MeshAsset &meshAssetData )
     }
 
     m_meshAsset                = meshAssetData;
-    m_expectedSubMeshCount     = m_meshAsset.SubMeshes.NumElements( );
-    m_expectedMorphTargetCount = m_meshAsset.MorphTargets.NumElements( );
+    m_expectedSubMeshCount     = m_meshAsset.SubMeshes.NumElements;
+    m_expectedMorphTargetCount = m_meshAsset.MorphTargets.NumElements;
     CalculateStrides( );
 
     m_state                   = State::ReadyToWriteData;
@@ -388,7 +388,7 @@ void MeshAssetWriter::AddVertex( const MeshVertex &vertex )
         spdlog::critical( "AddVertex called after all SubMeshes should have been written." );
     }
 
-    SubMeshData &currentSubMesh = m_meshAsset.SubMeshes.GetElement( m_currentSubMeshIndex );
+    SubMeshData &currentSubMesh = m_meshAsset.SubMeshes.Elements[ m_currentSubMeshIndex ];
     if ( m_numVertices == 0 )
     {
         m_state                            = State::WritingVertices;
@@ -409,9 +409,9 @@ void MeshAssetWriter::AddVertex( const MeshVertex &vertex )
             m_currentBVIndex = 0;
 
             bool hasHulls = false;
-            for ( size_t i = 0; i < currentSubMesh.BoundingVolumes.NumElements( ); ++i )
+            for ( size_t i = 0; i < currentSubMesh.BoundingVolumes.NumElements; ++i )
             {
-                if ( currentSubMesh.BoundingVolumes.GetElement( i ).Type == BoundingVolumeType::ConvexHull )
+                if ( currentSubMesh.BoundingVolumes.Elements[ i ].Type == BoundingVolumeType::ConvexHull )
                 {
                     hasHulls = true;
                     break;
@@ -435,7 +435,7 @@ void MeshAssetWriter::AddIndex16( const uint16_t index )
     {
         spdlog::critical( "AddIndex16 called at invalid state {}", static_cast<int>( m_state ) );
     }
-    SubMeshData &currentSubMesh = m_meshAsset.SubMeshes.GetElement( m_currentSubMeshIndex );
+    SubMeshData &currentSubMesh = m_meshAsset.SubMeshes.Elements[ m_currentSubMeshIndex ];
     if ( currentSubMesh.IndexType != IndexType::Uint16 )
     {
         spdlog::warn( "Adding uint16 index to SubMesh {} expecting Uint32.", m_currentSubMeshIndex );
@@ -457,9 +457,9 @@ void MeshAssetWriter::AddIndex16( const uint16_t index )
         m_currentBVIndex                    = 0;
 
         bool hasHulls = false;
-        for ( size_t i = 0; i < currentSubMesh.BoundingVolumes.NumElements( ); ++i )
+        for ( size_t i = 0; i < currentSubMesh.BoundingVolumes.NumElements; ++i )
         {
-            if ( currentSubMesh.BoundingVolumes.GetElement( i ).Type == BoundingVolumeType::ConvexHull )
+            if ( currentSubMesh.BoundingVolumes.Elements[ i ].Type == BoundingVolumeType::ConvexHull )
             {
                 hasHulls = true;
                 break;
@@ -482,7 +482,7 @@ void MeshAssetWriter::AddIndex32( const uint32_t index )
     {
         spdlog::critical( "AddIndex32 called at invalid state {}", static_cast<int>( m_state ) );
     }
-    SubMeshData &currentSubMesh = m_meshAsset.SubMeshes.GetElement( m_currentSubMeshIndex );
+    SubMeshData &currentSubMesh = m_meshAsset.SubMeshes.Elements[ m_currentSubMeshIndex ];
     if ( currentSubMesh.IndexType != IndexType::Uint32 )
     {
         spdlog::warn( "Adding uint32 index to SubMesh {} expecting Uint16.", m_currentSubMeshIndex );
@@ -504,9 +504,9 @@ void MeshAssetWriter::AddIndex32( const uint32_t index )
         m_currentBVIndex                    = 0;
 
         bool hasHulls = false;
-        for ( size_t i = 0; i < currentSubMesh.BoundingVolumes.NumElements( ); ++i )
+        for ( size_t i = 0; i < currentSubMesh.BoundingVolumes.NumElements; ++i )
         {
-            if ( currentSubMesh.BoundingVolumes.GetElement( i ).Type == BoundingVolumeType::ConvexHull )
+            if ( currentSubMesh.BoundingVolumes.Elements[ i ].Type == BoundingVolumeType::ConvexHull )
             {
                 hasHulls = true;
                 break;
@@ -529,9 +529,9 @@ void MeshAssetWriter::AddConvexHullData( const uint32_t boundingVolumeIndex, con
     {
         spdlog::critical( "AddConvexHullData called at invalid state {}", static_cast<int>( m_state ) );
     }
-    SubMeshData &currentSubMesh = m_meshAsset.SubMeshes.GetElement( m_currentSubMeshIndex );
-    if ( boundingVolumeIndex >= currentSubMesh.BoundingVolumes.NumElements( ) ||
-         currentSubMesh.BoundingVolumes.GetElement( boundingVolumeIndex ).Type != BoundingVolumeType::ConvexHull )
+    SubMeshData &currentSubMesh = m_meshAsset.SubMeshes.Elements[ m_currentSubMeshIndex ];
+    if ( boundingVolumeIndex >= currentSubMesh.BoundingVolumes.NumElements ||
+         currentSubMesh.BoundingVolumes.Elements[ boundingVolumeIndex ].Type != BoundingVolumeType::ConvexHull )
     {
         spdlog::critical( "Invalid boundingVolumeIndex or not a ConvexHull type." );
     }
@@ -541,7 +541,7 @@ void MeshAssetWriter::AddConvexHullData( const uint32_t boundingVolumeIndex, con
         m_state = State::WritingHulls;
     }
 
-    BoundingVolume &bv                = currentSubMesh.BoundingVolumes.GetElement( boundingVolumeIndex );
+    BoundingVolume &bv                = currentSubMesh.BoundingVolumes.Elements[ boundingVolumeIndex ];
     bv.ConvexHull.VertexStream.Offset = m_writer->Position( );
     m_writer->WriteBytes( vertexData );
     bv.ConvexHull.VertexStream.NumBytes = vertexData.NumElements;
@@ -549,9 +549,9 @@ void MeshAssetWriter::AddConvexHullData( const uint32_t boundingVolumeIndex, con
     m_currentBVIndex++;
 
     uint32_t expectedHullCount = 0;
-    for ( size_t i = 0; i < currentSubMesh.BoundingVolumes.NumElements( ); ++i )
+    for ( size_t i = 0; i < currentSubMesh.BoundingVolumes.NumElements; ++i )
     {
-        if ( currentSubMesh.BoundingVolumes.GetElement( i ).Type == BoundingVolumeType::ConvexHull )
+        if ( currentSubMesh.BoundingVolumes.Elements[ i ].Type == BoundingVolumeType::ConvexHull )
         {
             expectedHullCount++;
         }
@@ -578,7 +578,7 @@ void MeshAssetWriter::AddMorphTargetDelta( const MorphTargetDelta &delta )
         spdlog::critical( "AddMorphTargetDelta called after all MorphTargets should have been written." );
     }
 
-    MorphTarget &currentMorph = m_meshAsset.MorphTargets.GetElement( m_currentMorphTargetIndex );
+    MorphTarget &currentMorph = m_meshAsset.MorphTargets.Elements[ m_currentMorphTargetIndex ];
 
     if ( m_numDeltas == 0 )
     {
@@ -589,7 +589,7 @@ void MeshAssetWriter::AddMorphTargetDelta( const MorphTargetDelta &delta )
     WriteMorphTargetDeltaInternal( delta );
     m_numDeltas++;
 
-    if ( m_numDeltas == m_meshAsset.SubMeshes.GetElement( 0 ).NumVertices )
+    if ( m_numDeltas == m_meshAsset.SubMeshes.Elements[ 0 ].NumVertices )
     {
         currentMorph.VertexDeltaStream.NumBytes = m_numDeltas * m_morphDeltaStride;
         m_writtenMorphTargetCount++;

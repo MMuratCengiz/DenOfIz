@@ -77,7 +77,7 @@ SubMeshData MeshAssetReader::ReadCompleteSubMeshData( ) const
     data.BoundingVolumes.Resize( bvCount );
     for ( uint32_t j = 0; j < bvCount; ++j )
     {
-        data.BoundingVolumes.SetElement( j, ReadBoundingVolume( ) );
+        data.BoundingVolumes.[ j ] = ReadBoundingVolume( ) );
     }
     return data;
 }
@@ -112,7 +112,7 @@ uint32_t MeshAssetReader::VertexEntryNumBytes( ) const
     {
         for ( size_t i = 0; i < config.ColorFormats.NumElements( ); ++i )
         {
-            switch ( config.ColorFormats.GetElement( i ) )
+            switch ( config.ColorFormats.Elements[ i ] )
             {
             case ColorFormat::RGBA:
                 size += 4 * sizeof( float );
@@ -186,7 +186,7 @@ MeshVertex MeshAssetReader::ReadSingleVertex( ) const
         vertex.UVs.Resize( config.NumUVAttributes );
         for ( uint32_t i = 0; i < config.NumUVAttributes; ++i )
         {
-            vertex.UVs.SetElement( i, m_reader->ReadFloat_2( ) );
+            vertex.UVs.[ i ] = m_reader->ReadFloat_2( ) );
         }
     }
     if ( attributes.Color )
@@ -195,7 +195,7 @@ MeshVertex MeshAssetReader::ReadSingleVertex( ) const
         for ( size_t i = 0; i < config.ColorFormats.NumElements( ); ++i )
         {
             Float_4 colorRead = { 0.0f, 0.0f, 0.0f, 1.0f };
-            switch ( config.ColorFormats.GetElement( i ) )
+            switch ( config.ColorFormats.Elements[ i ] )
             {
             case ColorFormat::RGBA:
                 {
@@ -221,7 +221,7 @@ MeshVertex MeshAssetReader::ReadSingleVertex( ) const
                 }
                 break;
             }
-            vertex.Colors.SetElement( i, colorRead );
+            vertex.Colors.Elements[ i ] = colorRead;
         }
     }
     if ( attributes.Tangent )
@@ -302,7 +302,7 @@ MeshAsset MeshAssetReader::Read( )
     m_meshAsset.AttributeConfig.UVChannels.Resize( uvChanCount );
     for ( size_t i = 0; i < uvChanCount; ++i )
     {
-        auto &channel        = m_meshAsset.AttributeConfig.UVChannels.GetElement( i );
+        auto &channel        = m_meshAsset.AttributeConfig.UVChannels.Elements[ i ];
         channel.SemanticName = m_reader->ReadString( );
         channel.Index        = m_reader->ReadUInt32( );
     }
@@ -310,7 +310,7 @@ MeshAsset MeshAssetReader::Read( )
     m_meshAsset.AttributeConfig.ColorFormats.Resize( colorFmtCount );
     for ( size_t i = 0; i < colorFmtCount; ++i )
     {
-        m_meshAsset.AttributeConfig.ColorFormats.SetElement( i, static_cast<ColorFormat>( m_reader->ReadUInt32( ) ) );
+        m_meshAsset.AttributeConfig.ColorFormats.Elements[ i ] = static_cast<ColorFormat>( m_reader->ReadUInt32( ) );
     }
     m_meshAsset.AttributeConfig.MaxBoneInfluences = m_reader->ReadUInt32( );
 
@@ -323,7 +323,7 @@ MeshAsset MeshAssetReader::Read( )
     m_meshAsset.AnimationRefs.Resize( numAnimationRefs );
     for ( uint32_t i = 0; i < numAnimationRefs; ++i )
     {
-        m_meshAsset.AnimationRefs.SetElement( i, AssetUri::Parse( m_reader->ReadString( ) ) );
+        m_meshAsset.AnimationRefs.Elements[ i ] = AssetUri::Parse( m_reader->ReadString( ) );
     }
     m_meshAsset.SkeletonRef = AssetUri::Parse( m_reader->ReadString( ) );
 
@@ -331,14 +331,14 @@ MeshAsset MeshAssetReader::Read( )
     m_meshAsset.SubMeshes.Resize( numSubMeshes );
     for ( uint32_t i = 0; i < numSubMeshes; ++i )
     {
-        m_meshAsset.SubMeshes.SetElement( i, ReadCompleteSubMeshData( ) );
+        m_meshAsset.SubMeshes.Elements[ i ] = ReadCompleteSubMeshData( );
     }
 
     const uint32_t numMorphTargets = m_reader->ReadUInt32( );
     m_meshAsset.MorphTargets.Resize( numMorphTargets );
     for ( uint32_t i = 0; i < numMorphTargets; ++i )
     {
-        m_meshAsset.MorphTargets.SetElement( i, ReadCompleteMorphTargetData( ) );
+        m_meshAsset.MorphTargets.Elements[ i ] = ReadCompleteMorphTargetData( );
     }
 
     m_meshAsset.UserProperties = AssetReaderHelpers::ReadUserProperties( m_reader );

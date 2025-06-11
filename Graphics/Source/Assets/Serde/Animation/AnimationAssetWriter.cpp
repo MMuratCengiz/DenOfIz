@@ -43,55 +43,55 @@ void AnimationAssetWriter::Write( const AnimationAsset &animationAsset )
     m_writer->WriteString( animationAsset.Name );
     m_writer->WriteString( animationAsset.SkeletonRef.ToInteropString( ) );
 
-    m_writer->WriteUInt32( animationAsset.Animations.NumElements( ) );
-    for ( size_t i = 0; i < animationAsset.Animations.NumElements( ); ++i )
+    m_writer->WriteUInt32( animationAsset.Animations.NumElements );
+    for ( size_t i = 0; i < animationAsset.Animations.NumElements; ++i )
     {
-        const AnimationClip &clip = animationAsset.Animations.GetElement( i );
+        const AnimationClip &clip = animationAsset.Animations.Elements[ i ];
 
         m_writer->WriteString( clip.Name );
         m_writer->WriteFloat( clip.Duration );
 
-        m_writer->WriteUInt32( clip.Tracks.NumElements( ) );
-        for ( size_t j = 0; j < clip.Tracks.NumElements( ); ++j )
+        m_writer->WriteUInt32( clip.Tracks.NumElements );
+        for ( size_t j = 0; j < clip.Tracks.NumElements; ++j )
         {
-            const JointAnimTrack &track = clip.Tracks.GetElement( j );
+            const JointAnimTrack &track = clip.Tracks.Elements[ j ];
             m_writer->WriteString( track.JointName );
 
-            m_writer->WriteUInt32( track.PositionKeys.NumElements( ) );
-            for ( size_t k = 0; k < track.PositionKeys.NumElements( ); ++k )
+            m_writer->WriteUInt32( track.PositionKeys.NumElements );
+            for ( size_t k = 0; k < track.PositionKeys.NumElements; ++k )
             {
-                const PositionKey &key = track.PositionKeys.GetElement( k );
+                const PositionKey &key = track.PositionKeys.Elements[ k ];
                 m_writer->WriteFloat( key.Timestamp );
                 m_writer->WriteFloat_3( key.Value );
             }
 
-            m_writer->WriteUInt32( track.RotationKeys.NumElements( ) );
-            for ( size_t k = 0; k < track.RotationKeys.NumElements( ); ++k )
+            m_writer->WriteUInt32( track.RotationKeys.NumElements );
+            for ( size_t k = 0; k < track.RotationKeys.NumElements; ++k )
             {
-                const RotationKey &key = track.RotationKeys.GetElement( k );
+                const RotationKey &key = track.RotationKeys.Elements[ k ];
                 m_writer->WriteFloat( key.Timestamp );
                 m_writer->WriteFloat_4( key.Value );
             }
 
-            m_writer->WriteUInt32( track.ScaleKeys.NumElements( ) );
-            for ( size_t k = 0; k < track.ScaleKeys.NumElements( ); ++k )
+            m_writer->WriteUInt32( track.ScaleKeys.NumElements );
+            for ( size_t k = 0; k < track.ScaleKeys.NumElements; ++k )
             {
-                const ScaleKey &key = track.ScaleKeys.GetElement( k );
+                const ScaleKey &key = track.ScaleKeys.Elements[ k ];
                 m_writer->WriteFloat( key.Timestamp );
                 m_writer->WriteFloat_3( key.Value );
             }
         }
 
-        m_writer->WriteUInt32( clip.MorphTracks.NumElements( ) );
-        for ( size_t j = 0; j < clip.MorphTracks.NumElements( ); ++j )
+        m_writer->WriteUInt32( clip.MorphTracks.NumElements );
+        for ( size_t j = 0; j < clip.MorphTracks.NumElements; ++j )
         {
-            const MorphAnimTrack &track = clip.MorphTracks.GetElement( j );
+            const MorphAnimTrack &track = clip.MorphTracks.Elements[ j ];
             m_writer->WriteString( track.Name );
 
-            m_writer->WriteUInt32( track.Keyframes.NumElements( ) );
-            for ( size_t k = 0; k < track.Keyframes.NumElements( ); ++k )
+            m_writer->WriteUInt32( track.Keyframes.NumElements );
+            for ( size_t k = 0; k < track.Keyframes.NumElements; ++k )
             {
-                const MorphKeyframe &keyframe = track.Keyframes.GetElement( k );
+                const MorphKeyframe &keyframe = track.Keyframes.Elements[ k ];
                 m_writer->WriteFloat( keyframe.Timestamp );
                 m_writer->WriteFloat( keyframe.Weight );
             }

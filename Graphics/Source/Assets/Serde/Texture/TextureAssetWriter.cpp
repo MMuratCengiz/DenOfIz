@@ -178,7 +178,7 @@ void TextureAssetWriter::Write( const TextureAsset &textureAsset )
         m_textureAsset.SlicePitch = m_textureAsset.RowPitch * m_textureAsset.NumRows;
     }
 
-    if ( m_textureAsset.Mips.NumElements( ) == 0 )
+    if ( m_textureAsset.Mips.NumElements == 0 )
     {
         spdlog::warn( "TextureAssetWriter: No mip levels found, creating default mip level" );
         TextureMip mip{ };
@@ -207,9 +207,9 @@ void TextureAssetWriter::Write( const TextureAsset &textureAsset )
     m_writer->WriteUInt32( m_textureAsset.RowPitch );
     m_writer->WriteUInt32( m_textureAsset.NumRows );
     m_writer->WriteUInt32( m_textureAsset.SlicePitch );
-    m_writer->WriteUInt32( m_textureAsset.Mips.NumElements( ) );
-    m_textureMipPositions.resize( m_textureAsset.Mips.NumElements( ) );
-    for ( int i = 0; i < m_textureAsset.Mips.NumElements( ); ++i )
+    m_writer->WriteUInt32( m_textureAsset.Mips.NumElements );
+    m_textureMipPositions.resize( m_textureAsset.Mips.NumElements );
+    for ( int i = 0; i < m_textureAsset.Mips.NumElements; ++i )
     {
         m_textureMipPositions[ i ] = m_writer->Position( );
         WriteMipInfo( m_textureAsset.Mips.Elements[ i ] );
@@ -226,7 +226,7 @@ void TextureAssetWriter::AddPixelData( const ByteArrayView &bytes, const uint32_
     const uint32_t currentDataOffset = m_writer->Position( ) - m_assetDataStreamPosition;
     bool           mipFound          = false;
 
-    for ( size_t i = 0; i < m_textureAsset.Mips.NumElements( ); ++i )
+    for ( size_t i = 0; i < m_textureAsset.Mips.NumElements; ++i )
     {
         if ( TextureMip &mip = m_textureAsset.Mips.Elements[ i ]; mip.MipIndex == mipIndex && mip.ArrayIndex == arrayLayer )
         {

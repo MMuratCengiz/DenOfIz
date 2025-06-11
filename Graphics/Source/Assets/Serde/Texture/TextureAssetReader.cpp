@@ -160,7 +160,7 @@ void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc 
 
     stagingBuffer->UnmapMemory( );
 
-    for ( uint32_t i = 0; i < m_textureAsset.Mips.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < m_textureAsset.Mips.NumElements; ++i )
     {
         const TextureMip mip = m_textureAsset.Mips.Elements[ i ];
 
