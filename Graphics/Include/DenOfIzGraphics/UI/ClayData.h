@@ -474,20 +474,20 @@ namespace DenOfIz
 
     struct ClayDropdownDesc
     {
-        InteropArray<InteropString> Options;
-        InteropString               PlaceholderText   = "Select option...";
-        ClayColor                   BackgroundColor   = ClayColor( 255, 255, 255, 255 );
-        ClayColor                   BorderColor       = ClayColor( 200, 200, 200, 255 );
-        ClayColor                   TextColor         = ClayColor( 0, 0, 0, 255 );
-        ClayColor                   PlaceholderColor  = ClayColor( 150, 150, 150, 255 );
-        ClayColor                   HoverColor        = ClayColor( 240, 240, 240, 255 );
-        ClayColor                   SelectedColor     = ClayColor( 0, 120, 215, 255 );
-        ClayColor                   DropdownBgColor   = ClayColor( 255, 255, 255, 255 );
-        uint16_t                    FontId            = 0;
-        uint16_t                    FontSize          = 14;
-        ClayPadding                 Padding           = ClayPadding( 8 );
-        float                       MaxDropdownHeight = 200.0f;
-        float                       ItemHeight        = 32.0f;
+        StringArray Options;
+        const char *PlaceholderText   = "Select option...";
+        ClayColor   BackgroundColor   = ClayColor( 255, 255, 255, 255 );
+        ClayColor   BorderColor       = ClayColor( 200, 200, 200, 255 );
+        ClayColor   TextColor         = ClayColor( 0, 0, 0, 255 );
+        ClayColor   PlaceholderColor  = ClayColor( 150, 150, 150, 255 );
+        ClayColor   HoverColor        = ClayColor( 240, 240, 240, 255 );
+        ClayColor   SelectedColor     = ClayColor( 0, 120, 215, 255 );
+        ClayColor   DropdownBgColor   = ClayColor( 255, 255, 255, 255 );
+        uint16_t    FontId            = 0;
+        uint16_t    FontSize          = 14;
+        ClayPadding Padding           = ClayPadding( 8 );
+        float       MaxDropdownHeight = 200.0f;
+        float       ItemHeight        = 32.0f;
     };
 
     struct ClayDropdownRenderData
@@ -638,14 +638,14 @@ namespace DenOfIz
             return desc;
         }
 
-        inline ClayCheckboxDesc CreateCheckbox( float size = 20.0f )
+        inline ClayCheckboxDesc CreateCheckbox( const float size = 20.0f )
         {
             ClayCheckboxDesc desc;
             desc.Size = size;
             return desc;
         }
 
-        inline ClaySliderDesc CreateSlider( float minValue = 0.0f, float maxValue = 1.0f, float step = 0.01f )
+        inline ClaySliderDesc CreateSlider( const float minValue = 0.0f, const float maxValue = 1.0f, const float step = 0.01f )
         {
             ClaySliderDesc desc;
             desc.MinValue = minValue;
@@ -654,7 +654,7 @@ namespace DenOfIz
             return desc;
         }
 
-        inline ClayDropdownDesc CreateDropdown( const InteropArray<InteropString> &options, const InteropString &placeholder = "Select option..." )
+        inline ClayDropdownDesc CreateDropdown( const StringArray &options, const char *placeholder = "Select option..." )
         {
             ClayDropdownDesc desc;
             desc.Options         = options;
@@ -662,7 +662,7 @@ namespace DenOfIz
             return desc;
         }
 
-        inline ClayColorPickerDesc CreateColorPicker( float size = 150.0f )
+        inline ClayColorPickerDesc CreateColorPicker( const float size = 150.0f )
         {
             ClayColorPickerDesc desc;
             desc.Size = size;

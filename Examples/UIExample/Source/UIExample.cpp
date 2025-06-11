@@ -46,11 +46,11 @@ void UIExample::Init( )
 
     m_containerId = m_clay->HashString( "Container" );
 
-    m_dpiScaleOptions.AddElement( InteropString( "100%" ) );
-    m_dpiScaleOptions.AddElement( InteropString( "125%" ) );
-    m_dpiScaleOptions.AddElement( InteropString( "150%" ) );
-    m_dpiScaleOptions.AddElement( InteropString( "175%" ) );
-    m_dpiScaleOptions.AddElement( InteropString( "200%" ) );
+    m_dpiScaleOptions.push_back( StringView( "100%" ) );
+    m_dpiScaleOptions.push_back( StringView( "125%" ) );
+    m_dpiScaleOptions.push_back( StringView( "150%" ) );
+    m_dpiScaleOptions.push_back( StringView( "175%" ) );
+    m_dpiScaleOptions.push_back( StringView( "200%" ) );
 
     m_darkModeCheckbox = m_clay->CreateCheckbox( m_clay->HashString( "DarkModeCheckbox" ), false );
 
@@ -60,7 +60,7 @@ void UIExample::Init( )
     sliderStyle.Step        = 0.01f;
     m_cubeRotationSlider    = m_clay->CreateSlider( m_clay->HashString( "CubeRotationSlider" ), 1.0f, sliderStyle );
 
-    m_dpiScaleDropdown = m_clay->CreateDropdown( m_clay->HashString( "DpiScaleDropdown" ), m_dpiScaleOptions );
+    m_dpiScaleDropdown = m_clay->CreateDropdown( m_clay->HashString( "DpiScaleDropdown" ), { m_dpiScaleOptions.data(), static_cast<uint32_t>( m_dpiScaleOptions.size( ) ) } );
     m_dpiScaleDropdown->SetSelectedIndex( 0 );
 
     auto multilineStyle  = ClayWidgets::CreateTextArea( "Enter your text here..." );

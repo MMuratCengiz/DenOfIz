@@ -411,7 +411,7 @@ SliderWidget *Clay::CreateSlider( uint32_t id, float initialValue, const SliderS
     return ptr;
 }
 
-DropdownWidget *Clay::CreateDropdown( uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style ) const
+DropdownWidget *Clay::CreateDropdown( uint32_t id, const StringArray &options, const DropdownStyle &style ) const
 {
     auto            widget     = std::make_unique<DropdownWidget>( m_impl->clayContext.get( ), id, options, style );
     DropdownWidget *ptr        = widget.get( );

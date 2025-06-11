@@ -16,15 +16,23 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "DenOfIzGraphics/UI/ClayData.h"
 #include "DenOfIzGraphics/UI/Widgets/DropdownWidget.h"
 #include <algorithm>
+#include "DenOfIzGraphics/UI/ClayData.h"
 
 using namespace DenOfIz;
 
-DropdownWidget::DropdownWidget( IClayContext *clayContext, uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style ) :
+DropdownWidget::DropdownWidget( IClayContext *clayContext, uint32_t id, const StringArray &options, const DropdownStyle &style ) :
     Widget( clayContext, id ), m_options( options ), m_style( style ), m_dropdownListId( clayContext->HashString( InteropString( "dropdown_list" ), 0, id ) )
 {
+}
+
+DropdownWidget::~DropdownWidget( )
+{
+    if ( m_options.Elements )
+    {
+        m_options.Dispose( );
+    }
 }
 
 void DropdownWidget::Update( float deltaTime )
@@ -49,17 +57,17 @@ void DropdownWidget::CreateLayoutElement( )
 
     m_clayContext->OpenElement( decl );
 
-    const InteropString &displayText = GetSelectedText( );
+    const std::string &displayText = GetSelectedText( );
     const ClayColor     &textColor   = m_selectedIndex >= 0 ? m_style.TextColor : m_style.PlaceholderColor;
 
-    if ( !displayText.IsEmpty( ) )
+    if ( !displayText.empty( ) )
     {
         ClayTextDesc textDesc;
         textDesc.TextColor = textColor;
         textDesc.FontId    = m_style.FontId;
         textDesc.FontSize  = m_style.FontSize;
 
-        m_clayContext->Text( displayText, textDesc );
+        m_clayContext->Text( displayText.c_str( ), textDesc );
     }
 
     m_clayContext->CloseElement( );
@@ -98,9 +106,9 @@ void DropdownWidget::HandleEvent( const Event &event )
         else if ( m_isOpen )
         {
             bool clickedOnItem = false;
-            for ( size_t i = 0; i < m_options.NumElements( ); ++i )
+            for ( size_t i = 0; i < m_options.NumElements; ++i )
             {
-                uint32_t itemId = m_clayContext->HashString( "item", static_cast<uint32_t>( i ), m_dropdownListId );
+                const uint32_t itemId = m_clayContext->HashString( "item", static_cast<uint32_t>( i ), m_dropdownListId );
                 if ( m_clayContext->PointerOver( itemId ) )
                 {
                     SetSelectedIndex( static_cast<int32_t>( i ) );
@@ -121,7 +129,7 @@ void DropdownWidget::HandleEvent( const Event &event )
         if ( event.Wheel.X >= dropdownBounds.X && event.Wheel.X <= dropdownBounds.X + dropdownBounds.Width && event.Wheel.Y >= dropdownBounds.Y &&
              event.Wheel.Y <= dropdownBounds.Y + dropdownBounds.Height )
         {
-            const float totalHeight = m_options.NumElements( ) * m_style.ItemHeight;
+            const float totalHeight = m_options.NumElements * m_style.ItemHeight;
             const float maxScroll   = std::max( 0.0f, totalHeight - m_style.MaxDropdownHeight );
             m_scrollOffset          = std::clamp( m_scrollOffset - event.Wheel.Y * 20.0f, 0.0f, maxScroll );
         }
@@ -134,16 +142,16 @@ int32_t DropdownWidget::GetSelectedIndex( ) const
 
 void DropdownWidget::SetSelectedIndex( const int32_t index )
 {
-    if ( index >= -1 && index < static_cast<int32_t>( m_options.NumElements( ) ) && index != m_selectedIndex )
+    if ( index >= -1 && index < static_cast<int32_t>( m_options.NumElements ) && index != m_selectedIndex )
     {
         m_selectedIndex    = index;
         m_selectionChanged = true;
     }
 }
 
-InteropString DropdownWidget::GetSelectedText( ) const
+const char* DropdownWidget::GetSelectedText( ) const
 {
-    return m_selectedIndex >= 0 ? m_options.GetElement( m_selectedIndex ) : m_style.PlaceholderText;
+    return m_selectedIndex >= 0 ? m_options.Elements[ m_selectedIndex ].Chars : m_style.PlaceholderText;
 }
 
 bool DropdownWidget::WasSelectionChanged( ) const
@@ -166,17 +174,17 @@ void DropdownWidget::SetOpen( const bool open )
     m_isOpen = open;
 }
 
-void DropdownWidget::SetOptions( const InteropArray<InteropString> &options )
+void DropdownWidget::SetOptions( const StringArray &options )
 {
-    m_options = options;
-    if ( m_selectedIndex >= static_cast<int32_t>( options.NumElements( ) ) )
+    UpdateOptions( options );
+    if ( m_selectedIndex >= static_cast<int32_t>( options.NumElements ) )
     {
         m_selectedIndex    = -1;
         m_selectionChanged = true;
     }
 }
 
-const InteropArray<InteropString> &DropdownWidget::GetOptions( ) const
+const StringArray &DropdownWidget::GetOptions( ) const
 {
     return m_options;
 }
@@ -202,7 +210,7 @@ void DropdownWidget::RenderDropdownList( )
     const auto viewportSize        = m_clayContext->GetViewportSize( );
 
     const float spaceBelow           = viewportSize.Height - ( parentBounds.Y + parentBounds.Height );
-    const float actualDropdownHeight = m_options.NumElements( ) * m_style.ItemHeight;
+    const float actualDropdownHeight = m_options.NumElements * m_style.ItemHeight;
     const float dropdownHeight       = std::min( m_style.MaxDropdownHeight, actualDropdownHeight );
 
     ClayFloatingDesc floatingDesc;
@@ -239,7 +247,7 @@ void DropdownWidget::RenderDropdownList( )
     listDecl.Scroll                 = scrollDesc;
 
     m_clayContext->OpenElement( listDecl );
-    for ( size_t i = 0; i < m_options.NumElements( ); ++i )
+    for ( size_t i = 0; i < m_options.NumElements; ++i )
     {
         uint32_t itemId     = m_clayContext->HashString( "item", static_cast<uint32_t>( i ), m_dropdownListId );
         bool     isHovered  = m_clayContext->PointerOver( itemId );
@@ -269,9 +277,20 @@ void DropdownWidget::RenderDropdownList( )
         textDesc.FontId    = m_style.FontId;
         textDesc.FontSize  = m_style.FontSize;
 
-        m_clayContext->Text( m_options.GetElement( i ), textDesc );
+        m_clayContext->Text( m_options.Elements[ i ].Chars, textDesc );
         m_clayContext->CloseElement( );
     }
 
     m_clayContext->CloseElement( );
+}
+
+void DropdownWidget::UpdateOptions( const StringArray options )
+{
+    if ( m_options.Elements )
+    {
+        m_options.Dispose( );
+    }
+
+    m_options = StringArray::Create( options.NumElements );
+    std::copy_n( options.Elements, options.NumElements, m_options.Elements );
 }

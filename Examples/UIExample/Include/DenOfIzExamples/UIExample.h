@@ -47,8 +47,8 @@ namespace DenOfIz
         std::unique_ptr<DockingManager>       m_dockingManager = nullptr;
         std::unique_ptr<Spinning3DCubeWidget> m_spinningCubeWidget;
 
-        uint32_t                    m_containerId{ };
-        InteropArray<InteropString> m_dpiScaleOptions;
+        uint32_t                m_containerId{ };
+        std::vector<StringView> m_dpiScaleOptions;
 
         bool      m_darkMode  = false;
         ClayColor m_bgColor   = { };

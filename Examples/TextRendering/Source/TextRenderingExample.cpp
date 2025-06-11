@@ -264,9 +264,9 @@ void TextRenderingExample::ImportFont( ) const
             spdlog::error( "Import failed: {}", result.ErrorMessage.Get( ) );
         }
 
-        for ( size_t i = 0; i < result.CreatedAssets.NumElements( ); ++i )
+        for ( size_t i = 0; i < result.CreatedAssets.NumElements; ++i )
         {
-            AssetUri uri = result.CreatedAssets.GetElement( i );
+            AssetUri uri = result.CreatedAssets.Elements[ i ];
             spdlog::info( "Created asset: {}", uri.Path.Get( ) );
         }
 

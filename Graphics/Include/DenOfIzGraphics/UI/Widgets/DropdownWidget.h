@@ -28,38 +28,42 @@ namespace DenOfIz
 
     class DropdownWidget : public Widget
     {
-        InteropArray<InteropString> m_options;
-        int32_t                     m_selectedIndex    = -1;
-        bool                        m_isOpen           = false;
-        bool                        m_selectionChanged = false;
-        float                       m_scrollOffset     = 0.0f;
-        DropdownStyle               m_style;
-        uint32_t                    m_dropdownListId;
-        bool                        m_dropdownListCreatedThisFrame = false;
+        StringArray   m_options;
+        int32_t       m_selectedIndex    = -1;
+        bool          m_isOpen           = false;
+        bool          m_selectionChanged = false;
+        float         m_scrollOffset     = 0.0f;
+        DropdownStyle m_style;
+        uint32_t      m_dropdownListId;
+        bool          m_dropdownListCreatedThisFrame = false;
 
     public:
-        DZ_API DropdownWidget( IClayContext *clayContext, uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style = { } );
+        DZ_API DropdownWidget( IClayContext *clayContext, uint32_t id, const StringArray &options, const DropdownStyle &style = { } );
+        DZ_API ~DropdownWidget( );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;
         DZ_API void Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch ) override;
         DZ_API void HandleEvent( const Event &event ) override;
 
-        DZ_API int32_t       GetSelectedIndex( ) const;
-        DZ_API void          SetSelectedIndex( int32_t index );
-        DZ_API InteropString GetSelectedText( ) const;
-        DZ_API bool          WasSelectionChanged( ) const;
-        DZ_API void          ClearSelectionChangedEvent( );
-        DZ_API bool          IsOpen( ) const;
-        DZ_API void          SetOpen( bool open );
+        DZ_API int32_t     GetSelectedIndex( ) const;
+        DZ_API void        SetSelectedIndex( int32_t index );
+        DZ_API const char *GetSelectedText( ) const;
+        DZ_API bool        WasSelectionChanged( ) const;
+        DZ_API void        ClearSelectionChangedEvent( );
+        DZ_API bool        IsOpen( ) const;
+        DZ_API void        SetOpen( bool open );
 
-        DZ_API void  SetOptions( const InteropArray<InteropString> &options );
-        DZ_API const InteropArray<InteropString> &GetOptions( ) const;
+        DZ_API void               SetOptions( const StringArray &options );
+        DZ_API const StringArray &GetOptions( ) const;
 
         DZ_API void                 SetStyle( const DropdownStyle &style );
         DZ_API const DropdownStyle &GetStyle( ) const;
 
         DZ_API void RenderDropdownList( );
+
+    private:
+        void UpdateOptions( StringArray options );
     };
 
 } // namespace DenOfIz
