@@ -26,28 +26,28 @@ using namespace DenOfIz;
 
 VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc ) : m_desc( std::move( desc ) ), m_context( context )
 {
-    for ( int i = 0; i < m_desc.BindlessResources.NumElements( ); ++i )
+    for ( int i = 0; i < m_desc.BindlessResources.NumElements; ++i )
     {
-        const auto &bindlessResource = m_desc.BindlessResources.GetElement( i );
+        const auto &bindlessResource = m_desc.BindlessResources.Elements[ i ];
         AddBindlessResource( bindlessResource );
     }
 
-    for ( int i = 0; i < m_desc.ResourceBindings.NumElements( ); ++i )
+    for ( int i = 0; i < m_desc.ResourceBindings.NumElements; ++i )
     {
-        const ResourceBindingDesc &binding = m_desc.ResourceBindings.GetElement( i );
+        const ResourceBindingDesc &binding = m_desc.ResourceBindings.Elements[ i ];
         AddResourceBinding( binding );
     }
 
-    for ( int i = 0; i < m_desc.StaticSamplers.NumElements( ); ++i )
+    for ( int i = 0; i < m_desc.StaticSamplers.NumElements; ++i )
     {
-        const StaticSamplerDesc &staticSamplerDesc = m_desc.StaticSamplers.GetElement( i );
+        const StaticSamplerDesc &staticSamplerDesc = m_desc.StaticSamplers.Elements[ i ];
         AddStaticSampler( staticSamplerDesc );
     }
 
-    m_pushConstants.resize( m_desc.RootConstants.NumElements( ) );
-    for ( int i = 0; i < m_desc.RootConstants.NumElements( ); ++i )
+    m_pushConstants.resize( m_desc.RootConstants.NumElements );
+    for ( int i = 0; i < m_desc.RootConstants.NumElements; ++i )
     {
-        const RootConstantResourceBindingDesc &rootConstantBinding = m_desc.RootConstants.GetElement( i );
+        const RootConstantResourceBindingDesc &rootConstantBinding = m_desc.RootConstants.Elements[ i ];
         AddRootConstant( rootConstantBinding );
     }
 
@@ -168,9 +168,9 @@ void VulkanRootSignature::AddRootConstant( const RootConstantResourceBindingDesc
     }
 
     uint32_t offset = 0;
-    for ( int i = 0; i < m_desc.RootConstants.NumElements( ); ++i )
+    for ( int i = 0; i < m_desc.RootConstants.NumElements; ++i )
     {
-        const RootConstantResourceBindingDesc &binding = m_desc.RootConstants.GetElement( i );
+        const RootConstantResourceBindingDesc &binding = m_desc.RootConstants.Elements[ i ];
         if ( binding.Binding < rootConstantBinding.Binding )
         {
             offset += binding.NumBytes;

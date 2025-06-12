@@ -147,7 +147,7 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     m_rayTracingProgram       = std::make_unique<ShaderProgram>( programDesc );
     auto reflection           = m_rayTracingProgram->Reflect( );
     m_rayTracingRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
-    m_hgShaderLayout          = std::unique_ptr<ILocalRootSignature>( m_logicalDevice->CreateLocalRootSignature( reflection.LocalRootSignatures.GetElement( 1 ) ) );
+    m_hgShaderLayout          = std::unique_ptr<ILocalRootSignature>( m_logicalDevice->CreateLocalRootSignature( reflection.LocalRootSignatures.Elements[ 1 ] ) );
 
     m_hgData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderLocalData( { m_hgShaderLayout.get( ) } ) );
 

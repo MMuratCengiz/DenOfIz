@@ -33,25 +33,25 @@ DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureD
         rootSignatureVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
     }
 
-    for ( int i = 0; i < desc.ResourceBindings.NumElements( ); ++i )
+    for ( int i = 0; i < desc.ResourceBindings.NumElements; ++i )
     {
-        AddResourceBinding( desc.ResourceBindings.GetElement( i ) );
+        AddResourceBinding( desc.ResourceBindings.Elements[ i ] );
     }
 
-    for ( int i = 0; i < m_desc.StaticSamplers.NumElements( ); ++i )
+    for ( int i = 0; i < m_desc.StaticSamplers.NumElements; ++i )
     {
-        const StaticSamplerDesc &staticSamplerDesc = m_desc.StaticSamplers.GetElement( i );
+        const StaticSamplerDesc &staticSamplerDesc = m_desc.StaticSamplers.Elements[ i ];
         AddStaticSampler( staticSamplerDesc );
     }
 
-    for ( int i = 0; i < desc.RootConstants.NumElements( ); ++i )
+    for ( int i = 0; i < desc.RootConstants.NumElements; ++i )
     {
-        AddRootConstant( desc.RootConstants.GetElement( i ) );
+        AddRootConstant( desc.RootConstants.Elements[ i ] );
     }
 
-    for ( int i = 0; i < desc.BindlessResources.NumElements( ); ++i )
+    for ( int i = 0; i < desc.BindlessResources.NumElements; ++i )
     {
-        AddBindlessResource( desc.BindlessResources.GetElement( i ) );
+        AddBindlessResource( desc.BindlessResources.Elements[ i ] );
     }
 
     if ( m_descriptorRangesShaderVisibilities.size( ) == 1 )

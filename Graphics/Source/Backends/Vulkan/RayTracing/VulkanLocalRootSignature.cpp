@@ -36,9 +36,9 @@ VulkanLocalRootSignature::VulkanLocalRootSignature( VulkanContext *context, cons
 
     uint32_t minAlignment  = properties2.properties.limits.minStorageBufferOffsetAlignment;
     uint32_t currentOffset = 0;
-    for ( uint32_t i = 0; i < desc.ResourceBindings.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < desc.ResourceBindings.NumElements; ++i )
     {
-        const auto &binding = desc.ResourceBindings.GetElement( i );
+        const auto &binding = desc.ResourceBindings.Elements[ i ];
 
         uint32_t bindingTypeOffset = 0;
         switch ( binding.BindingType )

@@ -24,12 +24,12 @@ using namespace DenOfIz;
 
 DX12LocalRootSignature::DX12LocalRootSignature( DX12Context *context, const LocalRootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    std::vector<D3D12_ROOT_PARAMETER1> rootParameters( desc.ResourceBindings.NumElements( ) );
+    std::vector<D3D12_ROOT_PARAMETER1> rootParameters( desc.ResourceBindings.NumElements );
 
     std::vector<D3D12_DESCRIPTOR_RANGE1> samplerRanges;
-    for ( uint32_t i = 0; i < desc.ResourceBindings.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < desc.ResourceBindings.NumElements; ++i )
     {
-        const auto &binding = desc.ResourceBindings.GetElement( i );
+        const auto &binding = desc.ResourceBindings.Elements[ i ];
 
         D3D12_ROOT_PARAMETER1 &rootParameter = rootParameters[ i ];
         bool                   isDescriptor  = false;
@@ -139,9 +139,9 @@ uint32_t DX12LocalRootSignature::UavIndex( const uint32_t bindingIndex ) const
 
 bool DX12LocalRootSignature::HasBinding( const ResourceBindingType type, const uint32_t bindingIndex ) const
 {
-    for ( int i = 0; i < m_desc.ResourceBindings.NumElements( ); ++i )
+    for ( int i = 0; i < m_desc.ResourceBindings.NumElements; ++i )
     {
-        if ( const auto &binding = m_desc.ResourceBindings.GetElement( i ); binding.BindingType == type && binding.Binding == bindingIndex )
+        if ( const auto &binding = m_desc.ResourceBindings.Elements[ i ]; binding.BindingType == type && binding.Binding == bindingIndex )
         {
             return true;
         }
