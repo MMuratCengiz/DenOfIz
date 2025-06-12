@@ -32,9 +32,9 @@ namespace DenOfIz
 
     struct DZ_API UpdateSourceDataDesc
     {
-        InteropArray<Byte> Data;
-        uint64_t           Offset;
-        uint64_t           NumBytes;
+        ByteArrayView Data;
+        uint64_t      Offset;
+        uint64_t      NumBytes;
     };
 
     struct DZ_API TextureSubresourceDesc
@@ -61,9 +61,9 @@ namespace DenOfIz
 
     struct DZ_API TextureLoadDesc
     {
-        TextureDesc        Desc;
-        InteropString      Filename;
-        InteropArray<Byte> Data;
+        TextureDesc   Desc;
+        InteropString Filename;
+        ByteArrayView Data;
     };
 
     struct DZ_API TextureUpdateDesc
@@ -72,7 +72,7 @@ namespace DenOfIz
         uint32_t               MipLevel;
         uint32_t               ArrayLayer;
         TextureSubresourceDesc SubresourceDesc;
-        InteropArray<Byte>     Data;
+        ByteArrayView          Data;
         uint32_t               CurrentState;
     };
 
@@ -86,7 +86,7 @@ namespace DenOfIz
 
     struct DZ_API FlushUpdatesDesc
     {
-        InteropArray<ISemaphore *> WaitSemaphores;
+        ISemaphoreArray WaitSemaphores;
     };
 
     struct DZ_API FlushUpdatesResult
