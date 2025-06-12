@@ -377,7 +377,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
         attributeConfig.NumUVAttributes       = firstMesh->GetNumUVChannels( );
         attributeConfig.MaxBoneInfluences     = context.Desc.MaxBoneWeightsPerVertex;
 
-        DZArenaArrayHelper<UVChannelArray, UVChannel>::AllocateArray( m_arena, attributeConfig.UVChannels, firstMesh->GetNumUVChannels( ) );
+        DZArenaArrayHelper<UVChannelArray, UVChannel>::AllocateAndConstructArray( m_arena, attributeConfig.UVChannels, firstMesh->GetNumUVChannels( ) );
         for ( uint32_t i = 0; i < firstMesh->GetNumUVChannels( ); ++i )
         {
             UVChannel config;
@@ -700,7 +700,7 @@ ImporterResultCode AssimpImporter::Impl::ProcessMesh( ImportContext &context, co
             vertex.Bitangent = { mesh->mBitangents[ i ].x, mesh->mBitangents[ i ].y, mesh->mBitangents[ i ].z, 1.0f };
         }
 
-        DZArenaArrayHelper<Float_2Array, Float_2>::AllocateArray( context.MeshAsset._Arena, vertex.UVs, attributeConfig.NumUVAttributes );
+        DZArenaArrayHelper<Float_2Array, Float_2>::AllocateAndConstructArray( context.MeshAsset._Arena, vertex.UVs, attributeConfig.NumUVAttributes );
         for ( uint32_t uvChan = 0; uvChan < attributeConfig.NumUVAttributes; ++uvChan )
         {
             if ( mesh->HasTextureCoords( uvChan ) )
@@ -714,7 +714,7 @@ ImporterResultCode AssimpImporter::Impl::ProcessMesh( ImportContext &context, co
             }
         }
 
-        DZArenaArrayHelper<Float_4Array, Float_4>::AllocateArray( context.MeshAsset._Arena, vertex.Colors, attributeConfig.ColorFormats.NumElements );
+        DZArenaArrayHelper<Float_4Array, Float_4>::AllocateAndConstructArray( context.MeshAsset._Arena, vertex.Colors, attributeConfig.ColorFormats.NumElements );
         for ( uint32_t colChan = 0; colChan < attributeConfig.ColorFormats.NumElements; ++colChan )
         {
             if ( mesh->HasVertexColors( colChan ) )
@@ -914,7 +914,7 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
             continue;
         }
 
-        DZArenaArrayHelper<PositionKeyArray, PositionKey>::AllocateArray( animAsset._Arena, track.PositionKeys, nodeAnim->mNumPositionKeys );
+        DZArenaArrayHelper<PositionKeyArray, PositionKey>::AllocateAndConstructArray( animAsset._Arena, track.PositionKeys, nodeAnim->mNumPositionKeys );
         for ( unsigned int k = 0; k < nodeAnim->mNumPositionKeys; ++k )
         {
             PositionKey &key = track.PositionKeys.Elements[ k ];
@@ -926,7 +926,7 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
             key.Value.Z *= context.Desc.ScaleFactor;
         }
 
-        DZArenaArrayHelper<RotationKeyArray, RotationKey>::AllocateArray( animAsset._Arena, track.RotationKeys, nodeAnim->mNumRotationKeys );
+        DZArenaArrayHelper<RotationKeyArray, RotationKey>::AllocateAndConstructArray( animAsset._Arena, track.RotationKeys, nodeAnim->mNumRotationKeys );
         for ( unsigned int k = 0; k < nodeAnim->mNumRotationKeys; ++k )
         {
             RotationKey &key = track.RotationKeys.Elements[ k ];
@@ -934,7 +934,7 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
             key.Value        = ConvertQuaternion( nodeAnim->mRotationKeys[ k ].mValue );
         }
 
-        DZArenaArrayHelper<ScaleKeyArray, ScaleKey>::AllocateArray( animAsset._Arena, track.ScaleKeys, nodeAnim->mNumScalingKeys );
+        DZArenaArrayHelper<ScaleKeyArray, ScaleKey>::AllocateAndConstructArray( animAsset._Arena, track.ScaleKeys, nodeAnim->mNumScalingKeys );
         for ( unsigned int k = 0; k < nodeAnim->mNumScalingKeys; ++k )
         {
             ScaleKey &key = track.ScaleKeys.Elements[ k ];
@@ -950,7 +950,7 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
         const aiMeshMorphAnim *morphAnim = animation->mMorphMeshChannels[ i ];
         MorphAnimTrack        &track     = clip.MorphTracks.Elements[ i ];
         track.Name                       = morphAnim->mName.C_Str( );
-        DZArenaArrayHelper<MorphKeyframeArray, MorphKeyframe>::AllocateArray( animAsset._Arena, track.Keyframes, morphAnim->mNumKeys );
+        DZArenaArrayHelper<MorphKeyframeArray, MorphKeyframe>::AllocateAndConstructArray( animAsset._Arena, track.Keyframes, morphAnim->mNumKeys );
         for ( unsigned int k = 0; k < morphAnim->mNumKeys; ++k )
         {
             MorphKeyframe        &keyframe = track.Keyframes.Elements[ k ];
@@ -960,7 +960,7 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
         }
     }
 
-    DZArenaArrayHelper<AnimationClipArray, AnimationClip>::AllocateArray( animAsset._Arena, animAsset.Animations, 1 );
+    DZArenaArrayHelper<AnimationClipArray, AnimationClip>::AllocateAndConstructArray( animAsset._Arena, animAsset.Animations, 1 );
     animAsset.Animations.Elements[ 0 ] = clip;
     WriteAnimationAsset( context, animAsset, outAssetUri );
     spdlog::info( "Successfully wrote animation asset: {}", outAssetUri.ToInteropString( ).Get( ) );
@@ -1170,7 +1170,7 @@ void AssimpImporter::Impl::WriteTextureAsset( ImportContext &context, const aiTe
     texAsset.RowPitch     = sourceTexture->GetRowPitch( );
     texAsset.NumRows      = sourceTexture->GetNumRows( );
     texAsset.SlicePitch   = sourceTexture->GetSlicePitch( );
-    DZArenaArrayHelper<TextureMipArray, TextureMip>::AllocateArray( texAsset._Arena, texAsset.Mips, sourceTexture->GetMipLevels( ) * sourceTexture->GetArraySize( ) );
+    DZArenaArrayHelper<TextureMipArray, TextureMip>::AllocateAndConstructArray( texAsset._Arena, texAsset.Mips, sourceTexture->GetMipLevels( ) * sourceTexture->GetArraySize( ) );
 
     const auto mipDataArray = sourceTexture->ReadMipData( );
     for ( uint32_t i = 0; i < mipDataArray.NumElements; ++i )

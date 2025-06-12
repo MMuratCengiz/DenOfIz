@@ -284,6 +284,7 @@ MeshAsset *MeshAssetReader::Read( )
     }
     m_meshAsset->NumBytes = m_reader->ReadUInt64( );
     m_meshAsset->Uri      = AssetUri::Parse( m_reader->ReadString( ) );
+    m_meshAsset->_Arena.EnsureCapacity( m_meshAsset->NumBytes );
 
     m_meshAsset->Name                           = m_reader->ReadString( );
     m_meshAsset->NumLODs                        = m_reader->ReadUInt32( );

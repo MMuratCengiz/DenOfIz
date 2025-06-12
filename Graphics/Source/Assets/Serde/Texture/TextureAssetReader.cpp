@@ -67,6 +67,7 @@ TextureAsset *TextureAssetReader::Read( )
     }
     m_textureAsset->NumBytes = m_reader->ReadUInt64( );
     m_textureAsset->Uri      = AssetUri::Parse( m_reader->ReadString( ) );
+    m_textureAsset->_Arena.EnsureCapacity( m_textureAsset->NumBytes );
 
     m_textureAsset->Name         = m_reader->ReadString( );
     m_textureAsset->SourcePath   = m_reader->ReadString( );

@@ -48,6 +48,7 @@ FontAsset* FontAssetReader::Read( )
     m_fontAsset->Version  = m_reader->ReadUInt32( );
     m_fontAsset->NumBytes = m_reader->ReadUInt64( );
     m_fontAsset->Uri      = AssetUri::Parse( m_reader->ReadString( ) );
+    m_fontAsset->_Arena.EnsureCapacity( m_fontAsset->NumBytes );
 
     m_fontAsset->DataNumBytes    = m_reader->ReadUInt64( );
     m_fontAsset->Data            = m_reader->ReadBytes( m_fontAsset->DataNumBytes );

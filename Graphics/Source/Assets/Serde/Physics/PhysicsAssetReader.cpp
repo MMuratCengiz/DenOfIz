@@ -51,6 +51,7 @@ PhysicsAsset* PhysicsAssetReader::Read( )
     m_physicsAsset->NumBytes = m_reader->ReadUInt64( );
     m_physicsAsset->Uri      = AssetUri::Parse( m_reader->ReadString( ) );
     m_physicsAsset->Name     = m_reader->ReadString( );
+    m_physicsAsset->_Arena.EnsureCapacity( m_physicsAsset->NumBytes );
 
     const uint32_t numColliders = m_reader->ReadUInt32( );
     DZArenaArrayHelper<PhysicsColliderArray, PhysicsCollider>::AllocateAndConstructArray( m_physicsAsset->_Arena, m_physicsAsset->Colliders, numColliders );

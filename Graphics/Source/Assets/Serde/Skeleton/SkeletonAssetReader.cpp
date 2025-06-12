@@ -52,6 +52,7 @@ SkeletonAsset *SkeletonAssetReader::Read( )
 
     m_skeletonAsset->NumBytes = m_reader->ReadUInt64( );
     m_skeletonAsset->Uri      = AssetUri::Parse( m_reader->ReadString( ) );
+    m_skeletonAsset->_Arena.EnsureCapacity( m_skeletonAsset->NumBytes );
 
     m_skeletonAsset->Name = m_reader->ReadString( );
 

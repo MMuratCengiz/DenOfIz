@@ -116,6 +116,7 @@ void ShaderAssetReader::ReadHeader( )
     m_shaderAsset->Version  = m_reader->ReadUInt32( );
     m_shaderAsset->NumBytes = m_reader->ReadUInt64( );
     m_shaderAsset->Uri      = AssetUri::Parse( m_reader->ReadString( ) );
+    m_shaderAsset->_Arena.EnsureCapacity( m_shaderAsset->NumBytes );
 }
 
 void ShaderAssetReader::ReadInputLayout( InputLayoutDesc &inputLayout ) const

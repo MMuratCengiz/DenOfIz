@@ -193,7 +193,6 @@ namespace DenOfIz
         }
     };
 
-    template <typename T>
     class DZArenaString
     {
     public:

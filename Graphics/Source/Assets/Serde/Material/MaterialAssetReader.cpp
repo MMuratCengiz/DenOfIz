@@ -49,6 +49,7 @@ MaterialAsset* MaterialAssetReader::Read( )
 
     m_materialAsset->NumBytes = m_reader->ReadUInt64( );
     m_materialAsset->Uri      = AssetUri::Parse( m_reader->ReadString( ) );
+    m_materialAsset->_Arena.EnsureCapacity( m_materialAsset->NumBytes );
 
     m_materialAsset->Name      = m_reader->ReadString( );
     m_materialAsset->ShaderRef = m_reader->ReadString( );

@@ -106,7 +106,9 @@ AnimationAsset *AnimationAssetReader::Read( )
         spdlog::warn( "AnimationAsset version mismatch (File: {} , Expected: {} ). Attempting to read...", m_animationAsset->Version, AnimationAsset::Latest );
     }
 
-    m_animationAsset->NumBytes    = m_reader->ReadUInt64( );
+    m_animationAsset->NumBytes = m_reader->ReadUInt64( );
+    m_animationAsset->_Arena.EnsureCapacity( m_animationAsset->NumBytes );
+
     m_animationAsset->Uri         = AssetUri::Parse( m_reader->ReadString( ) );
     m_animationAsset->Name        = m_reader->ReadString( );
     m_animationAsset->SkeletonRef = AssetUri::Parse( m_reader->ReadString( ) );
