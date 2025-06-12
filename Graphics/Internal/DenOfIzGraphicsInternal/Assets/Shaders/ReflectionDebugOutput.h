@@ -30,7 +30,7 @@ namespace DenOfIz
     public:
         static void DumpIRRootParameters( const std::vector<IRRootParameter1> &rootParameters, const char *prefix = "" );
         static void DumpReflectionInfo( const ShaderReflectDesc &reflection );
-        static void DumpResourceBindings( std::stringstream &output, const InteropArray<ResourceBindingDesc> &resourceBindings );
+        static void DumpResourceBindings( std::stringstream &output, const ResourceBindingDescArray &resourceBindings );
         static void DumpRootSignature( std::stringstream &output, const RootSignatureDesc &sig );
         static void DumpStructFields( std::stringstream &output, const InteropArray<ReflectionResourceField> &fields );
     };

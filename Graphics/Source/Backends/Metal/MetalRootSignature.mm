@@ -26,24 +26,42 @@ using namespace DenOfIz;
 
 MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
 {
-
     std::map<uint32_t, std::vector<ResourceBindingDesc>> bindingsBySpace;
-    auto                                                 sortedBindings = SortResourceBindings( m_desc.ResourceBindings );
-    for ( int i = 0; i < sortedBindings.NumElements( ); i++ )
+    std::vector<ResourceBindingDesc> sortedBindings; // TODO duplicated in MetalRootSignature and MetalLocalRootSignature
+    sortedBindings.reserve( desc.ResourceBindings.NumElements );
+    for ( size_t i = 0; i < desc.ResourceBindings.NumElements; ++i )
     {
-        const auto &binding = m_desc.ResourceBindings.GetElement( i );
+        sortedBindings.push_back( desc.ResourceBindings.Elements[ i ] );
+    }
+    std::sort( sortedBindings.begin( ), sortedBindings.end( ),
+               []( const ResourceBindingDesc &a, const ResourceBindingDesc &b )
+               {
+                   if ( a.RegisterSpace != b.RegisterSpace )
+                   {
+                       return a.RegisterSpace < b.RegisterSpace;
+                   }
+                   if ( a.Binding != b.Binding )
+                   {
+                       return a.Binding < b.Binding;
+                   }
+                   return static_cast<int>( a.BindingType ) < static_cast<int>( b.BindingType );
+               } );
+
+    for ( int i = 0; i < sortedBindings.size( ); i++ )
+    {
+        const auto &binding = sortedBindings[ i ];
         bindingsBySpace[ binding.RegisterSpace ].push_back( binding );
     }
 
-    m_rootConstants.resize( m_desc.RootConstants.NumElements( ) );
-    for ( int i = 0; i < m_desc.RootConstants.NumElements( ); i++ )
+    m_rootConstants.resize( m_desc.RootConstants.NumElements );
+    for ( int i = 0; i < m_desc.RootConstants.NumElements; i++ )
     {
-        const auto &trueIndex = m_desc.RootConstants.GetElement( i ).Binding;
-        if ( trueIndex >= m_desc.RootConstants.NumElements( ) )
+        const auto &trueIndex = m_desc.RootConstants.Elements[ i ].Binding;
+        if ( trueIndex >= m_desc.RootConstants.NumElements )
         {
             spdlog::critical("Root constant binding index is out of range. Make sure all bindings are provided in ascending order.");
         }
-        const auto &rootConstant     = m_desc.RootConstants.GetElement( trueIndex );
+        const auto &rootConstant     = m_desc.RootConstants.Elements[ trueIndex ];
         m_rootConstants[ trueIndex ] = { .Offset = m_numRootConstantBytes, .NumBytes = rootConstant.NumBytes };
         m_numRootConstantBytes += rootConstant.NumBytes;
     }
@@ -51,7 +69,7 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
     m_descriptorOffsets.resize( bindingsBySpace.rbegin( )->first + 1 );
     int currentTLABOffset = m_numRootConstantBytes / sizeof( uint64_t );
     
-    bool hasBindlessResources = desc.BindlessResources.NumElements( ) > 0;
+    bool hasBindlessResources = desc.BindlessResources.NumElements > 0;
     for ( const auto &[ space, bindings ] : bindingsBySpace )
     {
         auto &offsets = m_descriptorOffsets[ space ];
@@ -154,9 +172,9 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
         }
     };
 
-    for ( int i = 0; i < desc.BindlessResources.NumElements( ); ++i )
+    for ( int i = 0; i < desc.BindlessResources.NumElements; ++i )
     {
-        const auto &bindlessResource = desc.BindlessResources.GetElement( i );
+        const auto &bindlessResource = desc.BindlessResources.Elements[ i ];
         AddBindlessResource( bindlessResource );
     }
 }

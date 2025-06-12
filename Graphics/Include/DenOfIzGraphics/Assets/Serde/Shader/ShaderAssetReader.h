@@ -31,7 +31,7 @@ namespace DenOfIz
     class ShaderAssetReader
     {
         BinaryReader *m_reader;
-        ShaderAsset   m_shaderAsset;
+        ShaderAsset  *m_shaderAsset;
         bool          m_assetRead         = false;
         uint64_t      m_streamStartOffset = 0;
 
@@ -39,7 +39,7 @@ namespace DenOfIz
         DZ_API explicit ShaderAssetReader( const ShaderAssetReaderDesc &desc );
         DZ_API ~ShaderAssetReader( );
 
-        DZ_API ShaderAsset Read( );
+        DZ_API ShaderAsset *Read( );
 
         DZ_API static CompiledShader ConvertToCompiledShader( const ShaderAsset &shaderAsset );
 

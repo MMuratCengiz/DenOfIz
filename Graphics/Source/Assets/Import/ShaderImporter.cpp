@@ -140,8 +140,9 @@ void ShaderImporter::WriteShaderAsset( const ImportContext &context, AssetUri &o
     writerDesc.Writer = &writer;
     ShaderAssetWriter shaderWriter( writerDesc );
 
-    shaderWriter.Write( context.ShaderAsset );
+    shaderWriter.Write( *context.ShaderAsset );
     shaderWriter.End( );
+    delete context.ShaderAsset;
 
     FileIO::WriteFile( outputPath.c_str( ), container.GetData( ) );
 

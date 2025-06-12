@@ -49,7 +49,8 @@ TextRenderer::TextRenderer( const TextRendererDesc &desc ) : m_desc( desc )
         // ReSharper disable once CppDFAUnreachableCode
         BinaryReader      binaryReader{ ByteArrayView( shaderAssetBytes.data( ), shaderAssetBytes.size( ) ) };
         ShaderAssetReader assetReader{ { &binaryReader } };
-        m_fontShaderProgram = std::make_unique<ShaderProgram>( assetReader.Read( ) );
+        auto shaderAsset = std::unique_ptr<ShaderAsset>( assetReader.Read( ) );
+        m_fontShaderProgram = std::make_unique<ShaderProgram>( *shaderAsset );
     }
     // ReSharper disable once CppRedundantElseKeywordInsideCompoundStatement
     else

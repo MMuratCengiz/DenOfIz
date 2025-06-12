@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
 #include "DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
 
 #ifdef _WIN32
 #include <wrl/client.h>
@@ -39,23 +40,25 @@ ShaderAssetReader::ShaderAssetReader( const ShaderAssetReaderDesc &desc ) : m_re
 
 ShaderAssetReader::~ShaderAssetReader( ) = default;
 
-ShaderAsset ShaderAssetReader::Read( )
+ShaderAsset *ShaderAssetReader::Read( )
 {
     if ( m_assetRead )
     {
         return m_shaderAsset;
     }
 
+    m_shaderAsset       = new ShaderAsset( );
     m_streamStartOffset = m_reader->Position( );
     ReadHeader( );
 
-    const uint32_t numStages         = m_reader->ReadUInt32( );
-    m_shaderAsset.Stages.NumElements = numStages;
-    m_shaderAsset.Stages.Elements    = static_cast<ShaderStageAsset *>( std::malloc( numStages * sizeof( ShaderStageAsset ) ) );
+    const uint32_t numStages          = m_reader->ReadUInt32( );
+    DZArenaArrayHelper<ShaderStageAssetArray, ShaderStageAsset>::AllocateArray( 
+        m_shaderAsset->_Arena, m_shaderAsset->Stages, numStages 
+    );
 
     for ( uint32_t i = 0; i < numStages; ++i )
     {
-        ShaderStageAsset &stage = m_shaderAsset.Stages.Elements[ i ];
+        ShaderStageAsset &stage = m_shaderAsset->Stages.Elements[ i ];
 
         stage.Stage      = static_cast<ShaderStage>( m_reader->ReadUInt32( ) );
         stage.EntryPoint = m_reader->ReadString( );
@@ -72,9 +75,11 @@ ShaderAsset ShaderAssetReader::Read( )
         const uint64_t reflectionSize = m_reader->ReadUInt64( );
         stage.Reflection              = m_reader->ReadBytes( reflectionSize );
 
-        const uint32_t numLocalBindings            = m_reader->ReadUInt32( );
-        stage.RayTracing.LocalBindings.Elements    = static_cast<ResourceBindingSlot *>( std::malloc( numLocalBindings * sizeof( ResourceBindingSlot ) ) );
+        const uint32_t numLocalBindings = m_reader->ReadUInt32( );
         stage.RayTracing.LocalBindings.NumElements = numLocalBindings;
+        stage.RayTracing.LocalBindings.Elements = DZArenaAllocator<ResourceBindingSlot>::Allocate( 
+            m_shaderAsset->_Arena, numLocalBindings 
+        );
 
         for ( uint32_t j = 0; j < numLocalBindings; ++j )
         {
@@ -87,23 +92,24 @@ ShaderAsset ShaderAssetReader::Read( )
         stage.RayTracing.HitGroupType = static_cast<HitGroupType>( m_reader->ReadUInt32( ) );
     }
 
-    ReadRootSignature( m_shaderAsset.ReflectDesc.RootSignature );
-    ReadInputLayout( m_shaderAsset.ReflectDesc.InputLayout );
+    ReadRootSignature( m_shaderAsset->ReflectDesc.RootSignature );
+    ReadInputLayout( m_shaderAsset->ReflectDesc.InputLayout );
 
     const uint32_t numLocalRootSigs = m_reader->ReadUInt32( );
-    m_shaderAsset.ReflectDesc.LocalRootSignatures.Resize( numLocalRootSigs );
+    DZArenaArrayHelper<LocalRootSignatureDescArray, LocalRootSignatureDesc>::AllocateAndConstructArray(
+        m_shaderAsset->_Arena, m_shaderAsset->ReflectDesc.LocalRootSignatures, numLocalRootSigs
+    );
 
     for ( uint32_t i = 0; i < numLocalRootSigs; ++i )
     {
-        LocalRootSignatureDesc &localDesc = m_shaderAsset.ReflectDesc.LocalRootSignatures.GetElement( i );
+        LocalRootSignatureDesc &localDesc = m_shaderAsset->ReflectDesc.LocalRootSignatures.Elements[ i ];
         ReadLocalRootSignature( localDesc );
     }
 
-    m_shaderAsset.RayTracing.MaxNumPayloadBytes   = m_reader->ReadUInt32( );
-    m_shaderAsset.RayTracing.MaxNumAttributeBytes = m_reader->ReadUInt32( );
-    m_shaderAsset.RayTracing.MaxRecursionDepth    = m_reader->ReadUInt32( );
-
-    m_shaderAsset.UserProperties = AssetReaderHelpers::ReadUserProperties( m_reader );
+    m_shaderAsset->RayTracing.MaxNumPayloadBytes   = m_reader->ReadUInt32( );
+    m_shaderAsset->RayTracing.MaxNumAttributeBytes = m_reader->ReadUInt32( );
+    m_shaderAsset->RayTracing.MaxRecursionDepth    = m_reader->ReadUInt32( );
+    m_shaderAsset->UserProperties                  = AssetReaderHelpers::ReadUserProperties( m_reader );
 
     m_assetRead = true;
     return m_shaderAsset;
@@ -111,10 +117,10 @@ ShaderAsset ShaderAssetReader::Read( )
 
 void ShaderAssetReader::ReadHeader( )
 {
-    m_shaderAsset.Magic    = m_reader->ReadUInt64( );
-    m_shaderAsset.Version  = m_reader->ReadUInt32( );
-    m_shaderAsset.NumBytes = m_reader->ReadUInt64( );
-    m_shaderAsset.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
+    m_shaderAsset->Magic    = m_reader->ReadUInt64( );
+    m_shaderAsset->Version  = m_reader->ReadUInt32( );
+    m_shaderAsset->NumBytes = m_reader->ReadUInt64( );
+    m_shaderAsset->Uri      = AssetUri::Parse( m_reader->ReadString( ) );
 }
 
 void ShaderAssetReader::ReadInputLayout( InputLayoutDesc &inputLayout ) const
@@ -143,20 +149,25 @@ void ShaderAssetReader::ReadInputLayout( InputLayoutDesc &inputLayout ) const
 void ShaderAssetReader::ReadRootSignature( RootSignatureDesc &rootSignature ) const
 {
     const uint32_t numResourceBindings = m_reader->ReadUInt32( );
-    rootSignature.ResourceBindings.Resize( numResourceBindings );
-
+    
+    DZArenaArrayHelper<ResourceBindingDescArray, ResourceBindingDesc>::AllocateAndConstructArray( 
+        m_shaderAsset->_Arena, rootSignature.ResourceBindings, numResourceBindings 
+    );
+    
     for ( uint32_t i = 0; i < numResourceBindings; ++i )
     {
-        ResourceBindingDesc &binding = rootSignature.ResourceBindings.GetElement( i );
+        ResourceBindingDesc &binding = rootSignature.ResourceBindings.Elements[ i ];
         ReadResourceBinding( binding );
     }
 
     const uint32_t numStaticSamplers = m_reader->ReadUInt32( );
-    rootSignature.StaticSamplers.Resize( numStaticSamplers );
+    DZArenaArrayHelper<StaticSamplerDescArray, StaticSamplerDesc>::AllocateAndConstructArray(
+        m_shaderAsset->_Arena, rootSignature.StaticSamplers, numStaticSamplers
+    );
 
     for ( uint32_t i = 0; i < numStaticSamplers; ++i )
     {
-        StaticSamplerDesc &sampler    = rootSignature.StaticSamplers.GetElement( i );
+        StaticSamplerDesc &sampler    = rootSignature.StaticSamplers.Elements[ i ];
         sampler.Sampler.MagFilter     = static_cast<Filter>( m_reader->ReadUInt32( ) );
         sampler.Sampler.MinFilter     = static_cast<Filter>( m_reader->ReadUInt32( ) );
         sampler.Sampler.AddressModeU  = static_cast<SamplerAddressMode>( m_reader->ReadUInt32( ) );
@@ -189,11 +200,13 @@ void ShaderAssetReader::ReadRootSignature( RootSignatureDesc &rootSignature ) co
     }
 
     const uint32_t numRootConstants = m_reader->ReadUInt32( );
-    rootSignature.RootConstants.Resize( numRootConstants );
+    DZArenaArrayHelper<RootConstantResourceBindingDescArray, RootConstantResourceBindingDesc>::AllocateAndConstructArray(
+        m_shaderAsset->_Arena, rootSignature.RootConstants, numRootConstants
+    );
 
     for ( uint32_t i = 0; i < numRootConstants; ++i )
     {
-        RootConstantResourceBindingDesc &constant = rootSignature.RootConstants.GetElement( i );
+        RootConstantResourceBindingDesc &constant = rootSignature.RootConstants.Elements[ i ];
         constant.Name                             = m_reader->ReadString( );
         constant.Binding                          = m_reader->ReadUInt32( );
         constant.NumBytes                         = m_reader->ReadInt32( );
@@ -212,11 +225,14 @@ void ShaderAssetReader::ReadRootSignature( RootSignatureDesc &rootSignature ) co
 void ShaderAssetReader::ReadLocalRootSignature( LocalRootSignatureDesc &localDesc ) const
 {
     const uint32_t numBindings = m_reader->ReadUInt32( );
-    localDesc.ResourceBindings.Resize( numBindings );
+    
+    DZArenaArrayHelper<ResourceBindingDescArray, ResourceBindingDesc>::AllocateAndConstructArray( 
+        m_shaderAsset->_Arena, localDesc.ResourceBindings, numBindings 
+    );
 
     for ( uint32_t j = 0; j < numBindings; ++j )
     {
-        ResourceBindingDesc &bindingDesc = localDesc.ResourceBindings.GetElement( j );
+        ResourceBindingDesc &bindingDesc = localDesc.ResourceBindings.Elements[ j ];
         ReadResourceBinding( bindingDesc );
     }
 }

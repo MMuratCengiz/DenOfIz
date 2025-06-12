@@ -505,7 +505,7 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
     m_rayTracingRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
 
     m_hgLocalRootSignature =
-        std::unique_ptr<ILocalRootSignature>( m_logicalDevice->CreateLocalRootSignature( reflection.LocalRootSignatures.GetElement( m_closestHitTriangleIndex ) ) );
+        std::unique_ptr<ILocalRootSignature>( m_logicalDevice->CreateLocalRootSignature( reflection.LocalRootSignatures.Elements[ m_closestHitTriangleIndex ] ) );
 
     InteropArray<HitGroupDesc> hitGroupDescs;
     { // Create hit groups

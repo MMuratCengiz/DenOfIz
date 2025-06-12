@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Serde/Asset.h"
 #include "DenOfIzGraphics/Assets/Shaders/ShaderReflectDesc.h"
 #include "DenOfIzGraphics/Utilities/Common_Arrays.h"
+#include "DenOfIzGraphics/Utilities/DZArena.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
 
 namespace DenOfIz
@@ -58,14 +59,15 @@ namespace DenOfIz
         }
     };
 
-    struct DZ_API ShaderAsset : AssetHeader
+    struct DZ_API ShaderAsset : AssetHeader, NonCopyable
     {
-        static constexpr uint32_t Latest = 1;
+        DZArena _Arena{ sizeof( ShaderAsset ) };
 
-        ShaderStageAssetArray  Stages;
-        ShaderReflectDesc      ReflectDesc;
-        ShaderRayTracingDesc   RayTracing;
-        UserPropertyArray      UserProperties;
+        static constexpr uint32_t Latest = 1;
+        ShaderStageAssetArray     Stages;
+        ShaderReflectDesc         ReflectDesc;
+        ShaderRayTracingDesc      RayTracing;
+        UserPropertyArray         UserProperties;
 
         ShaderAsset( ) : AssetHeader( 0x44414853445A /*DZSHAD*/, Latest, 0 )
         {
@@ -74,12 +76,6 @@ namespace DenOfIz
         static InteropString Extension( )
         {
             return "dzshader";
-        }
-
-        void Dispose( ) const
-        {
-            Stages.Dispose( );
-            delete[] UserProperties.Elements;
         }
     };
 } // namespace DenOfIz

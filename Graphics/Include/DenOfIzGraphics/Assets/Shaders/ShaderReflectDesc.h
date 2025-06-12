@@ -29,7 +29,7 @@ namespace DenOfIz
         InputLayoutDesc   InputLayout;
         RootSignatureDesc RootSignature;
         /// Local data layouts for each shader, index matched with the ShaderDescs provided in the ShaderProgramDesc.
-        InteropArray<LocalRootSignatureDesc> LocalRootSignatures;
+        LocalRootSignatureDescArray LocalRootSignatures;
         /// Thread group sizes for compute, mesh, and task shaders.
         InteropArray<ThreadGroupInfo> ThreadGroups;
     };

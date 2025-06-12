@@ -42,22 +42,33 @@ namespace DenOfIz
     /// in as well, some of it might feel cryptic to the end user.
     struct DZ_API ResourceBindingDesc
     {
-        InteropString              Name;
-        ResourceBindingType        BindingType = ResourceBindingType::ConstantBuffer;
-        uint32_t                   Binding{ };
-        uint32_t                   RegisterSpace = 0;
-        uint32_t                   Descriptor;
-        InteropArray<ShaderStage>  Stages;
-        int                        ArraySize = 1; // 1 is both 'Arr[1]'(Size of 1) and Simply 'Var'(Non array variable)
-        ReflectionDesc             Reflection{ };
-        bool                       IsBindless = false;
+        InteropString             Name;
+        ResourceBindingType       BindingType = ResourceBindingType::ConstantBuffer;
+        uint32_t                  Binding{ };
+        uint32_t                  RegisterSpace = 0;
+        uint32_t                  Descriptor;
+        InteropArray<ShaderStage> Stages;
+        int                       ArraySize = 1; // 1 is both 'Arr[1]'(Size of 1) and Simply 'Var'(Non array variable)
+        ReflectionDesc            Reflection{ };
+        bool                      IsBindless = false;
     };
-    DZ_API InteropArray<ResourceBindingDesc> SortResourceBindings( const InteropArray<ResourceBindingDesc> &bindings );
+
+    struct DZ_API ResourceBindingDescArray
+    {
+        ResourceBindingDesc *Elements;
+        uint32_t             NumElements;
+    };
 
     struct DZ_API StaticSamplerDesc
     {
         SamplerDesc         Sampler;
         ResourceBindingDesc Binding;
+    };
+
+    struct DZ_API StaticSamplerDescArray
+    {
+        StaticSamplerDesc *Elements;
+        uint32_t           NumElements;
     };
 
     // For cross api compatibility the RegisterSpace is hardcoded to 99, make sure to use the same value in the HLSL Shader
@@ -68,6 +79,12 @@ namespace DenOfIz
         int                       NumBytes{ };
         InteropArray<ShaderStage> Stages;
         ReflectionDesc            Reflection{ };
+    };
+
+    struct DZ_API RootConstantResourceBindingDescArray
+    {
+        RootConstantResourceBindingDesc *Elements;
+        uint32_t                         NumElements;
     };
 
     template class DZ_API InteropArray<ResourceBindingDesc>;
@@ -84,15 +101,19 @@ namespace DenOfIz
         bool                IsDynamic     = true; // Can be updated at runtime
         InteropString       Name;
     };
-    template class DZ_API InteropArray<BindlessResourceDesc>;
+    struct DZ_API BindlessResourceDescArray
+    {
+        BindlessResourceDesc *Elements;
+        uint32_t              NumElements;
+    };
 
     struct DZ_API RootSignatureDesc
     {
         // The order of the bindings must match the order of the shader inputs!!! TODO might need to be fixed but this is normal for DX12
-        InteropArray<ResourceBindingDesc>             ResourceBindings;
-        InteropArray<StaticSamplerDesc>               StaticSamplers;
-        InteropArray<RootConstantResourceBindingDesc> RootConstants;
-        InteropArray<BindlessResourceDesc>            BindlessResources;
+        ResourceBindingDescArray             ResourceBindings;
+        StaticSamplerDescArray               StaticSamplers;
+        RootConstantResourceBindingDescArray RootConstants;
+        BindlessResourceDescArray            BindlessResources;
     };
 
     class DZ_API IRootSignature

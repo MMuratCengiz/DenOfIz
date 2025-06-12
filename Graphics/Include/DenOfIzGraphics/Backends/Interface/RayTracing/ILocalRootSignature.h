@@ -27,8 +27,13 @@ namespace DenOfIz
 {
     struct DZ_API LocalRootSignatureDesc
     {
-        InteropArray<ResourceBindingDesc> ResourceBindings{ };
-        LocalRootSignatureDesc           &Merge( const LocalRootSignatureDesc &other );
+        ResourceBindingDescArray ResourceBindings{ };
+    };
+
+    struct DZ_API LocalRootSignatureDescArray
+    {
+        LocalRootSignatureDesc *Elements;
+        uint32_t                NumElements;
     };
     template class DZ_API InteropArray<LocalRootSignatureDesc>;
 

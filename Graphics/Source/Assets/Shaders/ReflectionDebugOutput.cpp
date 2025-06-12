@@ -142,9 +142,9 @@ void ReflectionDebugOutput::DumpReflectionInfo( const ShaderReflectDesc &reflect
     DumpRootSignature( output, reflection.RootSignature );
 
     output << "\n=== Local Root Signatures ===\n";
-    for ( int i = 0; i < reflection.LocalRootSignatures.NumElements( ); ++i )
+    for ( int i = 0; i < reflection.LocalRootSignatures.NumElements; ++i )
     {
-        if ( auto localRootSignatureDesc = reflection.LocalRootSignatures.GetElement( i ); localRootSignatureDesc.ResourceBindings.NumElements( ) > 0 )
+        if ( auto localRootSignatureDesc = reflection.LocalRootSignatures.Elements[ i ]; localRootSignatureDesc.ResourceBindings.NumElements > 0 )
         {
             output << "\nLocal Root Signature " << i << "\n";
             DumpResourceBindings( output, localRootSignatureDesc.ResourceBindings );
@@ -155,9 +155,9 @@ void ReflectionDebugOutput::DumpReflectionInfo( const ShaderReflectDesc &reflect
     spdlog::info( "{}", output.str( ) );
 }
 
-void ReflectionDebugOutput::DumpResourceBindings( std::stringstream &output, const InteropArray<ResourceBindingDesc> &resourceBindings )
+void ReflectionDebugOutput::DumpResourceBindings( std::stringstream &output, const ResourceBindingDescArray &resourceBindings )
 {
-    if ( resourceBindings.NumElements( ) == 0 )
+    if ( resourceBindings.NumElements == 0 )
     {
         return;
     }
@@ -168,9 +168,9 @@ void ReflectionDebugOutput::DumpResourceBindings( std::stringstream &output, con
            << "Stages\n";
     output << std::string( 100, '-' ) << '\n';
 
-    for ( int i = 0; i < resourceBindings.NumElements( ); ++i )
+    for ( int i = 0; i < resourceBindings.NumElements; ++i )
     {
-        const auto &binding = resourceBindings.GetElement( i );
+        const auto &binding = resourceBindings.Elements[ i ];
 
         output << std::setw( 40 ) << std::left << binding.Name.Get( ) << std::setw( 15 ) << DxcEnumConverter::GetBindingTypeString( binding.BindingType ) << std::setw( 10 )
                << binding.RegisterSpace << std::setw( 10 ) << binding.Binding << std::setw( 10 ) << binding.Reflection.NumBytes
@@ -195,9 +195,9 @@ void ReflectionDebugOutput::DumpRootSignature( std::stringstream &output, const 
     DumpResourceBindings( output, sig.ResourceBindings );
 
     output << "\n--- Root Constants --- \n";
-    for ( int i = 0; i < sig.RootConstants.NumElements( ); ++i )
+    for ( int i = 0; i < sig.RootConstants.NumElements; ++i )
     {
-        const auto &constant = sig.RootConstants.GetElement( i );
+        const auto &constant = sig.RootConstants.Elements[ i ];
         output << std::setw( 40 ) << constant.Name.Get( ) << std::setw( 10 ) << constant.Binding << std::setw( 10 ) << constant.NumBytes << " "
                << DxcEnumConverter::GetStagesString( constant.Stages ) << "\n";
     }

@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Import/ShaderImporter.h>
-#include <DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetWriter.h>
-#include <DenOfIzGraphics/Assets/Stream/BinaryWriter.h>
-#include <DenOfIzGraphics/Utilities/Interop.h>
+#include "DenOfIzGraphics/Assets/Import/ShaderImporter.h"
+#include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetWriter.h"
+#include "DenOfIzGraphics/Assets/Stream/BinaryWriter.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
 
 namespace DenOfIz::EmbeddedTextRendererShaders
 {
@@ -155,12 +155,12 @@ float4 main(PSInput input) : SV_TARGET
         compiledShader.Stages      = shaderProgram.CompiledShaders( );
         compiledShader.ReflectDesc = shaderProgram.Reflect( );
 
-        ShaderAsset asset = ShaderAssetWriter::CreateFromCompiledShader( compiledShader );
+        auto asset = std::unique_ptr<ShaderAsset>( ShaderAssetWriter::CreateFromCompiledShader( compiledShader ) );
 
         BinaryContainer   container;
         BinaryWriter      binaryWriter( container );
         ShaderAssetWriter shaderAssetWriter( ShaderAssetWriterDesc{ &binaryWriter } );
-        shaderAssetWriter.Write( asset );
+        shaderAssetWriter.Write( *asset.get( ) );
 
         BinaryReader binaryReader{ container };
         binaryReader.LogAsCppArray( ); // Replace ShaderAssetBytes with the result of this call, remember to have sufficient terminal buffer

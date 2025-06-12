@@ -30,10 +30,10 @@ namespace DenOfIz
 
     class ShaderAssetWriter
     {
-        ShaderAsset   m_shaderAsset;
-        BinaryWriter *m_writer;
-        uint64_t      m_streamStartOffset = 0;
-        bool          m_finalized         = false;
+        ShaderAsset const *m_shaderAsset;
+        BinaryWriter      *m_writer;
+        uint64_t           m_streamStartOffset = 0;
+        bool               m_finalized         = false;
 
     public:
         DZ_API explicit ShaderAssetWriter( const ShaderAssetWriterDesc &desc );
@@ -42,7 +42,7 @@ namespace DenOfIz
         DZ_API void Write( const ShaderAsset &shaderAsset );
         DZ_API void End( );
 
-        DZ_API static ShaderAsset CreateFromCompiledShader( const CompiledShader &compiledShader );
+        DZ_API static ShaderAsset *CreateFromCompiledShader( const CompiledShader &compiledShader );
 
     private:
         void WriteHeader( uint32_t totalNumBytes ) const;

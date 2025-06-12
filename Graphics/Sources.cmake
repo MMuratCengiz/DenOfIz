@@ -97,6 +97,7 @@ set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
     Source/Data/Geometry.cpp
     Source/Renderer/Sync/FrameSync.cpp
     Source/Renderer/Sync/ResourceTracking.cpp
+    Source/Utilities/DZArena.cpp
     Source/Utilities/Engine.cpp
     Source/Utilities/StepTimer.cpp
     Source/Utilities/Utilities.cpp
@@ -104,11 +105,9 @@ set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
     Source/Utilities/InteropMathConverter.cpp
     Source/Utilities/InteropUtilities.cpp
     Source/Backends/Interface/CommonData.cpp
-    Source/Backends/Interface/IRootSignature.cpp
     Source/Backends/Interface/ITextureResource.cpp
     Source/Backends/Interface/ShaderData.cpp
     Source/Backends/Interface/RayTracing/IShaderBindingTable.cpp
-    Source/Backends/Interface/RayTracing/ILocalRootSignature.cpp
 )
 
 set(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES

@@ -53,9 +53,9 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
     ResourceBindGroupDesc bindGroupDesc{ };
     bindGroupDesc.RootSignature = m_rootSignature.get( );
 
-    for ( int bindingIndex = 0; bindingIndex < programReflection.RootSignature.ResourceBindings.NumElements( ); ++bindingIndex )
+    for ( int bindingIndex = 0; bindingIndex < programReflection.RootSignature.ResourceBindings.NumElements; ++bindingIndex )
     {
-        const auto &resourceBinding = programReflection.RootSignature.ResourceBindings.GetElement( bindingIndex );
+        const auto &resourceBinding = programReflection.RootSignature.ResourceBindings.Elements[ bindingIndex ];
         bindGroupDesc.RegisterSpace = resourceBinding.RegisterSpace;
         for ( uint32_t i = 0; i < 3; ++i )
         {

@@ -16,8 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "DenOfIzGraphicsInternal/UI/UITextVertexCache.h"
 #include "DenOfIzGraphicsInternal/Assets/Font/TextLayoutCache.h"
+// Includes DirectXMath needs to be second due to build breaking macro definitions
+#include "DenOfIzGraphicsInternal/UI/UITextVertexCache.h"
 
 using namespace DenOfIz;
 

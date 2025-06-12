@@ -17,21 +17,39 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalLocalRootSignature.h"
-#include "DenOfIzGraphicsInternal/Utilities/ContainerUtilities.h"
 #include <algorithm>
+#include "DenOfIzGraphicsInternal/Utilities/ContainerUtilities.h"
 
 using namespace DenOfIz;
 
 MetalLocalRootSignature::MetalLocalRootSignature( MetalContext *context, const LocalRootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    auto sortedBindings = SortResourceBindings( desc.ResourceBindings );
+    std::vector<ResourceBindingDesc> sortedBindings;  // TODO duplicated in MetalRootSignature and MetalLocalRootSignature
+    sortedBindings.reserve( desc.ResourceBindings.NumElements );
+    for ( size_t i = 0; i < desc.ResourceBindings.NumElements; ++i )
+    {
+        sortedBindings.push_back( desc.ResourceBindings.Elements[ i ] );
+    }
+    std::sort( sortedBindings.begin( ), sortedBindings.end( ),
+               []( const ResourceBindingDesc &a, const ResourceBindingDesc &b )
+               {
+                   if ( a.RegisterSpace != b.RegisterSpace )
+                   {
+                       return a.RegisterSpace < b.RegisterSpace;
+                   }
+                   if ( a.Binding != b.Binding )
+                   {
+                       return a.Binding < b.Binding;
+                   }
+                   return static_cast<int>( a.BindingType ) < static_cast<int>( b.BindingType );
+               } );
 
     uint32_t cbvOffsetBytes = 0;
     uint32_t srvUavOffset   = 0;
     uint32_t samplerOffset  = 0;
-    for ( uint32_t i = 0; i < sortedBindings.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < sortedBindings.size( ); ++i )
     {
-        const auto &binding = sortedBindings.GetElement( i );
+        const auto &binding = sortedBindings[ i ];
 
         if ( binding.BindingType == ResourceBindingType::ConstantBuffer )
         {
@@ -79,7 +97,7 @@ const uint32_t MetalLocalRootSignature::InlineDataOffset( uint32_t binding ) con
 {
     if ( binding >= m_inlineDataOffsets.size( ) )
     {
-        spdlog::error("Invalid binding index( {} )", binding);
+        spdlog::error( "Invalid binding index( {} )", binding );
         return 0;
     }
     return m_inlineDataOffsets[ binding ];
@@ -89,7 +107,7 @@ const uint32_t MetalLocalRootSignature::InlineNumBytes( uint32_t binding ) const
 {
     if ( binding >= m_inlineDataNumBytes.size( ) )
     {
-        spdlog::error("Invalid binding index( {} )", binding);
+        spdlog::error( "Invalid binding index( {} )", binding );
         return 0;
     }
     return m_inlineDataNumBytes[ binding ];
@@ -126,7 +144,7 @@ bool MetalLocalRootSignature::EnsureSize( uint32_t binding, const std::vector<Me
 {
     if ( binding >= bindings.size( ) )
     {
-        spdlog::error("Invalid binding index( {} )", binding);
+        spdlog::error( "Invalid binding index( {} )", binding );
         return false;
     }
 

@@ -41,7 +41,7 @@ namespace DenOfIz
         struct ImportContext
         {
             ImportJobDesc    JobDesc;
-            ShaderAsset      ShaderAsset;
+            ShaderAsset     *ShaderAsset;
             InteropString    ErrorMessage;
             ImporterResult   Result;
             ShaderImportDesc Desc;

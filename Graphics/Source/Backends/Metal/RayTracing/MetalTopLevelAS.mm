@@ -121,7 +121,7 @@ id<MTLBuffer> MetalTopLevelAS::Scratch( ) const
 
 size_t MetalTopLevelAS::NumInstances( ) const
 {
-    return m_desc.Instances.NumElements( );
+    return m_desc.Instances.NumElements;
 }
 
 id<MTLBuffer> MetalTopLevelAS::InstanceBuffer( ) const

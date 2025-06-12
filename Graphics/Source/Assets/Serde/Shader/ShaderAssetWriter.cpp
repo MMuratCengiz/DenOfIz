@@ -37,7 +37,7 @@ void ShaderAssetWriter::Write( const ShaderAsset &shaderAsset )
         return;
     }
 
-    m_shaderAsset       = shaderAsset;
+    m_shaderAsset       = &shaderAsset;
     m_streamStartOffset = m_writer->Position( );
     WriteHeader( 0 );
 
@@ -80,11 +80,11 @@ void ShaderAssetWriter::Write( const ShaderAsset &shaderAsset )
     WriteRootSignature( shaderAsset.ReflectDesc.RootSignature );
     WriteInputLayout( shaderAsset.ReflectDesc.InputLayout );
 
-    const uint32_t numLocalRootSigs = shaderAsset.ReflectDesc.LocalRootSignatures.NumElements( );
+    const uint32_t numLocalRootSigs = shaderAsset.ReflectDesc.LocalRootSignatures.NumElements;
     m_writer->WriteUInt32( numLocalRootSigs );
     for ( uint32_t i = 0; i < numLocalRootSigs; ++i )
     {
-        const LocalRootSignatureDesc &localDesc = shaderAsset.ReflectDesc.LocalRootSignatures.GetElement( i );
+        const LocalRootSignatureDesc &localDesc = shaderAsset.ReflectDesc.LocalRootSignatures.Elements[ i ];
         WriteLocalRootSignature( localDesc );
     }
 
@@ -97,10 +97,10 @@ void ShaderAssetWriter::Write( const ShaderAsset &shaderAsset )
 
 void ShaderAssetWriter::WriteHeader( const uint32_t totalNumBytes ) const
 {
-    m_writer->WriteUInt64( m_shaderAsset.Magic );
-    m_writer->WriteUInt32( m_shaderAsset.Version );
+    m_writer->WriteUInt64( m_shaderAsset->Magic );
+    m_writer->WriteUInt32( m_shaderAsset->Version );
     m_writer->WriteUInt64( totalNumBytes );
-    m_writer->WriteString( m_shaderAsset.Uri.ToInteropString( ) );
+    m_writer->WriteString( m_shaderAsset->Uri.ToInteropString( ) );
 }
 
 void ShaderAssetWriter::WriteInputLayout( const InputLayoutDesc &inputLayout ) const
@@ -127,20 +127,20 @@ void ShaderAssetWriter::WriteInputLayout( const InputLayoutDesc &inputLayout ) c
 
 void ShaderAssetWriter::WriteRootSignature( const RootSignatureDesc &rootSignature ) const
 {
-    const uint32_t numResourceBindings = rootSignature.ResourceBindings.NumElements( );
+    const uint32_t numResourceBindings = rootSignature.ResourceBindings.NumElements;
     m_writer->WriteUInt32( numResourceBindings );
 
     for ( uint32_t i = 0; i < numResourceBindings; ++i )
     {
-        const ResourceBindingDesc &binding = rootSignature.ResourceBindings.GetElement( i );
+        const ResourceBindingDesc &binding = rootSignature.ResourceBindings.Elements[ i ];
         WriteResourceBinding( binding );
     }
 
-    const uint32_t numStaticSamplers = rootSignature.StaticSamplers.NumElements( );
+    const uint32_t numStaticSamplers = rootSignature.StaticSamplers.NumElements;
     m_writer->WriteUInt32( numStaticSamplers );
     for ( uint32_t i = 0; i < numStaticSamplers; ++i )
     {
-        const StaticSamplerDesc &sampler = rootSignature.StaticSamplers.GetElement( i );
+        const StaticSamplerDesc &sampler = rootSignature.StaticSamplers.Elements[ i ];
         m_writer->WriteUInt32( static_cast<uint32_t>( sampler.Sampler.MagFilter ) );
         m_writer->WriteUInt32( static_cast<uint32_t>( sampler.Sampler.MinFilter ) );
         m_writer->WriteUInt32( static_cast<uint32_t>( sampler.Sampler.AddressModeU ) );
@@ -172,12 +172,12 @@ void ShaderAssetWriter::WriteRootSignature( const RootSignatureDesc &rootSignatu
         WriteResourceReflection( sampler.Binding.Reflection );
     }
 
-    const uint32_t numRootConstants = rootSignature.RootConstants.NumElements( );
+    const uint32_t numRootConstants = rootSignature.RootConstants.NumElements;
     m_writer->WriteUInt32( numRootConstants );
 
     for ( uint32_t i = 0; i < numRootConstants; ++i )
     {
-        const RootConstantResourceBindingDesc &constant = rootSignature.RootConstants.GetElement( i );
+        const RootConstantResourceBindingDesc &constant = rootSignature.RootConstants.Elements[ i ];
         m_writer->WriteString( constant.Name );
         m_writer->WriteUInt32( constant.Binding );
         m_writer->WriteInt32( constant.NumBytes );
@@ -194,12 +194,12 @@ void ShaderAssetWriter::WriteRootSignature( const RootSignatureDesc &rootSignatu
 
 void ShaderAssetWriter::WriteLocalRootSignature( const LocalRootSignatureDesc &localDesc ) const
 {
-    const uint32_t numBindings = localDesc.ResourceBindings.NumElements( );
+    const uint32_t numBindings = localDesc.ResourceBindings.NumElements;
     m_writer->WriteUInt32( numBindings );
 
     for ( uint32_t j = 0; j < numBindings; ++j )
     {
-        const ResourceBindingDesc &bindingDesc = localDesc.ResourceBindings.GetElement( j );
+        const ResourceBindingDesc &bindingDesc = localDesc.ResourceBindings.Elements[ j ];
         WriteResourceBinding( bindingDesc );
     }
 }
@@ -264,24 +264,24 @@ void ShaderAssetWriter::End( )
     m_finalized = true;
 }
 
-ShaderAsset ShaderAssetWriter::CreateFromCompiledShader( const CompiledShader &compiledShader )
+ShaderAsset *ShaderAssetWriter::CreateFromCompiledShader( const CompiledShader &compiledShader )
 {
-    ShaderAsset shaderAsset{ };
-    shaderAsset.RayTracing.MaxNumPayloadBytes   = compiledShader.RayTracing.MaxNumPayloadBytes;
-    shaderAsset.RayTracing.MaxNumAttributeBytes = compiledShader.RayTracing.MaxNumAttributeBytes;
-    shaderAsset.RayTracing.MaxRecursionDepth    = compiledShader.RayTracing.MaxRecursionDepth;
+    ShaderAsset *shaderAsset                     = new ShaderAsset;
+    shaderAsset->RayTracing.MaxNumPayloadBytes   = compiledShader.RayTracing.MaxNumPayloadBytes;
+    shaderAsset->RayTracing.MaxNumAttributeBytes = compiledShader.RayTracing.MaxNumAttributeBytes;
+    shaderAsset->RayTracing.MaxRecursionDepth    = compiledShader.RayTracing.MaxRecursionDepth;
 
-    shaderAsset.ReflectDesc = compiledShader.ReflectDesc;
+    shaderAsset->ReflectDesc = compiledShader.ReflectDesc;
 
     const uint32_t numStages = compiledShader.Stages.NumElements;
 
-    shaderAsset.Stages.NumElements = numStages;
-    shaderAsset.Stages.Elements    = static_cast<ShaderStageAsset *>( std::malloc( numStages * sizeof( ShaderStageAsset ) ) );
+    shaderAsset->Stages.NumElements = numStages;
+    shaderAsset->Stages.Elements    = static_cast<ShaderStageAsset *>( std::malloc( numStages * sizeof( ShaderStageAsset ) ) );
 
     for ( uint32_t i = 0; i < numStages; ++i )
     {
         const CompiledShaderStage *compiledStage = compiledShader.Stages.Elements[ i ];
-        ShaderStageAsset          &stageAsset    = shaderAsset.Stages.Elements[ i ];
+        ShaderStageAsset          &stageAsset    = shaderAsset->Stages.Elements[ i ];
 
         stageAsset.Stage      = compiledStage->Stage;
         stageAsset.EntryPoint = compiledStage->EntryPoint;
