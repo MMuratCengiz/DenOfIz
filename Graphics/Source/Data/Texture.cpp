@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Data/Texture.h"
+#include "DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
@@ -26,9 +27,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 #include "stb_image.h"
 
-#include "dds.h"
 #include <filesystem>
 #include <fstream>
+#include "dds.h"
 
 using namespace DenOfIz;
 
@@ -501,8 +502,8 @@ TextureMipArray Texture::ReadMipData( ) const
     case TextureExtension::DDS:
         {
             const uint32_t totalMips = m_arraySize * m_mipLevels;
-            mipData = TextureMipArray::Create( totalMips );
-            
+            DZArenaArrayHelper<TextureMipArray, TextureMip>::AllocateAndConstructArray( m_arena, mipData, totalMips );
+
             uint32_t mipIndex = 0;
             for ( uint32_t array = 0; array < m_arraySize; ++array )
             {
@@ -512,30 +513,30 @@ TextureMipArray Texture::ReadMipData( ) const
                     const auto externalOffset = m_ddsHeader->mip_offset( mip, array ) - m_ddsHeader->data_offset( );
 
                     TextureMip &mipInfo = mipData.Elements[ mipIndex++ ];
-                    mipInfo.Width      = m_ddsHeader->width( ) >> mip;
-                    mipInfo.Height     = m_ddsHeader->height( ) >> mip;
-                    mipInfo.MipIndex   = mip;
-                    mipInfo.ArrayIndex = array;
-                    mipInfo.RowPitch   = m_ddsHeader->row_pitch( mip );
-                    mipInfo.NumRows    = m_numRows >> mip;
-                    mipInfo.SlicePitch = m_ddsHeader->slice_pitch( mip );
-                    mipInfo.DataOffset = externalOffset;
+                    mipInfo.Width       = m_ddsHeader->width( ) >> mip;
+                    mipInfo.Height      = m_ddsHeader->height( ) >> mip;
+                    mipInfo.MipIndex    = mip;
+                    mipInfo.ArrayIndex  = array;
+                    mipInfo.RowPitch    = m_ddsHeader->row_pitch( mip );
+                    mipInfo.NumRows     = m_numRows >> mip;
+                    mipInfo.SlicePitch  = m_ddsHeader->slice_pitch( mip );
+                    mipInfo.DataOffset  = externalOffset;
                 }
             }
         }
         break;
     default:
-        mipData = TextureMipArray::Create( 1 );
-        
+        DZArenaArrayHelper<TextureMipArray, TextureMip>::AllocateAndConstructArray( m_arena, mipData, 1 );
+
         TextureMip &mipInfo = mipData.Elements[ 0 ];
-        mipInfo.Width      = m_width;
-        mipInfo.Height     = m_height;
-        mipInfo.MipIndex   = 0;
-        mipInfo.ArrayIndex = 0;
-        mipInfo.RowPitch   = m_rowPitch;
-        mipInfo.NumRows    = m_numRows;
-        mipInfo.SlicePitch = m_slicePitch;
-        mipInfo.DataOffset = 0;
+        mipInfo.Width       = m_width;
+        mipInfo.Height      = m_height;
+        mipInfo.MipIndex    = 0;
+        mipInfo.ArrayIndex  = 0;
+        mipInfo.RowPitch    = m_rowPitch;
+        mipInfo.NumRows     = m_numRows;
+        mipInfo.SlicePitch  = m_slicePitch;
+        mipInfo.DataOffset  = 0;
         break;
     }
 

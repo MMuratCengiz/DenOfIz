@@ -31,11 +31,11 @@ namespace DenOfIz
 
     class TextureAssetWriter
     {
-        BinaryWriter          *m_writer;
-        TextureAssetWriterDesc m_desc;
-        TextureAsset           m_textureAsset;
-        uint64_t               m_assetDataStreamPosition = 0;
-        std::vector<uint64_t>  m_textureMipPositions;
+        BinaryWriter                 *m_writer;
+        TextureAssetWriterDesc        m_desc;
+        std::unique_ptr<TextureAsset> m_textureAsset;
+        uint64_t                      m_assetDataStreamPosition = 0;
+        std::vector<uint64_t>         m_textureMipPositions;
 
         uint64_t m_streamStartLocation = 0;
         uint32_t m_lastMipIndex        = 0;

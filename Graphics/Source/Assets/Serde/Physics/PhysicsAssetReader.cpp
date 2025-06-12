@@ -16,9 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h"
 #include "DenOfIzGraphics/Assets/Serde/Physics/PhysicsAssetReader.h"
+#include "DenOfIzGraphicsInternal/Assets/Serde/Common/AssetReaderHelpers.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
 
 using namespace DenOfIz;
 
@@ -32,31 +33,32 @@ PhysicsAssetReader::PhysicsAssetReader( const PhysicsAssetReaderDesc &desc ) : m
 
 PhysicsAssetReader::~PhysicsAssetReader( ) = default;
 
-PhysicsAsset PhysicsAssetReader::Read( )
+PhysicsAsset* PhysicsAssetReader::Read( )
 {
-    m_physicsAsset       = PhysicsAsset( );
-    m_physicsAsset.Magic = m_reader->ReadUInt64( );
-    if ( m_physicsAsset.Magic != PhysicsAsset{ }.Magic )
+    m_physicsAsset       = new PhysicsAsset( );
+    m_physicsAsset->Magic = m_reader->ReadUInt64( );
+    if ( m_physicsAsset->Magic != PhysicsAsset{ }.Magic )
     {
         spdlog::critical( "Invalid PhysicsAsset magic number." );
     }
 
-    m_physicsAsset.Version = m_reader->ReadUInt32( );
-    if ( m_physicsAsset.Version > PhysicsAsset::Latest )
+    m_physicsAsset->Version = m_reader->ReadUInt32( );
+    if ( m_physicsAsset->Version > PhysicsAsset::Latest )
     {
         spdlog::warn( "PhysicsAsset version mismatch." );
     }
 
-    m_physicsAsset.NumBytes = m_reader->ReadUInt64( );
-    m_physicsAsset.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
-    m_physicsAsset.Name     = m_reader->ReadString( );
+    m_physicsAsset->NumBytes = m_reader->ReadUInt64( );
+    m_physicsAsset->Uri      = AssetUri::Parse( m_reader->ReadString( ) );
+    m_physicsAsset->Name     = m_reader->ReadString( );
 
     const uint32_t numColliders = m_reader->ReadUInt32( );
-    m_physicsAsset.Colliders = PhysicsColliderArray::Create( numColliders );
+    DZArenaArrayHelper<PhysicsColliderArray, PhysicsCollider>::AllocateAndConstructArray( m_physicsAsset->_Arena, m_physicsAsset->Colliders, numColliders );
+
 
     for ( uint32_t i = 0; i < numColliders; ++i )
     {
-        PhysicsCollider &collider = m_physicsAsset.Colliders.Elements[ i ];
+        PhysicsCollider &collider = m_physicsAsset->Colliders.Elements[ i ];
 
         collider.Type        = static_cast<PhysicsColliderType>( m_reader->ReadUInt32( ) );
         collider.Name        = m_reader->ReadString( );
@@ -88,6 +90,6 @@ PhysicsAsset PhysicsAssetReader::Read( )
         }
     }
 
-    m_physicsAsset.UserProperties = AssetReaderHelpers::ReadUserProperties( m_reader );
+    m_physicsAsset->UserProperties = AssetReaderHelpers::ReadUserProperties( &m_physicsAsset->_Arena, m_reader );
     return m_physicsAsset;
 }

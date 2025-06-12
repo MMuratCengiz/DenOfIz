@@ -28,12 +28,12 @@ namespace DenOfIz
     public:
         DZ_API static FontAsset *GetInterVar( )
         {
-            static FontAsset interVar = GetInterVarInternal( );
-            return &interVar;
+            static std::unique_ptr<FontAsset> interVar = std::unique_ptr<FontAsset>( GetInterVarInternal( ) );
+            return interVar.get( );
         }
 
     private:
         static const std::vector<Byte> &GetInterData( );
-        static FontAsset                GetInterVarInternal( );
+        static FontAsset               *GetInterVarInternal( );
     };
 } // namespace DenOfIz

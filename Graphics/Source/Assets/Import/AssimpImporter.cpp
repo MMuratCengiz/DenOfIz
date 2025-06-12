@@ -44,6 +44,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Stream/BinaryWriter.h"
 #include "DenOfIzGraphics/Data/Texture.h"
 #include "DenOfIzGraphics/Utilities/InteropMath.h"
+#include "DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
 #include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
@@ -56,6 +57,8 @@ class AssimpImporter::Impl
 {
 public:
     ImporterDesc             m_importerInfo;
+    DZArena                  m_arena{ 8192 };
+    std::vector<AssetUri>    m_createdAssets;
     const AssimpImporterDesc m_desc;
 
     struct ImportContext
@@ -113,17 +116,17 @@ public:
     ImporterResultCode ImportSceneInternal( ImportContext &context );
     ImporterResultCode ProcessNode( ImportContext &context, const aiNode *node, MeshAssetWriter *meshWriter, SkeletonAsset &skeletonAsset, int32_t parentJointIndex = -1 );
     ImporterResultCode ProcessMesh( ImportContext &context, const aiMesh *mesh, MeshAssetWriter &assetWriter ) const;
-    void               ProcessMaterial( ImportContext &context, const aiMaterial *material ) const;
-    bool ProcessTexture( ImportContext &context, const aiMaterial *material, aiTextureType textureType, const InteropString &semanticName, AssetUri &outAssetUri ) const;
-    void ProcessAnimation( ImportContext &context, const aiAnimation *animation, AssetUri &outAssetUri ) const;
+    void               ProcessMaterial( ImportContext &context, const aiMaterial *material );
+    bool               ProcessTexture( ImportContext &context, const aiMaterial *material, aiTextureType textureType, const InteropString &semanticName, AssetUri &outAssetUri );
+    void               ProcessAnimation( ImportContext &context, const aiAnimation *animation, AssetUri &outAssetUri );
 
     void ConfigureAssimpImportFlags( const AssimpImportDesc &options, unsigned int &flags, Assimp::Importer &importer ) const;
     void CalculateMeshBounds( const aiMesh *mesh, float scaleFactor, Float_3 &outMin, Float_3 &outMax ) const;
 
-    void WriteMaterialAsset( ImportContext &context, const MaterialAsset &materialAsset, AssetUri &outAssetUri ) const;
-    void WriteTextureAsset( ImportContext &context, const aiTexture *texture, const std::string &path, const InteropString &semanticName, AssetUri &outAssetUri ) const;
-    void WriteSkeletonAsset( ImportContext &context, const SkeletonAsset &skeletonAsset ) const;
-    void WriteAnimationAsset( ImportContext &context, const AnimationAsset &animationAsset, AssetUri &outAssetUri ) const;
+    void WriteMaterialAsset( ImportContext &context, MaterialAsset &materialAsset, AssetUri &outAssetUri );
+    void WriteTextureAsset( ImportContext &context, const aiTexture *texture, const std::string &path, const InteropString &semanticName, AssetUri &outAssetUri );
+    void WriteSkeletonAsset( ImportContext &context, SkeletonAsset &skeletonAsset );
+    void WriteAnimationAsset( ImportContext &context, AnimationAsset &animationAsset, AssetUri &outAssetUri );
 
     Float_4x4 ConvertMatrix( const aiMatrix4x4 &matrix ) const;
     Float_4   ConvertQuaternion( const aiQuaternion &quat ) const;
@@ -131,7 +134,7 @@ public:
     Float_2   ConvertVector2( const aiVector3D &vec ) const;
     Float_4   ConvertColor( const aiColor4D &color ) const;
 
-    void RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri ) const;
+    void RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri );
     void GenerateMeshLODs( const ImportContext &context, MeshAssetWriter &meshWriter ) const;
 };
 
@@ -177,7 +180,7 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
     context.TargetDirectory = desc.TargetDirectory;
     context.AssetNamePrefix = desc.AssetNamePrefix;
     context.Desc            = *static_cast<AssimpImportDesc *>( desc.Desc );
-
+    DZArenaArrayHelper<AssetUriArray, AssetUri>::AllocateAndConstructArray( m_pImpl->m_arena, context.Result.CreatedAssets, 1 );
     if ( !FileIO::FileExists( context.SourceFilePath ) )
     {
         context.Result.ResultCode   = ImporterResultCode::FileNotFound;
@@ -224,6 +227,8 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
         spdlog::error( "Assimp import failed for: {} Error: {}", context.SourceFilePath.Get( ), context.Result.ErrorMessage.Get( ) );
     }
 
+    context.Result.CreatedAssets.Elements    = m_pImpl->m_createdAssets.data( );
+    context.Result.CreatedAssets.NumElements = static_cast<uint32_t>( m_pImpl->m_createdAssets.size( ) );
     return context.Result;
 }
 
@@ -347,7 +352,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
     collectMeshes( context.Scene->mRootNode );
     if ( !collectedSubMeshes.empty( ) )
     {
-        meshAsset.SubMeshes = SubMeshDataArray::Create( static_cast<uint32_t>( collectedSubMeshes.size( ) ) );
+        DZArenaArrayHelper<SubMeshDataArray, SubMeshData>::AllocateAndConstructArray( m_arena, meshAsset.SubMeshes, collectedSubMeshes.size( ) );
         for ( size_t i = 0; i < collectedSubMeshes.size( ); ++i )
         {
             meshAsset.SubMeshes.Elements[ i ] = collectedSubMeshes[ i ];
@@ -372,7 +377,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
         attributeConfig.NumUVAttributes       = firstMesh->GetNumUVChannels( );
         attributeConfig.MaxBoneInfluences     = context.Desc.MaxBoneWeightsPerVertex;
 
-        attributeConfig.UVChannels = UVChannelArray::Create( firstMesh->GetNumUVChannels( ) );
+        DZArenaArrayHelper<UVChannelArray, UVChannel>::AllocateArray( m_arena, attributeConfig.UVChannels, firstMesh->GetNumUVChannels( ) );
         for ( uint32_t i = 0; i < firstMesh->GetNumUVChannels( ); ++i )
         {
             UVChannel config;
@@ -381,7 +386,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
             attributeConfig.UVChannels.Elements[ i ] = config;
         }
 
-        attributeConfig.ColorFormats = ColorFormatArray::Create( firstMesh->GetNumColorChannels( ) );
+        DZArenaArrayHelper<ColorFormatArray, ColorFormat>::AllocateAndConstructArray( m_arena, attributeConfig.ColorFormats, firstMesh->GetNumColorChannels( ) );
         for ( uint32_t i = 0; i < firstMesh->GetNumColorChannels( ); ++i )
         {
             attributeConfig.ColorFormats.Elements[ i ] = ColorFormat::RGBA;
@@ -396,7 +401,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
     if ( context.Desc.ImportAnimations && context.Scene->HasAnimations( ) )
     {
         spdlog::info( "Phase 5: Processing {} animations...", context.Scene->mNumAnimations );
-        meshAsset.AnimationRefs = AssetUriArray::Create( context.Scene->mNumAnimations );
+        DZArenaArrayHelper<AssetUriArray, AssetUri>::AllocateAndConstructArray( m_arena, meshAsset.AnimationRefs, context.Scene->mNumAnimations );
         for ( unsigned int i = 0; i < context.Scene->mNumAnimations; ++i )
         {
             AssetUri animUri;
@@ -431,7 +436,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
 
         meshWriter.FinalizeAsset( );
         RegisterCreatedAsset( context, meshUri );
-        meshAsset.Dispose( );
+
         spdlog::info( "Successfully wrote Mesh asset: {}", meshUri.ToInteropString( ).Get( ) );
         if ( context.Desc.ImportAnimations && context.Scene->HasAnimations( ) )
         {
@@ -495,28 +500,41 @@ ImporterResultCode AssimpImporter::Impl::ProcessNode( ImportContext &context, co
             {
                 spdlog::warn( "Inverse bind matrix not found in map for joint: {} . Using identity.", joint.Name.Get( ) ); /* Set identity */
             }
-            // TODO: Cleaner growing mechanism
-            JointArray newJoints = JointArray::Create( skeletonAsset.Joints.NumElements + 1 );
-            for ( size_t i = 0; i < skeletonAsset.Joints.NumElements; ++i )
+
+            size_t newJointCount = skeletonAsset.Joints.NumElements + 1;
+            Joint *newJoints     = DZArenaAllocator<Joint>::Allocate( skeletonAsset._Arena, newJointCount );
+
+            if ( skeletonAsset.Joints.Elements )
             {
-                newJoints.Elements[ i ] = skeletonAsset.Joints.Elements[ i ];
+                for ( size_t i = 0; i < skeletonAsset.Joints.NumElements; ++i )
+                {
+                    newJoints[ i ] = skeletonAsset.Joints.Elements[ i ];
+                }
             }
-            newJoints.Elements[ skeletonAsset.Joints.NumElements ] = joint;
-            skeletonAsset.Joints.Dispose( );
-            skeletonAsset.Joints = newJoints;
+
+            newJoints[ skeletonAsset.Joints.NumElements ] = joint;
+
+            skeletonAsset.Joints.Elements    = newJoints;
+            skeletonAsset.Joints.NumElements = static_cast<uint32_t>( newJointCount );
 
             if ( parentJointIndex >= 0 && parentJointIndex < static_cast<int32_t>( skeletonAsset.Joints.NumElements ) )
             {
-                // TODO: Cleaner growing mechanism
                 UInt32Array &parentChildIndices = skeletonAsset.Joints.Elements[ parentJointIndex ].ChildIndices;
-                UInt32Array  newChildIndices    = UInt32Array::Create( parentChildIndices.NumElements + 1 );
-                for ( size_t i = 0; i < parentChildIndices.NumElements; ++i )
+                size_t       newChildCount      = parentChildIndices.NumElements + 1;
+                uint32_t    *newChildIndices    = DZArenaAllocator<uint32_t>::Allocate( skeletonAsset._Arena, newChildCount );
+
+                if ( parentChildIndices.Elements )
                 {
-                    newChildIndices.Elements[ i ] = parentChildIndices.Elements[ i ];
+                    for ( size_t i = 0; i < parentChildIndices.NumElements; ++i )
+                    {
+                        newChildIndices[ i ] = parentChildIndices.Elements[ i ];
+                    }
                 }
-                newChildIndices.Elements[ parentChildIndices.NumElements ] = currentJointIndex;
-                parentChildIndices.Dispose( );
-                parentChildIndices = newChildIndices;
+
+                newChildIndices[ parentChildIndices.NumElements ] = currentJointIndex;
+
+                parentChildIndices.Elements    = newChildIndices;
+                parentChildIndices.NumElements = static_cast<uint32_t>( newChildCount );
             }
             context.BoneNameToIndexMap[ nodeNameStr ]         = currentJointIndex;
             context.IndexToAssimpNodeMap[ currentJointIndex ] = node;
@@ -682,7 +700,7 @@ ImporterResultCode AssimpImporter::Impl::ProcessMesh( ImportContext &context, co
             vertex.Bitangent = { mesh->mBitangents[ i ].x, mesh->mBitangents[ i ].y, mesh->mBitangents[ i ].z, 1.0f };
         }
 
-        vertex.UVs = Float_2Array::Create( attributeConfig.NumUVAttributes );
+        DZArenaArrayHelper<Float_2Array, Float_2>::AllocateArray( context.MeshAsset._Arena, vertex.UVs, attributeConfig.NumUVAttributes );
         for ( uint32_t uvChan = 0; uvChan < attributeConfig.NumUVAttributes; ++uvChan )
         {
             if ( mesh->HasTextureCoords( uvChan ) )
@@ -696,7 +714,7 @@ ImporterResultCode AssimpImporter::Impl::ProcessMesh( ImportContext &context, co
             }
         }
 
-        vertex.Colors = Float_4Array::Create( attributeConfig.ColorFormats.NumElements );
+        DZArenaArrayHelper<Float_4Array, Float_4>::AllocateArray( context.MeshAsset._Arena, vertex.Colors, attributeConfig.ColorFormats.NumElements );
         for ( uint32_t colChan = 0; colChan < attributeConfig.ColorFormats.NumElements; ++colChan )
         {
             if ( mesh->HasVertexColors( colChan ) )
@@ -759,7 +777,7 @@ ImporterResultCode AssimpImporter::Impl::ProcessMesh( ImportContext &context, co
     return ImporterResultCode::Success;
 }
 
-void AssimpImporter::Impl::ProcessMaterial( ImportContext &context, const aiMaterial *material ) const
+void AssimpImporter::Impl::ProcessMaterial( ImportContext &context, const aiMaterial *material )
 {
     AssetUri          assetUri;
     const std::string matNameStr = material->GetName( ).C_Str( );
@@ -826,7 +844,7 @@ void AssimpImporter::Impl::ProcessMaterial( ImportContext &context, const aiMate
 }
 
 bool AssimpImporter::Impl::ProcessTexture( ImportContext &context, const aiMaterial *material, const aiTextureType textureType, const InteropString &semanticName,
-                                           AssetUri &outAssetUri ) const
+                                           AssetUri &outAssetUri )
 {
     aiString aiPath;
     if ( material->GetTexture( textureType, 0, &aiPath ) != AI_SUCCESS || aiPath.length == 0 )
@@ -863,7 +881,7 @@ bool AssimpImporter::Impl::ProcessTexture( ImportContext &context, const aiMater
     return true;
 }
 
-void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAnimation *animation, AssetUri &outAssetUri ) const
+void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAnimation *animation, AssetUri &outAssetUri )
 {
     const std::string animNameStr = animation->mName.C_Str( );
     InteropString     animName    = AssetPathUtilities::SanitizeAssetName( animNameStr.c_str( ) );
@@ -883,7 +901,7 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
     clip.Duration               = static_cast<float>( animation->mDuration / ticksPerSecond );
 
     spdlog::info( "Processing {} joint animation channels (raw keys).", animation->mNumChannels );
-    clip.Tracks = JointAnimTrackArray::Create( animation->mNumChannels );
+    DZArenaArrayHelper<JointAnimTrackArray, JointAnimTrack>::AllocateAndConstructArray( animAsset._Arena, clip.Tracks, animation->mNumChannels );
     for ( unsigned int i = 0; i < animation->mNumChannels; ++i )
     {
         const aiNodeAnim *nodeAnim = animation->mChannels[ i ];
@@ -896,7 +914,7 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
             continue;
         }
 
-        track.PositionKeys = PositionKeyArray::Create( nodeAnim->mNumPositionKeys );
+        DZArenaArrayHelper<PositionKeyArray, PositionKey>::AllocateArray( animAsset._Arena, track.PositionKeys, nodeAnim->mNumPositionKeys );
         for ( unsigned int k = 0; k < nodeAnim->mNumPositionKeys; ++k )
         {
             PositionKey &key = track.PositionKeys.Elements[ k ];
@@ -908,7 +926,7 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
             key.Value.Z *= context.Desc.ScaleFactor;
         }
 
-        track.RotationKeys = RotationKeyArray::Create( nodeAnim->mNumRotationKeys );
+        DZArenaArrayHelper<RotationKeyArray, RotationKey>::AllocateArray( animAsset._Arena, track.RotationKeys, nodeAnim->mNumRotationKeys );
         for ( unsigned int k = 0; k < nodeAnim->mNumRotationKeys; ++k )
         {
             RotationKey &key = track.RotationKeys.Elements[ k ];
@@ -916,7 +934,7 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
             key.Value        = ConvertQuaternion( nodeAnim->mRotationKeys[ k ].mValue );
         }
 
-        track.ScaleKeys = ScaleKeyArray::Create( nodeAnim->mNumScalingKeys );
+        DZArenaArrayHelper<ScaleKeyArray, ScaleKey>::AllocateArray( animAsset._Arena, track.ScaleKeys, nodeAnim->mNumScalingKeys );
         for ( unsigned int k = 0; k < nodeAnim->mNumScalingKeys; ++k )
         {
             ScaleKey &key = track.ScaleKeys.Elements[ k ];
@@ -926,13 +944,13 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
     }
 
     spdlog::info( "Processing {} morph target animation channels.", animation->mNumMorphMeshChannels );
-    clip.MorphTracks = MorphAnimTrackArray::Create( animation->mNumMorphMeshChannels );
+    DZArenaArrayHelper<MorphAnimTrackArray, MorphAnimTrack>::AllocateAndConstructArray( animAsset._Arena, clip.MorphTracks, animation->mNumMorphMeshChannels );
     for ( unsigned int i = 0; i < animation->mNumMorphMeshChannels; ++i )
     {
         const aiMeshMorphAnim *morphAnim = animation->mMorphMeshChannels[ i ];
         MorphAnimTrack        &track     = clip.MorphTracks.Elements[ i ];
         track.Name                       = morphAnim->mName.C_Str( );
-        track.Keyframes                  = MorphKeyframeArray::Create( morphAnim->mNumKeys );
+        DZArenaArrayHelper<MorphKeyframeArray, MorphKeyframe>::AllocateArray( animAsset._Arena, track.Keyframes, morphAnim->mNumKeys );
         for ( unsigned int k = 0; k < morphAnim->mNumKeys; ++k )
         {
             MorphKeyframe        &keyframe = track.Keyframes.Elements[ k ];
@@ -942,9 +960,8 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
         }
     }
 
-    // Todo this doesn't seem right
-    animAsset.Animations.Elements    = &clip;
-    animAsset.Animations.NumElements = 1;
+    DZArenaArrayHelper<AnimationClipArray, AnimationClip>::AllocateArray( animAsset._Arena, animAsset.Animations, 1 );
+    animAsset.Animations.Elements[ 0 ] = clip;
     WriteAnimationAsset( context, animAsset, outAssetUri );
     spdlog::info( "Successfully wrote animation asset: {}", outAssetUri.ToInteropString( ).Get( ) );
 }
@@ -1061,17 +1078,16 @@ void AssimpImporter::Impl::ConfigureAssimpImportFlags( const AssimpImportDesc &o
     }
 }
 
-void AssimpImporter::Impl::WriteMaterialAsset( ImportContext &context, const MaterialAsset &materialAsset, AssetUri &outAssetUri ) const
+void AssimpImporter::Impl::WriteMaterialAsset( ImportContext &context, MaterialAsset &materialAsset, AssetUri &outAssetUri )
 {
     const InteropString assetFilename   = AssetPathUtilities::CreateAssetFileName( context.AssetNamePrefix, materialAsset.Name, "Material", MaterialAsset::Extension( ) );
     const InteropString targetAssetPath = FileIO::GetAbsolutePath( InteropString( context.TargetDirectory ).Append( "/" ).Append( assetFilename.Get( ) ) );
     outAssetUri                         = AssetUri::Create( assetFilename );
-    MaterialAsset mutableAsset          = materialAsset;
-    mutableAsset.Uri                    = outAssetUri;
+    materialAsset.Uri                   = outAssetUri;
     spdlog::info( "Writing Material asset to: {}", targetAssetPath.Get( ) );
     BinaryWriter              writer( targetAssetPath );
     const MaterialAssetWriter assetWriter( { &writer } );
-    assetWriter.Write( mutableAsset );
+    assetWriter.Write( materialAsset );
     RegisterCreatedAsset( context, outAssetUri );
 }
 
@@ -1097,8 +1113,7 @@ TextureExtension GetTextureExtension( const aiTexture *texture, const InteropArr
     return texExtension;
 }
 
-void AssimpImporter::Impl::WriteTextureAsset( ImportContext &context, const aiTexture *texture, const std::string &path, const InteropString &semanticName,
-                                              AssetUri &outAssetUri ) const
+void AssimpImporter::Impl::WriteTextureAsset( ImportContext &context, const aiTexture *texture, const std::string &path, const InteropString &semanticName, AssetUri &outAssetUri )
 {
     InteropString texName;
     if ( texture != nullptr )
@@ -1115,7 +1130,8 @@ void AssimpImporter::Impl::WriteTextureAsset( ImportContext &context, const aiTe
         texName                             = AssetPathUtilities::SanitizeAssetName( texPath.filename( ).stem( ).string( ).c_str( ) );
     }
     const InteropString assetFilename   = AssetPathUtilities::CreateAssetFileName( context.AssetNamePrefix, texName, "Texture", TextureAsset::Extension( ) );
-    const InteropString targetAssetPath = FileIO::GetAbsolutePath( InteropString( context.TargetDirectory ).Append( "/" ).Append( assetFilename.Get( ) ) );
+    std::string         targetDir       = context.TargetDirectory.Get( );
+    const InteropString targetAssetPath = FileIO::GetAbsolutePath( ( targetDir + ( targetDir.ends_with( "/" ) ? "" : "/" ) + assetFilename.Get( ) ).c_str( ) );
 
     BinaryWriter       writer( targetAssetPath );
     TextureAssetWriter assetWriter( { &writer } );
@@ -1154,9 +1170,8 @@ void AssimpImporter::Impl::WriteTextureAsset( ImportContext &context, const aiTe
     texAsset.RowPitch     = sourceTexture->GetRowPitch( );
     texAsset.NumRows      = sourceTexture->GetNumRows( );
     texAsset.SlicePitch   = sourceTexture->GetSlicePitch( );
-    texAsset.Mips         = TextureMipArray::Create( sourceTexture->GetMipLevels( ) * sourceTexture->GetArraySize( ) );
+    DZArenaArrayHelper<TextureMipArray, TextureMip>::AllocateArray( texAsset._Arena, texAsset.Mips, sourceTexture->GetMipLevels( ) * sourceTexture->GetArraySize( ) );
 
-    // Have to double stream to write metadata correctly unfortunately
     const auto mipDataArray = sourceTexture->ReadMipData( );
     for ( uint32_t i = 0; i < mipDataArray.NumElements; ++i )
     {
@@ -1177,36 +1192,33 @@ void AssimpImporter::Impl::WriteTextureAsset( ImportContext &context, const aiTe
     }
 
     assetWriter.End( );
-    texAsset.Dispose( );
     RegisterCreatedAsset( context, outAssetUri );
     context.TexturePathToAssetUriMap[ targetAssetPath.Get( ) ] = outAssetUri;
 }
 
-void AssimpImporter::Impl::WriteSkeletonAsset( ImportContext &context, const SkeletonAsset &skeletonAsset ) const
+void AssimpImporter::Impl::WriteSkeletonAsset( ImportContext &context, SkeletonAsset &skeletonAsset )
 {
     const InteropString assetFilename   = AssetPathUtilities::CreateAssetFileName( context.AssetNamePrefix, skeletonAsset.Name, "Skeleton", SkeletonAsset::Extension( ) );
     const InteropString targetAssetPath = FileIO::GetAbsolutePath( InteropString( context.TargetDirectory ).Append( "/" ).Append( assetFilename.Get( ) ) );
     context.SkeletonAssetUri            = AssetUri::Create( assetFilename );
-    SkeletonAsset mutableAsset          = skeletonAsset;
-    mutableAsset.Uri                    = context.SkeletonAssetUri;
+    skeletonAsset.Uri                   = context.SkeletonAssetUri;
     spdlog::info( "Writing Skeleton asset to: {}", targetAssetPath.Get( ) );
     BinaryWriter              writer( targetAssetPath );
     const SkeletonAssetWriter assetWriter( { &writer } );
-    assetWriter.Write( mutableAsset );
+    assetWriter.Write( skeletonAsset );
     RegisterCreatedAsset( context, context.SkeletonAssetUri );
 }
 
-void AssimpImporter::Impl::WriteAnimationAsset( ImportContext &context, const AnimationAsset &animationAsset, AssetUri &outAssetUri ) const
+void AssimpImporter::Impl::WriteAnimationAsset( ImportContext &context, AnimationAsset &animationAsset, AssetUri &outAssetUri )
 {
     const InteropString assetFilename   = AssetPathUtilities::CreateAssetFileName( context.AssetNamePrefix, animationAsset.Name, "Animation", AnimationAsset::Extension( ) );
     const InteropString targetAssetPath = FileIO::GetAbsolutePath( InteropString( context.TargetDirectory ).Append( "/" ).Append( assetFilename.Get( ) ) );
     outAssetUri                         = AssetUri::Create( assetFilename );
-    AnimationAsset mutableAsset         = animationAsset;
-    mutableAsset.Uri                    = outAssetUri;
+    animationAsset.Uri                  = outAssetUri;
     spdlog::info( "Writing Animation asset to: {}", targetAssetPath.Get( ) );
     BinaryWriter         writer( targetAssetPath );
     AnimationAssetWriter assetWriter( { &writer } );
-    assetWriter.Write( mutableAsset );
+    assetWriter.Write( animationAsset );
     RegisterCreatedAsset( context, outAssetUri );
 }
 
@@ -1250,17 +1262,7 @@ Float_4 AssimpImporter::Impl::ConvertColor( const aiColor4D &color ) const
 
 // File path utility methods moved to FilePathUtilities class
 
-void AssimpImporter::Impl::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri ) const
+void AssimpImporter::Impl::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri )
 {
-    // TODO: Cleaner growing mechanism
-    auto newElements = new AssetUri[ context.Result.CreatedAssets.NumElements + 1 ];
-    for ( size_t i = 0; i < context.Result.CreatedAssets.NumElements; i++ )
-    {
-        newElements[ i ] = context.Result.CreatedAssets.Elements[ i ];
-    }
-    newElements[ context.Result.CreatedAssets.NumElements ] = assetUri;
-
-    delete[] context.Result.CreatedAssets.Elements;
-    context.Result.CreatedAssets.Elements = newElements;
-    context.Result.CreatedAssets.NumElements++;
+    m_createdAssets.push_back( assetUri );
 }

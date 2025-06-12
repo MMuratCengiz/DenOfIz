@@ -35,13 +35,17 @@ namespace DenOfIz
         ThorVGCanvas *Canvas       = nullptr;
     };
 
-    struct DZ_API VGImporterDesc{ };
+    struct DZ_API VGImporterDesc
+    {
+    };
 
     class DZ_API VGImporter final : public IAssetImporter
     {
-        VGImporterDesc         m_desc;
-        ImporterDesc           m_importerInfo;
-        InteropArray<uint32_t> m_renderBuffer;
+        VGImporterDesc          m_desc;
+        ImporterDesc            m_importerInfo;
+        InteropArray<uint32_t>  m_renderBuffer;
+        std::vector<AssetUri>   m_createdAssets;
+        std::vector<TextureMip> m_mips;
 
     public:
         explicit VGImporter( VGImporterDesc desc = { } );
@@ -66,7 +70,7 @@ namespace DenOfIz
 
         ImporterResultCode ImportVGInternal( ImportContext &context );
         void               WriteTextureAsset( const ImportContext &context, const TextureAsset &textureAsset, AssetUri &outAssetUri ) const;
-        void               RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri ) const;
+        void               RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri );
     };
 
 } // namespace DenOfIz

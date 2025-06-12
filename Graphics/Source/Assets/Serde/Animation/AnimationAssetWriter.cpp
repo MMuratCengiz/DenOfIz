@@ -17,7 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetWriter.h"
-#include "DenOfIzGraphics/Assets/Serde/Common/AssetWriterHelpers.h"
+#include "DenOfIzGraphicsInternal/Assets/Serde/Common/AssetWriterHelpers.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;

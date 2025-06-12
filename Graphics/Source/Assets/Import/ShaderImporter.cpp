@@ -90,17 +90,9 @@ ImporterResult ShaderImporter::Import( const ImportJobDesc &desc )
 
     AssetUri shaderAssetUri;
     WriteShaderAsset( context, shaderAssetUri );
-
-    // TODO: Cleaner growing mechanism
-    const AssetUriArray newCreatedAssets = AssetUriArray::Create( context.Result.CreatedAssets.NumElements + 1 );
-    for ( size_t i = 0; i < context.Result.CreatedAssets.NumElements; ++i )
-    {
-        newCreatedAssets.Elements[ i ] = context.Result.CreatedAssets.Elements[ i ];
-    }
-    newCreatedAssets.Elements[ context.Result.CreatedAssets.NumElements ] = shaderAssetUri;
-    context.Result.CreatedAssets.Dispose( );
-    context.Result.CreatedAssets = newCreatedAssets;
-
+    m_createdAssets.push_back( shaderAssetUri );
+    context.Result.CreatedAssets.NumElements = m_createdAssets.size( );
+    context.Result.CreatedAssets.Elements    = m_createdAssets.data( );
     return context.Result;
 }
 

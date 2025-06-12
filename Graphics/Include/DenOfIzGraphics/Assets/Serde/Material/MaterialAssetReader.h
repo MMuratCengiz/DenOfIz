@@ -30,12 +30,13 @@ namespace DenOfIz
 
     class MaterialAssetReader
     {
-        BinaryReader *m_reader;
-        MaterialAsset m_materialAsset;
+        BinaryReader  *m_reader;
+        MaterialAsset *m_materialAsset;
+
     public:
         DZ_API explicit MaterialAssetReader( const MaterialAssetReaderDesc &desc );
         DZ_API ~MaterialAssetReader( );
 
-        DZ_API MaterialAsset Read( );
+        DZ_API MaterialAsset *Read( );
     };
 } // namespace DenOfIz

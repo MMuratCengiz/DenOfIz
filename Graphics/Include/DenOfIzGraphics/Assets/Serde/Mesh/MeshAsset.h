@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Assets/Serde/Asset.h"
 #include "DenOfIzGraphics/Backends/Interface/CommonData.h"
-#include "DenOfIzGraphics/Utilities/Interop.h"
+#include "DenOfIzGraphics/Utilities/DZArena.h"
 #include "DenOfIzGraphics/Utilities/InteropMath.h"
 
 namespace DenOfIz
@@ -38,8 +38,6 @@ namespace DenOfIz
     {
         ColorFormat *Elements;
         uint32_t     NumElements;
-
-        DZ_ARRAY_METHODS( ColorFormatArray, ColorFormat )
     };
     /// The data will be structured in the following way:
     /// if Position is true => VertexAttributeConfig.NumPositionComponents x float
@@ -73,27 +71,12 @@ namespace DenOfIz
         Float_4      Bitangent{ };
         UInt32_4     BlendIndices{ };
         Float_4      BoneWeights{ };
-
-        void Dispose( ) const
-        {
-            UVs.Dispose( );
-            Colors.Dispose( );
-        }
     };
 
     struct DZ_API MeshVertexArray
     {
         MeshVertex *Elements;
         uint32_t    NumElements;
-
-        void Dispose( ) const
-        {
-            for ( uint32_t i = 0; i < NumElements; ++i )
-            {
-                Elements[ i ].Dispose( );
-            }
-            delete[] Elements;
-        }
     };
 
     struct DZ_API MorphTargetDeltaAttributes
@@ -186,8 +169,6 @@ namespace DenOfIz
     {
         BoundingVolume *Elements;
         uint32_t        NumElements;
-
-        DZ_ARRAY_METHODS( BoundingVolumeArray, BoundingVolume )
     };
 
     struct DZ_API MorphTarget
@@ -201,8 +182,6 @@ namespace DenOfIz
     {
         MorphTarget *Elements;
         uint32_t     NumElements;
-
-        DZ_ARRAY_METHODS( MorphTargetArray, MorphTarget )
     };
 
     struct DZ_API SubMeshData
@@ -219,34 +198,12 @@ namespace DenOfIz
         AssetUri            MaterialRef{ };
         uint32_t            LODLevel = 0;
         BoundingVolumeArray BoundingVolumes;
-
-        void Dispose( ) const
-        {
-            BoundingVolumes.Dispose( );
-        }
     };
 
     struct DZ_API SubMeshDataArray
     {
         SubMeshData *Elements;
         uint32_t     NumElements;
-
-        static SubMeshDataArray Create( uint32_t NumElements )
-        {
-            SubMeshDataArray Result;
-            Result.Elements    = new SubMeshData[ NumElements ];
-            Result.NumElements = NumElements;
-            return Result;
-        }
-
-        void Dispose( ) const
-        {
-            for ( uint32_t i = 0; i < NumElements; ++i )
-            {
-                Elements[ i ].Dispose( );
-            }
-            delete[] Elements;
-        }
     };
 
     struct DZ_API JointData
@@ -257,15 +214,12 @@ namespace DenOfIz
         Float_4x4     GlobalTransform;
         int32_t       ParentIndex = -1;
         UInt32Array   ChildIndices;
-
-        void Dispose( ) const
-        {
-            ChildIndices.Dispose( );
-        }
     };
 
-    struct DZ_API MeshAsset : AssetHeader
+    struct DZ_API MeshAsset : AssetHeader, NonCopyable
     {
+        DZArena _Arena{ sizeof( MeshAsset ) };
+
         static constexpr uint32_t Latest = 1;
 
         InteropString              Name;
@@ -277,7 +231,7 @@ namespace DenOfIz
         MorphTargetArray           MorphTargets;
         AssetUriArray              AnimationRefs; // Array of all available animations for this mesh
         AssetUri                   SkeletonRef{ };
-        UserPropertyArray          UserProperties;
+        UserPropertyArray          UserProperties{ };
 
         MeshAsset( ) : AssetHeader( 0x445A4D455348 /*DZMESH*/, Latest, 0 )
         {
@@ -286,14 +240,6 @@ namespace DenOfIz
         static InteropString Extension( )
         {
             return "dzmesh";
-        }
-
-        void Dispose( ) const
-        {
-            SubMeshes.Dispose( );
-            MorphTargets.Dispose( );
-            AnimationRefs.Dispose( );
-            UserProperties.Dispose( );
         }
     };
 } // namespace DenOfIz

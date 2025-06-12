@@ -15,11 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include "DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h"
 #include "DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h"
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
-#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
+#include "DenOfIzGraphicsInternal/Assets/Serde/Common/AssetReaderHelpers.h"
+#include "DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;
 
@@ -30,43 +31,44 @@ FontAssetReader::FontAssetReader( const FontAssetReaderDesc &desc ) : m_reader( 
 
 FontAssetReader::~FontAssetReader( ) = default;
 
-FontAsset FontAssetReader::Read( )
+FontAsset* FontAssetReader::Read( )
 {
     if ( m_assetRead )
     {
         return m_fontAsset;
     }
+    m_fontAsset = new FontAsset( );
     m_streamStartOffset = m_reader->Position( );
-    m_fontAsset.Magic   = m_reader->ReadUInt64( );
-    if ( m_fontAsset.Magic != FontAsset{ }.Magic ) // DZFONT
+    m_fontAsset->Magic   = m_reader->ReadUInt64( );
+    if ( m_fontAsset->Magic != FontAsset{ }.Magic ) // DZFONT
     {
         spdlog::error( "Invalid font asset magic word" );
         return m_fontAsset;
     }
-    m_fontAsset.Version  = m_reader->ReadUInt32( );
-    m_fontAsset.NumBytes = m_reader->ReadUInt64( );
-    m_fontAsset.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
+    m_fontAsset->Version  = m_reader->ReadUInt32( );
+    m_fontAsset->NumBytes = m_reader->ReadUInt64( );
+    m_fontAsset->Uri      = AssetUri::Parse( m_reader->ReadString( ) );
 
-    m_fontAsset.DataNumBytes    = m_reader->ReadUInt64( );
-    m_fontAsset.Data            = m_reader->ReadBytes( m_fontAsset.DataNumBytes );
-    m_fontAsset.InitialFontSize = m_reader->ReadUInt32( );
+    m_fontAsset->DataNumBytes    = m_reader->ReadUInt64( );
+    m_fontAsset->Data            = m_reader->ReadBytes( m_fontAsset->DataNumBytes );
+    m_fontAsset->InitialFontSize = m_reader->ReadUInt32( );
 
-    m_fontAsset.AtlasWidth  = m_reader->ReadUInt32( );
-    m_fontAsset.AtlasHeight = m_reader->ReadUInt32( );
+    m_fontAsset->AtlasWidth  = m_reader->ReadUInt32( );
+    m_fontAsset->AtlasHeight = m_reader->ReadUInt32( );
 
-    m_fontAsset.Metrics.Ascent             = m_reader->ReadUInt32( );
-    m_fontAsset.Metrics.Descent            = m_reader->ReadUInt32( );
-    m_fontAsset.Metrics.LineGap            = m_reader->ReadUInt32( );
-    m_fontAsset.Metrics.LineHeight         = m_reader->ReadUInt32( );
-    m_fontAsset.Metrics.UnderlinePos       = m_reader->ReadUInt32( );
-    m_fontAsset.Metrics.UnderlineThickness = m_reader->ReadUInt32( );
+    m_fontAsset->Metrics.Ascent             = m_reader->ReadUInt32( );
+    m_fontAsset->Metrics.Descent            = m_reader->ReadUInt32( );
+    m_fontAsset->Metrics.LineGap            = m_reader->ReadUInt32( );
+    m_fontAsset->Metrics.LineHeight         = m_reader->ReadUInt32( );
+    m_fontAsset->Metrics.UnderlinePos       = m_reader->ReadUInt32( );
+    m_fontAsset->Metrics.UnderlineThickness = m_reader->ReadUInt32( );
 
     const uint32_t numGlyphs = m_reader->ReadUInt32( );
-    m_fontAsset.Glyphs = FontGlyphArray::Create( numGlyphs );
+    DZArenaArrayHelper<FontGlyphArray, FontGlyph>::AllocateAndConstructArray( m_fontAsset->_Arena, m_fontAsset->Glyphs, numGlyphs );
 
     for ( uint32_t i = 0; i < numGlyphs; ++i )
     {
-        FontGlyph &glyph  = m_fontAsset.Glyphs.Elements[ i ];
+        FontGlyph &glyph  = m_fontAsset->Glyphs.Elements[ i ];
         glyph.CodePoint   = m_reader->ReadUInt32( );
         glyph.Bounds.XMin = m_reader->ReadDouble( );
         glyph.Bounds.YMin = m_reader->ReadDouble( );
@@ -82,9 +84,9 @@ FontAsset FontAssetReader::Read( )
         glyph.AtlasY      = m_reader->ReadUInt32( );
     }
 
-    m_fontAsset.UserProperties    = AssetReaderHelpers::ReadUserProperties( m_reader );
-    m_fontAsset.NumAtlasDataBytes = m_reader->ReadUInt64( );
-    m_fontAsset.AtlasData         = m_reader->ReadBytes( m_fontAsset.NumAtlasDataBytes );
+    m_fontAsset->UserProperties    = AssetReaderHelpers::ReadUserProperties( &m_fontAsset->_Arena, m_reader );
+    m_fontAsset->NumAtlasDataBytes = m_reader->ReadUInt64( );
+    m_fontAsset->AtlasData         = m_reader->ReadBytes( m_fontAsset->NumAtlasDataBytes );
 
     m_assetRead = true;
     return m_fontAsset;
@@ -101,8 +103,8 @@ void FontAssetReader::LoadAtlasIntoGpuTexture( const FontAsset &fontAsset, const
     const auto stagingBuffer = desc.StagingBuffer;
     const auto mappedMemory  = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
 
-    const uint32_t rowPitch          = fontAsset.AtlasWidth * FontAsset::NumChannels;
-    const uint32_t alignedRowPitch   = Utilities::Align( fontAsset.AtlasWidth * FontAsset::NumChannels, desc.Device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
+    const uint32_t rowPitch        = fontAsset.AtlasWidth * FontAsset::NumChannels;
+    const uint32_t alignedRowPitch = Utilities::Align( fontAsset.AtlasWidth * FontAsset::NumChannels, desc.Device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
 
     const Byte *pSrcData = fontAsset.AtlasData.Elements;
     for ( uint32_t y = 0; y < fontAsset.AtlasHeight; ++y )

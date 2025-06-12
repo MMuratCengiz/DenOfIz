@@ -76,10 +76,10 @@ DenOfIz::Font *FontLibrary::LoadFont( const InteropString &ttf )
 
     BinaryReader    reader( targetContainer );
     FontAssetReader fontReader( { &reader } );
-    FontAsset      &asset = m_assets.emplace_back( fontReader.Read( ) );
+    auto           &asset = m_assets.emplace_back( std::unique_ptr<FontAsset>( fontReader.Read( ) ) );
 
     FontDesc desc{ };
-    desc.FontAsset = &asset;
+    desc.FontAsset = asset.get( );
     auto font      = std::unique_ptr<Font>( new Font( m_ftLibrary, desc ) );
 
     m_fonts.emplace( ttf.Get( ), std::move( font ) );

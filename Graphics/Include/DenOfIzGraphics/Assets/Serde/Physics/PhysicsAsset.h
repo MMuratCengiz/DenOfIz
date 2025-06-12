@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Assets/Serde/Asset.h"
+#include "DenOfIzGraphics/Utilities/DZArena.h"
 
 namespace DenOfIz
 {
@@ -75,12 +76,12 @@ namespace DenOfIz
     {
         PhysicsCollider *Elements;
         uint32_t         NumElements;
-
-        DZ_ARRAY_METHODS( PhysicsColliderArray, PhysicsCollider )
     };
 
-    struct DZ_API PhysicsAsset : AssetHeader
+    struct DZ_API PhysicsAsset : AssetHeader, NonCopyable
     {
+        DZArena _Arena{ sizeof( PhysicsAsset ) };
+
         static constexpr uint32_t Latest = 1;
 
         InteropString        Name;
@@ -94,12 +95,6 @@ namespace DenOfIz
         static InteropString Extension( )
         {
             return "dzphys";
-        }
-
-        void Dispose( ) const
-        {
-            Colliders.Dispose( );
-            UserProperties.Dispose( );
         }
     };
 } // namespace DenOfIz

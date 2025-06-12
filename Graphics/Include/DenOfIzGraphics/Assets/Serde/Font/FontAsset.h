@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Assets/Serde/Asset.h"
 #include "DenOfIzGraphics/Utilities/Common_Arrays.h"
+#include "DenOfIzGraphics/Utilities/DZArena.h"
 
 namespace DenOfIz
 {
@@ -53,8 +54,6 @@ namespace DenOfIz
     {
         FontGlyph *Elements;
         uint32_t   NumElements;
-
-        DZ_ARRAY_METHODS( FontGlyphArray, FontGlyph )
     };
 
     struct DZ_API FontMetrics
@@ -69,6 +68,8 @@ namespace DenOfIz
 
     struct DZ_API FontAsset : public AssetHeader
     {
+        DZArena _Arena{ sizeof( FontAsset ) };
+
         static constexpr uint32_t Latest      = 1;
         static constexpr uint32_t NumChannels = 4;
 
@@ -101,14 +102,6 @@ namespace DenOfIz
         static InteropString Extension( )
         {
             return "dzfont";
-        }
-
-        void Dispose( ) const
-        {
-            Data.Dispose( );
-            AtlasData.Dispose( );
-            Glyphs.Dispose( );
-            UserProperties.Dispose( );
         }
     };
 } // namespace DenOfIz

@@ -19,13 +19,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Assets/Serde/Asset.h"
+#include "DenOfIzGraphics/Utilities/DZArena.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
 #include "DenOfIzGraphics/Utilities/InteropMath.h"
 
 namespace DenOfIz
 {
-    struct DZ_API MaterialAsset : AssetHeader
+    struct DZ_API MaterialAsset : AssetHeader, NonCopyable
     {
+        DZArena _Arena{ sizeof( MaterialAsset ) };
+
         static constexpr uint32_t Latest = 1;
 
         InteropString Name;
@@ -45,7 +48,7 @@ namespace DenOfIz
         bool AlphaBlend  = false;
         bool DoubleSided = false;
 
-        UserPropertyArray Properties;
+        UserPropertyArray Properties{ };
         MaterialAsset( ) : AssetHeader( 0x445A4D4154 /*DZMAT*/, Latest, 0 )
         {
         }

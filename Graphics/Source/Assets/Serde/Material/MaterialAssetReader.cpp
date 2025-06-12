@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h"
 #include "DenOfIzGraphics/Assets/Serde/Material/MaterialAssetReader.h"
+#include "DenOfIzGraphicsInternal/Assets/Serde/Common/AssetReaderHelpers.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
@@ -32,41 +32,41 @@ MaterialAssetReader::MaterialAssetReader( const MaterialAssetReaderDesc &desc ) 
 
 MaterialAssetReader::~MaterialAssetReader( ) = default;
 
-MaterialAsset MaterialAssetReader::Read( )
+MaterialAsset* MaterialAssetReader::Read( )
 {
-    m_materialAsset       = MaterialAsset( );
-    m_materialAsset.Magic = m_reader->ReadUInt64( );
-    if ( m_materialAsset.Magic != MaterialAsset{ }.Magic )
+    m_materialAsset       = new MaterialAsset( );
+    m_materialAsset->Magic = m_reader->ReadUInt64( );
+    if ( m_materialAsset->Magic != MaterialAsset{ }.Magic )
     {
         spdlog::critical( "Invalid MaterialAsset magic number." );
     }
 
-    m_materialAsset.Version = m_reader->ReadUInt32( );
-    if ( m_materialAsset.Version > MaterialAsset::Latest )
+    m_materialAsset->Version = m_reader->ReadUInt32( );
+    if ( m_materialAsset->Version > MaterialAsset::Latest )
     {
         spdlog::warn( "MaterialAsset version mismatch." );
     }
 
-    m_materialAsset.NumBytes = m_reader->ReadUInt64( );
-    m_materialAsset.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
+    m_materialAsset->NumBytes = m_reader->ReadUInt64( );
+    m_materialAsset->Uri      = AssetUri::Parse( m_reader->ReadString( ) );
 
-    m_materialAsset.Name      = m_reader->ReadString( );
-    m_materialAsset.ShaderRef = m_reader->ReadString( );
+    m_materialAsset->Name      = m_reader->ReadString( );
+    m_materialAsset->ShaderRef = m_reader->ReadString( );
 
-    m_materialAsset.AlbedoMapRef            = AssetUri::Parse( m_reader->ReadString( ) );
-    m_materialAsset.NormalMapRef            = AssetUri::Parse( m_reader->ReadString( ) );
-    m_materialAsset.MetallicRoughnessMapRef = AssetUri::Parse( m_reader->ReadString( ) );
-    m_materialAsset.EmissiveMapRef          = AssetUri::Parse( m_reader->ReadString( ) );
-    m_materialAsset.OcclusionMapRef         = AssetUri::Parse( m_reader->ReadString( ) );
+    m_materialAsset->AlbedoMapRef            = AssetUri::Parse( m_reader->ReadString( ) );
+    m_materialAsset->NormalMapRef            = AssetUri::Parse( m_reader->ReadString( ) );
+    m_materialAsset->MetallicRoughnessMapRef = AssetUri::Parse( m_reader->ReadString( ) );
+    m_materialAsset->EmissiveMapRef          = AssetUri::Parse( m_reader->ReadString( ) );
+    m_materialAsset->OcclusionMapRef         = AssetUri::Parse( m_reader->ReadString( ) );
 
-    m_materialAsset.BaseColorFactor = m_reader->ReadFloat_4( );
-    m_materialAsset.MetallicFactor  = m_reader->ReadFloat( );
-    m_materialAsset.RoughnessFactor = m_reader->ReadFloat( );
-    m_materialAsset.EmissiveFactor  = m_reader->ReadFloat_3( );
+    m_materialAsset->BaseColorFactor = m_reader->ReadFloat_4( );
+    m_materialAsset->MetallicFactor  = m_reader->ReadFloat( );
+    m_materialAsset->RoughnessFactor = m_reader->ReadFloat( );
+    m_materialAsset->EmissiveFactor  = m_reader->ReadFloat_3( );
 
-    m_materialAsset.AlphaBlend  = m_reader->ReadByte( ) != 0;
-    m_materialAsset.DoubleSided = m_reader->ReadByte( ) != 0;
-    m_materialAsset.Properties  = AssetReaderHelpers::ReadUserProperties( m_reader );
+    m_materialAsset->AlphaBlend  = m_reader->ReadByte( ) != 0;
+    m_materialAsset->DoubleSided = m_reader->ReadByte( ) != 0;
+    m_materialAsset->Properties  = AssetReaderHelpers::ReadUserProperties( &m_materialAsset->_Arena, m_reader );
 
     return m_materialAsset;
 }

@@ -84,7 +84,7 @@ void AnimatedFoxExample::LoadFoxAssets( )
     MeshAssetReaderDesc meshReaderDesc{ };
     meshReaderDesc.Reader = &meshReader;
     MeshAssetReader meshAssetReader( meshReaderDesc );
-    m_foxMesh = meshAssetReader.Read( );
+    m_foxMesh = std::unique_ptr<MeshAsset>( meshAssetReader.Read( ) );
 
     spdlog::info( "Loading texture from: {}", texturePath.Get( ) );
     m_textureAssetBinaryReader = std::make_unique<BinaryReader>( texturePath );
@@ -97,22 +97,22 @@ void AnimatedFoxExample::LoadFoxAssets( )
     SkeletonAssetReaderDesc skeletonReaderDesc{ };
     skeletonReaderDesc.Reader = &skeletonReader;
     SkeletonAssetReader skeletonAssetReader( skeletonReaderDesc );
-    m_foxSkeleton = skeletonAssetReader.Read( );
+    m_foxSkeleton = std::unique_ptr<SkeletonAsset>( skeletonAssetReader.Read( ) );
 
     spdlog::info( "Loading animations from: {} and {}", walkAnimPath.Get( ), runAnimPath.Get( ) );
     BinaryReader             walkAnimReader( walkAnimPath );
     AnimationAssetReaderDesc walkAnimReaderDesc{ };
     walkAnimReaderDesc.Reader = &walkAnimReader;
     AnimationAssetReader walkAnimAssetReader( walkAnimReaderDesc );
-    m_walkAnimation = walkAnimAssetReader.Read( );
+    m_walkAnimation = std::unique_ptr<AnimationAsset>( walkAnimAssetReader.Read( ) );
 
     BinaryReader             runAnimReader( runAnimPath );
     AnimationAssetReaderDesc runAnimReaderDesc{ };
     runAnimReaderDesc.Reader = &runAnimReader;
     AnimationAssetReader runAnimAssetReader( runAnimReaderDesc );
-    m_runAnimation = runAnimAssetReader.Read( );
+    m_runAnimation = std::unique_ptr<AnimationAsset>( runAnimAssetReader.Read( ) );
 
-    const auto &subMeshes = m_foxMesh.SubMeshes;
+    const auto &subMeshes = m_foxMesh->SubMeshes;
     if ( subMeshes.NumElements == 0 )
     {
         spdlog::critical( "Fox mesh has no sub-meshes." );
@@ -162,10 +162,10 @@ void AnimatedFoxExample::LoadFoxAssets( )
 void AnimatedFoxExample::SetupAnimation( )
 {
     AnimationStateManagerDesc animManagerDesc;
-    animManagerDesc.Skeleton = &m_foxSkeleton;
+    animManagerDesc.Skeleton = m_foxSkeleton.get( );
     m_animationManager       = std::make_unique<AnimationStateManager>( animManagerDesc );
-    m_animationManager->AddAnimation( m_walkAnimation );
-    m_animationManager->AddAnimation( m_runAnimation );
+    m_animationManager->AddAnimation( *m_walkAnimation );
+    m_animationManager->AddAnimation( *m_runAnimation );
     m_animationManager->Play( "Walk", true );
 }
 
@@ -315,9 +315,9 @@ void AnimatedFoxExample::UpdateBoneTransforms( )
     for ( size_t i = 0; i < maxBones && i < boneTransforms.NumElements( ); ++i )
     {
         const Float_4x4 &modelMatrix = boneTransforms.GetElement( i );
-        if ( i < m_foxSkeleton.Joints.NumElements )
+        if ( i < m_foxSkeleton->Joints.NumElements )
         {
-            const Joint &joint = m_foxSkeleton.Joints.Elements[ i ];
+            const Joint &joint = m_foxSkeleton->Joints.Elements[ i ];
 
             auto           xmModelMatrix = InteropMathConverter::Float_4x4ToXMFLOAT4X4( modelMatrix );
             const XMMATRIX modelMat      = XMLoadFloat4x4( &xmModelMatrix );

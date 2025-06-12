@@ -160,12 +160,15 @@ ImporterResultCode VGImporter::ImportVGInternal( ImportContext &context )
     mip.SlicePitch = mip.RowPitch * context.Desc.RenderHeight;
     mip.DataOffset = 0;
 
-    context.TextureAsset.Mips               = TextureMipArray::Create( 1 );
-    context.TextureAsset.Mips.Elements[ 0 ] = mip;
+    m_mips.push_back( mip );
+    context.TextureAsset.Mips.NumElements = m_mips.size( );
+    context.TextureAsset.Mips.Elements    = m_mips.data( );
 
     AssetUri assetUri;
     WriteTextureAsset( context, context.TextureAsset, assetUri );
     RegisterCreatedAsset( context, assetUri );
+    context.Result.CreatedAssets.NumElements = m_createdAssets.size( );
+    context.Result.CreatedAssets.Elements    = m_createdAssets.data( );
     return ImporterResultCode::Success;
 }
 
@@ -213,15 +216,8 @@ void VGImporter::WriteTextureAsset( const ImportContext &context, const TextureA
     outAssetUri.Path = filePath;
 }
 
-void VGImporter::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri ) const
+void VGImporter::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri )
 {
-    // TODO: Cleaner growing mechanism
-    const AssetUriArray newCreatedAssets = AssetUriArray::Create( context.Result.CreatedAssets.NumElements + 1 );
-    for ( size_t i = 0; i < context.Result.CreatedAssets.NumElements; ++i )
-    {
-        newCreatedAssets.Elements[ i ] = context.Result.CreatedAssets.Elements[ i ];
-    }
-    newCreatedAssets.Elements[ context.Result.CreatedAssets.NumElements ] = assetUri;
-    context.Result.CreatedAssets.Dispose( );
-    context.Result.CreatedAssets = newCreatedAssets;
+    m_createdAssets.push_back( assetUri );
+    ;
 }

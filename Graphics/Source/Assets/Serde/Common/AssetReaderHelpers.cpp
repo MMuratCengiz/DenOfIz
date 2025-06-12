@@ -18,7 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h"
+#include "DenOfIzGraphicsInternal/Assets/Serde/Common/AssetReaderHelpers.h"
+#include "DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
 
 using namespace DenOfIz;
 
@@ -30,10 +31,11 @@ AssetDataStream AssetReaderHelpers::ReadAssetDataStream( BinaryReader *reader )
     return stream;
 }
 
-UserPropertyArray AssetReaderHelpers::ReadUserProperties( BinaryReader *reader )
+UserPropertyArray AssetReaderHelpers::ReadUserProperties( DZArena *arena, BinaryReader *reader )
 {
-    const uint32_t          numProperties = reader->ReadUInt32( );
-    const UserPropertyArray properties    = UserPropertyArray::Create( numProperties );
+    const uint32_t    numProperties = reader->ReadUInt32( );
+    UserPropertyArray properties{ };
+    DZArenaArrayHelper<UserPropertyArray, UserProperty>::AllocateAndConstructArray( *arena, properties, numProperties );
     for ( uint32_t i = 0; i < numProperties; ++i )
     {
         properties.Elements[ i ] = ReadUserProperty( reader );

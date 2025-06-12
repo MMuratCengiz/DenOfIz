@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Assets/Serde/Asset.h"
+#include "DenOfIzGraphics/Utilities/DZArena.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
 #include "DenOfIzGraphics/Utilities/InteropMath.h"
 
@@ -32,10 +33,8 @@ namespace DenOfIz
 
     struct DZ_API PositionKeyArray
     {
-        PositionKey *Elements;
-        uint32_t     NumElements;
-
-        DZ_ARRAY_METHODS( PositionKeyArray, PositionKey )
+        PositionKey *Elements    = nullptr;
+        uint32_t     NumElements = 0;
     };
 
     struct DZ_API RotationKey
@@ -46,10 +45,8 @@ namespace DenOfIz
 
     struct DZ_API RotationKeyArray
     {
-        RotationKey *Elements;
-        uint32_t     NumElements;
-
-        DZ_ARRAY_METHODS( RotationKeyArray, RotationKey )
+        RotationKey *Elements    = nullptr;
+        uint32_t     NumElements = 0;
     };
 
     struct DZ_API ScaleKey
@@ -60,10 +57,8 @@ namespace DenOfIz
 
     struct DZ_API ScaleKeyArray
     {
-        ScaleKey *Elements;
-        uint32_t  NumElements;
-
-        DZ_ARRAY_METHODS( ScaleKeyArray, ScaleKey )
+        ScaleKey *Elements    = nullptr;
+        uint32_t  NumElements = 0;
     };
 
     struct DZ_API MorphKeyframe
@@ -74,10 +69,8 @@ namespace DenOfIz
 
     struct DZ_API MorphKeyframeArray
     {
-        MorphKeyframe *Elements;
-        uint32_t       NumElements;
-
-        DZ_ARRAY_METHODS( MorphKeyframeArray, MorphKeyframe )
+        MorphKeyframe *Elements    = nullptr;
+        uint32_t       NumElements = 0;
     };
 
     struct DZ_API MorphAnimTrack
@@ -88,10 +81,8 @@ namespace DenOfIz
 
     struct DZ_API MorphAnimTrackArray
     {
-        MorphAnimTrack *Elements;
-        uint32_t        NumElements;
-
-        DZ_ARRAY_METHODS( MorphAnimTrackArray, MorphAnimTrack )
+        MorphAnimTrack *Elements    = nullptr;
+        uint32_t        NumElements = 0;
     };
 
     struct DZ_API JointAnimTrack
@@ -100,36 +91,12 @@ namespace DenOfIz
         PositionKeyArray PositionKeys;
         RotationKeyArray RotationKeys;
         ScaleKeyArray    ScaleKeys;
-
-        void Dispose( ) const
-        {
-            PositionKeys.Dispose( );
-            RotationKeys.Dispose( );
-            ScaleKeys.Dispose( );
-        }
     };
 
     struct DZ_API JointAnimTrackArray
     {
-        JointAnimTrack *Elements;
-        uint32_t        NumElements;
-
-        static JointAnimTrackArray Create( const size_t numElements )
-        {
-            JointAnimTrackArray Array{ };
-            Array.Elements    = new JointAnimTrack[ numElements ];
-            Array.NumElements = numElements;
-            return Array;
-        }
-
-        void Dispose( ) const
-        {
-            for ( uint32_t i = 0; i < NumElements; ++i )
-            {
-                Elements[ i ].Dispose( );
-            }
-            delete[] Elements;
-        }
+        JointAnimTrack *Elements    = nullptr;
+        uint32_t        NumElements = 0;
     };
 
     struct DZ_API AnimationClip
@@ -138,39 +105,18 @@ namespace DenOfIz
         float               Duration{ };
         JointAnimTrackArray Tracks;
         MorphAnimTrackArray MorphTracks;
-
-        void Dispose( ) const
-        {
-            Tracks.Dispose( );
-            MorphTracks.Dispose( );
-        }
     };
 
     struct DZ_API AnimationClipArray
     {
-        AnimationClip *Elements;
-        uint32_t       NumElements;
-
-        static AnimationClipArray Create( const size_t numElements )
-        {
-            AnimationClipArray Array{ };
-            Array.Elements    = new AnimationClip[ numElements ];
-            Array.NumElements = numElements;
-            return Array;
-        }
-
-        void Dispose( ) const
-        {
-            for ( uint32_t i = 0; i < NumElements; ++i )
-            {
-                Elements[ i ].Dispose( );
-            }
-            delete[] Elements;
-        }
+        AnimationClip *Elements    = nullptr;
+        uint32_t       NumElements = 0;
     };
 
-    struct DZ_API AnimationAsset : AssetHeader
+    struct DZ_API AnimationAsset : AssetHeader, NonCopyable
     {
+        DZArena _Arena{ sizeof( AnimationAsset ) };
+
         static constexpr uint32_t Latest = 1;
 
         InteropString      Name;

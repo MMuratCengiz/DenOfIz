@@ -36,7 +36,8 @@ namespace DenOfIz
 
     class ShaderImporter final : public IAssetImporter
     {
-        ImporterDesc m_importerDesc;
+        ImporterDesc          m_importerDesc;
+        std::vector<AssetUri> m_createdAssets;
 
         struct ImportContext
         {

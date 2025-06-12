@@ -30,12 +30,13 @@ namespace DenOfIz
 
     class SkeletonAssetReader
     {
-        BinaryReader *m_reader;
-        SkeletonAsset m_skeletonAsset;
+        BinaryReader  *m_reader;
+        SkeletonAsset *m_skeletonAsset;
+
     public:
         DZ_API explicit SkeletonAssetReader( const SkeletonAssetReaderDesc &desc );
         DZ_API ~SkeletonAssetReader( );
 
-        DZ_API SkeletonAsset Read( );
+        DZ_API SkeletonAsset *Read( );
     };
 } // namespace DenOfIz

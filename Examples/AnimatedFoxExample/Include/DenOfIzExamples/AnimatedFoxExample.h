@@ -77,10 +77,10 @@ namespace DenOfIz
         std::unique_ptr<IRootSignature>     m_skinnedMeshRootSignature;
         std::unique_ptr<IResourceBindGroup> m_resourceBindGroup;
 
-        MeshAsset      m_foxMesh;
-        SkeletonAsset  m_foxSkeleton;
-        AnimationAsset m_walkAnimation;
-        AnimationAsset m_runAnimation;
+        std::unique_ptr<MeshAsset>      m_foxMesh;
+        std::unique_ptr<SkeletonAsset>  m_foxSkeleton;
+        std::unique_ptr<AnimationAsset> m_walkAnimation;
+        std::unique_ptr<AnimationAsset> m_runAnimation;
 
         std::unique_ptr<BinaryReader>       m_textureAssetBinaryReader;
         std::unique_ptr<TextureAssetReader> m_textureAssetReader;

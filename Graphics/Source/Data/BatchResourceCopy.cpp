@@ -178,7 +178,8 @@ ITextureResource *BatchResourceCopy::CreateAndLoadTexture( const InteropString &
 
 ITextureResource *BatchResourceCopy::CreateAndLoadAssetTexture( const CreateAssetTextureDesc &loadDesc )
 {
-    const TextureAsset &textureAsset = loadDesc.Reader->Read( );
+    auto                assetPtr     = std::unique_ptr<TextureAsset>( loadDesc.Reader->Read( ) );
+    const TextureAsset &textureAsset = *assetPtr;
 
     TextureDesc textureDesc{ };
     textureDesc.HeapType     = HeapType::GPU;

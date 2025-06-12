@@ -42,7 +42,7 @@ namespace DenOfIz
     {
         BinaryReader       *m_reader;
         MeshAssetReaderDesc m_desc;
-        MeshAsset           m_meshAsset;
+        MeshAsset          *m_meshAsset;
         bool                m_metadataRead         = false;
         uint64_t            m_dataBlockStartOffset = 0;
 
@@ -55,8 +55,7 @@ namespace DenOfIz
     public:
         DZ_API explicit MeshAssetReader( const MeshAssetReaderDesc &desc );
         DZ_API ~MeshAssetReader( );
-        DZ_API MeshAsset                      Read( );
-        [[nodiscard]] DZ_API const MeshAsset &GetMetadata( ) const;
+        DZ_API MeshAsset *Read( );
 
         DZ_API void LoadStreamToMemory( LoadToMemoryDesc &desc ) const;
 

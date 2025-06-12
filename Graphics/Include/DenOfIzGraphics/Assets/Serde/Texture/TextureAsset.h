@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Serde/Asset.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
 #include "DenOfIzGraphics/Utilities/InteropMath.h"
+#include "DenOfIzGraphics/Utilities/DZArena.h"
 
 namespace DenOfIz
 {
@@ -49,12 +50,12 @@ namespace DenOfIz
     {
         TextureMip *Elements;
         uint32_t    NumElements;
-
-        DZ_ARRAY_METHODS( TextureMipArray, TextureMip )
     };
 
-    struct DZ_API TextureAsset : AssetHeader
+    struct DZ_API TextureAsset : AssetHeader, NonCopyable
     {
+        DZArena _Arena{ sizeof( TextureAsset ) };
+
         static constexpr uint32_t Latest = 1;
 
         InteropString Name;
@@ -86,11 +87,6 @@ namespace DenOfIz
         static InteropString Extension( )
         {
             return "dztex";
-        }
-
-        void Dispose( ) const
-        {
-            Mips.Dispose( );
         }
     };
 } // namespace DenOfIz

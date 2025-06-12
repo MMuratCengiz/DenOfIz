@@ -19,39 +19,40 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Assets/Serde/Asset.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
 #include "DenOfIzGraphics/Utilities/InteropMath.h"
-#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
+#include "DenOfIzGraphics/Utilities/DZArena.h"
 
 namespace DenOfIz
 {
     struct DZ_API Joint
     {
-        InteropString          Name;
-        Float_4x4              InverseBindMatrix;
-        Float_3                LocalTranslation;
-        Float_4                LocalRotationQuat;
-        Float_3                LocalScale;
-        Float_4x4              GlobalTransform;
-        uint32_t     Index       = 0;
-        int32_t      ParentIndex = 0;
-        UInt32Array  ChildIndices;
+        InteropString Name;
+        Float_4x4     InverseBindMatrix;
+        Float_3       LocalTranslation;
+        Float_4       LocalRotationQuat;
+        Float_3       LocalScale;
+        Float_4x4     GlobalTransform;
+        uint32_t      Index       = 0;
+        int32_t       ParentIndex = 0;
+        UInt32Array   ChildIndices;
     };
 
     struct DZ_API JointArray
     {
-        Joint   *Elements;
-        uint32_t NumElements;
-
-        DZ_ARRAY_METHODS( JointArray, Joint )
+        Joint   *Elements    = nullptr;
+        uint32_t NumElements = 0;
     };
 
-    struct DZ_API SkeletonAsset : AssetHeader
+    struct DZ_API SkeletonAsset : AssetHeader, NonCopyable
     {
+        DZArena _Arena{ sizeof( SkeletonAsset ) };
+
         static constexpr uint32_t Latest = 1;
 
-        InteropString  Name;
-        JointArray     Joints;
+        InteropString Name;
+        JointArray    Joints{ };
 
         // Reference pose can be computed from joint local transforms
         SkeletonAsset( ) : AssetHeader( 0x445A534B454C /* DZSKEL */, Latest, 0 )

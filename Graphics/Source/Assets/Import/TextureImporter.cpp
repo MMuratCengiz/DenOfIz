@@ -112,6 +112,10 @@ ImporterResult TextureImporter::Import( const ImportJobDesc &desc )
 
     context.Result.ResultCode = ImportTextureInternal( context );
     spdlog::info( "Texture import successful for: {}", context.SourceFilePath.Get( ) );
+
+    context.Result.CreatedAssets.NumElements = m_createdAssets.size( );
+    context.Result.CreatedAssets.Elements    = m_createdAssets.data( );
+
     return context.Result;
 }
 
@@ -170,15 +174,6 @@ void TextureImporter::WriteTextureAsset( const ImportContext &context, const Tex
 
 void TextureImporter::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri )
 {
-    // TODO: Cleaner growing mechanism
-    const AssetUriArray newCreatedAssets = AssetUriArray::Create( context.Result.CreatedAssets.NumElements + 1 );
-    for ( size_t i = 0; i < context.Result.CreatedAssets.NumElements; ++i )
-    {
-        newCreatedAssets.Elements[ i ] = context.Result.CreatedAssets.Elements[ i ];
-    }
-    newCreatedAssets.Elements[ context.Result.CreatedAssets.NumElements ] = assetUri;
-    context.Result.CreatedAssets.Dispose( );
-    context.Result.CreatedAssets = newCreatedAssets;
-
+    m_createdAssets.push_back( assetUri );
     spdlog::info( "Created texture asset: {}", assetUri.Path.Get( ) );
 }

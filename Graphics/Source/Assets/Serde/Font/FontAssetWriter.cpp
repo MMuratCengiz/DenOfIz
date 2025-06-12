@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include "DenOfIzGraphics/Assets/Serde/Common/AssetWriterHelpers.h"
 #include "DenOfIzGraphics/Assets/Serde/Font/FontAssetWriter.h"
+#include "DenOfIzGraphicsInternal/Assets/Serde/Common/AssetWriterHelpers.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
@@ -30,7 +30,7 @@ FontAssetWriter::~FontAssetWriter( ) = default;
 
 void FontAssetWriter::Write( const FontAsset &fontAsset )
 {
-    m_fontAsset           = fontAsset;
+    m_fontAsset           = &fontAsset;
     m_streamStartLocation = m_writer->Position( );
 
     WriteHeader( 0 );
@@ -53,10 +53,10 @@ void FontAssetWriter::End( ) const
 
 void FontAssetWriter::WriteHeader( const uint64_t totalNumBytes ) const
 {
-    m_writer->WriteUInt64( m_fontAsset.Magic );
-    m_writer->WriteUInt32( m_fontAsset.Version );
+    m_writer->WriteUInt64( m_fontAsset->Magic );
+    m_writer->WriteUInt32( m_fontAsset->Version );
     m_writer->WriteUInt64( totalNumBytes );
-    m_writer->WriteString( m_fontAsset.Uri.ToInteropString( ) );
+    m_writer->WriteString( m_fontAsset->Uri.ToInteropString( ) );
 }
 
 void FontAssetWriter::WriteMetadata( const FontAsset &fontAsset ) const

@@ -39,13 +39,16 @@ namespace DenOfIz
         }
     };
 
-    struct DZ_API TextureImporterDesc{ };
+    struct DZ_API TextureImporterDesc
+    {
+    };
 
     class TextureImporter final : public IAssetImporter
     {
         ImporterDesc              m_importerInfo;
         const TextureImporterDesc m_desc;
         std::unique_ptr<Texture>  m_texture = nullptr;
+        std::vector<AssetUri>     m_createdAssets;
 
         struct ImportContext
         {
@@ -71,6 +74,6 @@ namespace DenOfIz
         ImporterResultCode ImportTextureInternal( ImportContext &context );
         void               WriteTextureAsset( const ImportContext &context, const TextureAsset &textureAsset, AssetUri &outAssetUri ) const;
 
-        static void RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri );
+        void RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri );
     };
 } // namespace DenOfIz

@@ -63,7 +63,7 @@ const std::vector<Byte> &EmbeddedFonts::GetInterData( )
     return g_decompressedData;
 }
 
-FontAsset EmbeddedFonts::GetInterVarInternal( )
+FontAsset* EmbeddedFonts::GetInterVarInternal( )
 {
     const auto &interData = GetInterData( );
 

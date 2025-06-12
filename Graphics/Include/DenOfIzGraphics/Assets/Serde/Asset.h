@@ -42,8 +42,6 @@ namespace DenOfIz
     {
         AssetUri *Elements;
         uint32_t  NumElements;
-
-        DZ_ARRAY_METHODS( AssetUriArray, AssetUri )
     };
 
     struct DZ_API AssetHeader
@@ -53,7 +51,9 @@ namespace DenOfIz
         uint64_t NumBytes = 0;
         AssetUri Uri{ };
 
-        AssetHeader( uint64_t magic, uint32_t version, uint64_t numBytes ) : Magic( magic ), Version( version ), NumBytes( numBytes ) { }
+        AssetHeader( uint64_t magic, uint32_t version, uint64_t numBytes ) : Magic( magic ), Version( version ), NumBytes( numBytes )
+        {
+        }
         AssetHeader( ) = default;
     };
 
@@ -94,8 +94,7 @@ namespace DenOfIz
 
     struct DZ_API UserPropertyArray
     {
-        UserProperty *Elements;
-        uint32_t      NumElements;
-        DZ_ARRAY_METHODS( UserPropertyArray, UserProperty )
+        UserProperty *Elements    = nullptr;
+        uint32_t      NumElements = 0;
     };
 } // namespace DenOfIz

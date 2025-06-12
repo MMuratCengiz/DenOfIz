@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Assets/Stream/BinaryWriter.h"
 #include <map>
+#include "DenOfIzGraphics/Assets/Stream/BinaryWriter.h"
 #include "MeshAsset.h"
 
 namespace DenOfIz
@@ -33,7 +33,7 @@ namespace DenOfIz
     {
         BinaryWriter       *m_writer;
         MeshAssetWriterDesc m_desc;
-        MeshAsset           m_meshAsset;
+        MeshAsset const    *m_meshAsset;
 
         enum class State
         {
@@ -64,10 +64,10 @@ namespace DenOfIz
 
         uint64_t m_numVertices = 0;
         uint64_t m_numIndices  = 0;
-        uint64_t m_numDeltas  = 0;
+        uint64_t m_numDeltas   = 0;
 
-        uint32_t m_vertexStride       = 0;
-        uint32_t m_morphDeltaStride   = 0;
+        uint32_t m_vertexStride     = 0;
+        uint32_t m_morphDeltaStride = 0;
 
         void CalculateStrides( );
         void WriteHeader( uint64_t totalNumBytes );

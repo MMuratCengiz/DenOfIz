@@ -17,7 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h"
-#include "DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h"
+#include "DenOfIzGraphicsInternal/Assets/Serde/Common/AssetReaderHelpers.h"
+#include "DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
@@ -35,9 +36,9 @@ TextureAssetReader::~TextureAssetReader( ) = default;
 
 TextureMip TextureAssetReader::FindMip( const uint32_t mipLevel, const uint32_t arrayLayer )
 {
-    for ( uint32_t i = 0; i < m_textureAsset.Mips.NumElements; ++i )
+    for ( uint32_t i = 0; i < m_textureAsset->Mips.NumElements; ++i )
     {
-        if ( const TextureMip &mip = m_textureAsset.Mips.Elements[ i ]; mip.MipIndex == mipLevel && mip.ArrayIndex == arrayLayer )
+        if ( const TextureMip &mip = m_textureAsset->Mips.Elements[ i ]; mip.MipIndex == mipLevel && mip.ArrayIndex == arrayLayer )
         {
             return mip;
         }
@@ -45,49 +46,49 @@ TextureMip TextureAssetReader::FindMip( const uint32_t mipLevel, const uint32_t 
     return { };
 }
 
-TextureAsset TextureAssetReader::Read( )
+TextureAsset *TextureAssetReader::Read( )
 {
     if ( m_textureRead )
     {
         return m_textureAsset;
     }
     m_textureRead        = true;
-    m_textureAsset       = TextureAsset( );
-    m_textureAsset.Magic = m_reader->ReadUInt64( );
-    if ( m_textureAsset.Magic != TextureAsset{ }.Magic )
+    m_textureAsset       = new TextureAsset( );
+    m_textureAsset->Magic = m_reader->ReadUInt64( );
+    if ( m_textureAsset->Magic != TextureAsset{ }.Magic )
     {
         spdlog::critical( "Invalid TextureAsset magic number." );
     }
 
-    m_textureAsset.Version = m_reader->ReadUInt32( );
-    if ( m_textureAsset.Version > TextureAsset::Latest )
+    m_textureAsset->Version = m_reader->ReadUInt32( );
+    if ( m_textureAsset->Version > TextureAsset::Latest )
     {
         spdlog::warn( "TextureAsset version mismatch." );
     }
-    m_textureAsset.NumBytes = m_reader->ReadUInt64( );
-    m_textureAsset.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
+    m_textureAsset->NumBytes = m_reader->ReadUInt64( );
+    m_textureAsset->Uri      = AssetUri::Parse( m_reader->ReadString( ) );
 
-    m_textureAsset.Name         = m_reader->ReadString( );
-    m_textureAsset.SourcePath   = m_reader->ReadString( );
-    m_textureAsset.Width        = m_reader->ReadUInt32( );
-    m_textureAsset.Height       = m_reader->ReadUInt32( );
-    m_textureAsset.Depth        = m_reader->ReadUInt32( );
-    m_textureAsset.Format       = static_cast<Format>( m_reader->ReadUInt32( ) );
-    m_textureAsset.Dimension    = static_cast<TextureDimension>( m_reader->ReadUInt32( ) );
-    m_textureAsset.MipLevels    = m_reader->ReadUInt32( );
-    m_textureAsset.ArraySize    = m_reader->ReadUInt32( );
-    m_textureAsset.BitsPerPixel = m_reader->ReadUInt32( );
-    m_textureAsset.BlockSize    = m_reader->ReadUInt32( );
-    m_textureAsset.RowPitch     = m_reader->ReadUInt32( );
-    m_textureAsset.NumRows      = m_reader->ReadUInt32( );
-    m_textureAsset.SlicePitch   = m_reader->ReadUInt32( );
+    m_textureAsset->Name         = m_reader->ReadString( );
+    m_textureAsset->SourcePath   = m_reader->ReadString( );
+    m_textureAsset->Width        = m_reader->ReadUInt32( );
+    m_textureAsset->Height       = m_reader->ReadUInt32( );
+    m_textureAsset->Depth        = m_reader->ReadUInt32( );
+    m_textureAsset->Format       = static_cast<Format>( m_reader->ReadUInt32( ) );
+    m_textureAsset->Dimension    = static_cast<TextureDimension>( m_reader->ReadUInt32( ) );
+    m_textureAsset->MipLevels    = m_reader->ReadUInt32( );
+    m_textureAsset->ArraySize    = m_reader->ReadUInt32( );
+    m_textureAsset->BitsPerPixel = m_reader->ReadUInt32( );
+    m_textureAsset->BlockSize    = m_reader->ReadUInt32( );
+    m_textureAsset->RowPitch     = m_reader->ReadUInt32( );
+    m_textureAsset->NumRows      = m_reader->ReadUInt32( );
+    m_textureAsset->SlicePitch   = m_reader->ReadUInt32( );
 
     const uint32_t numMips = m_reader->ReadUInt32( );
-    m_textureAsset.Mips    = TextureMipArray::Create( numMips );
+    DZArenaArrayHelper<TextureMipArray, TextureMip>::AllocateAndConstructArray( m_textureAsset->_Arena, m_textureAsset->Mips, numMips );
 
     for ( uint32_t i = 0; i < numMips; ++i )
     {
-        TextureMip &mip = m_textureAsset.Mips.Elements[ i ];
+        TextureMip &mip = m_textureAsset->Mips.Elements[ i ];
         mip.Width       = m_reader->ReadUInt32( );
         mip.Height      = m_reader->ReadUInt32( );
         mip.MipIndex    = m_reader->ReadUInt32( );
@@ -98,20 +99,20 @@ TextureAsset TextureAssetReader::Read( )
         mip.DataOffset  = m_reader->ReadUInt32( );
     }
 
-    m_textureAsset.Data = AssetReaderHelpers::ReadAssetDataStream( m_reader );
+    m_textureAsset->Data = AssetReaderHelpers::ReadAssetDataStream( m_reader );
     return m_textureAsset;
 }
 
 ByteArray TextureAssetReader::ReadRaw( const uint32_t mipLevel, const uint32_t arrayLayer )
 {
-    if ( mipLevel >= m_textureAsset.MipLevels || arrayLayer >= m_textureAsset.ArraySize )
+    if ( mipLevel >= m_textureAsset->MipLevels || arrayLayer >= m_textureAsset->ArraySize )
     {
         spdlog::critical( "Invalid mip level or array layer requested" );
         return { };
     }
 
     const TextureMip mip    = FindMip( mipLevel, arrayLayer );
-    const uint64_t   offset = m_textureAsset.Data.Offset + mip.DataOffset;
+    const uint64_t   offset = m_textureAsset->Data.Offset + mip.DataOffset;
 
     m_reader->Seek( offset );
     ByteArray mipData{ };
@@ -138,10 +139,10 @@ void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc 
     const ByteArray    bufferArray{ buffer.data( ), buffer.size( ) };
 
     const auto stagingBuffer  = desc.StagingBuffer;
-    uint64_t   remainingBytes = m_textureAsset.Data.NumBytes;
+    uint64_t   remainingBytes = m_textureAsset->Data.NumBytes;
     auto       mappedMemory   = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
 
-    m_reader->Seek( m_textureAsset.Data.Offset );
+    m_reader->Seek( m_textureAsset->Data.Offset );
     while ( remainingBytes > 0 )
     {
         const uint32_t bytesToRead = static_cast<uint32_t>( std::min( static_cast<uint64_t>( batchSize ), remainingBytes ) );
@@ -160,9 +161,9 @@ void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc 
 
     stagingBuffer->UnmapMemory( );
 
-    for ( uint32_t i = 0; i < m_textureAsset.Mips.NumElements; ++i )
+    for ( uint32_t i = 0; i < m_textureAsset->Mips.NumElements; ++i )
     {
-        const TextureMip mip = m_textureAsset.Mips.Elements[ i ];
+        const TextureMip mip = m_textureAsset->Mips.Elements[ i ];
 
         CopyBufferToTextureDesc copyDesc{ };
         copyDesc.DstTexture = desc.Texture;
@@ -184,9 +185,9 @@ void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc 
 uint64_t TextureAssetReader::AlignedTotalNumBytes( const DeviceConstants &constants )
 {
     uint64_t totalNumBytes = 0;
-    for ( uint32_t i = 0; i < m_textureAsset.Mips.NumElements; ++i )
+    for ( uint32_t i = 0; i < m_textureAsset->Mips.NumElements; ++i )
     {
-        const TextureMip &mip               = m_textureAsset.Mips.Elements[ i ];
+        const TextureMip &mip               = m_textureAsset->Mips.Elements[ i ];
         const uint32_t    alignedRowPitch   = Utilities::Align( mip.RowPitch, constants.BufferTextureRowAlignment );
         const uint32_t    alignedSlicePitch = Utilities::Align( alignedRowPitch * mip.NumRows, constants.BufferTextureAlignment );
         totalNumBytes += alignedSlicePitch;

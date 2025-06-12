@@ -29,10 +29,10 @@ namespace DenOfIz
 
     class FontAssetWriter
     {
-        BinaryWriter *m_writer;
-        uint64_t      m_dataOffset          = 0;
-        uint64_t      m_streamStartLocation = 0;
-        FontAsset     m_fontAsset;
+        BinaryWriter    *m_writer;
+        uint64_t         m_dataOffset          = 0;
+        uint64_t         m_streamStartLocation = 0;
+        FontAsset const *m_fontAsset;
 
     public:
         DZ_API explicit FontAssetWriter( const FontAssetWriterDesc &desc );

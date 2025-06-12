@@ -48,6 +48,7 @@ namespace DenOfIz
 
     class Texture
     {
+        mutable DZArena                                m_arena{ 1024 };
         std::string                                    m_path;
         std::vector<TextureMip>                        m_mipData;
         std::unique_ptr<dds::Header, DDSHeaderDeleter> m_ddsHeader;

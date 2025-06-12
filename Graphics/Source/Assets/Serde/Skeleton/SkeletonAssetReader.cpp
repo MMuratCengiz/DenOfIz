@@ -16,9 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h"
-#include "DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h"
 #include "DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetReader.h"
+#include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h"
+#include "DenOfIzGraphicsInternal/Assets/Serde/Common/AssetReaderHelpers.h"
+#include "DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
@@ -33,33 +34,33 @@ SkeletonAssetReader::SkeletonAssetReader( const SkeletonAssetReaderDesc &desc ) 
 
 SkeletonAssetReader::~SkeletonAssetReader( ) = default;
 
-SkeletonAsset SkeletonAssetReader::Read( )
+SkeletonAsset *SkeletonAssetReader::Read( )
 {
-    m_skeletonAsset = SkeletonAsset( );
+    m_skeletonAsset = new SkeletonAsset( );
 
-    m_skeletonAsset.Magic = m_reader->ReadUInt64( );
-    if ( m_skeletonAsset.Magic != SkeletonAsset{ }.Magic )
+    m_skeletonAsset->Magic = m_reader->ReadUInt64( );
+    if ( m_skeletonAsset->Magic != SkeletonAsset{ }.Magic )
     {
         spdlog::critical( "Invalid SkeletonAsset magic number." );
     }
 
-    m_skeletonAsset.Version = m_reader->ReadUInt32( );
-    if ( m_skeletonAsset.Version > SkeletonAsset::Latest )
+    m_skeletonAsset->Version = m_reader->ReadUInt32( );
+    if ( m_skeletonAsset->Version > SkeletonAsset::Latest )
     {
         spdlog::warn( "SkeletonAsset version mismatch." );
     }
 
-    m_skeletonAsset.NumBytes = m_reader->ReadUInt64( );
-    m_skeletonAsset.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
+    m_skeletonAsset->NumBytes = m_reader->ReadUInt64( );
+    m_skeletonAsset->Uri      = AssetUri::Parse( m_reader->ReadString( ) );
 
-    m_skeletonAsset.Name = m_reader->ReadString( );
+    m_skeletonAsset->Name = m_reader->ReadString( );
 
     const uint32_t numJoints = m_reader->ReadUInt32( );
-    m_skeletonAsset.Joints = JointArray::Create( numJoints );
+    DZArenaArrayHelper<JointArray, Joint>::AllocateAndConstructArray( m_skeletonAsset->_Arena, m_skeletonAsset->Joints, numJoints );
 
     for ( uint32_t i = 0; i < numJoints; ++i )
     {
-        Joint &joint = m_skeletonAsset.Joints.Elements[ i ];
+        Joint &joint = m_skeletonAsset->Joints.Elements[ i ];
 
         joint.Name              = m_reader->ReadString( );
         joint.InverseBindMatrix = m_reader->ReadFloat_4x4( );
@@ -70,7 +71,7 @@ SkeletonAsset SkeletonAssetReader::Read( )
         joint.ParentIndex       = m_reader->ReadInt32( );
 
         const uint32_t numChildren = m_reader->ReadUInt32( );
-        joint.ChildIndices = UInt32Array::Create( numChildren );
+        joint.ChildIndices         = UInt32Array::Create( numChildren );
 
         for ( uint32_t j = 0; j < numChildren; ++j )
         {

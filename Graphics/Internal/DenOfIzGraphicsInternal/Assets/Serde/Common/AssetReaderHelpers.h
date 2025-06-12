@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Assets/Serde/Asset.h"
 #include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
+#include "DenOfIzGraphics/Utilities/DZArena.h"
 
 namespace DenOfIz
 {
@@ -27,7 +28,7 @@ namespace DenOfIz
     {
     public:
         static AssetDataStream            ReadAssetDataStream( BinaryReader *reader );
-        static UserPropertyArray          ReadUserProperties( BinaryReader *reader );
+        static UserPropertyArray          ReadUserProperties( DZArena* arena, BinaryReader *reader );
         static UserProperty               ReadUserProperty( BinaryReader *reader );
     };
 } // namespace DenOfIz

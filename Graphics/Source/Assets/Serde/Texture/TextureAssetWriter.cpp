@@ -17,9 +17,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetWriter.h"
-#include "DenOfIzGraphics/Assets/Serde/Common/AssetWriterHelpers.h"
-
 #include "DenOfIzGraphics/Utilities/Common_Arrays.h"
+
+#include "DenOfIzGraphicsInternal/Assets/Serde/Common/AssetWriterHelpers.h"
+#include "DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
@@ -36,10 +37,10 @@ TextureAssetWriter::~TextureAssetWriter( ) = default;
 
 void TextureAssetWriter::WriteHeader( const uint64_t totalNumBytes ) const
 {
-    m_writer->WriteUInt64( m_textureAsset.Magic );
-    m_writer->WriteUInt32( m_textureAsset.Version );
+    m_writer->WriteUInt64( m_textureAsset->Magic );
+    m_writer->WriteUInt32( m_textureAsset->Version );
     m_writer->WriteUInt64( totalNumBytes );
-    m_writer->WriteString( m_textureAsset.Uri.ToInteropString( ) );
+    m_writer->WriteString( m_textureAsset->Uri.ToInteropString( ) );
 }
 void TextureAssetWriter::WriteMipInfo( const TextureMip &mip ) const
 {
@@ -55,7 +56,7 @@ void TextureAssetWriter::WriteMipInfo( const TextureMip &mip ) const
 
 void TextureAssetWriter::ValidateMipRange( const uint32_t mipIndex, const uint32_t arrayLayer )
 {
-    if ( mipIndex >= m_textureAsset.MipLevels || arrayLayer >= m_textureAsset.ArraySize )
+    if ( mipIndex >= m_textureAsset->MipLevels || arrayLayer >= m_textureAsset->ArraySize )
     {
         spdlog::critical( "Attempted to add more Mip or Array data than expected." );
     }
@@ -83,24 +84,42 @@ void TextureAssetWriter::ValidateMipRange( const uint32_t mipIndex, const uint32
 
 void TextureAssetWriter::Write( const TextureAsset &textureAsset )
 {
-    m_textureAsset        = textureAsset;
+    m_textureAsset = std::make_unique<TextureAsset>( );
+    // Copy the input since we modify it
+    m_textureAsset->Name         = textureAsset.Name;
+    m_textureAsset->SourcePath   = textureAsset.SourcePath;
+    m_textureAsset->Width        = textureAsset.Width;
+    m_textureAsset->Height       = textureAsset.Height;
+    m_textureAsset->Depth        = textureAsset.Depth;
+    m_textureAsset->Format       = textureAsset.Format;
+    m_textureAsset->Dimension    = textureAsset.Dimension;
+    m_textureAsset->MipLevels    = textureAsset.MipLevels;
+    m_textureAsset->ArraySize    = textureAsset.ArraySize;
+    m_textureAsset->BitsPerPixel = textureAsset.BitsPerPixel;
+    m_textureAsset->BlockSize    = textureAsset.BlockSize;
+    m_textureAsset->RowPitch     = textureAsset.RowPitch;
+    m_textureAsset->NumRows      = textureAsset.NumRows;
+    m_textureAsset->SlicePitch   = textureAsset.SlicePitch;
+    m_textureAsset->Mips         = textureAsset.Mips;
+    m_textureAsset->Data         = textureAsset.Data;
+
     m_streamStartLocation = m_writer->Position( );
     WriteHeader( 0 );
-    m_writer->WriteString( m_textureAsset.Name );
-    m_writer->WriteString( m_textureAsset.SourcePath );
-    if ( m_textureAsset.Width == 0 || m_textureAsset.Height == 0 )
+    m_writer->WriteString( m_textureAsset->Name );
+    m_writer->WriteString( m_textureAsset->SourcePath );
+    if ( m_textureAsset->Width == 0 || m_textureAsset->Height == 0 )
     {
         spdlog::warn( "TextureAssetWriter: Texture dimensions are zero, which may indicate uninitialized data" );
     }
-    if ( m_textureAsset.Format == Format::Undefined )
+    if ( m_textureAsset->Format == Format::Undefined )
     {
         spdlog::warn( "TextureAssetWriter: Texture format is undefined, defaulting to R8G8B8A8Unorm" );
-        m_textureAsset.Format = Format::R8G8B8A8Unorm;
+        m_textureAsset->Format = Format::R8G8B8A8Unorm;
     }
-    if ( m_textureAsset.BitsPerPixel == 0 )
+    if ( m_textureAsset->BitsPerPixel == 0 )
     {
         spdlog::warn( "TextureAssetWriter: BitsPerPixel is 0, attempting to set based on format" );
-        switch ( m_textureAsset.Format )
+        switch ( m_textureAsset->Format )
         {
         case Format::R8G8B8A8Unorm:
         case Format::R8G8B8A8UnormSrgb:
@@ -108,111 +127,111 @@ void TextureAssetWriter::Write( const TextureAsset &textureAsset )
         case Format::R8G8B8A8Snorm:
         case Format::R8G8B8A8Sint:
         case Format::B8G8R8A8Unorm:
-            m_textureAsset.BitsPerPixel = 32;
+            m_textureAsset->BitsPerPixel = 32;
             break;
         case Format::BC1Unorm:
         case Format::BC1UnormSrgb:
-            m_textureAsset.BitsPerPixel = 4;
+            m_textureAsset->BitsPerPixel = 4;
             break;
         case Format::BC2Unorm:
         case Format::BC2UnormSrgb:
         case Format::BC3Unorm:
         case Format::BC3UnormSrgb:
-            m_textureAsset.BitsPerPixel = 8;
+            m_textureAsset->BitsPerPixel = 8;
             break;
         case Format::BC4Unorm:
         case Format::BC4Snorm:
-            m_textureAsset.BitsPerPixel = 4;
+            m_textureAsset->BitsPerPixel = 4;
             break;
         case Format::BC5Unorm:
         case Format::BC5Snorm:
         case Format::BC7Unorm:
-            m_textureAsset.BitsPerPixel = 8;
+            m_textureAsset->BitsPerPixel = 8;
             break;
         default:
-            m_textureAsset.BitsPerPixel = 32;
+            m_textureAsset->BitsPerPixel = 32;
             break;
         }
     }
 
-    if ( m_textureAsset.BlockSize == 0 )
+    if ( m_textureAsset->BlockSize == 0 )
     {
-        if ( IsFormatBC( m_textureAsset.Format ) )
+        if ( IsFormatBC( m_textureAsset->Format ) )
         {
-            m_textureAsset.BlockSize = 4;
+            m_textureAsset->BlockSize = 4;
         }
         else
         {
-            m_textureAsset.BlockSize = 1;
+            m_textureAsset->BlockSize = 1;
         }
     }
 
-    if ( m_textureAsset.RowPitch == 0 )
+    if ( m_textureAsset->RowPitch == 0 )
     {
-        if ( m_textureAsset.Format >= Format::BC1Unorm && m_textureAsset.Format <= Format::BC7Unorm )
+        if ( m_textureAsset->Format >= Format::BC1Unorm && m_textureAsset->Format <= Format::BC7Unorm )
         {
-            const uint32_t blockWidth = ( m_textureAsset.Width + m_textureAsset.BlockSize - 1 ) / m_textureAsset.BlockSize;
-            m_textureAsset.RowPitch   = blockWidth * ( m_textureAsset.BitsPerPixel / 8 );
+            const uint32_t blockWidth = ( m_textureAsset->Width + m_textureAsset->BlockSize - 1 ) / m_textureAsset->BlockSize;
+            m_textureAsset->RowPitch  = blockWidth * ( m_textureAsset->BitsPerPixel / 8 );
         }
         else
         {
-            m_textureAsset.RowPitch = m_textureAsset.Width * ( m_textureAsset.BitsPerPixel / 8 );
+            m_textureAsset->RowPitch = m_textureAsset->Width * ( m_textureAsset->BitsPerPixel / 8 );
         }
     }
 
-    if ( m_textureAsset.NumRows == 0 )
+    if ( m_textureAsset->NumRows == 0 )
     {
         spdlog::warn( "TextureAssetWriter: NumRows is 0, calculating based on height and format" );
-        if ( m_textureAsset.Format >= Format::BC1Unorm && m_textureAsset.Format <= Format::BC7Unorm )
+        if ( m_textureAsset->Format >= Format::BC1Unorm && m_textureAsset->Format <= Format::BC7Unorm )
         {
-            m_textureAsset.NumRows = ( m_textureAsset.Height + m_textureAsset.BlockSize - 1 ) / m_textureAsset.BlockSize;
+            m_textureAsset->NumRows = ( m_textureAsset->Height + m_textureAsset->BlockSize - 1 ) / m_textureAsset->BlockSize;
         }
         else
         {
-            m_textureAsset.NumRows = m_textureAsset.Height;
+            m_textureAsset->NumRows = m_textureAsset->Height;
         }
     }
 
-    if ( m_textureAsset.SlicePitch == 0 )
+    if ( m_textureAsset->SlicePitch == 0 )
     {
-        m_textureAsset.SlicePitch = m_textureAsset.RowPitch * m_textureAsset.NumRows;
+        m_textureAsset->SlicePitch = m_textureAsset->RowPitch * m_textureAsset->NumRows;
     }
 
-    if ( m_textureAsset.Mips.NumElements == 0 )
+    if ( m_textureAsset->Mips.NumElements == 0 )
     {
         spdlog::warn( "TextureAssetWriter: No mip levels found, creating default mip level" );
         TextureMip mip{ };
-        mip.Width      = std::max( 1u, m_textureAsset.Width );
-        mip.Height     = std::max( 1u, m_textureAsset.Height );
+        mip.Width      = std::max( 1u, m_textureAsset->Width );
+        mip.Height     = std::max( 1u, m_textureAsset->Height );
         mip.MipIndex   = 0;
         mip.ArrayIndex = 0;
-        mip.RowPitch   = m_textureAsset.RowPitch;
-        mip.NumRows    = m_textureAsset.NumRows;
-        mip.SlicePitch = m_textureAsset.SlicePitch;
+        mip.RowPitch   = m_textureAsset->RowPitch;
+        mip.NumRows    = m_textureAsset->NumRows;
+        mip.SlicePitch = m_textureAsset->SlicePitch;
         mip.DataOffset = 0;
 
-        m_textureAsset.Mips               = TextureMipArray::Create( 1 );
-        m_textureAsset.Mips.Elements[ 0 ] = mip;
+        DZArenaArrayHelper<TextureMipArray, TextureMip>::AllocateAndConstructArray( m_textureAsset->_Arena, m_textureAsset->Mips, 1 );
+        m_textureAsset->Mips.Elements[ 0 ] = mip;
     }
 
-    m_writer->WriteUInt32( std::max( 1u, m_textureAsset.Width ) );
-    m_writer->WriteUInt32( std::max( 1u, m_textureAsset.Height ) );
-    m_writer->WriteUInt32( m_textureAsset.Depth );
-    m_writer->WriteUInt32( static_cast<uint32_t>( m_textureAsset.Format ) );
-    m_writer->WriteUInt32( static_cast<uint32_t>( m_textureAsset.Dimension ) );
-    m_writer->WriteUInt32( m_textureAsset.MipLevels );
-    m_writer->WriteUInt32( m_textureAsset.ArraySize );
-    m_writer->WriteUInt32( m_textureAsset.BitsPerPixel );
-    m_writer->WriteUInt32( m_textureAsset.BlockSize );
-    m_writer->WriteUInt32( m_textureAsset.RowPitch );
-    m_writer->WriteUInt32( m_textureAsset.NumRows );
-    m_writer->WriteUInt32( m_textureAsset.SlicePitch );
-    m_writer->WriteUInt32( m_textureAsset.Mips.NumElements );
-    m_textureMipPositions.resize( m_textureAsset.Mips.NumElements );
-    for ( int i = 0; i < m_textureAsset.Mips.NumElements; ++i )
+    m_writer->WriteUInt32( std::max( 1u, m_textureAsset->Width ) );
+    m_writer->WriteUInt32( std::max( 1u, m_textureAsset->Height ) );
+    m_writer->WriteUInt32( m_textureAsset->Depth );
+    m_writer->WriteUInt32( static_cast<uint32_t>( m_textureAsset->Format ) );
+    m_writer->WriteUInt32( static_cast<uint32_t>( m_textureAsset->Dimension ) );
+    m_writer->WriteUInt32( m_textureAsset->MipLevels );
+    m_writer->WriteUInt32( m_textureAsset->ArraySize );
+    m_writer->WriteUInt32( m_textureAsset->BitsPerPixel );
+    m_writer->WriteUInt32( m_textureAsset->BlockSize );
+    m_writer->WriteUInt32( m_textureAsset->RowPitch );
+    m_writer->WriteUInt32( m_textureAsset->NumRows );
+    m_writer->WriteUInt32( m_textureAsset->SlicePitch );
+    m_writer->WriteUInt32( m_textureAsset->Mips.NumElements );
+    m_textureMipPositions.resize( m_textureAsset->Mips.NumElements );
+    for ( int i = 0; i < m_textureAsset->Mips.NumElements; ++i )
     {
         m_textureMipPositions[ i ] = m_writer->Position( );
-        WriteMipInfo( m_textureAsset.Mips.Elements[ i ] );
+        WriteMipInfo( m_textureAsset->Mips.Elements[ i ] );
     }
 
     AssetWriterHelpers::WriteAssetDataStream( m_writer, { 0, 0 } );
@@ -226,9 +245,9 @@ void TextureAssetWriter::AddPixelData( const ByteArrayView &bytes, const uint32_
     const uint32_t currentDataOffset = m_writer->Position( ) - m_assetDataStreamPosition;
     bool           mipFound          = false;
 
-    for ( size_t i = 0; i < m_textureAsset.Mips.NumElements; ++i )
+    for ( size_t i = 0; i < m_textureAsset->Mips.NumElements; ++i )
     {
-        if ( TextureMip &mip = m_textureAsset.Mips.Elements[ i ]; mip.MipIndex == mipIndex && mip.ArrayIndex == arrayLayer )
+        if ( TextureMip &mip = m_textureAsset->Mips.Elements[ i ]; mip.MipIndex == mipIndex && mip.ArrayIndex == arrayLayer )
         {
             if ( mip.DataOffset == 0 )
             {
@@ -245,25 +264,25 @@ void TextureAssetWriter::AddPixelData( const ByteArrayView &bytes, const uint32_
     }
 
     // If mip was not found, add a new mip entry (unless we're already at max mips)
-    if ( !mipFound && ( mipIndex < m_textureAsset.MipLevels ) && ( arrayLayer < m_textureAsset.ArraySize ) )
+    if ( !mipFound && ( mipIndex < m_textureAsset->MipLevels ) && ( arrayLayer < m_textureAsset->ArraySize ) )
     {
         spdlog::warn( "TextureAssetWriter: Adding missing mip entry for level {} , array layer {}", mipIndex, arrayLayer );
-        const uint32_t mipWidth  = std::max( 1u, m_textureAsset.Width >> mipIndex );
-        const uint32_t mipHeight = std::max( 1u, m_textureAsset.Height >> mipIndex );
+        const uint32_t mipWidth  = std::max( 1u, m_textureAsset->Width >> mipIndex );
+        const uint32_t mipHeight = std::max( 1u, m_textureAsset->Height >> mipIndex );
 
         uint32_t mipRowPitch, mipNumRows, mipSlicePitch;
-        if ( IsFormatBC( m_textureAsset.Format ) )
+        if ( IsFormatBC( m_textureAsset->Format ) )
         {
-            const uint32_t blockWidth  = ( mipWidth + m_textureAsset.BlockSize - 1 ) / m_textureAsset.BlockSize;
-            const uint32_t blockHeight = ( mipHeight + m_textureAsset.BlockSize - 1 ) / m_textureAsset.BlockSize;
+            const uint32_t blockWidth  = ( mipWidth + m_textureAsset->BlockSize - 1 ) / m_textureAsset->BlockSize;
+            const uint32_t blockHeight = ( mipHeight + m_textureAsset->BlockSize - 1 ) / m_textureAsset->BlockSize;
 
-            mipRowPitch   = blockWidth * ( m_textureAsset.BitsPerPixel / 8 );
+            mipRowPitch   = blockWidth * ( m_textureAsset->BitsPerPixel / 8 );
             mipNumRows    = blockHeight;
             mipSlicePitch = mipRowPitch * mipNumRows;
         }
         else
         {
-            mipRowPitch   = mipWidth * ( m_textureAsset.BitsPerPixel / 8 );
+            mipRowPitch   = mipWidth * ( m_textureAsset->BitsPerPixel / 8 );
             mipNumRows    = mipHeight;
             mipSlicePitch = mipRowPitch * mipNumRows;
         }
@@ -277,15 +296,21 @@ void TextureAssetWriter::AddPixelData( const ByteArrayView &bytes, const uint32_
         newMip.NumRows    = mipNumRows;
         newMip.SlicePitch = mipSlicePitch;
         newMip.DataOffset = currentDataOffset;
-        // TODO: Cleaner growing mechanism
-        const TextureMipArray newMips = TextureMipArray::Create( m_textureAsset.Mips.NumElements + 1 );
-        for ( size_t j = 0; j < m_textureAsset.Mips.NumElements; ++j )
+        size_t newMipCount = m_textureAsset->Mips.NumElements + 1;
+        TextureMip* newMips = DZArenaAllocator<TextureMip>::Allocate( m_textureAsset->_Arena, newMipCount );
+        
+        if ( m_textureAsset->Mips.Elements )
         {
-            newMips.Elements[ j ] = m_textureAsset.Mips.Elements[ j ];
+            for ( size_t j = 0; j < m_textureAsset->Mips.NumElements; ++j )
+            {
+                newMips[ j ] = m_textureAsset->Mips.Elements[ j ];
+            }
         }
-        newMips.Elements[ m_textureAsset.Mips.NumElements ] = newMip;
-        m_textureAsset.Mips.Dispose( );
-        m_textureAsset.Mips = newMips;
+        
+        newMips[ m_textureAsset->Mips.NumElements ] = newMip;
+        
+        m_textureAsset->Mips.Elements = newMips;
+        m_textureAsset->Mips.NumElements = static_cast<uint32_t>( newMipCount );
         m_textureMipPositions.push_back( m_writer->Position( ) );
         WriteMipInfo( newMip );
     }

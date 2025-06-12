@@ -34,6 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Import/AssetPathUtilities.h"
 #include "DenOfIzGraphics/Assets/Import/FontImporter.h"
 #include "DenOfIzGraphics/Assets/Serde/Font/FontAssetWriter.h"
+#include "DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
@@ -44,6 +45,7 @@ namespace DenOfIz
     {
         FT_Library               m_ftLibrary{ };
         msdfgen::FreetypeHandle *m_msdfFtHandle{ };
+        std::vector<AssetUri>    m_createdAssets;
 
         struct Rect
         {
@@ -62,18 +64,13 @@ namespace DenOfIz
             ImporterResult Result;
             InteropString  ErrorMessage;
 
-            FontAsset FontAsset;
+            FontAsset *FontAsset;
 
             uint32_t CurrentAtlasX = 0;
             uint32_t CurrentAtlasY = 0;
             uint32_t RowHeight     = 0;
 
             msdfgen::FontHandle *MsdfFont = nullptr;
-
-            ~ImportContext( )
-            {
-                FontAsset.Dispose( );
-            }
         };
     };
 } // namespace DenOfIz
@@ -145,13 +142,13 @@ ImporterResult FontImporter::Import( const ImportJobDesc &desc )
 
     // For MSDF, we need RGB data (3 bytes per pixel) instead of grayscale
     const size_t atlasSize      = context.Desc.AtlasWidth * context.Desc.AtlasHeight * FontAsset::NumChannels;
-    context.FontAsset.AtlasData = ByteArray::Create( atlasSize );
-    memset( context.FontAsset.AtlasData.Elements, 0, atlasSize );
+    context.FontAsset->AtlasData = ByteArray::Create( atlasSize );
+    memset( context.FontAsset->AtlasData.Elements, 0, atlasSize );
 
-    context.FontAsset.InitialFontSize   = context.Desc.InitialFontSize;
-    context.FontAsset.AtlasWidth        = context.Desc.AtlasWidth;
-    context.FontAsset.AtlasHeight       = context.Desc.AtlasHeight;
-    context.FontAsset.NumAtlasDataBytes = context.Desc.AtlasWidth * context.Desc.AtlasHeight * FontAsset::NumChannels;
+    context.FontAsset->InitialFontSize   = context.Desc.InitialFontSize;
+    context.FontAsset->AtlasWidth        = context.Desc.AtlasWidth;
+    context.FontAsset->AtlasHeight       = context.Desc.AtlasHeight;
+    context.FontAsset->NumAtlasDataBytes = context.Desc.AtlasWidth * context.Desc.AtlasHeight * FontAsset::NumChannels;
 
     if ( const ImporterResultCode result = ImportFontInternal( *m_impl, context ); result != ImporterResultCode::Success )
     {
@@ -162,15 +159,10 @@ ImporterResult FontImporter::Import( const ImportJobDesc &desc )
 
     AssetUri fontAssetUri;
     WriteFontAsset( context, fontAssetUri );
+    m_impl->m_createdAssets.push_back( fontAssetUri );
 
-    const AssetUriArray newCreatedAssets = AssetUriArray::Create( context.Result.CreatedAssets.NumElements + 1 );
-    for ( size_t i = 0; i < context.Result.CreatedAssets.NumElements; ++i )
-    {
-        newCreatedAssets.Elements[ i ] = context.Result.CreatedAssets.Elements[ i ];
-    }
-    newCreatedAssets.Elements[ context.Result.CreatedAssets.NumElements ] = fontAssetUri;
-    context.Result.CreatedAssets.Dispose( );
-    context.Result.CreatedAssets = newCreatedAssets;
+    context.Result.CreatedAssets.NumElements = m_impl->m_createdAssets.size( );
+    context.Result.CreatedAssets.Elements    = m_impl->m_createdAssets.data( );
 
     return context.Result;
 }
@@ -196,10 +188,10 @@ namespace
         FT_Face           face;
         const std::string resolvedPath = PathResolver::ResolvePath( context.SourceFilePath.Get( ) );
 
-        context.FontAsset.Uri.Path = context.SourceFilePath;
+        context.FontAsset->Uri.Path = context.SourceFilePath;
 
-        context.FontAsset.Data         = FileIO::ReadFile( InteropString( resolvedPath.c_str( ) ) );
-        context.FontAsset.DataNumBytes = context.FontAsset.Data.NumElements;
+        context.FontAsset->Data         = FileIO::ReadFile( InteropString( resolvedPath.c_str( ) ) );
+        context.FontAsset->DataNumBytes = context.FontAsset->Data.NumElements;
 
         FT_Error error = FT_New_Face( impl.m_ftLibrary, resolvedPath.c_str( ), 0, &face );
 
@@ -226,27 +218,27 @@ namespace
 
     void ExtractFontMetrics( FontImporterImpl::ImportContext &context, const FT_Face face )
     {
-        context.FontAsset.Metrics.Ascent     = static_cast<uint32_t>( face->size->metrics.ascender >> 6 );
-        context.FontAsset.Metrics.Descent    = static_cast<uint32_t>( abs( face->size->metrics.descender ) >> 6 );
-        context.FontAsset.Metrics.LineGap    = static_cast<uint32_t>( ( face->size->metrics.height - ( face->size->metrics.ascender - face->size->metrics.descender ) ) >> 6 );
-        context.FontAsset.Metrics.LineHeight = static_cast<uint32_t>( face->size->metrics.height >> 6 );
+        context.FontAsset->Metrics.Ascent     = static_cast<uint32_t>( face->size->metrics.ascender >> 6 );
+        context.FontAsset->Metrics.Descent    = static_cast<uint32_t>( abs( face->size->metrics.descender ) >> 6 );
+        context.FontAsset->Metrics.LineGap    = static_cast<uint32_t>( ( face->size->metrics.height - ( face->size->metrics.ascender - face->size->metrics.descender ) ) >> 6 );
+        context.FontAsset->Metrics.LineHeight = static_cast<uint32_t>( face->size->metrics.height >> 6 );
 
         if ( FT_IS_SCALABLE( face ) )
         {
-            context.FontAsset.Metrics.UnderlinePos       = static_cast<uint32_t>( abs( face->underline_position ) >> 6 );
-            context.FontAsset.Metrics.UnderlineThickness = static_cast<uint32_t>( face->underline_thickness >> 6 );
+            context.FontAsset->Metrics.UnderlinePos       = static_cast<uint32_t>( abs( face->underline_position ) >> 6 );
+            context.FontAsset->Metrics.UnderlineThickness = static_cast<uint32_t>( face->underline_thickness >> 6 );
         }
         else
         {
-            context.FontAsset.Metrics.UnderlinePos       = context.FontAsset.Metrics.Descent / 2;
-            context.FontAsset.Metrics.UnderlineThickness = context.FontAsset.Metrics.Ascent / 20;
+            context.FontAsset->Metrics.UnderlinePos       = context.FontAsset->Metrics.Descent / 2;
+            context.FontAsset->Metrics.UnderlineThickness = context.FontAsset->Metrics.Ascent / 20;
         }
     }
 
     void GenerateAtlas( const FontImporterImpl &impl, FontImporterImpl::ImportContext &context )
     {
-        const Byte          *data         = context.FontAsset.Data.Elements;
-        const uint64_t       dataNumBytes = context.FontAsset.DataNumBytes;
+        const Byte          *data         = context.FontAsset->Data.Elements;
+        const uint64_t       dataNumBytes = context.FontAsset->DataNumBytes;
         msdfgen::FontHandle *msdfFont     = msdfgen::loadFontData( impl.m_msdfFtHandle, data, dataNumBytes );
         if ( !msdfFont )
         {
@@ -289,19 +281,19 @@ namespace
         const auto &atlasStorage = generator.atlasStorage( );
 
         // Resize atlas if necessary
-        if ( width != static_cast<int>( context.FontAsset.AtlasWidth ) || height != static_cast<int>( context.FontAsset.AtlasHeight ) )
+        if ( width != static_cast<int>( context.FontAsset->AtlasWidth ) || height != static_cast<int>( context.FontAsset->AtlasHeight ) )
         {
-            context.FontAsset.AtlasData.Dispose( );
-            context.FontAsset.AtlasWidth        = width;
-            context.FontAsset.AtlasHeight       = height;
-            context.FontAsset.NumAtlasDataBytes = width * height * FontAsset::NumChannels;
-            context.FontAsset.AtlasData         = ByteArray::Create( context.FontAsset.NumAtlasDataBytes );
-            memset( context.FontAsset.AtlasData.Elements, 0, context.FontAsset.NumAtlasDataBytes );
+            context.FontAsset->AtlasData.Dispose( );
+            context.FontAsset->AtlasWidth        = width;
+            context.FontAsset->AtlasHeight       = height;
+            context.FontAsset->NumAtlasDataBytes = width * height * FontAsset::NumChannels;
+            context.FontAsset->AtlasData         = ByteArray::Create( context.FontAsset->NumAtlasDataBytes );
+            memset( context.FontAsset->AtlasData.Elements, 0, context.FontAsset->NumAtlasDataBytes );
         }
 
         const msdfgen::BitmapConstRef<msdfgen::byte, 4> &bitmap    = atlasStorage;
         const msdfgen::byte                             *pixels    = bitmap.pixels;
-        Byte                                            *atlasData = context.FontAsset.AtlasData.Elements;
+        Byte                                            *atlasData = context.FontAsset->AtlasData.Elements;
 
         for ( int y = 0; y < height; y++ )
         {
@@ -325,10 +317,10 @@ namespace
         double lineHeight = fontGeometry.getMetrics( ).lineHeight;
         double scale      = context.Desc.InitialFontSize / emSize;
 
-        context.FontAsset.Metrics.Ascent     = static_cast<uint32_t>( ascender * scale );
-        context.FontAsset.Metrics.Descent    = static_cast<uint32_t>( std::abs( descender ) * scale );
-        context.FontAsset.Metrics.LineHeight = static_cast<uint32_t>( lineHeight * scale );
-        context.FontAsset.Metrics.LineGap    = context.FontAsset.Metrics.LineHeight - ( context.FontAsset.Metrics.Ascent + context.FontAsset.Metrics.Descent );
+        context.FontAsset->Metrics.Ascent     = static_cast<uint32_t>( ascender * scale );
+        context.FontAsset->Metrics.Descent    = static_cast<uint32_t>( std::abs( descender ) * scale );
+        context.FontAsset->Metrics.LineHeight = static_cast<uint32_t>( lineHeight * scale );
+        context.FontAsset->Metrics.LineGap    = context.FontAsset->Metrics.LineHeight - ( context.FontAsset->Metrics.Ascent + context.FontAsset->Metrics.Descent );
 
         // Count non-whitespace glyphs first
         size_t numNonWhitespaceGlyphs = 0;
@@ -341,7 +333,7 @@ namespace
         }
 
         // Allocate array for glyphs (including space glyph)
-        context.FontAsset.Glyphs = FontGlyphArray::Create( static_cast<uint32_t>( numNonWhitespaceGlyphs + 1 ) );
+        DZArenaArrayHelper<FontGlyphArray, FontGlyph>::AllocateAndConstructArray( context.FontAsset->_Arena, context.FontAsset->Glyphs, numNonWhitespaceGlyphs + 1 );
 
         size_t glyphIndex = 0;
         for ( size_t i = 0; i < layout.size( ); i++ )
@@ -353,7 +345,7 @@ namespace
                 continue;
             }
 
-            FontGlyph &glyphDesc = context.FontAsset.Glyphs.Elements[ glyphIndex++ ];
+            FontGlyph &glyphDesc = context.FontAsset->Glyphs.Elements[ glyphIndex++ ];
             glyphDesc.CodePoint  = glyph.getCodepoint( );
             glyphDesc.Width      = box.rect.w;
             glyphDesc.Height     = box.rect.h;
@@ -376,7 +368,7 @@ namespace
         }
 
         // Add space glyph at the end
-        FontGlyph &spaceGlyph = context.FontAsset.Glyphs.Elements[ glyphIndex ];
+        FontGlyph &spaceGlyph = context.FontAsset->Glyphs.Elements[ glyphIndex ];
         spaceGlyph.CodePoint  = ' ';
         spaceGlyph.Width      = 0;
         spaceGlyph.Height     = 0;
@@ -414,8 +406,8 @@ namespace
         writerDesc.Writer = &writer;
         FontAssetWriter fontWriter( writerDesc );
 
-        FontAsset msdfFontAsset = context.FontAsset;
-        fontWriter.Write( msdfFontAsset );
+        FontAsset *msdfFontAsset = context.FontAsset;
+        fontWriter.Write( *msdfFontAsset );
         fontWriter.End( );
 
         if ( context.Desc.TargetContainer == nullptr )

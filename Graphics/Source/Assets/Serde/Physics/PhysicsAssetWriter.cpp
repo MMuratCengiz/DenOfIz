@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "DenOfIzGraphics/Assets/Serde/Common/AssetWriterHelpers.h"
 #include "DenOfIzGraphics/Assets/Serde/Physics/PhysicsAssetWriter.h"
+#include "DenOfIzGraphicsInternal/Assets/Serde/Common/AssetWriterHelpers.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
