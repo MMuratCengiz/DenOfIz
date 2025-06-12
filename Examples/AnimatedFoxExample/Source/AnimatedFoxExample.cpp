@@ -306,15 +306,14 @@ void AnimatedFoxExample::Update( )
 
 void AnimatedFoxExample::UpdateBoneTransforms( )
 {
-    InteropArray<Float_4x4> boneTransforms;
-    m_animationManager->GetModelSpaceTransforms( boneTransforms );
+    Float_4x4Array boneTransforms = m_animationManager->GetModelSpaceTransforms( );
 
     const size_t numBones = m_animationManager->GetNumJoints( );
     const size_t maxBones = std::min( numBones, static_cast<size_t>( 128 ) );
 
-    for ( size_t i = 0; i < maxBones && i < boneTransforms.NumElements( ); ++i )
+    for ( size_t i = 0; i < maxBones && i < boneTransforms.NumElements; ++i )
     {
-        const Float_4x4 &modelMatrix = boneTransforms.GetElement( i );
+        const Float_4x4 &modelMatrix = boneTransforms.Elements[ i ];
         if ( i < m_foxSkeleton->Joints.NumElements )
         {
             const Joint &joint = m_foxSkeleton->Joints.Elements[ i ];

@@ -70,7 +70,7 @@ namespace DenOfIz
         DZ_API void                               Resume( );
         DZ_API void                               Update( float deltaTime );
         DZ_API [[nodiscard]] bool                 HasAnimation( const InteropString &animationName ) const;
-        DZ_API void                               GetModelSpaceTransforms( InteropArray<Float_4x4> &outTransforms ) const;
+        DZ_API Float_4x4Array                     GetModelSpaceTransforms( ) const;
         DZ_API [[nodiscard]] const InteropString &GetCurrentAnimationName( ) const;
         DZ_API [[nodiscard]] int                  GetNumJoints( ) const;
 

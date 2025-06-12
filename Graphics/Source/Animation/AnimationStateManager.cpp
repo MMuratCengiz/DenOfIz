@@ -210,21 +210,14 @@ bool AnimationStateManager::HasAnimation( const InteropString &animationName ) c
     return m_animations.contains( animationName.Get( ) );
 }
 
-void AnimationStateManager::GetModelSpaceTransforms( InteropArray<Float_4x4> &outTransforms ) const
+Float_4x4Array AnimationStateManager::GetModelSpaceTransforms( ) const
 {
     if ( m_modelTransforms.NumElements == 0 )
     {
-        outTransforms.Clear( );
-        return;
+        return { nullptr, 0 };
     }
 
-    outTransforms.Clear( );
-    outTransforms.Resize( m_modelTransforms.NumElements );
-
-    for ( size_t i = 0; i < m_modelTransforms.NumElements; ++i )
-    {
-        outTransforms.GetElement( i ) = m_modelTransforms.Elements[ i ];
-    }
+    return m_modelTransforms;
 }
 
 void AnimationStateManager::UpdateBlending( const float deltaTime )
