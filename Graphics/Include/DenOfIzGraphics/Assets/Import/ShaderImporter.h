@@ -45,7 +45,7 @@ namespace DenOfIz
 
     private:
         InteropString m_name;
-        InteropStringArray m_supportedExtensions;
+        InteropStringArray m_supportedExtensions{};
         std::vector<AssetUri> m_createdAssets;
 
         struct ImportContext

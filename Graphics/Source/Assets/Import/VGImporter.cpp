@@ -168,7 +168,7 @@ ImporterResultCode VGImporter::ImportVGInternal( ImportContext &context )
     AssetUri assetUri;
     WriteTextureAsset( context, context.TextureAsset, assetUri );
     RegisterCreatedAsset( context, assetUri );
-    // Copy the created assets to the result
+
     context.Result.CreatedAssets.NumElements = static_cast<uint32_t>( m_createdAssets.size( ) );
     context.Result.CreatedAssets.Elements    = m_createdAssets.data( );
     return ImporterResultCode::Success;
@@ -177,7 +177,7 @@ ImporterResultCode VGImporter::ImportVGInternal( ImportContext &context )
 void VGImporter::WriteTextureAsset( const ImportContext &context, const TextureAsset &textureAsset, AssetUri &outAssetUri ) const
 {
     const InteropString assetName     = AssetPathUtilities::GetAssetNameFromFilePath( context.Desc.SourceFilePath );
-    const InteropString       sanitizedName = AssetPathUtilities::SanitizeAssetName( assetName );
+    const InteropString sanitizedName = AssetPathUtilities::SanitizeAssetName( assetName );
 
     const std::filesystem::path targetDirectory = context.Desc.TargetDirectory.Get( );
     const std::filesystem::path fileName        = AssetPathUtilities::CreateAssetFileName( context.Desc.AssetNamePrefix, sanitizedName, "dztex" ).Get( );
@@ -191,7 +191,7 @@ void VGImporter::WriteTextureAsset( const ImportContext &context, const TextureA
     textureWriter.Write( textureAsset );
 
     const uint32_t  pixelCount  = context.Desc.RenderWidth * context.Desc.RenderHeight;
-    const ByteArray      textureData = ByteArray::Create( pixelCount * 4 );
+    const ByteArray textureData = ByteArray::Create( pixelCount * 4 );
 
     for ( uint32_t i = 0; i < pixelCount; ++i )
     {

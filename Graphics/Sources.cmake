@@ -14,6 +14,11 @@ set(DEN_OF_IZ_ASSETS_SOURCES
     Source/Assets/GpuResource/GpuResourceLoader.cpp
     Source/Assets/Import/AssetPathUtilities.cpp
     Source/Assets/Import/AssimpImporter.cpp
+    Source/Assets/Import/AssimpSceneLoader.cpp
+    Source/Assets/Import/AssimpMeshProcessor.cpp
+    Source/Assets/Import/AssimpMaterialProcessor.cpp
+    Source/Assets/Import/AssimpSkeletonProcessor.cpp
+    Source/Assets/Import/AssimpAnimationProcessor.cpp
     Source/Assets/Import/FontImporter.cpp
     Source/Assets/Import/ShaderImporter.cpp
     Source/Assets/Import/TextureImporter.cpp

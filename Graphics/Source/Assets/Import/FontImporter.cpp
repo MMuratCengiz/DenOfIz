@@ -78,7 +78,7 @@ namespace DenOfIz
 namespace
 {
     ImporterResultCode ImportFontInternal( const FontImporterImpl &impl, FontImporterImpl::ImportContext &context );
-    void               ExtractFontMetrics( FontImporterImpl::ImportContext &context, FT_Face face );
+    void               ExtractFontMetrics( const FontImporterImpl::ImportContext &context, FT_Face face );
     void               GenerateAtlas( const FontImporterImpl &impl, FontImporterImpl::ImportContext &context );
     void               WriteFontAsset( const FontImporterImpl::ImportContext &context, AssetUri &outAssetUri );
 } // namespace
@@ -140,7 +140,7 @@ bool FontImporter::CanProcessFileExtension( const InteropString &extension ) con
     return false;
 }
 
-ImporterResult FontImporter::Import( const FontImportDesc &desc )
+ImporterResult FontImporter::Import( const FontImportDesc &desc ) const
 {
     FontImporterImpl::ImportContext context;
     context.SourceFilePath    = desc.SourceFilePath;
@@ -228,7 +228,7 @@ namespace
         return ImporterResultCode::Success;
     }
 
-    void ExtractFontMetrics( FontImporterImpl::ImportContext &context, const FT_Face face )
+    void ExtractFontMetrics( const FontImporterImpl::ImportContext &context, const FT_Face face )
     {
         context.FontAsset->Metrics.Ascent     = static_cast<uint32_t>( face->size->metrics.ascender >> 6 );
         context.FontAsset->Metrics.Descent    = static_cast<uint32_t>( abs( face->size->metrics.descender ) >> 6 );

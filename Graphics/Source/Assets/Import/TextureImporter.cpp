@@ -56,7 +56,7 @@ InteropString TextureImporter::GetName( ) const
 
 InteropStringArray TextureImporter::GetSupportedExtensions( ) const
 {
-    InteropStringArray copy = InteropStringArray::Create( m_supportedExtensions.NumElements );
+    const InteropStringArray copy = InteropStringArray::Create( m_supportedExtensions.NumElements );
     for ( size_t i = 0; i < m_supportedExtensions.NumElements; ++i )
     {
         copy.Elements[ i ] = m_supportedExtensions.Elements[ i ];

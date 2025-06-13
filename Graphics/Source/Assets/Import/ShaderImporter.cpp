@@ -50,7 +50,7 @@ InteropString ShaderImporter::GetName( ) const
 
 InteropStringArray ShaderImporter::GetSupportedExtensions( ) const
 {
-    InteropStringArray copy = InteropStringArray::Create( m_supportedExtensions.NumElements );
+    const InteropStringArray copy = InteropStringArray::Create( m_supportedExtensions.NumElements );
     for ( size_t i = 0; i < m_supportedExtensions.NumElements; ++i )
     {
         copy.Elements[ i ] = m_supportedExtensions.Elements[ i ];
@@ -94,10 +94,10 @@ ImporterResult ShaderImporter::Import( const ShaderImportDesc &desc )
     AssetUri shaderAssetUri;
     WriteShaderAsset( context, shaderAssetUri );
     m_createdAssets.push_back( shaderAssetUri );
-    
+
     // Copy the created assets to the result
-    context.Result.CreatedAssets.NumElements = static_cast<uint32_t>(m_createdAssets.size());
-    context.Result.CreatedAssets.Elements = m_createdAssets.data();
+    context.Result.CreatedAssets.NumElements = static_cast<uint32_t>( m_createdAssets.size( ) );
+    context.Result.CreatedAssets.Elements    = m_createdAssets.data( );
     return context.Result;
 }
 
@@ -120,7 +120,7 @@ bool ShaderImporter::ValidateFile( const InteropString &filePath ) const
 
 void ShaderImporter::WriteShaderAsset( const ImportContext &context, AssetUri &outAssetUri )
 {
-    InteropString       assetName           = GetAssetName( context );
+    const InteropString assetName           = GetAssetName( context );
     const InteropString sanitizedName       = AssetPathUtilities::SanitizeAssetName( assetName );
     const InteropString shaderAssetFileName = AssetPathUtilities::CreateAssetFileName( context.Desc.OutputShaderName, sanitizedName, ShaderAsset::Extension( ) );
     std::string         outputPath          = context.Desc.TargetDirectory.Get( );

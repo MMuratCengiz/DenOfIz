@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-InteropString AssetPathUtilities::SanitizeAssetName( const InteropString &name, bool ensureValidStart, bool trimSpecialChars )
+InteropString AssetPathUtilities::SanitizeAssetName( const InteropString &name, const bool ensureValidStart, const bool trimSpecialChars )
 {
     const std::string &allowedSpecialChars = "_-.";
     std::string        sanitized           = name.Get( );

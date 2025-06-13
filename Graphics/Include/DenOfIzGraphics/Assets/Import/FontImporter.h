@@ -46,7 +46,7 @@ namespace DenOfIz
         [[nodiscard]] InteropString      GetName( ) const;
         [[nodiscard]] InteropStringArray GetSupportedExtensions( ) const;
         [[nodiscard]] bool               CanProcessFileExtension( const InteropString &extension ) const;
-        ImporterResult                   Import( const FontImportDesc &desc );
+        ImporterResult                   Import( const FontImportDesc &desc ) const;
         [[nodiscard]] bool               ValidateFile( const InteropString &filePath ) const;
 
     private:
