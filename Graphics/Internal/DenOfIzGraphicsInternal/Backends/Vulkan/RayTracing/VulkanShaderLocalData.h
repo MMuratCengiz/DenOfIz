@@ -42,7 +42,7 @@ namespace DenOfIz
 
         void Begin( ) override;
         void Cbv( const uint32_t binding, IBufferResource *bufferResource ) override;
-        void Cbv( const uint32_t binding, const InteropArray<Byte> &data ) override;
+        void Cbv( const uint32_t binding, const ByteArrayView &data ) override;
         void Srv( const uint32_t binding, const IBufferResource *bufferResource ) override;
         void Srv( const uint32_t binding, const ITextureResource *textureResource ) override;
         void Uav( const uint32_t binding, const IBufferResource *bufferResource ) override;

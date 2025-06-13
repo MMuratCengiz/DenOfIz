@@ -151,10 +151,11 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
 
     m_hgData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderLocalData( { m_hgShaderLayout.get( ) } ) );
 
-    auto     redData = InteropArray<Byte>( sizeof( float ) * 4 );
-    XMFLOAT4 red     = { 1.0f, 0.0f, 0.0f, 1.0f };
-    redData.MemCpy( &red, sizeof( float ) * 4 );
+    XMFLOAT4 red = { 1.0f, 0.0f, 0.0f, 1.0f };
 
+    ByteArrayView redData{ };
+    redData.Elements    = reinterpret_cast<const Byte *>( &red );
+    redData.NumElements = 4 * sizeof( float );
     m_hgData->Cbv( 0, redData );
 
     ResourceBindGroupDesc bindGroupDesc{ };

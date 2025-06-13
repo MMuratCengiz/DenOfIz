@@ -52,17 +52,17 @@ void MetalShaderLocalData::Cbv( uint32_t binding, IBufferResource *bufferResourc
     memcpy( m_data.data( ) + offset, srcData, numBytes );
 }
 
-void MetalShaderLocalData::Cbv( uint32_t binding, const InteropArray<Byte> &data )
+void MetalShaderLocalData::Cbv( uint32_t binding, const ByteArrayView &data )
 {
     auto offset   = m_layout->InlineDataOffset( binding );
     auto numBytes = m_layout->InlineNumBytes( binding );
-    if ( data.NumElements( ) > numBytes )
+    if ( data.NumElements > numBytes )
     {
-        spdlog::error("Data larger than expected: [ {} vs {} ] for binding: {} This could lead to data corruption. Binding skipped.", data.NumElements( ), numBytes, binding);
+        spdlog::error("Data larger than expected: [ {} vs {} ] for binding: {} This could lead to data corruption. Binding skipped.", data.NumElements, numBytes, binding);
         return;
     }
 
-    memcpy( m_data.data( ) + offset, data.Data( ), data.NumElements( ) );
+    memcpy( m_data.data( ) + offset, data.Elements, data.NumElements );
 }
 
 void MetalShaderLocalData::Srv( uint32_t binding, const IBufferResource *resource )

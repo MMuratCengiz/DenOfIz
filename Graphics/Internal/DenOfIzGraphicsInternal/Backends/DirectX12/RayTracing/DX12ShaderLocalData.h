@@ -35,7 +35,7 @@ namespace DenOfIz
         DX12ShaderLocalData( DX12Context *context, const ShaderLocalDataDesc &desc );
         void Begin( ) override;
         void Cbv( uint32_t binding, IBufferResource *bufferResource ) override;
-        void Cbv( uint32_t binding, const InteropArray<Byte> &data ) override;
+        void Cbv( uint32_t binding, const ByteArrayView &data ) override;
         void Srv( uint32_t binding, const IBufferResource *bufferResource ) override;
         void Srv( uint32_t binding, const ITextureResource *textureResource ) override;
         void Uav( uint32_t binding, const IBufferResource *bufferResource ) override;

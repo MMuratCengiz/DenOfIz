@@ -36,7 +36,7 @@ namespace DenOfIz
         virtual void Begin( ) = 0;
         // Non-const because Vulkan supports inline only, and uses map memory as a workaround the issue
         virtual void Cbv( uint32_t binding, IBufferResource *bufferResource )         = 0;
-        virtual void Cbv( uint32_t binding, const InteropArray<Byte> &data )          = 0;
+        virtual void Cbv( uint32_t binding, const ByteArrayView &data )               = 0;
         virtual void Srv( uint32_t binding, const IBufferResource *textureResource )  = 0;
         virtual void Srv( uint32_t binding, const ITextureResource *textureResource ) = 0;
         virtual void Uav( uint32_t binding, const IBufferResource *textureResource )  = 0;

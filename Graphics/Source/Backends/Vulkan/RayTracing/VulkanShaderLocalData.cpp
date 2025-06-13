@@ -65,16 +65,16 @@ void VulkanShaderLocalData::Cbv( const uint32_t binding, IBufferResource *buffer
     vulkanBuffer->UnmapMemory( );
 }
 
-void VulkanShaderLocalData::Cbv( const uint32_t binding, const InteropArray<Byte> &data )
+void VulkanShaderLocalData::Cbv( const uint32_t binding, const ByteArrayView &data )
 {
     const uint32_t offset   = m_layout->CbvOffset( binding );
     auto           numBytes = m_layout->CbvNumBytes( binding );
-    if ( data.NumElements( ) > numBytes )
+    if ( data.NumElements > numBytes )
     {
-        spdlog::error( "Data larger than expected: [ {} vs {} ] for binding: {} This could lead to data corruption. Binding skipped.", data.NumElements( ), numBytes, binding );
+        spdlog::error( "Data larger than expected: [ {} vs {} ] for binding: {} This could lead to data corruption. Binding skipped.", data.NumElements, numBytes, binding );
         return;
     }
-    memcpy( m_inlineData.data( ) + offset, data.Data( ), data.NumElements( ) );
+    memcpy( m_inlineData.data( ) + offset, data.Elements, data.NumElements );
 }
 
 void VulkanShaderLocalData::Srv( const uint32_t binding, const IBufferResource *bufferResource )

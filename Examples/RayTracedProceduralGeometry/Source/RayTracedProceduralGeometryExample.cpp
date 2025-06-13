@@ -705,18 +705,16 @@ void RayTracedProceduralGeometryExample::CreateShaderBindingTable( )
         m_shaderBindingTable->BindMissShader( shadowMissDesc );
     }
 
-    LocalData          localData{ };
-    InteropArray<Byte> localDataBuffer( sizeof( LocalData ) );
-
-    uint32_t hitGroupOffset = 0;
+    LocalData localData{ };
+    uint32_t  hitGroupOffset = 0;
     {
         const auto triangleHitGroupData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderLocalData( { m_hgLocalRootSignature.get( ) } ) );
 
         localData.materialCB = m_planeMaterialCB;
         localData.aabbCB     = { 0, 0, 0, 0 };
-        localDataBuffer.MemCpy( &localData, sizeof( LocalData ) );
 
-        triangleHitGroupData->Cbv( 1, localDataBuffer );
+        ByteArrayView localDataView( reinterpret_cast<const Byte *>( &localData ), sizeof( LocalData ) );
+        triangleHitGroupData->Cbv( 1, localDataView );
 
         // Create separate entries for each ray type
         for ( uint32_t rayType = 0; rayType < 2; rayType++ )
@@ -743,9 +741,9 @@ void RayTracedProceduralGeometryExample::CreateShaderBindingTable( )
 
                 localData.materialCB = m_aabbMaterials[ instanceIndex ];
                 localData.aabbCB     = { .instanceIndex = instanceIndex, .primitiveType = primitiveIndex };
-                localDataBuffer.MemCpy( &localData, sizeof( LocalData ) );
 
-                hitGroupData->Cbv( 1, localDataBuffer );
+                ByteArrayView localDataView( reinterpret_cast<const Byte *>( &localData ), sizeof( LocalData ) );
+                hitGroupData->Cbv( 1, localDataView );
 
                 // Ray types.
                 for ( uint32_t rayType = 0; rayType < RayType::Count; rayType++ )
