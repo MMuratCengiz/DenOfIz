@@ -53,9 +53,9 @@ namespace DenOfIz
     struct DZ_API BatchTransitionDesc
     {
     private:
-        ICommandList                       *m_commandList;
-        InteropArray<TransitionBufferDesc>  m_bufferTransitions;
-        InteropArray<TransitionTextureDesc> m_textureTransitions;
+        ICommandList                      *m_commandList;
+        std::vector<TransitionBufferDesc>  m_bufferTransitions;
+        std::vector<TransitionTextureDesc> m_textureTransitions;
 
         friend class ResourceTracking;
 
@@ -86,7 +86,7 @@ namespace DenOfIz
         DZ_API void BatchTransition( const BatchTransitionDesc &desc );
 
     private:
-        void ProcessBufferTransitions( const InteropArray<TransitionBufferDesc> &bufferTransitions, PipelineBarrierDesc &barrier );
-        void ProcessTextureTransitions( const InteropArray<TransitionTextureDesc> &textureTransitions, PipelineBarrierDesc &barrier );
+        void ProcessBufferTransitions( const std::vector<TransitionBufferDesc> &bufferTransitions, PipelineBarrierDesc &barrier );
+        void ProcessTextureTransitions( const std::vector<TransitionTextureDesc> &textureTransitions, PipelineBarrierDesc &barrier );
     };
 } // namespace DenOfIz

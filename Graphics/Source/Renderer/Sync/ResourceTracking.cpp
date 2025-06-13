@@ -21,34 +21,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-void BatchTransitionDesc::Reset( ICommandList * commandList )
+void BatchTransitionDesc::Reset( ICommandList *commandList )
 {
-    m_bufferTransitions.Clear( );
-    m_textureTransitions.Clear( );
+    m_bufferTransitions.clear( );
+    m_textureTransitions.clear( );
     m_commandList = commandList;
 }
 
-void BatchTransitionDesc::TransitionBuffer( IBufferResource *resource, const uint32_t& newUsage, const QueueType queueType)
+void BatchTransitionDesc::TransitionBuffer( IBufferResource *resource, const uint32_t &newUsage, const QueueType queueType )
 {
-    TransitionBufferDesc& desc = m_bufferTransitions.EmplaceElement( );
-    desc.Buffer    = resource;
-    desc.NewUsage  = newUsage;
-    desc.QueueType = queueType;
+    TransitionBufferDesc &desc = m_bufferTransitions.emplace_back( TransitionBufferDesc{ } );
+    desc.Buffer                = resource;
+    desc.NewUsage              = newUsage;
+    desc.QueueType             = queueType;
 }
 
-void BatchTransitionDesc::TransitionTexture( ITextureResource *resource, const uint32_t& newUsage, const QueueType queueType )
+void BatchTransitionDesc::TransitionTexture( ITextureResource *resource, const uint32_t &newUsage, const QueueType queueType )
 {
-    TransitionTextureDesc& desc = m_textureTransitions.EmplaceElement( );
-    desc.Texture    = resource;
-    desc.NewUsage  = newUsage;
-    desc.QueueType = queueType;
+    TransitionTextureDesc &desc = m_textureTransitions.emplace_back( TransitionTextureDesc{ } );
+    desc.Texture                = resource;
+    desc.NewUsage               = newUsage;
+    desc.QueueType              = queueType;
 }
 
 ResourceTracking::~ResourceTracking( )
 {
 }
 
-void ResourceTracking::TrackBuffer( IBufferResource *buffer, const uint32_t& currentUsage, const QueueType queueType )
+void ResourceTracking::TrackBuffer( IBufferResource *buffer, const uint32_t &currentUsage, const QueueType queueType )
 {
     if ( m_bufferStates.contains( buffer ) )
     {
@@ -59,7 +59,7 @@ void ResourceTracking::TrackBuffer( IBufferResource *buffer, const uint32_t& cur
     m_bufferStates[ buffer ].CurrentUsage = currentUsage;
 }
 
-void ResourceTracking::TrackTexture( ITextureResource *texture, const uint32_t& currentUsage, const QueueType queueType )
+void ResourceTracking::TrackTexture( ITextureResource *texture, const uint32_t &currentUsage, const QueueType queueType )
 {
     // Trust the user that this is an update.
     m_textureStates[ texture ].CurrentQueue = queueType;
@@ -76,12 +76,11 @@ void ResourceTracking::UntrackTexture( ITextureResource *texture )
     m_textureStates.erase( texture );
 }
 
-void ResourceTracking::ProcessBufferTransitions( const InteropArray<TransitionBufferDesc> &bufferTransitions, PipelineBarrierDesc &barrier )
+void ResourceTracking::ProcessBufferTransitions( const std::vector<TransitionBufferDesc> &bufferTransitions, PipelineBarrierDesc &barrier )
 {
-    for ( uint32_t i = 0; i < bufferTransitions.NumElements( ); ++i )
+    for ( const auto &desc : bufferTransitions )
     {
-        const auto &desc = bufferTransitions.GetElement( i );
-        auto        it   = m_bufferStates.find( desc.Buffer );
+        auto it = m_bufferStates.find( desc.Buffer );
         if ( it == m_bufferStates.end( ) )
         {
             continue;
@@ -103,12 +102,11 @@ void ResourceTracking::ProcessBufferTransitions( const InteropArray<TransitionBu
     }
 }
 
-void ResourceTracking::ProcessTextureTransitions( const InteropArray<TransitionTextureDesc> &textureTransitions, PipelineBarrierDesc &barrier )
+void ResourceTracking::ProcessTextureTransitions( const std::vector<TransitionTextureDesc> &textureTransitions, PipelineBarrierDesc &barrier )
 {
-    for ( uint32_t i = 0; i < textureTransitions.NumElements( ); ++i )
+    for ( const auto &desc : textureTransitions )
     {
-        const auto &desc = textureTransitions.GetElement( i );
-        auto        it   = m_textureStates.find( desc.Texture );
+        auto it = m_textureStates.find( desc.Texture );
         if ( it == m_textureStates.end( ) )
         {
             continue;
