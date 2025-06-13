@@ -338,12 +338,14 @@ void ShaderProgram::Impl::CreateReflectionData( )
         dxcUtils->Release( );
     }
 
-    m_reflectDesc.RootSignature.RootConstants.NumElements    = static_cast<uint32_t>( m_rootSignatureState.RootConstants.size( ) );
-    m_reflectDesc.RootSignature.RootConstants.Elements       = m_rootSignatureState.RootConstants.data( );
-    m_reflectDesc.RootSignature.ResourceBindings.NumElements = static_cast<uint32_t>( m_rootSignatureState.ResourceBindings.size( ) );
-    m_reflectDesc.RootSignature.ResourceBindings.Elements    = m_rootSignatureState.ResourceBindings.data( );
-    m_reflectDesc.LocalRootSignatures.NumElements            = static_cast<uint32_t>( m_localRootSignatures.size( ) );
-    m_reflectDesc.LocalRootSignatures.Elements               = m_localRootSignatures.data( );
+    m_reflectDesc.RootSignature.RootConstants.NumElements     = static_cast<uint32_t>( m_rootSignatureState.RootConstants.size( ) );
+    m_reflectDesc.RootSignature.RootConstants.Elements        = m_rootSignatureState.RootConstants.data( );
+    m_reflectDesc.RootSignature.ResourceBindings.NumElements  = static_cast<uint32_t>( m_rootSignatureState.ResourceBindings.size( ) );
+    m_reflectDesc.RootSignature.ResourceBindings.Elements     = m_rootSignatureState.ResourceBindings.data( );
+    m_reflectDesc.RootSignature.BindlessResources.NumElements = static_cast<uint32_t>( m_rootSignatureState.BindlessResources.size( ) );
+    m_reflectDesc.RootSignature.BindlessResources.Elements    = m_rootSignatureState.BindlessResources.data( );
+    m_reflectDesc.LocalRootSignatures.NumElements             = static_cast<uint32_t>( m_localRootSignatures.size( ) );
+    m_reflectDesc.LocalRootSignatures.Elements                = m_localRootSignatures.data( );
 }
 
 Format MaskToFormat( const D3D_REGISTER_COMPONENT_TYPE componentType, const uint32_t mask )

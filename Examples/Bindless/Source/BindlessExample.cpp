@@ -382,8 +382,8 @@ void BindlessExample::CreateTextures( )
 
         auto                  dataAsBytes = canvas.GetDataAsBytes( );
         CopyDataToTextureDesc copyDesc{ };
-        copyDesc.Data.Elements    = dataAsBytes.Data( );
-        copyDesc.Data.NumElements = dataAsBytes.NumElements( );
+        copyDesc.Data.Elements    = dataAsBytes.Elements;
+        copyDesc.Data.NumElements = dataAsBytes.NumElements;
         copyDesc.DstTexture       = m_textures[ i ].get( );
         copyDesc.MipLevel         = 0;
         batchCopy.CopyDataToTexture( copyDesc );

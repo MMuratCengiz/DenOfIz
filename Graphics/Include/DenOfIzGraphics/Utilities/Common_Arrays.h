@@ -147,6 +147,12 @@ namespace DenOfIz
         DZ_ARRAY_METHODS( UInt32Array, uint32_t )
     };
 
+    struct DZ_API UInt32ArrayView
+    {
+        uint32_t const *Elements;
+        size_t          NumElements;
+    };
+
     struct DZ_API Int16Array
     {
         int16_t *Elements;

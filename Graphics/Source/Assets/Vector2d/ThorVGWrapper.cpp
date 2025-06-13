@@ -713,38 +713,38 @@ namespace DenOfIz
 
     void ThorVGCanvas::Resize( const uint32_t w, const uint32_t h )
     {
-        m_data.Resize( w * h * 4 );
-        ThorVGCheckResult( m_canvas->target( m_data.Data( ), w, w, h, tvg::SwCanvas::ARGB8888 ) );
+        m_rbgaData.resize( w * h * 4 );
+        ThorVGCheckResult( m_canvas->target( m_rbgaData.data( ), w, w, h, tvg::SwCanvas::ARGB8888 ) );
     }
 
     void ThorVGCanvas::ResetData( )
     {
-        for ( int i = 0; i < m_data.NumElements( ); ++i )
+        for ( int i = 0; i < m_rbgaData.size( ); ++i )
         {
-            m_data.SetElement( i, 0 );
+            m_rbgaData[ i ] = 0;
         }
     }
-    const InteropArray<uint32_t> &ThorVGCanvas::GetData( ) const
+    UInt32ArrayView ThorVGCanvas::GetData( ) const
     {
-        return m_data;
+        return { m_rbgaData.data( ), m_rbgaData.size( ) };
     }
 
-    InteropArray<Byte> ThorVGCanvas::GetDataAsBytes( ) const
+    ByteArrayView ThorVGCanvas::GetDataAsBytes( ) const
     {
-        InteropArray<Byte> pixelData( m_width * m_height * 4 );
-        for ( uint32_t i = 0; i < m_data.NumElements( ); ++i )
+        m_bytes.resize( m_width * m_height * 4 );
+        for ( uint32_t i = 0; i < m_rbgaData.size( ); ++i )
         {
-            const uint32_t pixel = m_data.GetElement( i );
+            const uint32_t pixel = m_rbgaData[ i ];
             const uint8_t  a     = pixel >> 24 & 0xFF;
             const uint8_t  r     = pixel >> 16 & 0xFF;
             const uint8_t  g     = pixel >> 8 & 0xFF;
             const uint8_t  b     = pixel & 0xFF;
 
-            pixelData.AddElement( r );
-            pixelData.AddElement( g );
-            pixelData.AddElement( b );
-            pixelData.AddElement( a );
+            m_bytes.push_back( r );
+            m_bytes.push_back( g );
+            m_bytes.push_back( b );
+            m_bytes.push_back( a );
         }
-        return pixelData;
+        return { m_bytes.data( ), m_bytes.size( ) };
     }
 } // namespace DenOfIz

@@ -193,7 +193,7 @@ void VGImporter::WriteTextureAsset( const ImportContext &context, const TextureA
 
     for ( uint32_t i = 0; i < pixelCount; ++i )
     {
-        const uint32_t argb = m_renderBuffer.GetElement( i );
+        const uint32_t argb = m_renderBuffer.Elements[ i ];
         const uint8_t  a    = argb >> 24 & 0xFF;
         const uint8_t  r    = argb >> 16 & 0xFF;
         const uint8_t  g    = argb >> 8 & 0xFF;

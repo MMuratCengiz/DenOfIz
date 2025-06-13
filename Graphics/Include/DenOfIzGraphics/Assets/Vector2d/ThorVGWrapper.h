@@ -31,7 +31,7 @@ namespace tvg
     class Picture;
     class Scene;
     class SwCanvas;
-}
+} // namespace tvg
 
 namespace DenOfIz
 {
@@ -321,10 +321,11 @@ namespace DenOfIz
 
     class ThorVGCanvas
     {
-        uint32_t                       m_width{};
-        uint32_t                       m_height{};
-        InteropArray<uint32_t>         m_data;
-        std::unique_ptr<tvg::SwCanvas> m_canvas;
+        uint32_t                                  m_width{ };
+        uint32_t                                  m_height{ };
+        std::vector<uint32_t>                     m_rbgaData;
+        mutable /*todo remove*/ std::vector<Byte> m_bytes;
+        std::unique_ptr<tvg::SwCanvas>            m_canvas;
 
     public:
         DZ_API explicit ThorVGCanvas( const ThorVGCanvasDesc &desc );
@@ -339,9 +340,9 @@ namespace DenOfIz
 
         DZ_API void Resize( uint32_t w, uint32_t h );
 
-        DZ_API void  ResetData( );
-        DZ_API const InteropArray<uint32_t> &GetData( ) const;
-        DZ_API InteropArray<Byte> GetDataAsBytes( ) const;
+        DZ_API void                  ResetData( );
+        DZ_API UInt32ArrayView       GetData( ) const;
+        DZ_API ByteArrayView         GetDataAsBytes( ) const;
     };
 
     struct DZ_API ThorVGRendererDesc
