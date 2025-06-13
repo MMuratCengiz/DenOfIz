@@ -23,37 +23,82 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Import/AssetPathUtilities.h"
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetWriter.h"
 #include "DenOfIzGraphics/Assets/Stream/BinaryWriter.h"
+#include "DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
-VGImporter::VGImporter( ) : m_name( "Vector Graphics Importer (Simplified)" )
+class VGImporter::Impl
 {
-    m_supportedExtensions               = InteropStringArray::Create( 1 );
-    m_supportedExtensions.Elements[ 0 ] = ".svg";
+public:
+    InteropString         m_name;
+    InteropStringArray    m_supportedExtensions{ };
+    std::vector<AssetUri> m_createdAssets;
+
+    struct ImportContext
+    {
+        VGImportDesc   Desc;
+        ImporterResult Result;
+        InteropString  ErrorMessage;
+        TextureAsset  *TextureAsset = nullptr;
+        ByteArray      RenderData;
+    };
+
+    struct VGStats
+    {
+        uint32_t Width              = 0;
+        uint32_t Height             = 0;
+        uint32_t MipCount           = 1;
+        size_t   PixelDataSize      = 0;
+        size_t   EstimatedArenaSize = 0;
+    };
+
+    explicit Impl( ) : m_name( "Vector Graphics Importer (Simplified)" )
+    {
+        m_supportedExtensions               = InteropStringArray::Create( 1 );
+        m_supportedExtensions.Elements[ 0 ] = ".svg";
+    }
+
+    ~Impl( )
+    {
+        m_supportedExtensions.Dispose( );
+    }
+
+    ImporterResult Import( const VGImportDesc &desc );
+
+private:
+    ImporterResultCode ImportVGInternal( ImportContext &context ) const;
+    VGStats            CalculateVGStats( const VGImportDesc &desc ) const;
+    void               WriteTextureAsset( const ImportContext &context, AssetUri &outAssetUri ) const;
+};
+
+VGImporter::VGImporter( ) : m_pImpl( std::make_unique<Impl>( ) )
+{
 }
 
-VGImporter::~VGImporter( )
-{
-    m_supportedExtensions.Dispose( );
-}
+VGImporter::~VGImporter( ) = default;
 
 InteropString VGImporter::GetName( ) const
 {
-    return m_name;
+    return m_pImpl->m_name;
 }
 
 InteropStringArray VGImporter::GetSupportedExtensions( ) const
 {
-    return m_supportedExtensions;
+    const InteropStringArray copy = InteropStringArray::Create( m_pImpl->m_supportedExtensions.NumElements );
+    for ( size_t i = 0; i < m_pImpl->m_supportedExtensions.NumElements; ++i )
+    {
+        copy.Elements[ i ] = m_pImpl->m_supportedExtensions.Elements[ i ];
+    }
+    return copy;
 }
 
 bool VGImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
     const InteropString lowerExt = extension.ToLower( );
-    for ( size_t i = 0; i < m_supportedExtensions.NumElements; ++i )
+    for ( size_t i = 0; i < m_pImpl->m_supportedExtensions.NumElements; ++i )
     {
-        if ( m_supportedExtensions.Elements[ i ].Equals( lowerExt ) )
+        if ( m_pImpl->m_supportedExtensions.Elements[ i ].Equals( lowerExt ) )
         {
             return true;
         }
@@ -61,9 +106,43 @@ bool VGImporter::CanProcessFileExtension( const InteropString &extension ) const
     return false;
 }
 
-ImporterResult VGImporter::Import( const VGImportDesc &desc )
+ImporterResult VGImporter::Import( const VGImportDesc &desc ) const
+{
+    return m_pImpl->Import( desc );
+}
+
+bool VGImporter::ValidateFile( const InteropString &filePath ) const
+{
+    if ( !FileIO::FileExists( filePath ) )
+    {
+        return false;
+    }
+
+    const InteropString extension = AssetPathUtilities::GetFileExtension( filePath );
+    return CanProcessFileExtension( extension );
+}
+
+VGImporter::Impl::VGStats VGImporter::Impl::CalculateVGStats( const VGImportDesc &desc ) const
+{
+    VGStats stats;
+    stats.Width         = desc.RenderWidth;
+    stats.Height        = desc.RenderHeight;
+    stats.MipCount      = 1;
+    stats.PixelDataSize = stats.Width * stats.Height * 4; // RGBA
+
+    stats.EstimatedArenaSize = sizeof( TextureMip ) * stats.MipCount;
+    stats.EstimatedArenaSize += stats.PixelDataSize; // Space for pixel data
+    stats.EstimatedArenaSize += sizeof( UserProperty ) * 10;
+    stats.EstimatedArenaSize += 4096;
+
+    return stats;
+}
+
+ImporterResult VGImporter::Impl::Import( const VGImportDesc &desc )
 {
     spdlog::info( "Starting vector graphics import for file: {}", desc.SourceFilePath.Get( ) );
+
+    const VGStats stats = CalculateVGStats( desc );
 
     ImportContext context;
     context.Desc = desc;
@@ -99,30 +178,50 @@ ImporterResult VGImporter::Import( const VGImportDesc &desc )
         }
     }
 
-    context.Result.ResultCode = ImportVGInternal( context );
+    context.TextureAsset = new TextureAsset( );
+    context.TextureAsset->_Arena.EnsureCapacity( stats.EstimatedArenaSize );
+
+    if ( const ImporterResultCode result = ImportVGInternal( context ); result != ImporterResultCode::Success )
+    {
+        context.Result.ResultCode = result;
+        delete context.TextureAsset;
+        return context.Result;
+    }
+
+    AssetUri assetUri;
+    WriteTextureAsset( context, assetUri );
+    m_createdAssets.push_back( assetUri );
+
+    context.Result.CreatedAssets.NumElements = static_cast<uint32_t>( m_createdAssets.size( ) );
+    context.Result.CreatedAssets.Elements    = m_createdAssets.data( );
+
+    delete context.TextureAsset;
     spdlog::info( "Vector graphics import successful for: {}", context.Desc.SourceFilePath.Get( ) );
     return context.Result;
 }
 
-bool VGImporter::ValidateFile( const InteropString &filePath ) const
-{
-    if ( !FileIO::FileExists( filePath ) )
-    {
-        return false;
-    }
-
-    const InteropString extension = AssetPathUtilities::GetFileExtension( filePath );
-    return CanProcessFileExtension( extension );
-}
-
-ImporterResultCode VGImporter::ImportVGInternal( ImportContext &context )
+ImporterResultCode VGImporter::Impl::ImportVGInternal( ImportContext &context ) const
 {
     if ( context.Desc.Canvas )
     {
         const ThorVGCanvas *canvas = context.Desc.Canvas;
         canvas->Draw( );
         canvas->Sync( );
-        m_renderBuffer = canvas->GetData( );
+        const auto canvasData = canvas->GetData( );
+        DZArenaArrayHelper<ByteArray, Byte>::AllocateArray( context.TextureAsset->_Arena, context.RenderData, canvasData.NumElements * 4 );
+        for ( size_t i = 0; i < canvasData.NumElements; ++i )
+        {
+            const uint32_t argb = canvasData.Elements[ i ];
+            const uint8_t  a    = argb >> 24 & 0xFF;
+            const uint8_t  r    = argb >> 16 & 0xFF;
+            const uint8_t  g    = argb >> 8 & 0xFF;
+            const uint8_t  b    = argb & 0xFF;
+
+            context.RenderData.Elements[ i * 4 + 0 ] = r;
+            context.RenderData.Elements[ i * 4 + 1 ] = g;
+            context.RenderData.Elements[ i * 4 + 2 ] = b;
+            context.RenderData.Elements[ i * 4 + 3 ] = a;
+        }
     }
     else
     {
@@ -133,92 +232,91 @@ ImporterResultCode VGImporter::ImportVGInternal( ImportContext &context )
             thorPicture.SetSize( context.Desc.RenderWidth, context.Desc.RenderHeight );
         }
 
-        ThorVGCanvasDesc canvasDesc;
+        ThorVGCanvasDesc canvasDesc{ };
         canvasDesc.Width  = context.Desc.RenderWidth;
         canvasDesc.Height = context.Desc.RenderHeight;
 
         const ThorVGCanvas canvas{ canvasDesc };
         canvas.Push( &thorPicture );
         canvas.Draw( );
-        m_renderBuffer = canvas.GetData( );
+        const auto canvasData = canvas.GetData( );
+
+        DZArenaArrayHelper<ByteArray, Byte>::AllocateArray( context.TextureAsset->_Arena, context.RenderData, canvasData.NumElements * 4 );
+        for ( size_t i = 0; i < canvasData.NumElements; ++i )
+        {
+            const uint32_t argb = canvasData.Elements[ i ];
+            const uint8_t  a    = argb >> 24 & 0xFF;
+            const uint8_t  r    = argb >> 16 & 0xFF;
+            const uint8_t  g    = argb >> 8 & 0xFF;
+            const uint8_t  b    = argb & 0xFF;
+
+            context.RenderData.Elements[ i * 4 + 0 ] = r;
+            context.RenderData.Elements[ i * 4 + 1 ] = g;
+            context.RenderData.Elements[ i * 4 + 2 ] = b;
+            context.RenderData.Elements[ i * 4 + 3 ] = a;
+        }
     }
 
-    context.TextureAsset.Width     = context.Desc.RenderWidth;
-    context.TextureAsset.Height    = context.Desc.RenderHeight;
-    context.TextureAsset.Depth     = 1;
-    context.TextureAsset.MipLevels = 1;
-    context.TextureAsset.ArraySize = 1;
-    context.TextureAsset.Format    = context.Desc.OutputFormat;
-    context.TextureAsset.Dimension = TextureDimension::Texture2D;
+    context.TextureAsset->Width     = context.Desc.RenderWidth;
+    context.TextureAsset->Height    = context.Desc.RenderHeight;
+    context.TextureAsset->Depth     = 1;
+    context.TextureAsset->MipLevels = 1;
+    context.TextureAsset->ArraySize = 1;
+    context.TextureAsset->Format    = context.Desc.OutputFormat;
+    context.TextureAsset->Dimension = TextureDimension::Texture2D;
+    context.TextureAsset->Uri.Path  = context.Desc.SourceFilePath;
 
-    TextureMip mip;
-    mip.Width      = context.Desc.RenderWidth;
-    mip.Height     = context.Desc.RenderHeight;
-    mip.MipIndex   = 0;
-    mip.ArrayIndex = 0;
-    mip.RowPitch   = context.Desc.RenderWidth * 4; // 4 bytes per pixel (RGBA)
-    mip.NumRows    = context.Desc.RenderHeight;
-    mip.SlicePitch = mip.RowPitch * context.Desc.RenderHeight;
-    mip.DataOffset = 0;
+    context.TextureAsset->BitsPerPixel = 32; // RGBA8
+    context.TextureAsset->BlockSize    = 1;
+    context.TextureAsset->RowPitch     = context.Desc.RenderWidth * 4;
+    context.TextureAsset->NumRows      = context.Desc.RenderHeight;
+    context.TextureAsset->SlicePitch   = context.TextureAsset->RowPitch * context.Desc.RenderHeight;
 
-    m_mips.push_back( mip );
-    context.TextureAsset.Mips.NumElements = m_mips.size( );
-    context.TextureAsset.Mips.Elements    = m_mips.data( );
+    DZArenaArrayHelper<TextureMipArray, TextureMip>::AllocateAndConstructArray( context.TextureAsset->_Arena, context.TextureAsset->Mips, 1 );
 
-    AssetUri assetUri;
-    WriteTextureAsset( context, context.TextureAsset, assetUri );
-    RegisterCreatedAsset( context, assetUri );
+    TextureMip &mip = context.TextureAsset->Mips.Elements[ 0 ];
+    mip.Width       = context.Desc.RenderWidth;
+    mip.Height      = context.Desc.RenderHeight;
+    mip.MipIndex    = 0;
+    mip.ArrayIndex  = 0;
+    mip.RowPitch    = context.Desc.RenderWidth * 4;
+    mip.NumRows     = context.Desc.RenderHeight;
+    mip.SlicePitch  = mip.RowPitch * context.Desc.RenderHeight;
+    mip.DataOffset  = 0;
 
-    context.Result.CreatedAssets.NumElements = static_cast<uint32_t>( m_createdAssets.size( ) );
-    context.Result.CreatedAssets.Elements    = m_createdAssets.data( );
     return ImporterResultCode::Success;
 }
 
-void VGImporter::WriteTextureAsset( const ImportContext &context, const TextureAsset &textureAsset, AssetUri &outAssetUri ) const
+void VGImporter::Impl::WriteTextureAsset( const ImportContext &context, AssetUri &outAssetUri ) const
 {
     const InteropString assetName     = AssetPathUtilities::GetAssetNameFromFilePath( context.Desc.SourceFilePath );
     const InteropString sanitizedName = AssetPathUtilities::SanitizeAssetName( assetName );
 
     const std::filesystem::path targetDirectory = context.Desc.TargetDirectory.Get( );
-    const std::filesystem::path fileName        = AssetPathUtilities::CreateAssetFileName( context.Desc.AssetNamePrefix, sanitizedName, "dztex" ).Get( );
+    const std::filesystem::path fileName        = AssetPathUtilities::CreateAssetFileName( context.Desc.AssetNamePrefix, sanitizedName, TextureAsset::Extension( ) ).Get( );
     const InteropString         filePath        = ( targetDirectory / fileName ).string( ).c_str( );
 
-    BinaryWriter           writer( filePath );
-    TextureAssetWriterDesc writerDesc{ };
-    writerDesc.Writer = &writer;
-
-    TextureAssetWriter textureWriter( writerDesc );
-    textureWriter.Write( textureAsset );
-
-    const uint32_t  pixelCount  = context.Desc.RenderWidth * context.Desc.RenderHeight;
-    const ByteArray textureData = ByteArray::Create( pixelCount * 4 );
-
-    for ( uint32_t i = 0; i < pixelCount; ++i )
     {
-        const uint32_t argb = m_renderBuffer.Elements[ i ];
-        const uint8_t  a    = argb >> 24 & 0xFF;
-        const uint8_t  r    = argb >> 16 & 0xFF;
-        const uint8_t  g    = argb >> 8 & 0xFF;
-        const uint8_t  b    = argb & 0xFF;
+        BinaryWriter           writer( filePath );
+        TextureAssetWriterDesc writerDesc{ };
+        writerDesc.Writer = &writer;
 
-        textureData.Elements[ i * 4 + 0 ] = r;
-        textureData.Elements[ i * 4 + 1 ] = g;
-        textureData.Elements[ i * 4 + 2 ] = b;
-        textureData.Elements[ i * 4 + 3 ] = a;
+        TextureAssetWriter textureWriter( writerDesc );
+        textureWriter.Write( *context.TextureAsset );
+
+        if ( context.RenderData.Elements == nullptr || context.RenderData.NumElements == 0 )
+        {
+            spdlog::error( "VGImporter: No pixel data to write" );
+        }
+
+        ByteArrayView dataView{ };
+        dataView.Elements    = context.RenderData.Elements;
+        dataView.NumElements = context.RenderData.NumElements;
+        textureWriter.AddPixelData( dataView, 0, 0 );
+        textureWriter.End( );
+        writer.Flush( );
     }
 
-    ByteArrayView dataView{ };
-    dataView.Elements    = textureData.Elements;
-    dataView.NumElements = textureData.NumElements;
-    textureWriter.AddPixelData( dataView, 0, 0 );
-    textureData.Dispose( );
-    textureWriter.End( );
-    writer.Flush( );
-
     outAssetUri.Path = filePath;
-}
-
-void VGImporter::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri )
-{
-    m_createdAssets.push_back( assetUri );
+    spdlog::info( "VGImporter: Wrote texture asset to {} with {} bytes of pixel data", filePath.Get( ), context.RenderData.NumElements );
 }

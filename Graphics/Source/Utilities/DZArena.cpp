@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DZArena::DZArena( size_t initialCapacity ) : Buffer( nullptr ), Capacity( initialCapacity ), Used( 0 ), InitialCapacity( initialCapacity )
+DZArena::DZArena( const size_t initialCapacity ) : Buffer( nullptr ), Capacity( initialCapacity ), Used( 0 ), InitialCapacity( initialCapacity )
 {
     Buffer = static_cast<Byte *>( malloc( initialCapacity ) );
 }
@@ -49,15 +49,15 @@ void DZArena::Clear( )
     }
 }
 
-Byte *DZArena::Allocate( size_t size, size_t alignment )
+Byte *DZArena::Allocate( const size_t size, const size_t alignment )
 {
-    size_t alignedUsed  = ( Used + alignment - 1 ) & ~( alignment - 1 );
-    size_t requiredSize = alignedUsed + size;
+    size_t       alignedUsed  = Used + alignment - 1 & ~( alignment - 1 );
+    const size_t requiredSize = alignedUsed + size;
 
     if ( requiredSize > Capacity )
     {
         Grow( requiredSize );
-        alignedUsed = ( Used + alignment - 1 ) & ~( alignment - 1 );
+        alignedUsed = Used + alignment - 1 & ~( alignment - 1 );
     }
 
     Byte *result = Buffer + alignedUsed;
@@ -65,7 +65,7 @@ Byte *DZArena::Allocate( size_t size, size_t alignment )
     return result;
 }
 
-Byte *DZArena::GetWritePointer( )
+Byte *DZArena::GetWritePointer( ) const
 {
     return Buffer + Used;
 }
@@ -75,9 +75,14 @@ size_t DZArena::GetRemainingCapacity( ) const
     return Capacity - Used;
 }
 
-void DZArena::AdvanceCursor( size_t bytes )
+size_t DZArena::GetTotalCapacity( ) const
 {
-    size_t newUsed = Used + bytes;
+    return Capacity;
+}
+
+void DZArena::AdvanceCursor( const size_t bytes )
+{
+    const size_t newUsed = Used + bytes;
     if ( newUsed > Capacity )
     {
         Grow( newUsed );
@@ -85,7 +90,7 @@ void DZArena::AdvanceCursor( size_t bytes )
     Used = newUsed;
 }
 
-void DZArena::EnsureCapacity( size_t requiredCapacity )
+void DZArena::EnsureCapacity( const size_t requiredCapacity )
 {
     if ( requiredCapacity > Capacity )
     {
@@ -93,14 +98,14 @@ void DZArena::EnsureCapacity( size_t requiredCapacity )
     }
 }
 
-void DZArena::Write( const void *data, size_t size )
+void DZArena::Write( const void *data, const size_t size )
 {
     EnsureCapacity( Used + size );
     memcpy( Buffer + Used, data, size );
     Used += size;
 }
 
-void DZArena::Grow( size_t requiredSize )
+void DZArena::Grow( const size_t requiredSize )
 {
     size_t newCapacity = Capacity;
     while ( newCapacity < requiredSize )
@@ -108,7 +113,7 @@ void DZArena::Grow( size_t requiredSize )
         newCapacity *= 2;
     }
 
-    Byte *newBuffer = static_cast<Byte *>( malloc( newCapacity ) );
+    const auto newBuffer = static_cast<Byte *>( malloc( newCapacity ) );
     memcpy( newBuffer, Buffer, Used );
     free( Buffer );
     Buffer   = newBuffer;
@@ -123,10 +128,10 @@ DZArenaCursor DZArenaCursor::Create( DZArena *arena )
     return cursor;
 }
 
-void *DZArenaCursor::Allocate( size_t size, size_t alignment )
+void *DZArenaCursor::Allocate( const size_t size, const size_t alignment )
 {
-    size_t alignedPosition = ( Position + alignment - 1 ) & ~( alignment - 1 );
-    size_t requiredSize    = alignedPosition + size;
+    const size_t alignedPosition = Position + alignment - 1 & ~( alignment - 1 );
+    const size_t requiredSize    = alignedPosition + size;
 
     Arena->EnsureCapacity( requiredSize );
     void *result = Arena->Buffer + alignedPosition;
@@ -138,7 +143,7 @@ void *DZArenaCursor::Allocate( size_t size, size_t alignment )
     return result;
 }
 
-void DZArenaCursor::Write( const void *data, size_t size )
+void DZArenaCursor::Write( const void *data, const size_t size )
 {
     Arena->EnsureCapacity( Position + size );
     memcpy( Arena->Buffer + Position, data, size );
@@ -149,12 +154,12 @@ void DZArenaCursor::Write( const void *data, size_t size )
     }
 }
 
-Byte *DZArenaCursor::GetWritePointer( )
+Byte *DZArenaCursor::GetWritePointer( ) const
 {
     return Arena->Buffer + Position;
 }
 
-void DZArenaCursor::AdvancePosition( size_t bytes )
+void DZArenaCursor::AdvancePosition( const size_t bytes )
 {
     Position += bytes;
     Arena->EnsureCapacity( Position );
@@ -169,7 +174,7 @@ size_t DZArenaCursor::GetPosition( ) const
     return Position;
 }
 
-void DZArenaCursor::SetPosition( size_t position )
+void DZArenaCursor::SetPosition( const size_t position )
 {
     Position = position;
     if ( Position > Arena->Used )

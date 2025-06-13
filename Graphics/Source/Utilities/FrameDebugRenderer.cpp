@@ -90,7 +90,7 @@ void FrameDebugRenderer::UpdateStats( const float deltaTime )
     }
 }
 
-void FrameDebugRenderer::UpdateFrameTimeStats( float deltaTime )
+void FrameDebugRenderer::UpdateFrameTimeStats( const float deltaTime )
 {
     m_frameTimes.pop_front( );
     m_frameTimes.push_back( deltaTime * 1000.0 );

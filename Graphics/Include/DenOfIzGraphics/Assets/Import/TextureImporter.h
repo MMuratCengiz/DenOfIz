@@ -18,11 +18,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <memory>
 #include "DenOfIzGraphics/Assets/Bundle/BundleManager.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Import/ImporterCommon.h"
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h"
 #include "DenOfIzGraphics/Data/Texture.h"
+#include "DenOfIzGraphics/Utilities/DZArena.h"
 
 namespace DenOfIz
 {
@@ -46,25 +48,11 @@ namespace DenOfIz
         DZ_API [[nodiscard]] InteropString      GetName( ) const;
         DZ_API [[nodiscard]] InteropStringArray GetSupportedExtensions( ) const;
         DZ_API [[nodiscard]] bool               CanProcessFileExtension( const InteropString &extension ) const;
-        DZ_API ImporterResult                   Import( const TextureImportDesc &desc );
+        DZ_API ImporterResult                   Import( const TextureImportDesc &desc ) const;
         DZ_API [[nodiscard]] bool               ValidateFile( const InteropString &filePath ) const;
 
     private:
-        InteropString            m_name;
-        InteropStringArray       m_supportedExtensions;
-        std::unique_ptr<Texture> m_texture = nullptr;
-        std::vector<AssetUri>    m_createdAssets;
-
-        struct ImportContext
-        {
-            TextureImportDesc Desc;
-            ImporterResult    Result;
-            InteropString     ErrorMessage;
-            TextureAsset      TextureAsset{ };
-        };
-
-        ImporterResultCode ImportTextureInternal( ImportContext &context );
-        void               WriteTextureAsset( const ImportContext &context, const TextureAsset &textureAsset, AssetUri &outAssetUri ) const;
-        void               RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri );
+        class Impl;
+        std::unique_ptr<Impl> m_pImpl;
     };
 } // namespace DenOfIz

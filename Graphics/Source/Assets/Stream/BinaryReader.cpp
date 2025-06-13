@@ -105,16 +105,8 @@ int BinaryReader::Read( const ByteArray &buffer, const uint32_t offset, const ui
         return -1;
     }
 
-    std::vector<Byte> tempBuffer( count );
-    m_stream->read( reinterpret_cast<char *>( tempBuffer.data( ) ), count );
-
-    const int bytesRead = static_cast<int>( m_stream->gcount( ) );
-    for ( int i = 0; i < bytesRead; i++ )
-    {
-        buffer.Elements[ offset + i ] = tempBuffer[ i ];
-    }
-
-    return bytesRead;
+    m_stream->read( reinterpret_cast<char *>( buffer.Elements + offset ), count );
+    return static_cast<int>( m_stream->gcount( ) );
 }
 
 ByteArray BinaryReader::ReadAllBytes( )

@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-TextureAssetReader::TextureAssetReader( const TextureAssetReaderDesc &desc ) : m_reader( desc.Reader )
+TextureAssetReader::TextureAssetReader( const TextureAssetReaderDesc &desc ) : m_reader( desc.Reader ), m_textureAsset( nullptr )
 {
     if ( !m_reader )
     {
@@ -34,7 +34,7 @@ TextureAssetReader::TextureAssetReader( const TextureAssetReaderDesc &desc ) : m
 
 TextureAssetReader::~TextureAssetReader( ) = default;
 
-TextureMip TextureAssetReader::FindMip( const uint32_t mipLevel, const uint32_t arrayLayer )
+TextureMip TextureAssetReader::FindMip( const uint32_t mipLevel, const uint32_t arrayLayer ) const
 {
     for ( uint32_t i = 0; i < m_textureAsset->Mips.NumElements; ++i )
     {
@@ -52,8 +52,8 @@ TextureAsset *TextureAssetReader::Read( )
     {
         return m_textureAsset;
     }
-    m_textureRead        = true;
-    m_textureAsset       = new TextureAsset( );
+    m_textureRead         = true;
+    m_textureAsset        = new TextureAsset( );
     m_textureAsset->Magic = m_reader->ReadUInt64( );
     if ( m_textureAsset->Magic != TextureAsset{ }.Magic )
     {
@@ -104,7 +104,7 @@ TextureAsset *TextureAssetReader::Read( )
     return m_textureAsset;
 }
 
-ByteArray TextureAssetReader::ReadRaw( const uint32_t mipLevel, const uint32_t arrayLayer )
+ByteArray TextureAssetReader::ReadRaw( const uint32_t mipLevel, const uint32_t arrayLayer ) const
 {
     if ( mipLevel >= m_textureAsset->MipLevels || arrayLayer >= m_textureAsset->ArraySize )
     {
@@ -127,7 +127,7 @@ ByteArray TextureAssetReader::ReadRaw( const uint32_t mipLevel, const uint32_t a
     return mipData;
 }
 
-void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc )
+void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc ) const
 {
     if ( !desc.CommandList || !desc.Texture )
     {
@@ -140,7 +140,7 @@ void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc 
     const ByteArray    bufferArray{ buffer.data( ), buffer.size( ) };
 
     const auto stagingBuffer  = desc.StagingBuffer;
-    uint64_t   remainingBytes = m_textureAsset->Data.NumBytes;
+    uint64_t   remainingBytes = std::min( desc.StagingBuffer->NumBytes( ), m_textureAsset->Data.NumBytes );
     auto       mappedMemory   = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
 
     m_reader->Seek( m_textureAsset->Data.Offset );
@@ -183,7 +183,7 @@ void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc 
     }
 }
 
-uint64_t TextureAssetReader::AlignedTotalNumBytes( const DeviceConstants &constants )
+uint64_t TextureAssetReader::AlignedTotalNumBytes( const DeviceConstants &constants ) const
 {
     uint64_t totalNumBytes = 0;
     for ( uint32_t i = 0; i < m_textureAsset->Mips.NumElements; ++i )

@@ -26,40 +26,80 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h"
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetWriter.h"
 #include "DenOfIzGraphics/Data/Texture.h"
+#include "DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
-TextureImporter::TextureImporter( ) : m_name( "Texture Importer" )
+class TextureImporter::Impl
 {
-    m_supportedExtensions               = InteropStringArray::Create( 9 );
-    m_supportedExtensions.Elements[ 0 ] = ".png";
-    m_supportedExtensions.Elements[ 1 ] = ".jpg";
-    m_supportedExtensions.Elements[ 2 ] = ".jpeg";
-    m_supportedExtensions.Elements[ 3 ] = ".bmp";
-    m_supportedExtensions.Elements[ 4 ] = ".tga";
-    m_supportedExtensions.Elements[ 5 ] = ".dds";
-    m_supportedExtensions.Elements[ 6 ] = ".hdr";
-    m_supportedExtensions.Elements[ 7 ] = ".gif";
-    m_supportedExtensions.Elements[ 8 ] = ".psd";
+public:
+    InteropString            m_name;
+    InteropStringArray       m_supportedExtensions;
+    std::vector<AssetUri>    m_createdAssets;
+    std::unique_ptr<Texture> m_texture = nullptr;
+
+    struct ImportContext
+    {
+        TextureImportDesc Desc;
+        ImporterResult    Result;
+        InteropString     ErrorMessage;
+        TextureAsset     *TextureAsset = nullptr;
+    };
+
+    struct TextureStats
+    {
+        uint32_t Width              = 0;
+        uint32_t Height             = 0;
+        uint32_t MipCount           = 0;
+        uint32_t ArraySize          = 0;
+        size_t   EstimatedArenaSize = 0;
+    };
+
+    explicit Impl( ) : m_name( "Texture Importer" )
+    {
+        m_supportedExtensions               = InteropStringArray::Create( 9 );
+        m_supportedExtensions.Elements[ 0 ] = ".png";
+        m_supportedExtensions.Elements[ 1 ] = ".jpg";
+        m_supportedExtensions.Elements[ 2 ] = ".jpeg";
+        m_supportedExtensions.Elements[ 3 ] = ".bmp";
+        m_supportedExtensions.Elements[ 4 ] = ".tga";
+        m_supportedExtensions.Elements[ 5 ] = ".dds";
+        m_supportedExtensions.Elements[ 6 ] = ".hdr";
+        m_supportedExtensions.Elements[ 7 ] = ".gif";
+        m_supportedExtensions.Elements[ 8 ] = ".psd";
+    }
+
+    ~Impl( )
+    {
+        m_supportedExtensions.Dispose( );
+    }
+
+    ImporterResult Import( const TextureImportDesc &desc );
+
+private:
+    ImporterResultCode ImportTextureInternal( ImportContext &context ) const;
+    TextureStats       CalculateTextureStats( const TextureImportDesc &desc );
+    void               WriteTextureAsset( const ImportContext &context, AssetUri &outAssetUri ) const;
+};
+
+TextureImporter::TextureImporter( ) : m_pImpl( std::make_unique<Impl>( ) )
+{
 }
 
-TextureImporter::~TextureImporter( )
-{
-    m_supportedExtensions.Dispose( );
-}
+TextureImporter::~TextureImporter( ) = default;
 
 InteropString TextureImporter::GetName( ) const
 {
-    return m_name;
+    return m_pImpl->m_name;
 }
 
 InteropStringArray TextureImporter::GetSupportedExtensions( ) const
 {
-    const InteropStringArray copy = InteropStringArray::Create( m_supportedExtensions.NumElements );
-    for ( size_t i = 0; i < m_supportedExtensions.NumElements; ++i )
+    const InteropStringArray copy = InteropStringArray::Create( m_pImpl->m_supportedExtensions.NumElements );
+    for ( size_t i = 0; i < m_pImpl->m_supportedExtensions.NumElements; ++i )
     {
-        copy.Elements[ i ] = m_supportedExtensions.Elements[ i ];
+        copy.Elements[ i ] = m_pImpl->m_supportedExtensions.Elements[ i ];
     }
     return copy;
 }
@@ -67,9 +107,9 @@ InteropStringArray TextureImporter::GetSupportedExtensions( ) const
 bool TextureImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
     const InteropString lowerExt = extension.ToLower( );
-    for ( size_t i = 0; i < m_supportedExtensions.NumElements; ++i )
+    for ( size_t i = 0; i < m_pImpl->m_supportedExtensions.NumElements; ++i )
     {
-        if ( m_supportedExtensions.Elements[ i ].Equals( lowerExt ) )
+        if ( m_pImpl->m_supportedExtensions.Elements[ i ].Equals( lowerExt ) )
         {
             return true;
         }
@@ -88,9 +128,33 @@ bool TextureImporter::ValidateFile( const InteropString &filePath ) const
     return CanProcessFileExtension( extension );
 }
 
-ImporterResult TextureImporter::Import( const TextureImportDesc &desc )
+ImporterResult TextureImporter::Import( const TextureImportDesc &desc ) const
+{
+    return m_pImpl->Import( desc );
+}
+
+TextureImporter::Impl::TextureStats TextureImporter::Impl::CalculateTextureStats( const TextureImportDesc &desc )
+{
+    TextureStats stats;
+
+    m_texture       = std::make_unique<Texture>( desc.SourceFilePath );
+    stats.Width     = m_texture->GetWidth( );
+    stats.Height    = m_texture->GetHeight( );
+    stats.MipCount  = m_texture->GetMipLevels( );
+    stats.ArraySize = m_texture->GetArraySize( );
+
+    stats.EstimatedArenaSize = sizeof( TextureMip ) * stats.MipCount * stats.ArraySize;
+    stats.EstimatedArenaSize += sizeof( UserProperty ) * 10;
+    stats.EstimatedArenaSize += 4096;
+
+    return stats;
+}
+
+ImporterResult TextureImporter::Impl::Import( const TextureImportDesc &desc )
 {
     spdlog::info( "Starting texture import for file: {}", desc.SourceFilePath.Get( ) );
+
+    const TextureStats stats = CalculateTextureStats( desc );
 
     ImportContext context;
     context.Desc = desc;
@@ -115,41 +179,51 @@ ImporterResult TextureImporter::Import( const TextureImportDesc &desc )
         }
     }
 
-    context.Result.ResultCode = ImportTextureInternal( context );
-    spdlog::info( "Texture import successful for: {}", context.Desc.SourceFilePath.Get( ) );
+    context.TextureAsset = new TextureAsset( );
+    context.TextureAsset->_Arena.EnsureCapacity( stats.EstimatedArenaSize );
 
-    // Copy the created assets to the result
+    if ( const ImporterResultCode result = ImportTextureInternal( context ); result != ImporterResultCode::Success )
+    {
+        context.Result.ResultCode = result;
+        delete context.TextureAsset;
+        return context.Result;
+    }
+
+    AssetUri assetUri;
+    WriteTextureAsset( context, assetUri );
+    m_createdAssets.push_back( assetUri );
+
     context.Result.CreatedAssets.NumElements = static_cast<uint32_t>( m_createdAssets.size( ) );
     context.Result.CreatedAssets.Elements    = m_createdAssets.data( );
 
+    delete context.TextureAsset;
+    spdlog::info( "Texture import successful for: {}", context.Desc.SourceFilePath.Get( ) );
     return context.Result;
 }
 
-ImporterResultCode TextureImporter::ImportTextureInternal( ImportContext &context )
+ImporterResultCode TextureImporter::Impl::ImportTextureInternal( ImportContext &context ) const
 {
-    m_texture = std::make_unique<Texture>( context.Desc.SourceFilePath );
-    TextureAsset textureAsset;
-    textureAsset.Width     = m_texture->GetWidth( );
-    textureAsset.Height    = m_texture->GetHeight( );
-    textureAsset.Depth     = m_texture->GetDepth( );
-    textureAsset.MipLevels = m_texture->GetMipLevels( );
-    textureAsset.ArraySize = m_texture->GetArraySize( );
-    textureAsset.Format    = m_texture->GetFormat( );
-    textureAsset.Dimension = m_texture->GetDimension( );
-    textureAsset.Mips      = m_texture->ReadMipData( );
+    context.TextureAsset->Width     = m_texture->GetWidth( );
+    context.TextureAsset->Height    = m_texture->GetHeight( );
+    context.TextureAsset->Depth     = m_texture->GetDepth( );
+    context.TextureAsset->MipLevels = m_texture->GetMipLevels( );
+    context.TextureAsset->ArraySize = m_texture->GetArraySize( );
+    context.TextureAsset->Format    = m_texture->GetFormat( );
+    context.TextureAsset->Dimension = m_texture->GetDimension( );
+    context.TextureAsset->Uri.Path  = context.Desc.SourceFilePath;
 
-    AssetUri assetUri;
-    WriteTextureAsset( context, textureAsset, assetUri );
-    RegisterCreatedAsset( context, assetUri );
+    const auto sourceMips = m_texture->ReadMipData( );
+    DZArenaArrayHelper<TextureMipArray, TextureMip>::AllocateAndCopyArray( context.TextureAsset->_Arena, context.TextureAsset->Mips, sourceMips.Elements, sourceMips.NumElements );
+
     return ImporterResultCode::Success;
 }
 
-void TextureImporter::WriteTextureAsset( const ImportContext &context, const TextureAsset &textureAsset, AssetUri &outAssetUri ) const
+void TextureImporter::Impl::WriteTextureAsset( const ImportContext &context, AssetUri &outAssetUri ) const
 {
     const InteropString         assetName       = AssetPathUtilities::GetAssetNameFromFilePath( context.Desc.SourceFilePath );
     const InteropString         sanitizedName   = AssetPathUtilities::SanitizeAssetName( assetName );
     const std::filesystem::path targetDirectory = context.Desc.TargetDirectory.Get( );
-    const std::filesystem::path fileName        = AssetPathUtilities::CreateAssetFileName( context.Desc.AssetNamePrefix, sanitizedName, "texture" ).Get( );
+    const std::filesystem::path fileName        = AssetPathUtilities::CreateAssetFileName( context.Desc.AssetNamePrefix, sanitizedName, "dztex" ).Get( );
     const InteropString         filePath        = ( targetDirectory / fileName ).string( ).c_str( );
 
     BinaryWriter           writer( filePath );
@@ -157,7 +231,7 @@ void TextureImporter::WriteTextureAsset( const ImportContext &context, const Tex
     writerDesc.Writer = &writer;
 
     TextureAssetWriter textureWriter( writerDesc );
-    textureWriter.Write( textureAsset );
+    textureWriter.Write( *context.TextureAsset );
 
     const auto mipDataArray = m_texture->ReadMipData( );
     for ( uint32_t i = 0; i < mipDataArray.NumElements; ++i )
@@ -176,10 +250,5 @@ void TextureImporter::WriteTextureAsset( const ImportContext &context, const Tex
     writer.Flush( );
 
     outAssetUri.Path = filePath;
-}
-
-void TextureImporter::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri )
-{
-    m_createdAssets.push_back( assetUri );
-    spdlog::info( "Created texture asset: {}", assetUri.Path.Get( ) );
+    spdlog::info( "Created texture asset: {}", outAssetUri.Path.Get( ) );
 }

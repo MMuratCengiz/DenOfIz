@@ -17,9 +17,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
+#include <memory>
 #include "DenOfIzGraphics/Assets/Import/ImporterCommon.h"
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAsset.h"
 #include "DenOfIzGraphics/Backends/Common/ShaderProgram.h"
+#include "DenOfIzGraphics/Utilities/DZArena.h"
 
 namespace DenOfIz
 {
@@ -40,24 +42,11 @@ namespace DenOfIz
         DZ_API [[nodiscard]] InteropString GetName() const;
         DZ_API [[nodiscard]] InteropStringArray GetSupportedExtensions() const;
         DZ_API [[nodiscard]] bool CanProcessFileExtension(const InteropString &extension) const;
-        DZ_API ImporterResult Import(const ShaderImportDesc &desc);
+        DZ_API ImporterResult Import(const ShaderImportDesc &desc ) const;
         DZ_API [[nodiscard]] bool ValidateFile(const InteropString &filePath) const;
 
     private:
-        InteropString m_name;
-        InteropStringArray m_supportedExtensions{};
-        std::vector<AssetUri> m_createdAssets;
-
-        struct ImportContext
-        {
-            ShaderImportDesc Desc;
-            ShaderAsset     *ShaderAsset;
-            InteropString    ErrorMessage;
-            ImporterResult   Result;
-        };
-
-        static void          WriteShaderAsset(const ImportContext &context, AssetUri &outAssetUri);
-        static InteropString GetAssetName(const ImportContext &context);
-        static ShaderStage   InferShaderStageFromExtension(const std::string &fileExtension);
+        class Impl;
+        std::unique_ptr<Impl> m_pImpl;
     };
 } // namespace DenOfIz

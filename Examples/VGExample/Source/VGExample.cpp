@@ -341,7 +341,6 @@ void VGExample::ImportSvgIfNeeded( const InteropString &svgPath, const InteropSt
         VGImportDesc desc{ };
         desc.SourceFilePath  = svgPath;
         desc.TargetDirectory = "Assets/Textures/";
-        desc.AssetNamePrefix = "svg";
         desc.RenderWidth     = 1024;
         desc.RenderHeight    = 1024;
         desc.Scale           = 1.0f;

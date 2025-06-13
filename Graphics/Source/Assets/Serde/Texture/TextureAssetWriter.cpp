@@ -85,7 +85,7 @@ void TextureAssetWriter::ValidateMipRange( const uint32_t mipIndex, const uint32
 void TextureAssetWriter::Write( const TextureAsset &textureAsset )
 {
     m_textureAsset = std::make_unique<TextureAsset>( );
-    // Copy the input since we modify it
+    m_textureAsset->_Arena.EnsureCapacity( textureAsset._Arena.GetTotalCapacity( ) );
     m_textureAsset->Name         = textureAsset.Name;
     m_textureAsset->SourcePath   = textureAsset.SourcePath;
     m_textureAsset->Width        = textureAsset.Width;
@@ -100,7 +100,15 @@ void TextureAssetWriter::Write( const TextureAsset &textureAsset )
     m_textureAsset->RowPitch     = textureAsset.RowPitch;
     m_textureAsset->NumRows      = textureAsset.NumRows;
     m_textureAsset->SlicePitch   = textureAsset.SlicePitch;
-    m_textureAsset->Mips         = textureAsset.Mips;
+    if ( textureAsset.Mips.NumElements > 0 )
+    {
+        DZArenaArrayHelper<TextureMipArray, TextureMip>::AllocateAndCopyArray( 
+            m_textureAsset->_Arena, 
+            m_textureAsset->Mips, 
+            textureAsset.Mips.Elements, 
+            textureAsset.Mips.NumElements 
+        );
+    }
     m_textureAsset->Data         = textureAsset.Data;
 
     m_streamStartLocation = m_writer->Position( );
@@ -199,19 +207,7 @@ void TextureAssetWriter::Write( const TextureAsset &textureAsset )
 
     if ( m_textureAsset->Mips.NumElements == 0 )
     {
-        spdlog::warn( "TextureAssetWriter: No mip levels found, creating default mip level" );
-        TextureMip mip{ };
-        mip.Width      = std::max( 1u, m_textureAsset->Width );
-        mip.Height     = std::max( 1u, m_textureAsset->Height );
-        mip.MipIndex   = 0;
-        mip.ArrayIndex = 0;
-        mip.RowPitch   = m_textureAsset->RowPitch;
-        mip.NumRows    = m_textureAsset->NumRows;
-        mip.SlicePitch = m_textureAsset->SlicePitch;
-        mip.DataOffset = 0;
-
-        DZArenaArrayHelper<TextureMipArray, TextureMip>::AllocateAndConstructArray( m_textureAsset->_Arena, m_textureAsset->Mips, 1 );
-        m_textureAsset->Mips.Elements[ 0 ] = mip;
+        spdlog::critical( "TextureAssetWriter: No mip levels provided. Importers must provide pre-allocated mips" );
     }
 
     m_writer->WriteUInt32( std::max( 1u, m_textureAsset->Width ) );
@@ -263,56 +259,9 @@ void TextureAssetWriter::AddPixelData( const ByteArrayView &bytes, const uint32_
         }
     }
 
-    // If mip was not found, add a new mip entry (unless we're already at max mips)
-    if ( !mipFound && ( mipIndex < m_textureAsset->MipLevels ) && ( arrayLayer < m_textureAsset->ArraySize ) )
+    if ( !mipFound )
     {
-        spdlog::warn( "TextureAssetWriter: Adding missing mip entry for level {} , array layer {}", mipIndex, arrayLayer );
-        const uint32_t mipWidth  = std::max( 1u, m_textureAsset->Width >> mipIndex );
-        const uint32_t mipHeight = std::max( 1u, m_textureAsset->Height >> mipIndex );
-
-        uint32_t mipRowPitch, mipNumRows, mipSlicePitch;
-        if ( IsFormatBC( m_textureAsset->Format ) )
-        {
-            const uint32_t blockWidth  = ( mipWidth + m_textureAsset->BlockSize - 1 ) / m_textureAsset->BlockSize;
-            const uint32_t blockHeight = ( mipHeight + m_textureAsset->BlockSize - 1 ) / m_textureAsset->BlockSize;
-
-            mipRowPitch   = blockWidth * ( m_textureAsset->BitsPerPixel / 8 );
-            mipNumRows    = blockHeight;
-            mipSlicePitch = mipRowPitch * mipNumRows;
-        }
-        else
-        {
-            mipRowPitch   = mipWidth * ( m_textureAsset->BitsPerPixel / 8 );
-            mipNumRows    = mipHeight;
-            mipSlicePitch = mipRowPitch * mipNumRows;
-        }
-
-        TextureMip newMip{ };
-        newMip.Width      = mipWidth;
-        newMip.Height     = mipHeight;
-        newMip.MipIndex   = mipIndex;
-        newMip.ArrayIndex = arrayLayer;
-        newMip.RowPitch   = mipRowPitch;
-        newMip.NumRows    = mipNumRows;
-        newMip.SlicePitch = mipSlicePitch;
-        newMip.DataOffset = currentDataOffset;
-        size_t newMipCount = m_textureAsset->Mips.NumElements + 1;
-        TextureMip* newMips = DZArenaAllocator<TextureMip>::Allocate( m_textureAsset->_Arena, newMipCount );
-        
-        if ( m_textureAsset->Mips.Elements )
-        {
-            for ( size_t j = 0; j < m_textureAsset->Mips.NumElements; ++j )
-            {
-                newMips[ j ] = m_textureAsset->Mips.Elements[ j ];
-            }
-        }
-        
-        newMips[ m_textureAsset->Mips.NumElements ] = newMip;
-        
-        m_textureAsset->Mips.Elements = newMips;
-        m_textureAsset->Mips.NumElements = static_cast<uint32_t>( newMipCount );
-        m_textureMipPositions.push_back( m_writer->Position( ) );
-        WriteMipInfo( newMip );
+        spdlog::critical( "TextureAssetWriter: Mip level {} array layer {} not found in pre-allocated mips array", mipIndex, arrayLayer );
     }
 
     m_lastMipIndex   = mipIndex;

@@ -31,17 +31,18 @@ namespace DenOfIz
         friend struct DZArenaCursor;
 
     public:
-        DZArena( size_t initialCapacity );
+        explicit DZArena( size_t initialCapacity );
         ~DZArena( );
 
-        void   Reset( );
-        void   Clear( );
-        Byte  *Allocate( size_t size, size_t alignment = alignof( std::max_align_t ) );
-        Byte  *GetWritePointer( );
-        size_t GetRemainingCapacity( ) const;
-        void   AdvanceCursor( size_t bytes );
-        void   EnsureCapacity( size_t requiredCapacity );
-        void   Write( const void *data, size_t size );
+        void                 Reset( );
+        void                 Clear( );
+        Byte                *Allocate( size_t size, size_t alignment = alignof( std::max_align_t ) );
+        Byte                *GetWritePointer( ) const;
+        [[nodiscard]] size_t GetRemainingCapacity( ) const;
+        [[nodiscard]] size_t GetTotalCapacity( ) const;
+        void                 AdvanceCursor( size_t bytes );
+        void                 EnsureCapacity( size_t requiredCapacity );
+        void                 Write( const void *data, size_t size );
 
     private:
         void Grow( size_t requiredSize );
@@ -59,11 +60,11 @@ namespace DenOfIz
 
         static DZArenaCursor Create( DZArena *arena );
 
-        void  *Allocate( size_t size, size_t alignment = alignof( std::max_align_t ) );
-        void   Write( const void *data, size_t size );
-        Byte  *GetWritePointer( );
-        void   AdvancePosition( size_t bytes );
-        size_t GetPosition( ) const;
-        void   SetPosition( size_t position );
+        void                *Allocate( size_t size, size_t alignment = alignof( std::max_align_t ) );
+        void                 Write( const void *data, size_t size );
+        Byte                *GetWritePointer( ) const;
+        void                 AdvancePosition( size_t bytes );
+        [[nodiscard]] size_t GetPosition( ) const;
+        void                 SetPosition( size_t position );
     };
 } // namespace DenOfIz

@@ -18,9 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <memory>
 #include "DenOfIzGraphics/Assets/Import/ImporterCommon.h"
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h"
 #include "DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h"
+#include "DenOfIzGraphics/Utilities/DZArena.h"
 
 namespace DenOfIz
 {
@@ -48,27 +50,12 @@ namespace DenOfIz
         [[nodiscard]] InteropString      GetName( ) const;
         [[nodiscard]] InteropStringArray GetSupportedExtensions( ) const;
         [[nodiscard]] bool               CanProcessFileExtension( const InteropString &extension ) const;
-        ImporterResult                   Import( const VGImportDesc &desc );
+        ImporterResult                   Import( const VGImportDesc &desc ) const;
         [[nodiscard]] bool               ValidateFile( const InteropString &filePath ) const;
 
     private:
-        InteropString           m_name;
-        InteropStringArray      m_supportedExtensions;
-        UInt32ArrayView         m_renderBuffer;
-        std::vector<AssetUri>   m_createdAssets;
-        std::vector<TextureMip> m_mips;
-
-        struct ImportContext
-        {
-            VGImportDesc   Desc;
-            ImporterResult Result;
-            InteropString  ErrorMessage;
-            TextureAsset   TextureAsset;
-        };
-
-        ImporterResultCode ImportVGInternal( ImportContext &context );
-        void               WriteTextureAsset( const ImportContext &context, const TextureAsset &textureAsset, AssetUri &outAssetUri ) const;
-        void               RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri );
+        class Impl;
+        std::unique_ptr<Impl> m_pImpl;
     };
 
 } // namespace DenOfIz

@@ -45,12 +45,12 @@ std::string Utilities::ReadFile( const std::string &filename )
     return std::move( data );
 }
 
-std::string Utilities::GetFileDirectory( const std::string &file, bool includeFinalSep )
+std::string Utilities::GetFileDirectory( const std::string &file, const bool includeFinalSep )
 {
-    size_t sepUnixIdx = file.find_last_of( "/\\" );
-    size_t sepWinIdx  = file.find_last_of( "\\\\" );
+    const size_t sepUnixIdx = file.find_last_of( "/\\" );
+    const size_t sepWinIdx  = file.find_last_of( "\\\\" );
 
-    int finalSepSub = includeFinalSep ? 1 : 0;
+    const int finalSepSub = includeFinalSep ? 1 : 0;
 
     if ( sepUnixIdx != -1 )
     {
@@ -66,8 +66,8 @@ std::string Utilities::GetFileDirectory( const std::string &file, bool includeFi
 
 std::string Utilities::GetFilename( const std::string &file )
 {
-    size_t sepUnixIdx = file.find_last_of( "/\\" );
-    size_t sepWinIdx  = file.find_last_of( "\\\\" );
+    const size_t sepUnixIdx = file.find_last_of( "/\\" );
+    const size_t sepWinIdx  = file.find_last_of( "\\\\" );
 
     if ( sepUnixIdx != -1 )
     {
@@ -83,15 +83,15 @@ std::string Utilities::GetFilename( const std::string &file )
 
 std::string Utilities::CombineDirectories( const std::string &directory, const std::string &file )
 {
-    std::string dir = GetFileDirectory( directory );
-    std::string f   = GetFilename( file );
+    const std::string dir = GetFileDirectory( directory );
+    const std::string f   = GetFilename( file );
 
     return dir + f;
 }
 
 std::string Utilities::AppPath( const std::string &resourcePath )
 {
-    std::filesystem::path testRel( resourcePath );
+    const std::filesystem::path testRel( resourcePath );
     if ( testRel.is_absolute( ) )
     {
         return resourcePath;

@@ -22,47 +22,79 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetWriter.h"
 #include "DenOfIzGraphics/Assets/Stream/BinaryContainer.h"
 #include "DenOfIzGraphics/Backends/Common/ShaderProgram.h"
+#include "DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
-ShaderImporter::ShaderImporter( ) : m_name( "Shader Importer" )
+class ShaderImporter::Impl
 {
-    m_supportedExtensions               = InteropStringArray::Create( 7 );
-    m_supportedExtensions.Elements[ 0 ] = "hlsl";
-    m_supportedExtensions.Elements[ 1 ] = "vs.hlsl";
-    m_supportedExtensions.Elements[ 2 ] = "ps.hlsl";
-    m_supportedExtensions.Elements[ 3 ] = "gs.hlsl";
-    m_supportedExtensions.Elements[ 4 ] = "hs.hlsl";
-    m_supportedExtensions.Elements[ 5 ] = "ds.hlsl";
-    m_supportedExtensions.Elements[ 6 ] = "cs.hlsl";
+public:
+    InteropString         m_name;
+    InteropStringArray    m_supportedExtensions{ };
+    std::vector<AssetUri> m_createdAssets;
+
+    struct ImportContext
+    {
+        ShaderImportDesc Desc;
+        ShaderAsset     *ShaderAsset = nullptr;
+        InteropString    ErrorMessage;
+        ImporterResult   Result;
+    };
+
+    struct ShaderStats
+    {
+        uint32_t StageCount         = 0;
+        size_t   EstimatedArenaSize = 0;
+    };
+
+    explicit Impl( ) : m_name( "Shader Importer" )
+    {
+        m_supportedExtensions               = InteropStringArray::Create( 7 );
+        m_supportedExtensions.Elements[ 0 ] = "hlsl";
+        m_supportedExtensions.Elements[ 1 ] = "vs.hlsl";
+        m_supportedExtensions.Elements[ 2 ] = "ps.hlsl";
+        m_supportedExtensions.Elements[ 3 ] = "gs.hlsl";
+        m_supportedExtensions.Elements[ 4 ] = "hs.hlsl";
+        m_supportedExtensions.Elements[ 5 ] = "ds.hlsl";
+        m_supportedExtensions.Elements[ 6 ] = "cs.hlsl";
+    }
+
+    ~Impl( )
+    {
+        m_supportedExtensions.Dispose( );
+    }
+
+    ImporterResult Import( const ShaderImportDesc &desc );
+
+private:
+    ShaderStats          CalculateShaderStats( const ShaderImportDesc &desc ) const;
+    void                 WriteShaderAsset( const ImportContext &context, AssetUri &outAssetUri ) const;
+    static InteropString GetAssetName( const ImportContext &context );
+    static ShaderStage   InferShaderStageFromExtension( const std::string &fileExtension );
+};
+
+ShaderImporter::ShaderImporter( ) : m_pImpl( std::make_unique<Impl>( ) )
+{
 }
 
-ShaderImporter::~ShaderImporter( )
-{
-    m_supportedExtensions.Dispose( );
-}
+ShaderImporter::~ShaderImporter( ) = default;
 
 InteropString ShaderImporter::GetName( ) const
 {
-    return m_name;
+    return m_pImpl->m_name;
 }
 
 InteropStringArray ShaderImporter::GetSupportedExtensions( ) const
 {
-    const InteropStringArray copy = InteropStringArray::Create( m_supportedExtensions.NumElements );
-    for ( size_t i = 0; i < m_supportedExtensions.NumElements; ++i )
-    {
-        copy.Elements[ i ] = m_supportedExtensions.Elements[ i ];
-    }
-    return copy;
+    return m_pImpl->m_supportedExtensions;
 }
 
 bool ShaderImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
-    for ( int i = 0; i < m_supportedExtensions.NumElements; ++i )
+    for ( int i = 0; i < m_pImpl->m_supportedExtensions.NumElements; ++i )
     {
-        if ( strcmp( extension.Get( ), m_supportedExtensions.Elements[ i ].Get( ) ) == 0 )
+        if ( strcmp( extension.Get( ), m_pImpl->m_supportedExtensions.Elements[ i ].Get( ) ) == 0 )
         {
             return true;
         }
@@ -70,8 +102,27 @@ bool ShaderImporter::CanProcessFileExtension( const InteropString &extension ) c
     return false;
 }
 
-ImporterResult ShaderImporter::Import( const ShaderImportDesc &desc )
+ImporterResult ShaderImporter::Import( const ShaderImportDesc &desc ) const
 {
+    return m_pImpl->Import( desc );
+}
+
+ShaderImporter::Impl::ShaderStats ShaderImporter::Impl::CalculateShaderStats( const ShaderImportDesc &desc ) const
+{
+    ShaderStats stats;
+    stats.StageCount = desc.ProgramDesc.ShaderStages.NumElements;
+
+    stats.EstimatedArenaSize = sizeof( ShaderStageAsset ) * stats.StageCount;
+    stats.EstimatedArenaSize += sizeof( UserProperty ) * 20;
+    stats.EstimatedArenaSize += 8192;
+
+    return stats;
+}
+
+ImporterResult ShaderImporter::Impl::Import( const ShaderImportDesc &desc )
+{
+    const ShaderStats stats = CalculateShaderStats( desc );
+
     ImportContext context;
     context.Result.ResultCode = ImporterResultCode::Success;
     context.Desc              = desc;
@@ -90,12 +141,12 @@ ImporterResult ShaderImporter::Import( const ShaderImportDesc &desc )
     compiledShader.ReflectDesc = shaderProgram.Reflect( );
 
     context.ShaderAsset = ShaderAssetWriter::CreateFromCompiledShader( compiledShader );
+    context.ShaderAsset->_Arena.EnsureCapacity( stats.EstimatedArenaSize );
 
     AssetUri shaderAssetUri;
     WriteShaderAsset( context, shaderAssetUri );
     m_createdAssets.push_back( shaderAssetUri );
 
-    // Copy the created assets to the result
     context.Result.CreatedAssets.NumElements = static_cast<uint32_t>( m_createdAssets.size( ) );
     context.Result.CreatedAssets.Elements    = m_createdAssets.data( );
     return context.Result;
@@ -118,7 +169,7 @@ bool ShaderImporter::ValidateFile( const InteropString &filePath ) const
     return CanProcessFileExtension( extension.Get( ) );
 }
 
-void ShaderImporter::WriteShaderAsset( const ImportContext &context, AssetUri &outAssetUri )
+void ShaderImporter::Impl::WriteShaderAsset( const ImportContext &context, AssetUri &outAssetUri ) const
 {
     const InteropString assetName           = GetAssetName( context );
     const InteropString sanitizedName       = AssetPathUtilities::SanitizeAssetName( assetName );
@@ -146,7 +197,7 @@ void ShaderImporter::WriteShaderAsset( const ImportContext &context, AssetUri &o
     outAssetUri.Path = outputPath.c_str( );
 }
 
-InteropString ShaderImporter::GetAssetName( const ImportContext &context )
+InteropString ShaderImporter::Impl::GetAssetName( const ImportContext &context )
 {
     if ( !context.Desc.OutputShaderName.IsEmpty( ) )
     {
@@ -171,7 +222,7 @@ InteropString ShaderImporter::GetAssetName( const ImportContext &context )
     return "ShaderProgram";
 }
 
-ShaderStage ShaderImporter::InferShaderStageFromExtension( const std::string &fileExtension )
+ShaderStage ShaderImporter::Impl::InferShaderStageFromExtension( const std::string &fileExtension )
 {
     if ( fileExtension == "vs.hlsl" )
     {

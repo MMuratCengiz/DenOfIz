@@ -44,15 +44,15 @@ namespace DenOfIz
         TextureAsset *m_textureAsset;
         bool          m_textureRead = false;
 
-        TextureMip FindMip( const uint32_t mipLevel, const uint32_t arrayLayer );
+        TextureMip FindMip( const uint32_t mipLevel, const uint32_t arrayLayer ) const;
 
     public:
         DZ_API explicit TextureAssetReader( const TextureAssetReaderDesc &desc );
         DZ_API ~TextureAssetReader( );
 
         DZ_API TextureAsset *Read( );
-        DZ_API void          LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc );
-        DZ_API ByteArray     ReadRaw( const uint32_t mipLevel = 0, const uint32_t arrayLayer = 0 );
-        DZ_API uint64_t      AlignedTotalNumBytes( const DeviceConstants &constants );
+        DZ_API void          LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc ) const;
+        DZ_API ByteArray     ReadRaw( const uint32_t mipLevel = 0, const uint32_t arrayLayer = 0 ) const;
+        DZ_API uint64_t      AlignedTotalNumBytes( const DeviceConstants &constants ) const;
     };
 } // namespace DenOfIz
