@@ -31,6 +31,6 @@ namespace DenOfIz
         /// Local data layouts for each shader, index matched with the ShaderDescs provided in the ShaderProgramDesc.
         LocalRootSignatureDescArray LocalRootSignatures;
         /// Thread group sizes for compute, mesh, and task shaders.
-        InteropArray<ThreadGroupInfo> ThreadGroups;
+        ThreadGroupInfoArray ThreadGroups;
     };
 } // namespace DenOfIz

@@ -58,7 +58,12 @@ namespace DenOfIz
         uint32_t Y = 0;
         uint32_t Z = 0;
     };
-    template class DZ_API InteropArray<ThreadGroupInfo>;
+
+    struct DZ_API ThreadGroupInfoArray
+    {
+        ThreadGroupInfo *Elements;
+        uint32_t         NumElements;
+    };
 
     enum class TargetIL
     {
@@ -163,7 +168,7 @@ namespace DenOfIz
 
     struct DZ_API CompiledShaderStageArray
     {
-        CompiledShaderStage **Elements; // Array of pointers
+        CompiledShaderStage **Elements;
         uint32_t              NumElements;
     };
 } // namespace DenOfIz

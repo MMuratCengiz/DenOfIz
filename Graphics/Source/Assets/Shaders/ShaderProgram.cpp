@@ -90,6 +90,7 @@ public:
     std::vector<ResourceBindingSlotArray>             m_localBindingsToClean;
     std::vector<std::vector<ResourceBindingDesc>>     m_localResourceBindings;
     std::vector<LocalRootSignatureDesc>               m_localRootSignatures;
+    std::vector<ThreadGroupInfo>                      m_threadGroupInfos;
 
     explicit Impl( const ShaderProgramDesc &desc ) : m_desc( desc )
     {
@@ -257,7 +258,7 @@ void ShaderProgram::Impl::CreateReflectionData( )
     m_reflectDesc = { };
     m_localRootSignatures.resize( m_compiledShaders.size( ) );
     m_localResourceBindings.resize( m_compiledShaders.size( ) );
-    m_reflectDesc.ThreadGroups.Resize( m_compiledShaders.size( ) );
+    m_threadGroupInfos.resize( m_compiledShaders.size( ) );
 
     InputLayoutDesc   &inputLayout   = m_reflectDesc.InputLayout;
     RootSignatureDesc &rootSignature = m_reflectDesc.RootSignature;
@@ -307,9 +308,9 @@ void ShaderProgram::Impl::CreateReflectionData( )
 
             if ( shader->Stage == ShaderStage::Compute || shader->Stage == ShaderStage::Mesh || shader->Stage == ShaderStage::Task )
             {
-                ThreadGroupInfo threadGroup = ShaderReflectionHelper::ExtractThreadGroupSize( shaderReflection, nullptr );
-                shader->ThreadGroup         = threadGroup;
-                m_reflectDesc.ThreadGroups.SetElement( stageIndex, threadGroup );
+                const ThreadGroupInfo threadGroup = ShaderReflectionHelper::ExtractThreadGroupSize( shaderReflection, nullptr );
+                shader->ThreadGroup               = threadGroup;
+                m_threadGroupInfos[ stageIndex ]  = threadGroup;
             }
             break;
         }
@@ -346,6 +347,8 @@ void ShaderProgram::Impl::CreateReflectionData( )
     m_reflectDesc.RootSignature.BindlessResources.Elements    = m_rootSignatureState.BindlessResources.data( );
     m_reflectDesc.LocalRootSignatures.NumElements             = static_cast<uint32_t>( m_localRootSignatures.size( ) );
     m_reflectDesc.LocalRootSignatures.Elements                = m_localRootSignatures.data( );
+    m_reflectDesc.ThreadGroups.NumElements                    = static_cast<uint32_t>( m_threadGroupInfos.size( ) );
+    m_reflectDesc.ThreadGroups.Elements                       = m_threadGroupInfos.data( );
 }
 
 Format MaskToFormat( const D3D_REGISTER_COMPONENT_TYPE componentType, const uint32_t mask )
