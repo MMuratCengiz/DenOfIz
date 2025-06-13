@@ -17,49 +17,47 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
+#include "DenOfIzGraphics/Assets/Import/ImporterCommon.h"
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAsset.h"
 #include "DenOfIzGraphics/Backends/Common/ShaderProgram.h"
 
 namespace DenOfIz
 {
-    struct DZ_API ShaderImportDesc : ImportDesc
+    
+    struct DZ_API ShaderImportDesc
     {
-        ShaderProgramDesc ProgramDesc{ };
-        InteropString     OutputShaderName; // Note this is just the file name, ImportDesc.TargetDirectory is still used for the directory
-
-        ShaderImportDesc( ) = default;
-        explicit ShaderImportDesc( const ImportDesc &base ) : ImportDesc( base )
-        {
-        }
+        InteropString     TargetDirectory;
+        ShaderProgramDesc ProgramDesc;
+        InteropString     OutputShaderName; // Note this is just the file name
     };
 
-    class ShaderImporter final : public IAssetImporter
+    class ShaderImporter
     {
-        ImporterDesc          m_importerDesc;
+    public:
+        DZ_API ShaderImporter();
+        DZ_API ~ShaderImporter();
+
+        DZ_API [[nodiscard]] InteropString GetName() const;
+        DZ_API [[nodiscard]] InteropStringArray GetSupportedExtensions() const;
+        DZ_API [[nodiscard]] bool CanProcessFileExtension(const InteropString &extension) const;
+        DZ_API ImporterResult Import(const ShaderImportDesc &desc);
+        DZ_API [[nodiscard]] bool ValidateFile(const InteropString &filePath) const;
+
+    private:
+        InteropString m_name;
+        InteropStringArray m_supportedExtensions;
         std::vector<AssetUri> m_createdAssets;
 
         struct ImportContext
         {
-            ImportJobDesc    JobDesc;
+            ShaderImportDesc Desc;
             ShaderAsset     *ShaderAsset;
             InteropString    ErrorMessage;
             ImporterResult   Result;
-            ShaderImportDesc Desc;
         };
 
-    public:
-        DZ_API ShaderImporter( );
-        DZ_API ~ShaderImporter( ) override;
-
-        DZ_API ImporterDesc   GetImporterInfo( ) const override;
-        DZ_API bool           CanProcessFileExtension( const InteropString &extension ) const override;
-        DZ_API ImporterResult Import( const ImportJobDesc &desc ) override;
-        DZ_API bool           ValidateFile( const InteropString &filePath ) const override;
-
-    private:
-        static void          WriteShaderAsset( const ImportContext &context, AssetUri &outAssetUri );
-        static InteropString GetAssetName( const ImportContext &context );
-        static ShaderStage   InferShaderStageFromExtension( const std::string &fileExtension );
+        static void          WriteShaderAsset(const ImportContext &context, AssetUri &outAssetUri);
+        static InteropString GetAssetName(const ImportContext &context);
+        static ShaderStage   InferShaderStageFromExtension(const std::string &fileExtension);
     };
 } // namespace DenOfIz

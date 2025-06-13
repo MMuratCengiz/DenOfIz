@@ -141,8 +141,8 @@ namespace DenOfIz
 
     struct DZ_API UInt32Array
     {
-        uint32_t *Elements;
-        uint32_t  NumElements;
+        uint32_t *Elements    = nullptr;
+        uint32_t  NumElements = 0;
 
         DZ_ARRAY_METHODS( UInt32Array, uint32_t )
     };

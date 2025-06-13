@@ -81,13 +81,7 @@ void BinaryWriter::Write( const ByteArrayView &buffer, const uint32_t offset, co
         return;
     }
 
-    std::vector<Byte> tempBuffer( count );
-    for ( uint32_t i = 0; i < count; i++ )
-    {
-        tempBuffer[ i ] = buffer.Elements[ offset + i ];
-    }
-
-    m_stream->write( reinterpret_cast<const char *>( tempBuffer.data( ) ), count );
+    m_stream->write( reinterpret_cast<const char *>( buffer.Elements + offset ), count );
 }
 
 void BinaryWriter::WriteBytes( const ByteArrayView &buffer ) const

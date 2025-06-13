@@ -17,42 +17,41 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
-#include "DenOfIzGraphics/Assets/Serde/Font/FontAssetWriter.h"
 #include <memory>
+#include "DenOfIzGraphics/Assets/Import/ImporterCommon.h"
+#include "DenOfIzGraphics/Assets/Serde/Font/FontAssetWriter.h"
 
 namespace DenOfIz
 {
     struct FontImporterImpl;
 
-    struct DZ_API FontImportDesc : ImportDesc
+    struct DZ_API FontImportDesc
     {
+        InteropString SourceFilePath;
+        InteropString TargetDirectory;
+        InteropString AssetNamePrefix;
+
         uint32_t         InitialFontSize = 36;
         uint32_t         AtlasWidth      = 512;
         uint32_t         AtlasHeight     = 512;
         BinaryContainer *TargetContainer = nullptr; // Not required, only useful to load font into memory
-
-        FontImportDesc( ) = default;
-        explicit FontImportDesc( const ImportDesc &base ) : ImportDesc( base )
-        {
-        }
     };
 
-    struct DZ_API FontImporterDesc{ };
-
-    class DZ_API FontImporter final : public IAssetImporter
+    class DZ_API FontImporter
     {
-        ImporterDesc                      m_importerDesc;
-        const FontImporterDesc            m_desc;
-        std::unique_ptr<FontImporterImpl> m_impl;
-
     public:
-        explicit FontImporter( FontImporterDesc desc );
-        ~FontImporter( ) override;
+        FontImporter( );
+        ~FontImporter( );
 
-        [[nodiscard]] ImporterDesc GetImporterInfo( ) const override;
-        [[nodiscard]] bool         CanProcessFileExtension( const InteropString &extension ) const override;
-        ImporterResult             Import( const ImportJobDesc &desc ) override;
-        [[nodiscard]] bool         ValidateFile( const InteropString &filePath ) const override;
+        [[nodiscard]] InteropString      GetName( ) const;
+        [[nodiscard]] InteropStringArray GetSupportedExtensions( ) const;
+        [[nodiscard]] bool               CanProcessFileExtension( const InteropString &extension ) const;
+        ImporterResult                   Import( const FontImportDesc &desc );
+        [[nodiscard]] bool               ValidateFile( const InteropString &filePath ) const;
+
+    private:
+        InteropString                     m_name;
+        InteropStringArray                m_supportedExtensions;
+        std::unique_ptr<FontImporterImpl> m_impl;
     };
 } // namespace DenOfIz

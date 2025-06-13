@@ -27,7 +27,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzExamples/InteropMathConverter.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Import/FontImporter.h"
-#include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
 
 using namespace DenOfIz;
 
@@ -42,7 +41,7 @@ void TextRenderingExample::Init( )
     fontAssetReaderDesc.Reader = m_binaryReader.get( );
     m_fontAssetReader          = std::make_unique<FontAssetReader>( fontAssetReaderDesc );
 
-    m_fontAsset = std::make_unique<FontAsset>( m_fontAssetReader->Read( ) );
+    m_fontAsset = std::unique_ptr<FontAsset>( m_fontAssetReader->Read( ) );
 
     FontDesc fontDesc{ };
     fontDesc.FontAsset = m_fontAsset.get( );
@@ -250,15 +249,13 @@ void TextRenderingExample::ImportFont( ) const
     if ( !FileIO::FileExists( m_fontAssetPath ) )
     {
         spdlog::warn( "Font is missing, running import." );
-        ImportJobDesc importJobDesc;
-        importJobDesc.SourceFilePath  = "Assets/Fonts/Inconsolata-Regular.ttf";
-        importJobDesc.TargetDirectory = "Assets/Fonts/";
 
-        FontImportDesc desc{ }; // Defaults are fine
-        importJobDesc.Desc = &desc;
+        FontImportDesc desc{ };
+        desc.SourceFilePath  = "Assets/Fonts/Inconsolata-Regular.ttf";
+        desc.TargetDirectory = "Assets/Fonts/";
 
-        FontImporter   importer( { } );
-        ImporterResult result = importer.Import( importJobDesc );
+        FontImporter         importer{ };
+        const ImporterResult result = importer.Import( desc );
         if ( result.ResultCode != ImporterResultCode::Success )
         {
             spdlog::error( "Import failed: {}", result.ErrorMessage.Get( ) );

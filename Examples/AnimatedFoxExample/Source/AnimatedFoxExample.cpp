@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzExamples/AnimatedFoxExample.h"
 #include "DenOfIzGraphics/Animation/AnimationStateManager.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphics/Assets/Import/AssimpImporter.h"
 #include "DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetReader.h"
 #include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h"
 #include "DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetReader.h"
@@ -53,17 +54,17 @@ void AnimatedFoxExample::ModifyApiPreferences( APIPreference &apiPreference )
 
 void AnimatedFoxExample::LoadFoxAssets( )
 {
-    InteropString meshPath     = "Assets/Models/Fox_Fox_Mesh.dzmesh";
-    InteropString texturePath  = "Assets/Models/Fox_Texture_Texture.dztex";
-    InteropString skeletonPath = "Assets/Models/Fox_Fox_Skeleton.dzskel";
-    InteropString walkAnimPath = "Assets/Models/Fox_Walk_Animation.dzanim";
-    InteropString runAnimPath  = "Assets/Models/Fox_Run_Animation.dzanim";
+    const InteropString meshPath     = "Assets/Models/Fox_Fox_Mesh.dzmesh";
+    InteropString       texturePath  = "Assets/Models/Fox_Texture_Texture.dztex";
+    const InteropString skeletonPath = "Assets/Models/Fox_Fox_Skeleton.dzskel";
+    const InteropString walkAnimPath = "Assets/Models/Fox_Walk_Animation.dzanim";
+    const InteropString runAnimPath  = "Assets/Models/Fox_Run_Animation.dzanim";
 
     if ( bool assetsExist = FileIO::FileExists( meshPath ) && FileIO::FileExists( skeletonPath ) && FileIO::FileExists( walkAnimPath ) && FileIO::FileExists( runAnimPath );
          !assetsExist )
     {
         spdlog::warn( "One or more fox assets are missing. Attempting to import the model..." );
-        if ( InteropString sourceGltfPath = "Assets/Models/Fox.gltf"; !ImportFoxModel( sourceGltfPath ) )
+        if ( const InteropString sourceGltfPath = "Assets/Models/Fox.gltf"; !ImportFoxModel( sourceGltfPath ) )
         {
             spdlog::critical( "Failed to import fox model!" );
             return;
@@ -129,7 +130,7 @@ void AnimatedFoxExample::LoadFoxAssets( )
     m_indices.Elements    = nullptr;
     m_indices.NumElements = 0;
 
-    MeshVertexArray meshVertices = meshAssetReader.ReadVertices( subMesh.VertexStream );
+    const MeshVertexArray meshVertices = meshAssetReader.ReadVertices( subMesh.VertexStream );
     m_vertices.resize( meshVertices.NumElements );
     for ( size_t i = 0; i < meshVertices.NumElements; ++i )
     {
@@ -306,7 +307,7 @@ void AnimatedFoxExample::Update( )
 
 void AnimatedFoxExample::UpdateBoneTransforms( )
 {
-    Float_4x4Array boneTransforms = m_animationManager->GetModelSpaceTransforms( );
+    const Float_4x4Array boneTransforms = m_animationManager->GetModelSpaceTransforms( );
 
     const size_t numBones = m_animationManager->GetNumJoints( );
     const size_t maxBones = std::min( numBones, static_cast<size_t>( 128 ) );
@@ -432,7 +433,7 @@ void AnimatedFoxExample::HandleEvent( Event &event )
     IExample::HandleEvent( event );
 }
 
-bool AnimatedFoxExample::ImportFoxModel( const InteropString &gltfPath )
+bool AnimatedFoxExample::ImportFoxModel( const InteropString &gltfPath ) const
 {
     if ( !FileIO::FileExists( gltfPath ) )
     {
@@ -440,20 +441,18 @@ bool AnimatedFoxExample::ImportFoxModel( const InteropString &gltfPath )
         return false;
     }
 
-    AssimpImporter importer( { } );
+    const auto importer = std::make_unique<AssimpImporter>( );
 
-    if ( !importer.ValidateFile( gltfPath ) )
+    if ( !importer->ValidateFile( gltfPath ) )
     {
         spdlog::error( "AssimpImporter cannot process the file: {}", gltfPath.Get( ) );
         return false;
     }
 
-    ImportJobDesc importJobDesc;
-    importJobDesc.SourceFilePath  = gltfPath;
-    importJobDesc.TargetDirectory = "Assets/Models/";
-    importJobDesc.AssetNamePrefix = "Fox";
-
     AssimpImportDesc assimpDesc;
+    assimpDesc.SourceFilePath          = gltfPath;
+    assimpDesc.TargetDirectory         = "Assets/Models/";
+    assimpDesc.AssetNamePrefix         = "Fox";
     assimpDesc.ImportMaterials         = true;
     assimpDesc.ImportTextures          = true;
     assimpDesc.ImportSkeletons         = true;
@@ -462,9 +461,7 @@ bool AnimatedFoxExample::ImportFoxModel( const InteropString &gltfPath )
     assimpDesc.MaxBoneWeightsPerVertex = 4;
     assimpDesc.ScaleFactor             = 0.01f;
 
-    importJobDesc.Desc = &assimpDesc;
-
-    ImporterResult result = importer.Import( importJobDesc );
+    const ImporterResult result = importer->Import( assimpDesc );
     if ( result.ResultCode != ImporterResultCode::Success )
     {
         spdlog::error( "Import failed: {}", result.ErrorMessage.Get( ) );

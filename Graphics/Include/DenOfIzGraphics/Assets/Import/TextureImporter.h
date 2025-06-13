@@ -20,60 +20,51 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Assets/Bundle/BundleManager.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
-#include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
+#include "DenOfIzGraphics/Assets/Import/ImporterCommon.h"
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h"
 #include "DenOfIzGraphics/Data/Texture.h"
 
 namespace DenOfIz
 {
-    struct DZ_API TextureImportDesc : ImportDesc
+    struct DZ_API TextureImportDesc
     {
-        // Todo not yet implemented
+        InteropString SourceFilePath;
+        InteropString TargetDirectory;
+        InteropString AssetNamePrefix;
+
         bool GenerateMips        = true;
         bool NormalizeNormalMaps = true;
         bool FlipY               = false;
-
-        TextureImportDesc( ) = default;
-        explicit TextureImportDesc( const ImportDesc &base ) : ImportDesc( base )
-        {
-        }
     };
 
-    struct DZ_API TextureImporterDesc
+    class TextureImporter
     {
-    };
+    public:
+        DZ_API TextureImporter( );
+        DZ_API ~TextureImporter( );
 
-    class TextureImporter final : public IAssetImporter
-    {
-        ImporterDesc              m_importerInfo;
-        const TextureImporterDesc m_desc;
-        std::unique_ptr<Texture>  m_texture = nullptr;
-        std::vector<AssetUri>     m_createdAssets;
+        DZ_API [[nodiscard]] InteropString      GetName( ) const;
+        DZ_API [[nodiscard]] InteropStringArray GetSupportedExtensions( ) const;
+        DZ_API [[nodiscard]] bool               CanProcessFileExtension( const InteropString &extension ) const;
+        DZ_API ImporterResult                   Import( const TextureImportDesc &desc );
+        DZ_API [[nodiscard]] bool               ValidateFile( const InteropString &filePath ) const;
+
+    private:
+        InteropString            m_name;
+        InteropStringArray       m_supportedExtensions;
+        std::unique_ptr<Texture> m_texture = nullptr;
+        std::vector<AssetUri>    m_createdAssets;
 
         struct ImportContext
         {
-            InteropString     SourceFilePath;
-            InteropString     TargetDirectory;
-            InteropString     AssetNamePrefix;
             TextureImportDesc Desc;
             ImporterResult    Result;
             InteropString     ErrorMessage;
             TextureAsset      TextureAsset{ };
         };
 
-    public:
-        DZ_API explicit TextureImporter( TextureImporterDesc desc );
-        DZ_API ~TextureImporter( ) override;
-
-        DZ_API [[nodiscard]] ImporterDesc GetImporterInfo( ) const override;
-        DZ_API [[nodiscard]] bool         CanProcessFileExtension( const InteropString &extension ) const override;
-        DZ_API ImporterResult             Import( const ImportJobDesc &desc ) override;
-        DZ_API [[nodiscard]] bool         ValidateFile( const InteropString &filePath ) const override;
-
-    private:
         ImporterResultCode ImportTextureInternal( ImportContext &context );
         void               WriteTextureAsset( const ImportContext &context, const TextureAsset &textureAsset, AssetUri &outAssetUri ) const;
-
-        void RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri );
+        void               RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri );
     };
 } // namespace DenOfIz

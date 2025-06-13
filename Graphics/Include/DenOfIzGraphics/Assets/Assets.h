@@ -25,11 +25,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "Stream/BinaryReader.h"
 #include "Stream/BinaryWriter.h"
 
-#include "Import/AssetScanner.h"
+#include "Import/ImporterCommon.h"
 #include "Import/AssimpImporter.h"
 #include "Import/FontImporter.h"
-#include "Import/IAssetImporter.h"
 #include "Import/ShaderImporter.h"
+#include "Import/TextureImporter.h"
+#include "Import/VGImporter.h"
 
 #include "Serde/Animation/AnimationAsset.h"
 #include "Serde/Animation/AnimationAssetReader.h"

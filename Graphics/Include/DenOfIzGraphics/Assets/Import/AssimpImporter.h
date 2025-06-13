@@ -19,13 +19,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <memory>
-#include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
+#include "DenOfIzGraphics/Assets/Import/ImporterCommon.h"
 #include "DenOfIzGraphics/Utilities/DZArena.h"
 
 namespace DenOfIz
 {
-    struct DZ_API AssimpImportDesc : ImportDesc
+
+    struct DZ_API AssimpImportDesc
     {
+        InteropString SourceFilePath;
+        InteropString TargetDirectory;
+        InteropString AssetNamePrefix;
+
+        bool ImportMaterials  = true;
+        bool ImportTextures   = true;
+        bool ImportAnimations = true;
+        bool ImportSkeletons  = true;
+
         bool     OverwriteExisting        = true;
         bool     GenerateLODs             = true;
         uint32_t MaxLODCount              = 3;
@@ -47,24 +57,21 @@ namespace DenOfIz
         bool     DropNormals              = false;
         bool     ConvertToLeftHanded      = true; // DenOfIz uses a left handed coordinate system, DirectX12 settings
         bool     CalculateTangentSpace    = true;
-        AssimpImportDesc( )               = default;
-        explicit AssimpImportDesc( const ImportDesc &base ) : ImportDesc( base )
-        {
-        }
+
+        InteropStringArray AdditionalOptions;
     };
 
-    struct DZ_API AssimpImporterDesc{ };
-
-    class AssimpImporter final : public IAssetImporter
+    class AssimpImporter
     {
     public:
-        DZ_API explicit AssimpImporter( AssimpImporterDesc desc );
-        DZ_API ~AssimpImporter( ) override;
+        DZ_API AssimpImporter( );
+        DZ_API ~AssimpImporter( );
 
-        DZ_API [[nodiscard]] ImporterDesc GetImporterInfo( ) const override;
-        DZ_API [[nodiscard]] bool         CanProcessFileExtension( const InteropString &extension ) const override;
-        DZ_API ImporterResult             Import( const ImportJobDesc &desc ) override;
-        DZ_API [[nodiscard]] bool         ValidateFile( const InteropString &filePath ) const override;
+        DZ_API [[nodiscard]] InteropString      GetName( ) const;
+        DZ_API [[nodiscard]] InteropStringArray GetSupportedExtensions( ) const;
+        DZ_API [[nodiscard]] bool               CanProcessFileExtension( const InteropString &extension ) const;
+        DZ_API [[nodiscard]] ImporterResult     Import( const AssimpImportDesc &desc ) const;
+        DZ_API [[nodiscard]] bool               ValidateFile( const InteropString &filePath ) const;
 
     private:
         class Impl;

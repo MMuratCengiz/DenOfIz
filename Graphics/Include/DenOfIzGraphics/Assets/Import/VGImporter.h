@@ -18,14 +18,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
+#include "DenOfIzGraphics/Assets/Import/ImporterCommon.h"
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h"
 #include "DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h"
 
 namespace DenOfIz
 {
-    struct DZ_API VGImportDesc : ImportDesc
+    struct DZ_API VGImportDesc
     {
+        InteropString SourceFilePath;
+        InteropString TargetDirectory;
+        InteropString AssetNamePrefix;
+
         uint32_t      RenderWidth  = 1024;
         uint32_t      RenderHeight = 1024;
         float         Scale        = 1.0f;
@@ -35,31 +39,27 @@ namespace DenOfIz
         ThorVGCanvas *Canvas       = nullptr;
     };
 
-    struct DZ_API VGImporterDesc{ };
-
-    class DZ_API VGImporter final : public IAssetImporter
+    class DZ_API VGImporter
     {
-        VGImporterDesc          m_desc;
-        ImporterDesc            m_importerInfo;
+    public:
+        VGImporter( );
+        ~VGImporter( );
+
+        [[nodiscard]] InteropString      GetName( ) const;
+        [[nodiscard]] InteropStringArray GetSupportedExtensions( ) const;
+        [[nodiscard]] bool               CanProcessFileExtension( const InteropString &extension ) const;
+        ImporterResult                   Import( const VGImportDesc &desc );
+        [[nodiscard]] bool               ValidateFile( const InteropString &filePath ) const;
+
+    private:
+        InteropString           m_name;
+        InteropStringArray      m_supportedExtensions;
         UInt32ArrayView         m_renderBuffer;
         std::vector<AssetUri>   m_createdAssets;
         std::vector<TextureMip> m_mips;
 
-    public:
-        explicit VGImporter( VGImporterDesc desc = { } );
-        ~VGImporter( ) override;
-
-        [[nodiscard]] ImporterDesc GetImporterInfo( ) const override;
-        [[nodiscard]] bool         CanProcessFileExtension( const InteropString &extension ) const override;
-        ImporterResult             Import( const ImportJobDesc &desc ) override;
-        [[nodiscard]] bool         ValidateFile( const InteropString &filePath ) const override;
-
-    private:
         struct ImportContext
         {
-            InteropString  SourceFilePath;
-            InteropString  TargetDirectory;
-            InteropString  AssetNamePrefix;
             VGImportDesc   Desc;
             ImporterResult Result;
             InteropString  ErrorMessage;

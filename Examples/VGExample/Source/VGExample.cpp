@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzExamples/VGExample.h"
 #include "DenOfIzExamples/InteropMathConverter.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
-#include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
 #include "DenOfIzGraphics/Assets/Import/VGImporter.h"
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h"
 #include "DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h"
@@ -252,9 +251,9 @@ void VGExample::CreateStarTexture( )
     std::vector<uint8_t> pixelData;
     pixelData.reserve( width * height * 4 );
 
-    for ( uint32_t i = 0; i < data.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < data.NumElements; ++i )
     {
-        const uint32_t pixel = data.GetElement( i );
+        const uint32_t pixel = data.Elements[ i ];
         const uint8_t  a     = pixel >> 24 & 0xFF;
         const uint8_t  r     = pixel >> 16 & 0xFF;
         const uint8_t  g     = pixel >> 8 & 0xFF;
@@ -339,30 +338,28 @@ void VGExample::ImportSvgIfNeeded( const InteropString &svgPath, const InteropSt
     {
         spdlog::warn( "SVG texture is missing, running import for: {}", svgPath.Get( ) );
 
-        ImportJobDesc importJobDesc;
-        importJobDesc.SourceFilePath  = svgPath;
-        importJobDesc.TargetDirectory = "Assets/Textures/";
-
         VGImportDesc desc{ };
-        desc.RenderWidth   = 1024;
-        desc.RenderHeight  = 1024;
-        desc.Scale         = 1.0f;
-        desc.Padding       = 8;
-        desc.Premultiply   = true;
-        desc.OutputFormat  = Format::R8G8B8A8Unorm;
-        importJobDesc.Desc = &desc;
+        desc.SourceFilePath  = svgPath;
+        desc.TargetDirectory = "Assets/Textures/";
+        desc.AssetNamePrefix = "svg";
+        desc.RenderWidth     = 1024;
+        desc.RenderHeight    = 1024;
+        desc.Scale           = 1.0f;
+        desc.Padding         = 8;
+        desc.Premultiply     = true;
+        desc.OutputFormat    = Format::R8G8B8A8Unorm;
 
-        VGImporter     importer( VGImporterDesc{ } );
-        ImporterResult result = importer.Import( importJobDesc );
+        VGImporter     importer;
+        ImporterResult result = importer.Import( desc );
         if ( result.ResultCode != ImporterResultCode::Success )
         {
             spdlog::critical( "SVG import failed: {}", result.ErrorMessage.Get( ) );
         }
         else
         {
-            for ( size_t i = 0; i < result.CreatedAssets.NumElements( ); ++i )
+            for ( size_t i = 0; i < result.CreatedAssets.NumElements; ++i )
             {
-                AssetUri uri = result.CreatedAssets.GetElement( i );
+                AssetUri uri = result.CreatedAssets.Elements[ i ];
                 spdlog::info( "Created SVG texture asset: {}", uri.Path.Get( ) );
             }
         }

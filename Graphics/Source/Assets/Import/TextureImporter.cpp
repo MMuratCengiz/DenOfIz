@@ -23,7 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Assets/Bundle/BundleManager.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
-#include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h"
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetWriter.h"
 #include "DenOfIzGraphics/Data/Texture.h"
@@ -31,37 +30,46 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-TextureImporter::TextureImporter( const TextureImporterDesc desc ) : m_desc( desc )
+TextureImporter::TextureImporter( ) : m_name( "Texture Importer" )
 {
-    m_importerInfo.Name                              = "Texture Importer";
-    m_importerInfo.SupportedExtensions               = InteropStringArray::Create( 9 );
-    m_importerInfo.SupportedExtensions.Elements[ 0 ] = ".png";
-    m_importerInfo.SupportedExtensions.Elements[ 1 ] = ".jpg";
-    m_importerInfo.SupportedExtensions.Elements[ 2 ] = ".jpeg";
-    m_importerInfo.SupportedExtensions.Elements[ 3 ] = ".bmp";
-    m_importerInfo.SupportedExtensions.Elements[ 4 ] = ".tga";
-    m_importerInfo.SupportedExtensions.Elements[ 5 ] = ".dds";
-    m_importerInfo.SupportedExtensions.Elements[ 6 ] = ".hdr";
-    m_importerInfo.SupportedExtensions.Elements[ 7 ] = ".gif";
-    m_importerInfo.SupportedExtensions.Elements[ 8 ] = ".psd";
+    m_supportedExtensions               = InteropStringArray::Create( 9 );
+    m_supportedExtensions.Elements[ 0 ] = ".png";
+    m_supportedExtensions.Elements[ 1 ] = ".jpg";
+    m_supportedExtensions.Elements[ 2 ] = ".jpeg";
+    m_supportedExtensions.Elements[ 3 ] = ".bmp";
+    m_supportedExtensions.Elements[ 4 ] = ".tga";
+    m_supportedExtensions.Elements[ 5 ] = ".dds";
+    m_supportedExtensions.Elements[ 6 ] = ".hdr";
+    m_supportedExtensions.Elements[ 7 ] = ".gif";
+    m_supportedExtensions.Elements[ 8 ] = ".psd";
 }
 
 TextureImporter::~TextureImporter( )
 {
-    m_importerInfo.SupportedExtensions.Dispose( );
+    m_supportedExtensions.Dispose( );
 }
 
-ImporterDesc TextureImporter::GetImporterInfo( ) const
+InteropString TextureImporter::GetName( ) const
 {
-    return m_importerInfo;
+    return m_name;
+}
+
+InteropStringArray TextureImporter::GetSupportedExtensions( ) const
+{
+    InteropStringArray copy = InteropStringArray::Create( m_supportedExtensions.NumElements );
+    for ( size_t i = 0; i < m_supportedExtensions.NumElements; ++i )
+    {
+        copy.Elements[ i ] = m_supportedExtensions.Elements[ i ];
+    }
+    return copy;
 }
 
 bool TextureImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
     const InteropString lowerExt = extension.ToLower( );
-    for ( size_t i = 0; i < m_importerInfo.SupportedExtensions.NumElements; ++i )
+    for ( size_t i = 0; i < m_supportedExtensions.NumElements; ++i )
     {
-        if ( m_importerInfo.SupportedExtensions.Elements[ i ].Equals( lowerExt ) )
+        if ( m_supportedExtensions.Elements[ i ].Equals( lowerExt ) )
         {
             return true;
         }
@@ -80,40 +88,38 @@ bool TextureImporter::ValidateFile( const InteropString &filePath ) const
     return CanProcessFileExtension( extension );
 }
 
-ImporterResult TextureImporter::Import( const ImportJobDesc &desc )
+ImporterResult TextureImporter::Import( const TextureImportDesc &desc )
 {
     spdlog::info( "Starting texture import for file: {}", desc.SourceFilePath.Get( ) );
 
     ImportContext context;
-    context.SourceFilePath  = desc.SourceFilePath;
-    context.TargetDirectory = desc.TargetDirectory;
-    context.AssetNamePrefix = desc.AssetNamePrefix;
-    context.Desc            = *reinterpret_cast<TextureImportDesc *>( desc.Desc );
+    context.Desc = desc;
 
-    if ( !FileIO::FileExists( context.SourceFilePath ) )
+    if ( !FileIO::FileExists( context.Desc.SourceFilePath ) )
     {
         context.Result.ResultCode   = ImporterResultCode::FileNotFound;
-        context.Result.ErrorMessage = InteropString( "Source file not found: " ).Append( context.SourceFilePath.Get( ) );
+        context.Result.ErrorMessage = InteropString( "Source file not found: " ).Append( context.Desc.SourceFilePath.Get( ) );
         spdlog::error( "{}", context.Result.ErrorMessage.Get( ) );
         return context.Result;
     }
 
-    if ( !FileIO::FileExists( context.TargetDirectory ) )
+    if ( !FileIO::FileExists( context.Desc.TargetDirectory ) )
     {
-        spdlog::info( "Target directory does not exist, attempting to create: {}", context.TargetDirectory.Get( ) );
-        if ( !FileIO::CreateDirectories( context.TargetDirectory ) )
+        spdlog::info( "Target directory does not exist, attempting to create: {}", context.Desc.TargetDirectory.Get( ) );
+        if ( !FileIO::CreateDirectories( context.Desc.TargetDirectory ) )
         {
             context.Result.ResultCode   = ImporterResultCode::WriteFailed;
-            context.Result.ErrorMessage = InteropString( "Failed to create target directory: " ).Append( context.TargetDirectory.Get( ) );
+            context.Result.ErrorMessage = InteropString( "Failed to create target directory: " ).Append( context.Desc.TargetDirectory.Get( ) );
             spdlog::error( "{}", context.Result.ErrorMessage.Get( ) );
             return context.Result;
         }
     }
 
     context.Result.ResultCode = ImportTextureInternal( context );
-    spdlog::info( "Texture import successful for: {}", context.SourceFilePath.Get( ) );
+    spdlog::info( "Texture import successful for: {}", context.Desc.SourceFilePath.Get( ) );
 
-    context.Result.CreatedAssets.NumElements = m_createdAssets.size( );
+    // Copy the created assets to the result
+    context.Result.CreatedAssets.NumElements = static_cast<uint32_t>( m_createdAssets.size( ) );
     context.Result.CreatedAssets.Elements    = m_createdAssets.data( );
 
     return context.Result;
@@ -121,7 +127,7 @@ ImporterResult TextureImporter::Import( const ImportJobDesc &desc )
 
 ImporterResultCode TextureImporter::ImportTextureInternal( ImportContext &context )
 {
-    m_texture = std::make_unique<Texture>( context.SourceFilePath );
+    m_texture = std::make_unique<Texture>( context.Desc.SourceFilePath );
     TextureAsset textureAsset;
     textureAsset.Width     = m_texture->GetWidth( );
     textureAsset.Height    = m_texture->GetHeight( );
@@ -140,10 +146,10 @@ ImporterResultCode TextureImporter::ImportTextureInternal( ImportContext &contex
 
 void TextureImporter::WriteTextureAsset( const ImportContext &context, const TextureAsset &textureAsset, AssetUri &outAssetUri ) const
 {
-    const InteropString         assetName       = AssetPathUtilities::GetAssetNameFromFilePath( context.SourceFilePath );
+    const InteropString         assetName       = AssetPathUtilities::GetAssetNameFromFilePath( context.Desc.SourceFilePath );
     const InteropString         sanitizedName   = AssetPathUtilities::SanitizeAssetName( assetName );
-    const std::filesystem::path targetDirectory = context.TargetDirectory.Get( );
-    const std::filesystem::path fileName        = AssetPathUtilities::CreateAssetFileName( context.AssetNamePrefix, sanitizedName, "texture" ).Get( );
+    const std::filesystem::path targetDirectory = context.Desc.TargetDirectory.Get( );
+    const std::filesystem::path fileName        = AssetPathUtilities::CreateAssetFileName( context.Desc.AssetNamePrefix, sanitizedName, "texture" ).Get( );
     const InteropString         filePath        = ( targetDirectory / fileName ).string( ).c_str( );
 
     BinaryWriter           writer( filePath );

@@ -106,7 +106,7 @@ namespace DenOfIz
 
     private:
         void                              LoadFoxAssets( );
-        bool                              ImportFoxModel( const InteropString &gltfPath );
+        bool                              ImportFoxModel( const InteropString &gltfPath ) const;
         void                              SetupAnimation( );
         void                              CreateBuffers( );
         void                              CreateShaders( );

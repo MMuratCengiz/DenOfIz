@@ -31,15 +31,15 @@ FontAssetReader::FontAssetReader( const FontAssetReaderDesc &desc ) : m_reader( 
 
 FontAssetReader::~FontAssetReader( ) = default;
 
-FontAsset* FontAssetReader::Read( )
+FontAsset *FontAssetReader::Read( )
 {
     if ( m_assetRead )
     {
         return m_fontAsset;
     }
-    m_fontAsset = new FontAsset( );
+    m_fontAsset         = new FontAsset( );
     m_streamStartOffset = m_reader->Position( );
-    m_fontAsset->Magic   = m_reader->ReadUInt64( );
+    m_fontAsset->Magic  = m_reader->ReadUInt64( );
     if ( m_fontAsset->Magic != FontAsset{ }.Magic ) // DZFONT
     {
         spdlog::error( "Invalid font asset magic word" );

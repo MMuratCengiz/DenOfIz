@@ -83,7 +83,7 @@ namespace
     void               WriteFontAsset( const FontImporterImpl::ImportContext &context, AssetUri &outAssetUri );
 } // namespace
 
-FontImporter::FontImporter( const FontImporterDesc desc ) : m_desc( desc ), m_impl( std::make_unique<FontImporterImpl>( ) )
+FontImporter::FontImporter( ) : m_name( "Font Importer" ), m_impl( std::make_unique<FontImporterImpl>( ) )
 {
     if ( const FT_Error error = FT_Init_FreeType( &m_impl->m_ftLibrary ); error != 0 )
     {
@@ -96,11 +96,10 @@ FontImporter::FontImporter( const FontImporterDesc desc ) : m_desc( desc ), m_im
         spdlog::critical( "Failed to initialize MSDF Freetype library" );
     }
 
-    m_importerDesc.Name                              = "Font Importer";
-    m_importerDesc.SupportedExtensions               = InteropStringArray::Create( 3 );
-    m_importerDesc.SupportedExtensions.Elements[ 0 ] = "ttf";
-    m_importerDesc.SupportedExtensions.Elements[ 1 ] = "otf";
-    m_importerDesc.SupportedExtensions.Elements[ 2 ] = "ttc";
+    m_supportedExtensions               = InteropStringArray::Create( 3 );
+    m_supportedExtensions.Elements[ 0 ] = "ttf";
+    m_supportedExtensions.Elements[ 1 ] = "otf";
+    m_supportedExtensions.Elements[ 2 ] = "ttc";
 }
 
 FontImporter::~FontImporter( )
@@ -110,20 +109,30 @@ FontImporter::~FontImporter( )
         msdfgen::deinitializeFreetype( m_impl->m_msdfFtHandle );
         m_impl->m_msdfFtHandle = nullptr;
     }
-    m_importerDesc.SupportedExtensions.Dispose( );
+    m_supportedExtensions.Dispose( );
 }
 
-ImporterDesc FontImporter::GetImporterInfo( ) const
+InteropString FontImporter::GetName( ) const
 {
-    return m_importerDesc;
+    return m_name;
+}
+
+InteropStringArray FontImporter::GetSupportedExtensions( ) const
+{
+    const InteropStringArray copy = InteropStringArray::Create( m_supportedExtensions.NumElements );
+    for ( size_t i = 0; i < m_supportedExtensions.NumElements; ++i )
+    {
+        copy.Elements[ i ] = m_supportedExtensions.Elements[ i ];
+    }
+    return copy;
 }
 
 bool FontImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
     const std::string ext = extension.Get( );
-    for ( size_t i = 0; i < m_importerDesc.SupportedExtensions.NumElements; ++i )
+    for ( size_t i = 0; i < m_supportedExtensions.NumElements; ++i )
     {
-        if ( strcmp( extension.Get( ), m_importerDesc.SupportedExtensions.Elements[ i ].Get( ) ) == 0 )
+        if ( strcmp( extension.Get( ), m_supportedExtensions.Elements[ i ].Get( ) ) == 0 )
         {
             return true;
         }
@@ -131,17 +140,18 @@ bool FontImporter::CanProcessFileExtension( const InteropString &extension ) con
     return false;
 }
 
-ImporterResult FontImporter::Import( const ImportJobDesc &desc )
+ImporterResult FontImporter::Import( const FontImportDesc &desc )
 {
     FontImporterImpl::ImportContext context;
     context.SourceFilePath    = desc.SourceFilePath;
     context.TargetDirectory   = desc.TargetDirectory;
     context.AssetNamePrefix   = desc.AssetNamePrefix;
-    context.Desc              = *reinterpret_cast<FontImportDesc *>( desc.Desc );
+    context.Desc              = desc;
     context.Result.ResultCode = ImporterResultCode::Success;
+    context.FontAsset         = new FontAsset( );
 
     // For MSDF, we need RGB data (3 bytes per pixel) instead of grayscale
-    const size_t atlasSize      = context.Desc.AtlasWidth * context.Desc.AtlasHeight * FontAsset::NumChannels;
+    const size_t atlasSize       = context.Desc.AtlasWidth * context.Desc.AtlasHeight * FontAsset::NumChannels;
     context.FontAsset->AtlasData = ByteArray::Create( atlasSize );
     memset( context.FontAsset->AtlasData.Elements, 0, atlasSize );
 
@@ -154,6 +164,7 @@ ImporterResult FontImporter::Import( const ImportJobDesc &desc )
     {
         context.Result.ResultCode   = result;
         context.Result.ErrorMessage = context.ErrorMessage;
+        delete context.FontAsset;
         return context.Result;
     }
 
@@ -161,9 +172,10 @@ ImporterResult FontImporter::Import( const ImportJobDesc &desc )
     WriteFontAsset( context, fontAssetUri );
     m_impl->m_createdAssets.push_back( fontAssetUri );
 
-    context.Result.CreatedAssets.NumElements = m_impl->m_createdAssets.size( );
+    context.Result.CreatedAssets.NumElements = static_cast<uint32_t>( m_impl->m_createdAssets.size( ) );
     context.Result.CreatedAssets.Elements    = m_impl->m_createdAssets.data( );
 
+    delete context.FontAsset;
     return context.Result;
 }
 
@@ -406,7 +418,7 @@ namespace
         writerDesc.Writer = &writer;
         FontAssetWriter fontWriter( writerDesc );
 
-        FontAsset *msdfFontAsset = context.FontAsset;
+        const FontAsset *msdfFontAsset = context.FontAsset;
         fontWriter.Write( *msdfFontAsset );
         fontWriter.End( );
 

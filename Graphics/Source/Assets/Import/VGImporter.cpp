@@ -27,29 +27,33 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VGImporter::VGImporter( const VGImporterDesc desc ) : m_desc( desc )
+VGImporter::VGImporter( ) : m_name( "Vector Graphics Importer (Simplified)" )
 {
-    m_importerInfo.Name                              = "Vector Graphics Importer (Simplified)";
-    m_importerInfo.SupportedExtensions               = InteropStringArray::Create( 1 );
-    m_importerInfo.SupportedExtensions.Elements[ 0 ] = ".svg";
+    m_supportedExtensions               = InteropStringArray::Create( 1 );
+    m_supportedExtensions.Elements[ 0 ] = ".svg";
 }
 
 VGImporter::~VGImporter( )
 {
-    m_importerInfo.SupportedExtensions.Dispose( );
+    m_supportedExtensions.Dispose( );
 }
 
-ImporterDesc VGImporter::GetImporterInfo( ) const
+InteropString VGImporter::GetName( ) const
 {
-    return m_importerInfo;
+    return m_name;
+}
+
+InteropStringArray VGImporter::GetSupportedExtensions( ) const
+{
+    return m_supportedExtensions;
 }
 
 bool VGImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
     const InteropString lowerExt = extension.ToLower( );
-    for ( size_t i = 0; i < m_importerInfo.SupportedExtensions.NumElements; ++i )
+    for ( size_t i = 0; i < m_supportedExtensions.NumElements; ++i )
     {
-        if ( m_importerInfo.SupportedExtensions.Elements[ i ].Equals( lowerExt ) )
+        if ( m_supportedExtensions.Elements[ i ].Equals( lowerExt ) )
         {
             return true;
         }
@@ -57,17 +61,14 @@ bool VGImporter::CanProcessFileExtension( const InteropString &extension ) const
     return false;
 }
 
-ImporterResult VGImporter::Import( const ImportJobDesc &desc )
+ImporterResult VGImporter::Import( const VGImportDesc &desc )
 {
     spdlog::info( "Starting vector graphics import for file: {}", desc.SourceFilePath.Get( ) );
 
     ImportContext context;
-    context.SourceFilePath  = desc.SourceFilePath;
-    context.TargetDirectory = desc.TargetDirectory;
-    context.AssetNamePrefix = desc.AssetNamePrefix;
-    context.Desc            = *reinterpret_cast<VGImportDesc *>( desc.Desc );
+    context.Desc = desc;
 
-    if ( context.Desc.Canvas && !context.SourceFilePath.IsEmpty( ) )
+    if ( context.Desc.Canvas && !context.Desc.SourceFilePath.IsEmpty( ) )
     {
         context.Result.ResultCode   = ImporterResultCode::InvalidParameters;
         context.Result.ErrorMessage = InteropString( "Cannot specify both Canvas and file path - use one or the other" );
@@ -77,29 +78,29 @@ ImporterResult VGImporter::Import( const ImportJobDesc &desc )
 
     if ( !context.Desc.Canvas )
     {
-        if ( !FileIO::FileExists( context.SourceFilePath ) )
+        if ( !FileIO::FileExists( context.Desc.SourceFilePath ) )
         {
             context.Result.ResultCode   = ImporterResultCode::FileNotFound;
-            context.Result.ErrorMessage = InteropString( "Source file not found: " ).Append( context.SourceFilePath.Get( ) );
+            context.Result.ErrorMessage = InteropString( "Source file not found: " ).Append( context.Desc.SourceFilePath.Get( ) );
             spdlog::error( "{}", context.Result.ErrorMessage.Get( ) );
             return context.Result;
         }
     }
 
-    if ( !FileIO::FileExists( context.TargetDirectory ) )
+    if ( !FileIO::FileExists( context.Desc.TargetDirectory ) )
     {
-        spdlog::info( "Target directory does not exist, attempting to create: {}", context.TargetDirectory.Get( ) );
-        if ( !FileIO::CreateDirectories( context.TargetDirectory ) )
+        spdlog::info( "Target directory does not exist, attempting to create: {}", context.Desc.TargetDirectory.Get( ) );
+        if ( !FileIO::CreateDirectories( context.Desc.TargetDirectory ) )
         {
             context.Result.ResultCode   = ImporterResultCode::WriteFailed;
-            context.Result.ErrorMessage = InteropString( "Failed to create target directory: " ).Append( context.TargetDirectory.Get( ) );
+            context.Result.ErrorMessage = InteropString( "Failed to create target directory: " ).Append( context.Desc.TargetDirectory.Get( ) );
             spdlog::error( "{}", context.Result.ErrorMessage.Get( ) );
             return context.Result;
         }
     }
 
     context.Result.ResultCode = ImportVGInternal( context );
-    spdlog::info( "Vector graphics import successful for: {}", context.SourceFilePath.Get( ) );
+    spdlog::info( "Vector graphics import successful for: {}", context.Desc.SourceFilePath.Get( ) );
     return context.Result;
 }
 
@@ -126,7 +127,7 @@ ImporterResultCode VGImporter::ImportVGInternal( ImportContext &context )
     else
     {
         ThorVGPicture thorPicture;
-        thorPicture.Load( context.SourceFilePath.Get( ) );
+        thorPicture.Load( context.Desc.SourceFilePath.Get( ) );
         if ( context.Desc.RenderWidth != 0 && context.Desc.RenderHeight != 0 )
         {
             thorPicture.SetSize( context.Desc.RenderWidth, context.Desc.RenderHeight );
@@ -167,18 +168,19 @@ ImporterResultCode VGImporter::ImportVGInternal( ImportContext &context )
     AssetUri assetUri;
     WriteTextureAsset( context, context.TextureAsset, assetUri );
     RegisterCreatedAsset( context, assetUri );
-    context.Result.CreatedAssets.NumElements = m_createdAssets.size( );
+    // Copy the created assets to the result
+    context.Result.CreatedAssets.NumElements = static_cast<uint32_t>( m_createdAssets.size( ) );
     context.Result.CreatedAssets.Elements    = m_createdAssets.data( );
     return ImporterResultCode::Success;
 }
 
 void VGImporter::WriteTextureAsset( const ImportContext &context, const TextureAsset &textureAsset, AssetUri &outAssetUri ) const
 {
-    const InteropString assetName     = AssetPathUtilities::GetAssetNameFromFilePath( context.SourceFilePath );
-    InteropString       sanitizedName = AssetPathUtilities::SanitizeAssetName( assetName );
+    const InteropString assetName     = AssetPathUtilities::GetAssetNameFromFilePath( context.Desc.SourceFilePath );
+    const InteropString       sanitizedName = AssetPathUtilities::SanitizeAssetName( assetName );
 
-    const std::filesystem::path targetDirectory = context.TargetDirectory.Get( );
-    const std::filesystem::path fileName        = AssetPathUtilities::CreateAssetFileName( context.AssetNamePrefix, sanitizedName, "dztex" ).Get( );
+    const std::filesystem::path targetDirectory = context.Desc.TargetDirectory.Get( );
+    const std::filesystem::path fileName        = AssetPathUtilities::CreateAssetFileName( context.Desc.AssetNamePrefix, sanitizedName, "dztex" ).Get( );
     const InteropString         filePath        = ( targetDirectory / fileName ).string( ).c_str( );
 
     BinaryWriter           writer( filePath );
@@ -188,8 +190,8 @@ void VGImporter::WriteTextureAsset( const ImportContext &context, const TextureA
     TextureAssetWriter textureWriter( writerDesc );
     textureWriter.Write( textureAsset );
 
-    const uint32_t pixelCount  = context.Desc.RenderWidth * context.Desc.RenderHeight;
-    ByteArray      textureData = ByteArray::Create( pixelCount * 4 );
+    const uint32_t  pixelCount  = context.Desc.RenderWidth * context.Desc.RenderHeight;
+    const ByteArray      textureData = ByteArray::Create( pixelCount * 4 );
 
     for ( uint32_t i = 0; i < pixelCount; ++i )
     {
@@ -219,5 +221,4 @@ void VGImporter::WriteTextureAsset( const ImportContext &context, const TextureA
 void VGImporter::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri )
 {
     m_createdAssets.push_back( assetUri );
-    ;
 }

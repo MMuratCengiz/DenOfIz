@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-FontLibrary::FontLibrary( )
+FontLibrary::FontLibrary( ) : m_fontImporter( std::make_unique<FontImporter>( ) )
 {
     if ( const FT_Error error = FT_Init_FreeType( &m_ftLibrary ) )
     {
@@ -67,16 +67,14 @@ DenOfIz::Font *FontLibrary::LoadFont( const InteropString &ttf )
     BinaryContainer targetContainer{ };
 
     FontImportDesc fontImport{ };
+    fontImport.SourceFilePath  = ttf;
     fontImport.TargetContainer = &targetContainer;
 
-    ImportJobDesc importJob{ };
-    importJob.SourceFilePath = ttf;
-    importJob.Desc           = &fontImport;
-    m_fontImporter.Import( importJob );
+    m_fontImporter->Import( fontImport );
 
     BinaryReader    reader( targetContainer );
     FontAssetReader fontReader( { &reader } );
-    auto           &asset = m_assets.emplace_back( std::unique_ptr<FontAsset>( fontReader.Read( ) ) );
+    const auto     &asset = m_assets.emplace_back( std::unique_ptr<FontAsset>( fontReader.Read( ) ) );
 
     FontDesc desc{ };
     desc.FontAsset = asset.get( );

@@ -297,7 +297,7 @@ using namespace DirectX;
 %include <DenOfIzGraphics/Assets/Vector2d/QuadRenderer.h>
 %include <DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h>
 
-%include <DenOfIzGraphics/Assets/Import/IAssetImporter.h>
+%include <DenOfIzGraphics/Assets/Import/ImporterCommon.h>
 %include <DenOfIzGraphics/Assets/Import/AssetScanner.h>
 %include <DenOfIzGraphics/Assets/Import/AssimpImporter.h>
 %include <DenOfIzGraphics/Assets/Import/FontImporter.h>

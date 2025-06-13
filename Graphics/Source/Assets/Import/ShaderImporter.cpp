@@ -26,34 +26,43 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-ShaderImporter::ShaderImporter( )
+ShaderImporter::ShaderImporter( ) : m_name( "Shader Importer" )
 {
-    m_importerDesc.Name                              = "Shader Importer";
-    m_importerDesc.SupportedExtensions               = InteropStringArray::Create( 7 );
-    m_importerDesc.SupportedExtensions.Elements[ 0 ] = "hlsl";
-    m_importerDesc.SupportedExtensions.Elements[ 1 ] = "vs.hlsl";
-    m_importerDesc.SupportedExtensions.Elements[ 2 ] = "ps.hlsl";
-    m_importerDesc.SupportedExtensions.Elements[ 3 ] = "gs.hlsl";
-    m_importerDesc.SupportedExtensions.Elements[ 4 ] = "hs.hlsl";
-    m_importerDesc.SupportedExtensions.Elements[ 5 ] = "ds.hlsl";
-    m_importerDesc.SupportedExtensions.Elements[ 6 ] = "cs.hlsl";
+    m_supportedExtensions               = InteropStringArray::Create( 7 );
+    m_supportedExtensions.Elements[ 0 ] = "hlsl";
+    m_supportedExtensions.Elements[ 1 ] = "vs.hlsl";
+    m_supportedExtensions.Elements[ 2 ] = "ps.hlsl";
+    m_supportedExtensions.Elements[ 3 ] = "gs.hlsl";
+    m_supportedExtensions.Elements[ 4 ] = "hs.hlsl";
+    m_supportedExtensions.Elements[ 5 ] = "ds.hlsl";
+    m_supportedExtensions.Elements[ 6 ] = "cs.hlsl";
 }
 
 ShaderImporter::~ShaderImporter( )
 {
-    m_importerDesc.SupportedExtensions.Dispose( );
+    m_supportedExtensions.Dispose( );
 }
 
-ImporterDesc ShaderImporter::GetImporterInfo( ) const
+InteropString ShaderImporter::GetName( ) const
 {
-    return m_importerDesc;
+    return m_name;
+}
+
+InteropStringArray ShaderImporter::GetSupportedExtensions( ) const
+{
+    InteropStringArray copy = InteropStringArray::Create( m_supportedExtensions.NumElements );
+    for ( size_t i = 0; i < m_supportedExtensions.NumElements; ++i )
+    {
+        copy.Elements[ i ] = m_supportedExtensions.Elements[ i ];
+    }
+    return copy;
 }
 
 bool ShaderImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
-    for ( int i = 0; i < m_importerDesc.SupportedExtensions.NumElements; ++i )
+    for ( int i = 0; i < m_supportedExtensions.NumElements; ++i )
     {
-        if ( strcmp( extension.Get( ), m_importerDesc.SupportedExtensions.Elements[ i ].Get( ) ) == 0 )
+        if ( strcmp( extension.Get( ), m_supportedExtensions.Elements[ i ].Get( ) ) == 0 )
         {
             return true;
         }
@@ -61,17 +70,11 @@ bool ShaderImporter::CanProcessFileExtension( const InteropString &extension ) c
     return false;
 }
 
-ImporterResult ShaderImporter::Import( const ImportJobDesc &desc )
+ImporterResult ShaderImporter::Import( const ShaderImportDesc &desc )
 {
     ImportContext context;
-    context.JobDesc           = desc;
     context.Result.ResultCode = ImporterResultCode::Success;
-    context.Desc              = *reinterpret_cast<ShaderImportDesc *>( desc.Desc );
-
-    if ( !desc.SourceFilePath.IsEmpty( ) )
-    {
-        spdlog::warn( "ShaderImporter needs all shader stages and all shader files, please use context.Options.ProgramDesc instead." );
-    }
+    context.Desc              = desc;
     if ( context.Desc.ProgramDesc.ShaderStages.NumElements == 0 )
     {
         spdlog::warn( "No Shader Stages provided." );
@@ -91,8 +94,10 @@ ImporterResult ShaderImporter::Import( const ImportJobDesc &desc )
     AssetUri shaderAssetUri;
     WriteShaderAsset( context, shaderAssetUri );
     m_createdAssets.push_back( shaderAssetUri );
-    context.Result.CreatedAssets.NumElements = m_createdAssets.size( );
-    context.Result.CreatedAssets.Elements    = m_createdAssets.data( );
+    
+    // Copy the created assets to the result
+    context.Result.CreatedAssets.NumElements = static_cast<uint32_t>(m_createdAssets.size());
+    context.Result.CreatedAssets.Elements = m_createdAssets.data();
     return context.Result;
 }
 
@@ -117,8 +122,8 @@ void ShaderImporter::WriteShaderAsset( const ImportContext &context, AssetUri &o
 {
     InteropString       assetName           = GetAssetName( context );
     const InteropString sanitizedName       = AssetPathUtilities::SanitizeAssetName( assetName );
-    const InteropString shaderAssetFileName = AssetPathUtilities::CreateAssetFileName( context.JobDesc.AssetNamePrefix, sanitizedName, ShaderAsset::Extension( ) );
-    std::string         outputPath          = context.JobDesc.TargetDirectory.Get( );
+    const InteropString shaderAssetFileName = AssetPathUtilities::CreateAssetFileName( context.Desc.OutputShaderName, sanitizedName, ShaderAsset::Extension( ) );
+    std::string         outputPath          = context.Desc.TargetDirectory.Get( );
     if ( !outputPath.empty( ) && outputPath.back( ) != '/' && outputPath.back( ) != '\\' )
     {
         outputPath += '/';

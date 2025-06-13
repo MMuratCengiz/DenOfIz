@@ -18,30 +18,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <mutex>
-#include <unordered_map>
-#include <vector>
-#include "DenOfIzGraphics/Assets/Import/FontImporter.h"
+#include "DenOfIzGraphics/Assets/Serde/Asset.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
-#include "Font.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 
 namespace DenOfIz
 {
-    class FontLibrary
+    enum class ImporterResultCode
     {
-        std::unique_ptr<FontImporter> m_fontImporter;
-
-        FT_Library m_ftLibrary{ };
-        std::mutex m_mutex;
-
-        std::vector<std::unique_ptr<FontAsset>>                m_assets;
-        std::vector<std::unique_ptr<Font>>                     m_fontStore;
-        std::unordered_map<std::string, std::unique_ptr<Font>> m_fonts;
-
-    public:
-        DZ_API FontLibrary( );
-        DZ_API ~FontLibrary( );
-        DZ_API Font *LoadFont( const FontDesc &desc );
-        DZ_API Font *LoadFont( const InteropString &ttf );
+        Success,
+        FileNotFound,
+        UnsupportedFormat,
+        ImportFailed,
+        WriteFailed,
+        InvalidParameters,
+        ResourceUnavailable
     };
+
+    struct DZ_API ImporterResult
+    {
+        ImporterResultCode     ResultCode = ImporterResultCode::Success;
+        InteropString          ErrorMessage;
+        AssetUriArray          CreatedAssets;
+    };
+
 } // namespace DenOfIz

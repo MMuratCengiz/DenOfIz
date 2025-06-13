@@ -56,10 +56,8 @@ using namespace DenOfIz;
 class AssimpImporter::Impl
 {
 public:
-    ImporterDesc             m_importerInfo;
-    DZArena                  m_arena{ 8192 };
-    std::vector<AssetUri>    m_createdAssets;
-    const AssimpImporterDesc m_desc;
+    DZArena               m_arena{ 80000 };
+    std::vector<AssetUri> m_createdAssets;
 
     struct ImportContext
     {
@@ -80,41 +78,18 @@ public:
         AssetUri                                     SkeletonAssetUri;
         uint32_t                                     CurrentSubMeshIndex = 0;
         MeshAsset                                    MeshAsset{ };
+        DZArena                                     *Arena = nullptr;
     };
 
-    explicit Impl( AssimpImporterDesc desc ) : m_desc( std::move( desc ) )
+    explicit Impl( )
     {
-        m_importerInfo.Name                               = "Assimp Importer";
-        m_importerInfo.SupportedExtensions                = InteropStringArray::Create( 20 );
-        m_importerInfo.SupportedExtensions.Elements[ 0 ]  = ".fbx";
-        m_importerInfo.SupportedExtensions.Elements[ 1 ]  = ".gltf";
-        m_importerInfo.SupportedExtensions.Elements[ 2 ]  = ".glb";
-        m_importerInfo.SupportedExtensions.Elements[ 3 ]  = ".obj";
-        m_importerInfo.SupportedExtensions.Elements[ 4 ]  = ".dae";
-        m_importerInfo.SupportedExtensions.Elements[ 5 ]  = ".blend";
-        m_importerInfo.SupportedExtensions.Elements[ 6 ]  = ".3ds";
-        m_importerInfo.SupportedExtensions.Elements[ 7 ]  = ".ase";
-        m_importerInfo.SupportedExtensions.Elements[ 8 ]  = ".ifc";
-        m_importerInfo.SupportedExtensions.Elements[ 9 ]  = ".xgl";
-        m_importerInfo.SupportedExtensions.Elements[ 10 ] = ".zgl";
-        m_importerInfo.SupportedExtensions.Elements[ 11 ] = ".ply";
-        m_importerInfo.SupportedExtensions.Elements[ 12 ] = ".dxf";
-        m_importerInfo.SupportedExtensions.Elements[ 13 ] = ".lwo";
-        m_importerInfo.SupportedExtensions.Elements[ 14 ] = ".lws";
-        m_importerInfo.SupportedExtensions.Elements[ 15 ] = ".lxo";
-        m_importerInfo.SupportedExtensions.Elements[ 16 ] = ".stl";
-        m_importerInfo.SupportedExtensions.Elements[ 17 ] = ".x";
-        m_importerInfo.SupportedExtensions.Elements[ 18 ] = ".ac";
-        m_importerInfo.SupportedExtensions.Elements[ 19 ] = ".ms3d";
     }
 
-    ~Impl( )
-    {
-        m_importerInfo.SupportedExtensions.Dispose( );
-    }
+    ~Impl( ) = default;
 
     ImporterResultCode ImportSceneInternal( ImportContext &context );
-    ImporterResultCode ProcessNode( ImportContext &context, const aiNode *node, MeshAssetWriter *meshWriter, SkeletonAsset &skeletonAsset, int32_t parentJointIndex = -1 );
+    ImporterResultCode ProcessNode( ImportContext &context, const aiNode *node, MeshAssetWriter *meshWriter, SkeletonAsset &skeletonAsset, int32_t parentJointIndex,
+                                    uint32_t &jointIndex );
     ImporterResultCode ProcessMesh( ImportContext &context, const aiMesh *mesh, MeshAssetWriter &assetWriter ) const;
     void               ProcessMaterial( ImportContext &context, const aiMaterial *material );
     bool               ProcessTexture( ImportContext &context, const aiMaterial *material, aiTextureType textureType, const InteropString &semanticName, AssetUri &outAssetUri );
@@ -122,6 +97,7 @@ public:
 
     void ConfigureAssimpImportFlags( const AssimpImportDesc &options, unsigned int &flags, Assimp::Importer &importer ) const;
     void CalculateMeshBounds( const aiMesh *mesh, float scaleFactor, Float_3 &outMin, Float_3 &outMax ) const;
+    void CountBones( const aiNode *node, const std::unordered_map<std::string, uint32_t> &boneNameToIndexMap, uint32_t &numJoints );
 
     void WriteMaterialAsset( ImportContext &context, MaterialAsset &materialAsset, AssetUri &outAssetUri );
     void WriteTextureAsset( ImportContext &context, const aiTexture *texture, const std::string &path, const InteropString &semanticName, AssetUri &outAssetUri );
@@ -138,27 +114,56 @@ public:
     void GenerateMeshLODs( const ImportContext &context, MeshAssetWriter &meshWriter ) const;
 };
 
-AssimpImporter::AssimpImporter( AssimpImporterDesc desc ) : m_pImpl( std::make_unique<Impl>( std::move( desc ) ) )
+AssimpImporter::AssimpImporter( ) : m_pImpl( std::make_unique<Impl>( ) )
 {
 }
 
 AssimpImporter::~AssimpImporter( ) = default;
 
-ImporterDesc AssimpImporter::GetImporterInfo( ) const
+InteropString AssimpImporter::GetName( ) const
 {
-    return m_pImpl->m_importerInfo;
+    return "Assimp Importer";
+}
+
+InteropStringArray AssimpImporter::GetSupportedExtensions( ) const
+{
+    const InteropStringArray extensions = InteropStringArray::Create( 20 );
+    extensions.Elements[ 0 ]            = ".fbx";
+    extensions.Elements[ 1 ]            = ".gltf";
+    extensions.Elements[ 2 ]            = ".glb";
+    extensions.Elements[ 3 ]            = ".obj";
+    extensions.Elements[ 4 ]            = ".dae";
+    extensions.Elements[ 5 ]            = ".blend";
+    extensions.Elements[ 6 ]            = ".3ds";
+    extensions.Elements[ 7 ]            = ".ase";
+    extensions.Elements[ 8 ]            = ".ifc";
+    extensions.Elements[ 9 ]            = ".xgl";
+    extensions.Elements[ 10 ]           = ".zgl";
+    extensions.Elements[ 11 ]           = ".ply";
+    extensions.Elements[ 12 ]           = ".dxf";
+    extensions.Elements[ 13 ]           = ".lwo";
+    extensions.Elements[ 14 ]           = ".lws";
+    extensions.Elements[ 15 ]           = ".lxo";
+    extensions.Elements[ 16 ]           = ".stl";
+    extensions.Elements[ 17 ]           = ".x";
+    extensions.Elements[ 18 ]           = ".ac";
+    extensions.Elements[ 19 ]           = ".ms3d";
+    return extensions;
 }
 
 bool AssimpImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
-    const InteropString lowerExt = extension.ToLower( );
-    for ( size_t i = 0; i < m_pImpl->m_importerInfo.SupportedExtensions.NumElements; ++i )
+    const InteropString      lowerExt   = extension.ToLower( );
+    const InteropStringArray extensions = GetSupportedExtensions( );
+    for ( size_t i = 0; i < extensions.NumElements; ++i )
     {
-        if ( m_pImpl->m_importerInfo.SupportedExtensions.Elements[ i ].Equals( lowerExt ) )
+        if ( extensions.Elements[ i ].Equals( lowerExt ) )
         {
+            extensions.Dispose( );
             return true;
         }
     }
+    extensions.Dispose( );
     return false;
 }
 
@@ -171,7 +176,7 @@ bool AssimpImporter::ValidateFile( const InteropString &filePath ) const
     return aiIsExtensionSupported( AssetPathUtilities::GetFileExtension( filePath ).Get( ) );
 }
 
-ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
+ImporterResult AssimpImporter::Import( const AssimpImportDesc &desc ) const
 {
     spdlog::info( "Starting Assimp import for file: {}", desc.SourceFilePath.Get( ) );
 
@@ -179,7 +184,8 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
     context.SourceFilePath  = desc.SourceFilePath;
     context.TargetDirectory = desc.TargetDirectory;
     context.AssetNamePrefix = desc.AssetNamePrefix;
-    context.Desc            = *static_cast<AssimpImportDesc *>( desc.Desc );
+    context.Desc            = desc;
+    context.Arena           = &m_pImpl->m_arena;
     DZArenaArrayHelper<AssetUriArray, AssetUri>::AllocateAndConstructArray( m_pImpl->m_arena, context.Result.CreatedAssets, 1 );
     if ( !FileIO::FileExists( context.SourceFilePath ) )
     {
@@ -277,7 +283,15 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
     if ( context.Desc.ImportSkeletons && !context.BoneNameToIndexMap.empty( ) )
     {
         spdlog::info( "Phase 3: Building skeleton hierarchy..." );
-        if ( const ImporterResultCode result = ProcessNode( context, context.Scene->mRootNode, nullptr, skeletonAsset ); result != ImporterResultCode::Success )
+
+        uint32_t numJoints = 0;
+        CountBones( context.Scene->mRootNode, context.BoneNameToIndexMap, numJoints );
+
+        skeletonAsset._Arena.EnsureCapacity( 16192 );
+        DZArenaArrayHelper<JointArray, Joint>::AllocateAndConstructArray( skeletonAsset._Arena, skeletonAsset.Joints, numJoints );
+
+        uint32_t jointIndex = 0;
+        if ( const ImporterResultCode result = ProcessNode( context, context.Scene->mRootNode, nullptr, skeletonAsset, -1, jointIndex ); result != ImporterResultCode::Success )
         {
             spdlog::error( "Failed to build skeleton hierarchy" );
             return result;
@@ -448,7 +462,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
 }
 
 ImporterResultCode AssimpImporter::Impl::ProcessNode( ImportContext &context, const aiNode *node, MeshAssetWriter *meshWriter, SkeletonAsset &skeletonAsset,
-                                                      int32_t parentJointIndex )
+                                                      int32_t parentJointIndex, uint32_t &jointIndex )
 {
     if ( !node )
     {
@@ -472,8 +486,10 @@ ImporterResultCode AssimpImporter::Impl::ProcessNode( ImportContext &context, co
 
         if ( !alreadyAdded )
         {
-            currentJointIndex = skeletonAsset.Joints.NumElements;
-            Joint joint;
+            currentJointIndex = jointIndex;
+            jointIndex++;
+
+            Joint &joint      = skeletonAsset.Joints.Elements[ currentJointIndex ];
             joint.Name        = nodeNameStr.c_str( );
             joint.Index       = currentJointIndex;
             joint.ParentIndex = parentJointIndex;
@@ -501,27 +517,11 @@ ImporterResultCode AssimpImporter::Impl::ProcessNode( ImportContext &context, co
                 spdlog::warn( "Inverse bind matrix not found in map for joint: {} . Using identity.", joint.Name.Get( ) ); /* Set identity */
             }
 
-            size_t newJointCount = skeletonAsset.Joints.NumElements + 1;
-            Joint *newJoints     = DZArenaAllocator<Joint>::Allocate( skeletonAsset._Arena, newJointCount );
-
-            if ( skeletonAsset.Joints.Elements )
-            {
-                for ( size_t i = 0; i < skeletonAsset.Joints.NumElements; ++i )
-                {
-                    newJoints[ i ] = skeletonAsset.Joints.Elements[ i ];
-                }
-            }
-
-            newJoints[ skeletonAsset.Joints.NumElements ] = joint;
-
-            skeletonAsset.Joints.Elements    = newJoints;
-            skeletonAsset.Joints.NumElements = static_cast<uint32_t>( newJointCount );
-
             if ( parentJointIndex >= 0 && parentJointIndex < static_cast<int32_t>( skeletonAsset.Joints.NumElements ) )
             {
                 UInt32Array &parentChildIndices = skeletonAsset.Joints.Elements[ parentJointIndex ].ChildIndices;
                 size_t       newChildCount      = parentChildIndices.NumElements + 1;
-                uint32_t    *newChildIndices    = DZArenaAllocator<uint32_t>::Allocate( skeletonAsset._Arena, newChildCount );
+                uint32_t    *newChildIndices    = DZArenaAllocator<uint32_t>::AllocateAndConstruct( skeletonAsset._Arena, newChildCount );
 
                 if ( parentChildIndices.Elements )
                 {
@@ -592,7 +592,7 @@ ImporterResultCode AssimpImporter::Impl::ProcessNode( ImportContext &context, co
 
     for ( unsigned int i = 0; i < node->mNumChildren; ++i )
     {
-        if ( const ImporterResultCode childResult = ProcessNode( context, node->mChildren[ i ], meshWriter, skeletonAsset, currentJointIndex );
+        if ( const ImporterResultCode childResult = ProcessNode( context, node->mChildren[ i ], meshWriter, skeletonAsset, currentJointIndex, jointIndex );
              childResult != ImporterResultCode::Success )
         {
             return childResult;
@@ -993,6 +993,25 @@ void AssimpImporter::Impl::CalculateMeshBounds( const aiMesh *mesh, const float 
         outMax.X *= scaleFactor;
         outMax.Y *= scaleFactor;
         outMax.Z *= scaleFactor;
+    }
+}
+
+void AssimpImporter::Impl::CountBones( const aiNode *node, const std::unordered_map<std::string, uint32_t> &boneNameToIndexMap, uint32_t &numJoints )
+{
+    if ( !node )
+    {
+        return;
+    }
+
+    const std::string nodeNameStr = node->mName.C_Str( );
+    if ( boneNameToIndexMap.contains( nodeNameStr ) )
+    {
+        numJoints++;
+    }
+
+    for ( unsigned int i = 0; i < node->mNumChildren; ++i )
+    {
+        CountBones( node->mChildren[ i ], boneNameToIndexMap, numJoints );
     }
 }
 
