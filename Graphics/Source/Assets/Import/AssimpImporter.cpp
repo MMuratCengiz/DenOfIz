@@ -1260,8 +1260,6 @@ Float_4 AssimpImporter::Impl::ConvertColor( const aiColor4D &color ) const
     return { color.r, color.g, color.b, color.a };
 }
 
-// File path utility methods moved to FilePathUtilities class
-
 void AssimpImporter::Impl::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri )
 {
     m_createdAssets.push_back( assetUri );

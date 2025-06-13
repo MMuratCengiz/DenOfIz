@@ -131,12 +131,12 @@ namespace DenOfIz
     /// Use either Path or Data, Data takes priority if both are provided
     struct DZ_API ShaderStageDesc
     {
-        ShaderStage                 Stage;
-        CodePage                    CodePage;
-        InteropString               Path;
-        ByteArray                   Data;
-        InteropArray<InteropString> Defines;
-        InteropString               EntryPoint = "main";
+        ShaderStage   Stage;
+        CodePage      CodePage;
+        InteropString Path;
+        ByteArray     Data;
+        StringArray   Defines;
+        InteropString EntryPoint = "main";
         /// \brief Only available for Raygen, Miss and Hit shaders(Intersection, ClosestHit, AnyHit)
         RayTracingShaderDesc RayTracing;
         BindlessDesc         Bindless;

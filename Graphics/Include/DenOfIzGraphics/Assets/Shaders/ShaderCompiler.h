@@ -8,13 +8,13 @@ namespace DenOfIz
 {
     struct DZ_API CompileDesc
     {
-        InteropString               Path;
-        CodePage                    CodePage;
-        ByteArray                   Data;
-        InteropString               EntryPoint = "main";
-        ShaderStage                 Stage;
-        TargetIL                    TargetIL;
-        InteropArray<InteropString> Defines;
+        InteropString Path;
+        CodePage      CodePage;
+        ByteArray     Data;
+        InteropString EntryPoint = "main";
+        ShaderStage   Stage;
+        TargetIL      TargetIL;
+        StringArray   Defines;
     };
 
     struct DZ_API CompileResult

@@ -245,11 +245,14 @@ CompileResult ShaderCompiler::Impl::CompileHLSL( const CompileDesc &compileDesc 
         arguments.push_back( L"-fspv-debug=line" );
         arguments.push_back( L"-fvk-support-nonzero-base-instance" );
     }
-    for ( int i = 0; i < compileDesc.Defines.NumElements( ); ++i )
+
+    std::vector<std::string> defines( compileDesc.Defines.NumElements );
+    for ( int i = 0; i < compileDesc.Defines.NumElements; ++i )
     {
-        const auto &define = compileDesc.Defines.GetElement( i );
+        auto               strView   = compileDesc.Defines.Elements[ i ];
+        const std::string &defineStr = defines.emplace_back( strView.Chars, strView.Length );
         arguments.push_back( L"-D" );
-        arguments.push_back( reinterpret_cast<LPCWSTR>( define.Get( ) ) );
+        arguments.push_back( reinterpret_cast<LPCWSTR>( defineStr.c_str( ) ) );
     }
     arguments.push_back( L"-HV" );
     arguments.push_back( L"2021" );
