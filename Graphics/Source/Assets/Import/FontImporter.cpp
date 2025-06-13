@@ -72,15 +72,24 @@ namespace DenOfIz
 
             msdfgen::FontHandle *MsdfFont = nullptr;
         };
+
+        struct FontStats
+        {
+            uint32_t GlyphCount         = 0;
+            uint32_t AtlasWidth         = 0;
+            uint32_t AtlasHeight        = 0;
+            size_t   EstimatedArenaSize = 0;
+        };
     };
 } // namespace DenOfIz
 
 namespace
 {
-    ImporterResultCode ImportFontInternal( const FontImporterImpl &impl, FontImporterImpl::ImportContext &context );
-    void               ExtractFontMetrics( const FontImporterImpl::ImportContext &context, FT_Face face );
-    void               GenerateAtlas( const FontImporterImpl &impl, FontImporterImpl::ImportContext &context );
-    void               WriteFontAsset( const FontImporterImpl::ImportContext &context, AssetUri &outAssetUri );
+    ImporterResultCode          ImportFontInternal( const FontImporterImpl &impl, FontImporterImpl::ImportContext &context );
+    void                        ExtractFontMetrics( const FontImporterImpl::ImportContext &context, FT_Face face );
+    void                        GenerateAtlas( const FontImporterImpl &impl, FontImporterImpl::ImportContext &context );
+    void                        WriteFontAsset( const FontImporterImpl::ImportContext &context, AssetUri &outAssetUri );
+    FontImporterImpl::FontStats CalculateFontStats( const FontImporterImpl &impl, const FontImportDesc &desc );
 } // namespace
 
 FontImporter::FontImporter( ) : m_name( "Font Importer" ), m_impl( std::make_unique<FontImporterImpl>( ) )
@@ -142,6 +151,8 @@ bool FontImporter::CanProcessFileExtension( const InteropString &extension ) con
 
 ImporterResult FontImporter::Import( const FontImportDesc &desc ) const
 {
+    const FontImporterImpl::FontStats stats = CalculateFontStats( *m_impl, desc );
+
     FontImporterImpl::ImportContext context;
     context.SourceFilePath    = desc.SourceFilePath;
     context.TargetDirectory   = desc.TargetDirectory;
@@ -149,16 +160,16 @@ ImporterResult FontImporter::Import( const FontImportDesc &desc ) const
     context.Desc              = desc;
     context.Result.ResultCode = ImporterResultCode::Success;
     context.FontAsset         = new FontAsset( );
+    context.FontAsset->_Arena.EnsureCapacity( stats.EstimatedArenaSize );
 
-    // For MSDF, we need RGB data (3 bytes per pixel) instead of grayscale
-    const size_t atlasSize       = context.Desc.AtlasWidth * context.Desc.AtlasHeight * FontAsset::NumChannels;
+    const size_t atlasSize       = stats.AtlasWidth * stats.AtlasHeight * FontAsset::NumChannels;
     context.FontAsset->AtlasData = ByteArray::Create( atlasSize );
     memset( context.FontAsset->AtlasData.Elements, 0, atlasSize );
 
     context.FontAsset->InitialFontSize   = context.Desc.InitialFontSize;
-    context.FontAsset->AtlasWidth        = context.Desc.AtlasWidth;
-    context.FontAsset->AtlasHeight       = context.Desc.AtlasHeight;
-    context.FontAsset->NumAtlasDataBytes = context.Desc.AtlasWidth * context.Desc.AtlasHeight * FontAsset::NumChannels;
+    context.FontAsset->AtlasWidth        = stats.AtlasWidth;
+    context.FontAsset->AtlasHeight       = stats.AtlasHeight;
+    context.FontAsset->NumAtlasDataBytes = atlasSize;
 
     if ( const ImporterResultCode result = ImportFontInternal( *m_impl, context ); result != ImporterResultCode::Success )
     {
@@ -195,6 +206,64 @@ bool FontImporter::ValidateFile( const InteropString &filePath ) const
 
 namespace
 {
+    FontImporterImpl::FontStats CalculateFontStats( const FontImporterImpl &impl, const FontImportDesc &desc )
+    {
+        FontImporterImpl::FontStats stats;
+
+        const std::string    resolvedPath = PathResolver::ResolvePath( desc.SourceFilePath.Get( ) );
+        const ByteArray      fontData     = FileIO::ReadFile( InteropString( resolvedPath.c_str( ) ) );
+        msdfgen::FontHandle *msdfFont     = msdfgen::loadFontData( impl.m_msdfFtHandle, fontData.Elements, fontData.NumElements );
+        if ( !msdfFont )
+        {
+            spdlog::warn( "Failed to load font for pre-calculation, using default estimates" );
+            stats.GlyphCount  = 128; // ASCII charset estimate
+            stats.AtlasWidth  = desc.AtlasWidth;
+            stats.AtlasHeight = desc.AtlasHeight;
+        }
+        else
+        {
+            std::vector<msdf_atlas::GlyphGeometry> glyphs;
+            msdf_atlas::FontGeometry               fontGeometry( &glyphs );
+            fontGeometry.loadCharset( msdfFont, 1.0, msdf_atlas::Charset::ASCII );
+
+            stats.GlyphCount = 0;
+            for ( const auto &glyph : glyphs )
+            {
+                if ( !glyph.isWhitespace( ) )
+                {
+                    stats.GlyphCount++;
+                }
+            }
+            stats.GlyphCount++; // ' '
+            for ( auto &glyph : glyphs )
+            {
+                constexpr double maxCornerAngle = 3.0;
+                glyph.edgeColoring( &msdfgen::edgeColoringByDistance, maxCornerAngle, 0 );
+            }
+
+            msdf_atlas::TightAtlasPacker packer;
+            packer.setDimensionsConstraint( msdf_atlas::DimensionsConstraint::SQUARE );
+            packer.setMinimumScale( desc.InitialFontSize );
+            packer.setPixelRange( Font::MsdfPixelRange );
+            packer.setMiterLimit( 1.0 );
+            packer.pack( glyphs.data( ), glyphs.size( ) );
+
+            int width = 0, height = 0;
+            packer.getDimensions( width, height );
+            stats.AtlasWidth  = static_cast<uint32_t>( width );
+            stats.AtlasHeight = static_cast<uint32_t>( height );
+
+            msdfgen::destroyFont( msdfFont );
+        }
+
+        fontData.Dispose( );
+
+        stats.EstimatedArenaSize = sizeof( FontGlyph ) * stats.GlyphCount;
+        stats.EstimatedArenaSize += sizeof( UserProperty ) * 10;
+        stats.EstimatedArenaSize += 4096;
+        return stats;
+    }
+
     ImporterResultCode ImportFontInternal( const FontImporterImpl &impl, FontImporterImpl::ImportContext &context )
     {
         FT_Face           face;
@@ -279,6 +348,20 @@ namespace
         int width = 0, height = 0;
         packer.getDimensions( width, height );
 
+        if ( width != static_cast<int>( context.FontAsset->AtlasWidth ) || height != static_cast<int>( context.FontAsset->AtlasHeight ) )
+        {
+            spdlog::warn( "Atlas dimensions mismatch - expected {}x{}, got {}x{}", context.FontAsset->AtlasWidth, context.FontAsset->AtlasHeight, width, height );
+            if ( static_cast<size_t>( width * height * FontAsset::NumChannels ) > context.FontAsset->AtlasData.NumElements )
+            {
+                context.FontAsset->AtlasData.Dispose( );
+                context.FontAsset->AtlasWidth        = width;
+                context.FontAsset->AtlasHeight       = height;
+                context.FontAsset->NumAtlasDataBytes = width * height * FontAsset::NumChannels;
+                context.FontAsset->AtlasData         = ByteArray::Create( context.FontAsset->NumAtlasDataBytes );
+                memset( context.FontAsset->AtlasData.Elements, 0, context.FontAsset->NumAtlasDataBytes );
+            }
+        }
+
         msdf_atlas::GeneratorAttributes attributes;
         attributes.config.overlapSupport = true;
         attributes.scanlinePass          = true;
@@ -291,17 +374,6 @@ namespace
         generator.generate( glyphs.data( ), glyphs.size( ) );
 
         const auto &atlasStorage = generator.atlasStorage( );
-
-        // Resize atlas if necessary
-        if ( width != static_cast<int>( context.FontAsset->AtlasWidth ) || height != static_cast<int>( context.FontAsset->AtlasHeight ) )
-        {
-            context.FontAsset->AtlasData.Dispose( );
-            context.FontAsset->AtlasWidth        = width;
-            context.FontAsset->AtlasHeight       = height;
-            context.FontAsset->NumAtlasDataBytes = width * height * FontAsset::NumChannels;
-            context.FontAsset->AtlasData         = ByteArray::Create( context.FontAsset->NumAtlasDataBytes );
-            memset( context.FontAsset->AtlasData.Elements, 0, context.FontAsset->NumAtlasDataBytes );
-        }
 
         const msdfgen::BitmapConstRef<msdfgen::byte, 4> &bitmap    = atlasStorage;
         const msdfgen::byte                             *pixels    = bitmap.pixels;

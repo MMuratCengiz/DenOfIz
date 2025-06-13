@@ -25,6 +25,6 @@ BinaryContainer::~BinaryContainer( ) = default;
 
 ByteArrayView BinaryContainer::GetData( ) const
 {
-    const size_t len = m_stream.str( ).size( );
-    return ByteArrayView( reinterpret_cast<const Byte *>( m_stream.str( ).c_str( ) ), len );
+    m_cachedData = m_stream.str( );
+    return ByteArrayView( reinterpret_cast<const Byte *>( m_cachedData.c_str( ) ), m_cachedData.size( ) );
 }

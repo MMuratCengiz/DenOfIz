@@ -28,6 +28,7 @@ namespace DenOfIz
     class BinaryContainer
     {
         std::stringstream m_stream;
+        mutable std::string m_cachedData; // Cache the string data to avoid dangling pointer
 
         friend class BinaryWriter;
         friend class BinaryReader;
