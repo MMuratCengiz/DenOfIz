@@ -20,8 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <utility>
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12EnumConverter.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12Fence.h"
-#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 typedef size_t i;
 using namespace DenOfIz;
@@ -182,21 +182,19 @@ void DX12BufferResource::UnmapMemory( )
     m_mappedMemory = nullptr;
 }
 
-InteropArray<Byte> DX12BufferResource::GetData( ) const
+ByteArray DX12BufferResource::GetData( ) const
 {
-    InteropArray<Byte> data( m_numBytes );
-    std::memcpy( data.Data( ), m_mappedMemory, m_numBytes );
-    return std::move( data );
+    return { static_cast<Byte *>( m_mappedMemory ), m_numBytes };
 }
 
-void DX12BufferResource::SetData( const InteropArray<Byte> &data, const bool keepMapped )
+void DX12BufferResource::SetData( const ByteArrayView &data, const bool keepMapped )
 {
     if ( m_mappedMemory == nullptr )
     {
         MapMemory( );
     }
 
-    std::memcpy( m_mappedMemory, data.Data( ), data.NumElements( ) );
+    std::memcpy( m_mappedMemory, data.Elements, data.NumElements );
 
     if ( !keepMapped )
     {
@@ -204,14 +202,14 @@ void DX12BufferResource::SetData( const InteropArray<Byte> &data, const bool kee
     }
 }
 
-void DX12BufferResource::WriteData( const InteropArray<Byte> &data, const uint32_t bufferOffset )
+void DX12BufferResource::WriteData( const ByteArrayView &data, const uint32_t bufferOffset )
 {
     if ( m_mappedMemory == nullptr )
     {
         MapMemory( );
     }
 
-    std::memcpy( static_cast<Byte *>( m_mappedMemory ) + bufferOffset, data.Data( ), data.NumElements( ) );
+    std::memcpy( static_cast<Byte *>( m_mappedMemory ) + bufferOffset, data.Elements, data.NumElements );
 }
 
 DX12BufferResource::~DX12BufferResource( )

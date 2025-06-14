@@ -102,21 +102,19 @@ void MetalBufferResource::UnmapMemory( )
     m_mappedMemory = nullptr;
 }
 
-InteropArray<Byte> MetalBufferResource::GetData( ) const
+ByteArray MetalBufferResource::GetData( ) const
 {
-    InteropArray<Byte> data( m_numBytes );
-    std::memcpy( data.Data( ), m_mappedMemory, m_numBytes );
-    return std::move( data );
+    return { static_cast<Byte *>( m_mappedMemory ), m_numBytes };
 }
 
-void MetalBufferResource::SetData( const InteropArray<Byte> &data, bool keepMapped )
+void MetalBufferResource::SetData( const ByteArrayView &data, bool keepMapped )
 {
     if ( m_mappedMemory == nullptr )
     {
         MapMemory( );
     }
 
-    std::memcpy( m_mappedMemory, data.Data( ), data.NumElements( ) );
+    std::memcpy( m_mappedMemory, data.Elements, data.NumElements );
 
     if ( !keepMapped )
     {
@@ -124,14 +122,14 @@ void MetalBufferResource::SetData( const InteropArray<Byte> &data, bool keepMapp
     }
 }
 
-void MetalBufferResource::WriteData( const InteropArray<Byte> &data, uint32_t bufferOffset )
+void MetalBufferResource::WriteData( const ByteArrayView &data, uint32_t bufferOffset )
 {
     if ( m_mappedMemory == nullptr )
     {
         MapMemory( );
     }
 
-    std::memcpy( static_cast<Byte *>( m_mappedMemory ) + bufferOffset, data.Data( ), data.NumElements( ) );
+    std::memcpy( static_cast<Byte *>( m_mappedMemory ) + bufferOffset, data.Elements, data.NumElements );
 }
 
 

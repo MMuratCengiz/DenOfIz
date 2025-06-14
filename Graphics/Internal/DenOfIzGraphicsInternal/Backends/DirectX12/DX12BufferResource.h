@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Backends/Interface/IBufferResource.h"
 #include "DX12Context.h"
+#include "DenOfIzGraphics/Backends/Interface/IBufferResource.h"
 
 namespace DenOfIz
 {
@@ -56,14 +56,14 @@ namespace DenOfIz
         void                                      UnmapMemory( ) override;
 
         ~DX12BufferResource( ) override;
-        uint32_t InitialState( ) const override;
-        size_t                NumBytes( ) const override;
-        const void           *Data( ) const override;
+        uint32_t    InitialState( ) const override;
+        size_t      NumBytes( ) const override;
+        const void *Data( ) const override;
 
         // Interop API
-        [[nodiscard]] InteropArray<Byte> GetData( ) const override;
-        void                             SetData( const InteropArray<Byte> &data, bool keepMapped ) override;
-        void                             WriteData( const InteropArray<Byte> &data, uint32_t bufferOffset ) override;
+        [[nodiscard]] ByteArray GetData( ) const override;
+        void                    SetData( const ByteArrayView &data, bool keepMapped ) override;
+        void                    WriteData( const ByteArrayView &data, uint32_t bufferOffset ) override;
 
     private:
         void CreateViewInternal( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type, uint32_t offset ) const;

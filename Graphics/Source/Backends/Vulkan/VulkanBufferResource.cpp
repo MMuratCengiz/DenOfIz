@@ -116,21 +116,19 @@ VulkanBufferResource::~VulkanBufferResource( )
     vmaDestroyBuffer( m_context->Vma, m_instance, m_allocation );
 }
 
-InteropArray<Byte> VulkanBufferResource::GetData( ) const
+ByteArray VulkanBufferResource::GetData( ) const
 {
-    InteropArray<Byte> data( m_numBytes );
-    std::memcpy( data.Data( ), m_mappedMemory, m_numBytes );
-    return std::move( data );
+    return { static_cast<Byte *>( m_mappedMemory ), m_numBytes };
 }
 
-void VulkanBufferResource::SetData( const InteropArray<Byte> &data, const bool keepMapped )
+void VulkanBufferResource::SetData( const ByteArrayView &data, const bool keepMapped )
 {
     if ( m_mappedMemory == nullptr )
     {
         MapMemory( );
     }
 
-    std::memcpy( m_mappedMemory, data.Data( ), data.NumElements( ) );
+    std::memcpy( m_mappedMemory, data.Elements, data.NumElements );
 
     if ( !keepMapped )
     {
@@ -138,14 +136,14 @@ void VulkanBufferResource::SetData( const InteropArray<Byte> &data, const bool k
     }
 }
 
-void VulkanBufferResource::WriteData( const InteropArray<Byte> &data, uint32_t bufferOffset )
+void VulkanBufferResource::WriteData( const ByteArrayView &data, uint32_t bufferOffset )
 {
     if ( m_mappedMemory == nullptr )
     {
         MapMemory( );
     }
 
-    std::memcpy( static_cast<Byte *>( m_mappedMemory ) + bufferOffset, data.Data( ), data.NumElements( ) );
+    std::memcpy( static_cast<Byte *>( m_mappedMemory ) + bufferOffset, data.Elements, data.NumElements );
 }
 
 uint32_t VulkanBufferResource::InitialState( ) const

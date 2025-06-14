@@ -117,6 +117,8 @@ namespace DenOfIz
         std::fstream                               *m_bundleFile;
         bool                                        m_isDirty;
         bool                                        m_isCompressed;
+        mutable std::vector<AssetUri>               m_allAssets;
+        mutable std::vector<AssetUri>               m_assetsByType;
 
         void             LoadTableOfContents( );
         void             WriteEmptyHeader( ) const;
@@ -127,17 +129,22 @@ namespace DenOfIz
         DZ_API explicit Bundle( const BundleDirectoryDesc &directoryDesc );
         DZ_API ~Bundle( );
 
-        DZ_API BinaryReader                        *OpenReader( const AssetUri &assetUri );
-        DZ_API BinaryWriter                        *OpenWriter( const AssetUri &assetUri );
-        DZ_API void                                 AddAsset( const AssetUri &assetUri, AssetType type, const ByteArrayView &data );
-        DZ_API bool                                 Save( );
-        DZ_API [[nodiscard]] bool                   Exists( const AssetUri &assetUri ) const;
-        DZ_API [[nodiscard]] InteropArray<AssetUri> GetAllAssets( ) const;
-        DZ_API [[nodiscard]] InteropArray<AssetUri> GetAssetsByType( AssetType type ) const;
-        DZ_API [[nodiscard]] bool                   IsCompressed( ) const;
-        DZ_API [[nodiscard]] const InteropString   &GetPath( ) const;
+        DZ_API BinaryReader                      *OpenReader( const AssetUri &assetUri );
+        DZ_API BinaryWriter                      *OpenWriter( const AssetUri &assetUri );
+        DZ_API void                               AddAsset( const AssetUri &assetUri, AssetType type, const ByteArrayView &data );
+        DZ_API bool                               Save( );
+        DZ_API [[nodiscard]] bool                 Exists( const AssetUri &assetUri ) const;
+        DZ_API [[nodiscard]] AssetUriArray        GetAllAssets( ) const;
+        DZ_API [[nodiscard]] AssetUriArray        GetAssetsByType( AssetType type ) const;
+        DZ_API [[nodiscard]] bool                 IsCompressed( ) const;
+        DZ_API [[nodiscard]] const InteropString &GetPath( ) const;
 
         DZ_API static Bundle *CreateFromDirectory( const BundleDirectoryDesc &directoryDesc );
     };
-    template class DZ_API InteropArray<Bundle *>;
+
+    struct DZ_API BundleArray
+    {
+        Bundle **Elements;
+        uint32_t NumElements;
+    };
 } // namespace DenOfIz

@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Assets/Bundle/Bundle.h"
 #include <vector>
+#include "DenOfIzGraphics/Assets/Bundle/Bundle.h"
 
 namespace DenOfIz
 {
@@ -33,6 +33,8 @@ namespace DenOfIz
         std::vector<Bundle *>                     m_mountedBundles;
         InteropString                             m_defaultSearchPath;
         std::unordered_map<std::string, Bundle *> m_assetLocationCache;
+        mutable std::vector<AssetUri>             m_allAssets;
+        mutable std::vector<AssetUri>             m_assetsByType;
 
     public:
         DZ_API explicit BundleManager( const BundleManagerDesc &desc );
@@ -47,11 +49,11 @@ namespace DenOfIz
         DZ_API void          AddAsset( Bundle *bundle, const AssetUri &path, AssetType type, const ByteArrayView &data );
         DZ_API bool          Exists( const AssetUri &path );
 
-        DZ_API void      InvalidateCache( );
+        DZ_API void InvalidateCache( );
 
         DZ_API InteropString ResolveToFilesystemPath( const AssetUri &path );
-        DZ_API InteropArray<AssetUri> GetAllAssets( ) const;
-        DZ_API InteropArray<AssetUri> GetAssetsByType( AssetType type ) const;
-        DZ_API InteropArray<Bundle *> GetMountedBundles( ) const;
+        DZ_API AssetUriArray GetAllAssets( ) const;
+        DZ_API AssetUriArray GetAssetsByType( AssetType type ) const;
+        DZ_API BundleArray   GetMountedBundles( ) const;
     };
 } // namespace DenOfIz

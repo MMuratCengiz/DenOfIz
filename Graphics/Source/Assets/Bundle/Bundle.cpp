@@ -113,10 +113,10 @@ Bundle::Bundle( const BundleDirectoryDesc &directoryDesc ) : m_bundleFile( nullp
         const InteropString filePath( path.string( ).c_str( ) );
         if ( FileIO::FileExists( filePath ) )
         {
-            ByteArray fileData = FileIO::ReadFile( filePath );
+            const ByteArray fileData = FileIO::ReadFile( filePath );
             const AssetUri  assetUri = AssetUri::Create( InteropString( relPathStr.c_str( ) ) );
             AddAsset( assetUri, assetType, ByteArrayView( fileData ) );
-            fileData.Dispose();
+            fileData.Dispose( );
         }
         else
         {
@@ -420,41 +420,40 @@ bool Bundle::Save( )
     return true;
 }
 
-InteropArray<AssetUri> Bundle::GetAllAssets( ) const
+AssetUriArray Bundle::GetAllAssets( ) const
 {
-    InteropArray<AssetUri> result( m_assetEntries.size( ) );
-    size_t                 index = 0;
-    for ( const auto &key : m_assetEntries | std::views::keys )
+    if ( m_allAssets.size( ) != m_assetEntries.size( ) )
     {
-        const AssetUri uri = AssetUri::Parse( InteropString( key.c_str( ) ) );
-        result.SetElement( index++, uri );
-    }
-    return result;
-}
-
-InteropArray<AssetUri> Bundle::GetAssetsByType( const AssetType type ) const
-{
-    size_t count = 0;
-    for ( const auto &val : m_assetEntries | std::views::values )
-    {
-        if ( val.Type == type )
+        m_allAssets.clear( );
+        m_allAssets.reserve( m_assetEntries.size( ) );
+        for ( const auto &key : m_assetEntries | std::views::keys )
         {
-            count++;
+            m_allAssets.push_back( AssetUri::Parse( InteropString( key.c_str( ) ) ) );
         }
     }
 
-    InteropArray<AssetUri> result( count );
-    size_t                 index = 0;
+    AssetUriArray result{ };
+    result.Elements    = m_allAssets.data( );
+    result.NumElements = static_cast<uint32_t>( m_allAssets.size( ) );
+    return result;
+}
+
+AssetUriArray Bundle::GetAssetsByType( const AssetType type ) const
+{
+    m_assetsByType.clear( );
+    m_assetsByType.reserve( m_assetEntries.size( ) );
 
     for ( const auto &entry : m_assetEntries )
     {
         if ( entry.second.Type == type )
         {
-            const AssetUri uri = AssetUri::Parse( InteropString( entry.first.c_str( ) ) );
-            result.SetElement( index++, uri );
+            m_assetsByType.push_back( AssetUri::Parse( InteropString( entry.first.c_str( ) ) ) );
         }
     }
 
+    AssetUriArray result{ };
+    result.Elements    = m_assetsByType.data( );
+    result.NumElements = static_cast<uint32_t>( m_assetsByType.size( ) );
     return result;
 }
 

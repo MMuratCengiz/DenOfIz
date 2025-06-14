@@ -26,16 +26,16 @@ namespace DenOfIz
 
     class VulkanBufferResource final : public IBufferResource, NonCopyable
     {
-        BufferDesc            m_desc{ };
-        VulkanContext        *m_context = nullptr;
-        VmaAllocation         m_allocation{ };
-        VkBuffer              m_instance{ };
-        size_t                m_offset{ };
-        size_t                m_numBytes{ };
-        const void           *m_data         = nullptr;
-        void                 *m_mappedMemory = nullptr;
-        VkDeviceAddress       m_deviceAddress{ };
-        uint32_t m_state;
+        BufferDesc      m_desc{ };
+        VulkanContext  *m_context = nullptr;
+        VmaAllocation   m_allocation{ };
+        VkBuffer        m_instance{ };
+        size_t          m_offset{ };
+        size_t          m_numBytes{ };
+        const void     *m_data         = nullptr;
+        void           *m_mappedMemory = nullptr;
+        VkDeviceAddress m_deviceAddress{ };
+        uint32_t        m_state;
 
     public:
         void *MapMemory( ) override;
@@ -44,18 +44,18 @@ namespace DenOfIz
         explicit VulkanBufferResource( VulkanContext *context, BufferDesc desc );
         ~VulkanBufferResource( ) override;
 
-        [[nodiscard]] uint32_t InitialState( ) const override;
-        [[nodiscard]] size_t                NumBytes( ) const override;
-        [[nodiscard]] const void           *Data( ) const override;
+        [[nodiscard]] uint32_t    InitialState( ) const override;
+        [[nodiscard]] size_t      NumBytes( ) const override;
+        [[nodiscard]] const void *Data( ) const override;
 
         [[nodiscard]] size_t                 Offset( ) const;
         [[nodiscard]] const VkBuffer        &Instance( ) const;
         [[nodiscard]] const VkDeviceAddress &DeviceAddress( ) const;
 
         // Interop API
-        [[nodiscard]] InteropArray<Byte> GetData( ) const override;
-        void                             SetData( const InteropArray<Byte> &data, bool keepMapped ) override;
-        void                             WriteData( const InteropArray<Byte> &data, uint32_t bufferOffset ) override;
+        [[nodiscard]] ByteArray GetData( ) const override;
+        void                    SetData( const ByteArrayView &data, bool keepMapped ) override;
+        void                    WriteData( const ByteArrayView &data, uint32_t bufferOffset ) override;
     };
 
 } // namespace DenOfIz

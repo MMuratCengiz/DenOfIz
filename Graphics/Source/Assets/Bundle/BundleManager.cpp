@@ -17,10 +17,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Assets/Bundle/BundleManager.h"
-#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
-#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include <filesystem>
 #include <ranges>
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
@@ -174,6 +174,8 @@ bool BundleManager::Exists( const AssetUri &path )
 void BundleManager::InvalidateCache( )
 {
     m_assetLocationCache.clear( );
+    m_allAssets.clear( );
+    m_assetsByType.clear( );
 }
 
 InteropString BundleManager::ResolveToFilesystemPath( const AssetUri &path )
@@ -198,60 +200,48 @@ InteropString BundleManager::ResolveToFilesystemPath( const AssetUri &path )
     return InteropString{ };
 }
 
-InteropArray<AssetUri> BundleManager::GetAllAssets( ) const
+AssetUriArray BundleManager::GetAllAssets( ) const
 {
-    size_t totalAssets = 0;
-    for ( const Bundle *bundle : m_mountedBundles )
-    {
-        InteropArray<AssetUri> bundleAssets = bundle->GetAllAssets( );
-        totalAssets += bundleAssets.NumElements( );
-    }
-
-    InteropArray<AssetUri> allAssets( totalAssets );
-    size_t                 index = 0;
+    m_allAssets.clear( );
 
     for ( const Bundle *bundle : m_mountedBundles )
     {
-        InteropArray<AssetUri> bundleAssets = bundle->GetAllAssets( );
-        for ( size_t i = 0; i < bundleAssets.NumElements( ); ++i )
+        const AssetUriArray bundleAssets = bundle->GetAllAssets( );
+        for ( uint32_t i = 0; i < bundleAssets.NumElements; ++i )
         {
-            allAssets.SetElement( index++, bundleAssets.GetElement( i ) );
+            m_allAssets.push_back( bundleAssets.Elements[ i ] );
         }
     }
 
-    return allAssets;
+    AssetUriArray result;
+    result.Elements    = m_allAssets.data( );
+    result.NumElements = static_cast<uint32_t>( m_allAssets.size( ) );
+    return result;
 }
 
-InteropArray<AssetUri> BundleManager::GetAssetsByType( const AssetType type ) const
+AssetUriArray BundleManager::GetAssetsByType( const AssetType type ) const
 {
-    size_t totalAssets = 0;
-    for ( const Bundle *bundle : m_mountedBundles )
-    {
-        InteropArray<AssetUri> bundleAssets = bundle->GetAssetsByType( type );
-        totalAssets += bundleAssets.NumElements( );
-    }
-
-    InteropArray<AssetUri> typeAssets( totalAssets );
-    size_t                 index = 0;
+    m_assetsByType.clear( );
 
     for ( const Bundle *bundle : m_mountedBundles )
     {
-        InteropArray<AssetUri> bundleAssets = bundle->GetAssetsByType( type );
-        for ( size_t i = 0; i < bundleAssets.NumElements( ); ++i )
+        const AssetUriArray bundleAssets = bundle->GetAssetsByType( type );
+        for ( uint32_t i = 0; i < bundleAssets.NumElements; ++i )
         {
-            typeAssets.SetElement( index++, bundleAssets.GetElement( i ) );
+            m_assetsByType.push_back( bundleAssets.Elements[ i ] );
         }
     }
 
-    return typeAssets;
+    AssetUriArray result;
+    result.Elements    = m_assetsByType.data( );
+    result.NumElements = static_cast<uint32_t>( m_assetsByType.size( ) );
+    return result;
 }
 
-InteropArray<Bundle *> BundleManager::GetMountedBundles( ) const
+BundleArray BundleManager::GetMountedBundles( ) const
 {
-    InteropArray<Bundle *> bundles( m_mountedBundles.size( ) );
-    for ( size_t i = 0; i < m_mountedBundles.size( ); ++i )
-    {
-        bundles.SetElement( i, m_mountedBundles[ i ] );
-    }
-    return bundles;
+    BundleArray result{ };
+    result.Elements    = const_cast<Bundle **>( m_mountedBundles.data( ) );
+    result.NumElements = static_cast<uint32_t>( m_mountedBundles.size( ) );
+    return result;
 }

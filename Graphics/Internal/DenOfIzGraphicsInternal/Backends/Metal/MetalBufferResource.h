@@ -44,14 +44,14 @@ namespace DenOfIz
         void                   *MapMemory( ) override;
         void                    UnmapMemory( ) override;
 
-        [[nodiscard]] size_t                NumBytes( ) const override;
-        [[nodiscard]] const void           *Data( ) const override;
-        [[nodiscard]] uint32_t InitialState( ) const override;
+        [[nodiscard]] size_t      NumBytes( ) const override;
+        [[nodiscard]] const void *Data( ) const override;
+        [[nodiscard]] uint32_t    InitialState( ) const override;
 
         // Interop API
-        [[nodiscard]] InteropArray<Byte> GetData( ) const override;
-        void                             SetData( const InteropArray<Byte> &data, bool keepMapped ) override;
-        void                             WriteData( const InteropArray<Byte> &data, uint32_t bufferOffset ) override;
+        [[nodiscard]] ByteArray GetData( ) const override;
+        void                    SetData( const ByteArrayView &data, bool keepMapped ) override;
+        void                    WriteData( const ByteArrayView &data, uint32_t bufferOffset ) override;
     };
 
 } // namespace DenOfIz

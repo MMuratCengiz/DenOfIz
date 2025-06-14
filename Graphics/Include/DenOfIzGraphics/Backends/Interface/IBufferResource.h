@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Utilities/Interop.h"
 #include "CommonData.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 
 namespace DenOfIz
 {
@@ -32,15 +32,15 @@ namespace DenOfIz
 
     struct DZ_API BufferDesc
     {
-        uint32_t                   Alignment = 0; // None or Constants.BufferAlignment(Api Dependant)
-        size_t                     NumBytes{ };
-        StructuredBufferDesc       StructureDesc{ }; // For Structured Buffers, set `ResourceDescriptor::StructuredBuffer`
-        Format                     Format = Format::Undefined;
-        uint32_t                   Descriptor;
-        uint32_t                   InitialUsage = ResourceUsage::Common;
-        uint32_t                   Usages;
-        HeapType                   HeapType;
-        InteropString              DebugName;
+        uint32_t             Alignment = 0; // None or Constants.BufferAlignment(Api Dependant)
+        size_t               NumBytes{ };
+        StructuredBufferDesc StructureDesc{ }; // For Structured Buffers, set `ResourceDescriptor::StructuredBuffer`
+        Format               Format = Format::Undefined;
+        uint32_t             Descriptor;
+        uint32_t             InitialUsage = ResourceUsage::Common;
+        uint32_t             Usages;
+        HeapType             HeapType;
+        InteropString        DebugName;
     };
 
     class DZ_API IBufferResource
@@ -52,15 +52,15 @@ namespace DenOfIz
         virtual void *MapMemory( )   = 0;
         virtual void  UnmapMemory( ) = 0;
         //--
-        [[nodiscard]] virtual uint32_t InitialState( ) const = 0;
-        [[nodiscard]] virtual size_t                NumBytes( ) const     = 0;
-        [[nodiscard]] virtual const void           *Data( ) const         = 0;
+        [[nodiscard]] virtual uint32_t    InitialState( ) const = 0;
+        [[nodiscard]] virtual size_t      NumBytes( ) const     = 0;
+        [[nodiscard]] virtual const void *Data( ) const         = 0;
 
         // Interop API
-        [[nodiscard]] virtual InteropArray<Byte> GetData( ) const                                           = 0;
-        virtual void                             SetData( const InteropArray<Byte> &data, bool keepMapped ) = 0;
+        [[nodiscard]] virtual ByteArray GetData( ) const                                      = 0;
+        virtual void                    SetData( const ByteArrayView &data, bool keepMapped ) = 0;
         /// Write data always maps memory, user should properly align bufferOffset if necessary
-        virtual void WriteData( const InteropArray<Byte> &data, uint32_t bufferOffset ) = 0;
+        virtual void WriteData( const ByteArrayView &data, uint32_t bufferOffset ) = 0;
     };
 
     struct BufferSlice
