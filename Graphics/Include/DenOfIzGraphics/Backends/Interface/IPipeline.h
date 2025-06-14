@@ -130,7 +130,6 @@ namespace DenOfIz
         BlendDesc Blend  = { };
         Format    Format = Format::Undefined;
     };
-    template class DZ_API InteropArray<RenderTargetDesc>;
 
     struct DZ_API RenderTargetDescArray
     {
@@ -191,7 +190,6 @@ namespace DenOfIz
 
         HitGroupType Type = HitGroupType::Triangles;
     };
-    template class DZ_API InteropArray<HitGroupDesc>;
 
     struct DZ_API HitGroupDescArray
     {

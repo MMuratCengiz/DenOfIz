@@ -51,7 +51,7 @@ namespace DenOfIz
     public:
         VulkanResourceBindGroup( VulkanContext *context, const ResourceBindGroupDesc &desc );
         ~VulkanResourceBindGroup( ) override;
-        void                SetRootConstantsData( uint32_t binding, const InteropArray<Byte> &data ) override;
+        void                SetRootConstantsData( uint32_t binding, const ByteArrayView &data ) override;
         void                SetRootConstants( uint32_t binding, void *data ) override;
         IResourceBindGroup *BeginUpdate( ) override;
         IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource ) override;
@@ -59,7 +59,7 @@ namespace DenOfIz
         IResourceBindGroup *Srv( const uint32_t binding, IBufferResource *resource ) override;
         IResourceBindGroup *Srv( const BindBufferDesc& desc ) override;
         IResourceBindGroup *Srv( const uint32_t binding, ITextureResource *resource ) override;
-        IResourceBindGroup *SrvArray( const uint32_t binding, const InteropArray<ITextureResource *> &resources ) override;
+        IResourceBindGroup *SrvArray( const uint32_t binding, const TextureResourceArray &resources ) override;
         IResourceBindGroup *SrvArrayIndex( const uint32_t binding, uint32_t arrayIndex, ITextureResource *resource ) override;
         IResourceBindGroup *Srv( const uint32_t binding, ITopLevelAS *accelerationStructure ) override;
         IResourceBindGroup *Uav( const uint32_t binding, IBufferResource *resource ) override;

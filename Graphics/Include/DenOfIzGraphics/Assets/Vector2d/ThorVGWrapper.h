@@ -112,6 +112,12 @@ namespace DenOfIz
         uint8_t A;
     };
 
+    struct DZ_API ThorVGColorStopArray
+    {
+        ThorVGColorStop *Elements;
+        uint32_t         NumElements;
+    };
+
     struct DZ_API ThorVGBounds
     {
         float X;
@@ -125,7 +131,6 @@ namespace DenOfIz
         float Width;
         float Height;
     };
-    template class DZ_API InteropArray<ThorVGColorStop>;
 
     struct DZ_API ThorVGMatrix
     {
@@ -169,7 +174,7 @@ namespace DenOfIz
     public:
         DZ_API virtual ~ThorVGGradient( );
 
-        DZ_API virtual void ColorStops( const InteropArray<ThorVGColorStop> &colorStops ) = 0;
+        DZ_API virtual void ColorStops( const ThorVGColorStopArray &colorStops ) = 0;
         DZ_API virtual void Spread( ThorVGSpreadMethod spread )                           = 0;
         DZ_API virtual void Transform( const ThorVGMatrix &m )                            = 0;
 
@@ -191,7 +196,7 @@ namespace DenOfIz
         ~ThorVGLinearGradient( ) override;
 
         DZ_API void Linear( float x1, float y1, float x2, float y2 ) const;
-        DZ_API void ColorStops( const InteropArray<ThorVGColorStop> &colorStops ) override;
+        DZ_API void ColorStops( const ThorVGColorStopArray &colorStops ) override;
         DZ_API void Spread( ThorVGSpreadMethod spread ) override;
         DZ_API void Transform( const ThorVGMatrix &m ) override;
 
@@ -208,7 +213,7 @@ namespace DenOfIz
         ~ThorVGRadialGradient( ) override;
 
         DZ_API void Radial( float cx, float cy, float radius ) const;
-        DZ_API void ColorStops( const InteropArray<ThorVGColorStop> &colorStops ) override;
+        DZ_API void ColorStops( const ThorVGColorStopArray &colorStops ) override;
         DZ_API void Spread( ThorVGSpreadMethod spread ) override;
         DZ_API void Transform( const ThorVGMatrix &m ) override;
 
@@ -232,7 +237,7 @@ namespace DenOfIz
 
         DZ_API void AppendRect( float x, float y, float w, float h, float rx = 0, float ry = 0 ) const;
         DZ_API void AppendCircle( float cx, float cy, float rx, float ry ) const;
-        DZ_API void AppendPath( const InteropArray<Float_2> &points ) const;
+        DZ_API void AppendPath( const Float_2Array &points ) const;
 
         DZ_API void Fill( uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255 ) const;
         DZ_API void Fill( const ThorVGGradient *gradient ) const;
@@ -243,7 +248,7 @@ namespace DenOfIz
         DZ_API void StrokeCap( ThorVGStrokeCap cap ) const;
         DZ_API void StrokeJoin( ThorVGStrokeJoin join ) const;
         DZ_API void StrokeMiterlimit( float miterlimit ) const;
-        DZ_API void StrokeDash( const InteropArray<float> &pattern, float offset = 0 ) const;
+        DZ_API void StrokeDash( const FloatArray &pattern, float offset = 0 ) const;
 
         DZ_API void         Transform( const ThorVGMatrix &m ) override;
         DZ_API void         Translate( float x, float y ) override;
@@ -268,7 +273,7 @@ namespace DenOfIz
         DZ_API ~ThorVGPicture( ) override;
 
         DZ_API void Load( const InteropString &path ) const;
-        DZ_API void Load( const InteropArray<Byte> &data, const InteropString &mimeType = nullptr, bool copy = true ) const;
+        DZ_API void Load( const ByteArray &data, const InteropString &mimeType = nullptr, bool copy = true ) const;
         DZ_API void Load( uint32_t *data, uint32_t w, uint32_t h, bool premultiplied = true ) const;
         DZ_API void SetSize( float w, float h ) const;
 
@@ -340,9 +345,9 @@ namespace DenOfIz
 
         DZ_API void Resize( uint32_t w, uint32_t h );
 
-        DZ_API void                  ResetData( );
-        DZ_API UInt32ArrayView       GetData( ) const;
-        DZ_API ByteArrayView         GetDataAsBytes( ) const;
+        DZ_API void            ResetData( );
+        DZ_API UInt32ArrayView GetData( ) const;
+        DZ_API ByteArrayView   GetDataAsBytes( ) const;
     };
 
     struct DZ_API ThorVGRendererDesc

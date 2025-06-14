@@ -42,13 +42,11 @@ namespace DenOfIz
     {
         IBufferResource *Buffer = nullptr;
     };
-    template class DZ_API InteropArray<TransitionBufferDesc>;
 
     struct DZ_API TransitionTextureDesc : TransitionResourceDesc
     {
         ITextureResource *Texture = nullptr;
     };
-    template class DZ_API InteropArray<TransitionTextureDesc>;
 
     struct DZ_API BatchTransitionDesc
     {

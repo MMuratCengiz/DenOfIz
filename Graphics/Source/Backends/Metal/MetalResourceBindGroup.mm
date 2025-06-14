@@ -32,7 +32,7 @@ MetalResourceBindGroup::MetalResourceBindGroup( MetalContext *context, ResourceB
     }
 }
 
-void MetalResourceBindGroup::SetRootConstantsData( uint32_t binding, const InteropArray<Byte> &data )
+void MetalResourceBindGroup::SetRootConstantsData( uint32_t binding, const ByteArrayView &data )
 {
     const auto &rootConstants = m_rootSignature->RootConstants( );
     if ( binding >= rootConstants.size( ) )
@@ -40,12 +40,12 @@ void MetalResourceBindGroup::SetRootConstantsData( uint32_t binding, const Inter
         spdlog::critical("Root constant binding out of range");
     }
     const auto &rootConstantBinding = rootConstants[ binding ];
-    if ( data.NumElements( ) != rootConstantBinding.NumBytes )
+    if ( data.NumElements != rootConstantBinding.NumBytes )
     {
-        spdlog::error("Root constant size mismatch. Expected: {} , Got: {}", rootConstantBinding.NumBytes, data.NumElements( ));
+        spdlog::error("Root constant size mismatch. Expected: {} , Got: {}", rootConstantBinding.NumBytes, data.NumElements);
         return;
     }
-    SetRootConstants( binding, (void *)data.Data( ) );
+    SetRootConstants( binding, (void *)data.Elements );
 }
 
 void MetalResourceBindGroup::SetRootConstants( uint32_t binding, void *data )
@@ -115,11 +115,11 @@ IResourceBindGroup *MetalResourceBindGroup::Srv( const uint32_t binding, ITextur
     return this;
 }
 
-IResourceBindGroup *MetalResourceBindGroup::SrvArray( const uint32_t binding, const InteropArray<ITextureResource *> &resources )
+IResourceBindGroup *MetalResourceBindGroup::SrvArray( const uint32_t binding, const TextureResourceArray &resources )
 {
-    for ( uint32_t i = 0; i < resources.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < resources.NumElements; ++i )
     {
-        SrvArrayIndex( binding, i, resources.GetElement( i ) );
+        SrvArrayIndex( binding, i, resources.Elements[ i ] );
     }
     return this;
 }

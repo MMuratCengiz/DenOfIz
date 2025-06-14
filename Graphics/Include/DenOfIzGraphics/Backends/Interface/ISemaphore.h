@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Utilities/Interop.h"
 #include <stddef.h>
+#include "DenOfIzGraphics/Utilities/Interop.h"
 
 namespace DenOfIz
 {
@@ -32,5 +32,10 @@ namespace DenOfIz
         virtual void Notify( ) = 0;
         virtual ~ISemaphore( ) = default;
     };
-    template class DZ_API InteropArray<ISemaphore *>;
+
+    struct DZ_API ISemaphoreArray
+    {
+        ISemaphore **Elements;
+        uint32_t     NumElements;
+    };
 } // namespace DenOfIz

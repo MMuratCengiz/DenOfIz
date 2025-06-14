@@ -972,13 +972,15 @@ void ClayRenderer::UpdateTextureBindings( const uint32_t frameIndex ) const
         return;
     }
 
-    const FrameData                 &frame = m_frameData[ frameIndex ];
-    InteropArray<ITextureResource *> textureArray;
+    const FrameData                &frame = m_frameData[ frameIndex ];
+    std::vector<ITextureResource *> textureVector;
+    textureVector.reserve( m_textures.size( ) );
     for ( size_t i = 0; i < m_textures.size( ); ++i )
     {
         ITextureResource *tex = m_textures[ i ];
-        textureArray.AddElement( tex ? tex : m_nullTexture.get( ) );
+        textureVector.push_back( tex ? tex : m_nullTexture.get( ) );
     }
+    const TextureResourceArray textureArray{ textureVector.data( ), static_cast<uint32_t>( textureVector.size( ) ) };
     frame.TextureBindGroup->BeginUpdate( )->SrvArray( 0, textureArray )->Sampler( 0, m_linearSampler.get( ) )->EndUpdate( );
 }
 

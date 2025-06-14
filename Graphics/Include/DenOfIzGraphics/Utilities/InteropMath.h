@@ -42,8 +42,6 @@ namespace DenOfIz
         DZ_ARRAY_METHODS( Float_2Array, Float_2 )
     };
 
-    template class DZ_API InteropArray<Float_2>;
-
     struct DZ_API Float_3
     {
         float X;
@@ -58,8 +56,6 @@ namespace DenOfIz
 
         DZ_ARRAY_METHODS( Float_3Array, Float_3 )
     };
-
-    template class DZ_API InteropArray<Float_3>;
 
     struct DZ_API Float_4
     {
@@ -77,14 +73,11 @@ namespace DenOfIz
         DZ_ARRAY_METHODS( Float_4Array, Float_4 )
     };
 
-    template class DZ_API InteropArray<Float_4>;
-
     struct DZ_API Int16_2
     {
         int16_t X;
         int16_t Y;
     };
-    template class DZ_API InteropArray<Int16_2>;
 
     struct DZ_API Int16_3
     {
@@ -92,7 +85,6 @@ namespace DenOfIz
         int16_t Y;
         int16_t Z;
     };
-    template class DZ_API InteropArray<Int16_3>;
 
     struct DZ_API Int16_4
     {
@@ -101,14 +93,12 @@ namespace DenOfIz
         int16_t Z;
         int16_t W;
     };
-    template class DZ_API InteropArray<Int16_4>;
 
     struct DZ_API Int32_2
     {
         int X;
         int Y;
     };
-    template class DZ_API InteropArray<Int32_2>;
 
     struct DZ_API Int32_3
     {
@@ -116,7 +106,6 @@ namespace DenOfIz
         int Y;
         int Z;
     };
-    template class DZ_API InteropArray<Int32_3>;
 
     struct DZ_API Int32_4
     {
@@ -125,14 +114,12 @@ namespace DenOfIz
         int Z;
         int W;
     };
-    template class DZ_API InteropArray<Int32_4>;
 
     struct DZ_API UInt16_2
     {
         uint16_t X;
         uint16_t Y;
     };
-    template class DZ_API InteropArray<UInt16_2>;
 
     struct DZ_API UInt16_3
     {
@@ -140,7 +127,6 @@ namespace DenOfIz
         uint16_t Y;
         uint16_t Z;
     };
-    template class DZ_API InteropArray<UInt16_3>;
 
     struct DZ_API UInt16_4
     {
@@ -149,14 +135,12 @@ namespace DenOfIz
         uint16_t Z;
         uint16_t W;
     };
-    template class DZ_API InteropArray<UInt16_4>;
 
     struct DZ_API UInt32_2
     {
         uint32_t X;
         uint32_t Y;
     };
-    template class DZ_API InteropArray<UInt32_2>;
 
     struct DZ_API UInt32_3
     {
@@ -164,7 +148,6 @@ namespace DenOfIz
         uint32_t Y;
         uint32_t Z;
     };
-    template class DZ_API InteropArray<UInt32_3>;
 
     struct DZ_API UInt32_4
     {
@@ -173,7 +156,6 @@ namespace DenOfIz
         uint32_t Z;
         uint32_t W;
     };
-    template class DZ_API InteropArray<UInt32_4>;
 
     struct Float_4x4
     {
@@ -212,5 +194,4 @@ namespace DenOfIz
 
         DZ_ARRAY_METHODS( Float_4x4Array, Float_4x4 )
     };
-    template class DZ_API InteropArray<Float_4x4>;
 } // namespace DenOfIz

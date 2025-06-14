@@ -96,12 +96,6 @@ namespace DenOfIz
         uint32_t MaxRecursionDepth    = 1;
     };
 
-    struct DZ_API ResourceBindingSlotArray
-    {
-        ResourceBindingSlot *Elements;
-        uint32_t             NumElements;
-    };
-
     struct DZ_API RayTracingShaderDesc
     {
         // For metal, it needs to know before compiling what the hit group is otherwise intersection shaders do not work

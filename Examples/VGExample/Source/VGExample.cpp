@@ -221,12 +221,12 @@ void VGExample::CreateStarTexture( )
     ThorVGLinearGradient gradient;
     gradient.Linear( cx - radius, cy - radius, cx + radius, cy + radius );
 
-    InteropArray<ThorVGColorStop> colorStops;
-    colorStops.Resize( 3 );
-    colorStops.SetElement( 0, { 0.0f, 255, 215, 0, 255 } );
-    colorStops.SetElement( 1, { 0.5f, 255, 255, 100, 255 } );
-    colorStops.SetElement( 2, { 1.0f, 255, 140, 0, 255 } );
-    gradient.ColorStops( colorStops );
+    std::vector<ThorVGColorStop> colorStops;
+    colorStops.resize( 3 );
+    colorStops[ 0 ] = { 0.0f, 255, 215, 0, 255 };
+    colorStops[ 1 ] = { 0.5f, 255, 255, 100, 255 };
+    colorStops[ 2 ] = { 1.0f, 255, 140, 0, 255 };
+    gradient.ColorStops( { colorStops.data( ), static_cast<uint32_t>( colorStops.size( ) ) } );
 
     star.Fill( &gradient );
     star.Stroke( 255, 255, 255, 255 );

@@ -68,12 +68,12 @@ void BindlessExample::Init( )
     m_bindGroup                 = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( bindGroupDesc ) );
 
     m_bindGroup->BeginUpdate( );
-    InteropArray<ITextureResource *> textureArray;
+    std::vector<ITextureResource *> textureArray;
     for ( const auto &m_texture : m_textures )
     {
-        textureArray.AddElement( m_texture.get( ) );
+        textureArray.push_back( m_texture.get( ) );
     }
-    m_bindGroup->SrvArray( 0, textureArray );
+    m_bindGroup->SrvArray( 0, { textureArray.data( ), static_cast<uint32_t>( textureArray.size( ) ) } );
     m_bindGroup->Sampler( 0, m_sampler.get( ) );
     m_bindGroup->EndUpdate( );
 
@@ -84,7 +84,10 @@ void BindlessExample::Init( )
     pipelineDesc.InputLayout   = m_inputLayout.get( );
     pipelineDesc.ShaderProgram = m_program.get( );
     pipelineDesc.RootSignature = m_rootSignature.get( );
-    pipelineDesc.Graphics.RenderTargets.AddElement( { .Format = Format::B8G8R8A8Unorm } );
+
+    RenderTargetDesc renderTargetDesc{ .Format = Format::B8G8R8A8Unorm };
+    pipelineDesc.Graphics.RenderTargets.Elements    = &renderTargetDesc;
+    pipelineDesc.Graphics.RenderTargets.NumElements = 1;
 
     m_pipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 }
@@ -134,7 +137,7 @@ void BindlessExample::Render( const uint32_t frameIndex, ICommandList *commandLi
     attachmentDesc.Resource = renderTarget;
 
     RenderingDesc renderingDesc;
-    renderingDesc.RTAttachments.Elements = &attachmentDesc;
+    renderingDesc.RTAttachments.Elements    = &attachmentDesc;
     renderingDesc.RTAttachments.NumElements = 1;
     commandList->BeginRendering( renderingDesc );
 
@@ -301,13 +304,12 @@ void BindlessExample::CreateTextures( )
                 ThorVGLinearGradient gradient;
                 gradient.Linear( 0, 0, width, height );
 
-                InteropArray<ThorVGColorStop> colorStops;
-                colorStops.Resize( 4 );
-                colorStops.SetElement( 0, { 0.0f, 255, 0, 128, 255 } );
-                colorStops.SetElement( 1, { 0.33f, 255, 255, 0, 255 } );
-                colorStops.SetElement( 2, { 0.66f, 0, 255, 255, 255 } );
-                colorStops.SetElement( 3, { 1.0f, 128, 0, 255, 255 } );
-                gradient.ColorStops( colorStops );
+                std::vector<ThorVGColorStop> colorStops( 4 );
+                colorStops[ 0 ] = { 0.0f, 255, 0, 128, 255 };
+                colorStops[ 1 ] = { 0.33f, 255, 255, 0, 255 };
+                colorStops[ 2 ] = { 0.66f, 0, 255, 255, 255 };
+                colorStops[ 3 ] = { 1.0f, 128, 0, 255, 255 };
+                gradient.ColorStops( { colorStops.data( ), static_cast<uint32_t>( colorStops.size( ) ) } );
 
                 shape.Fill( &gradient );
                 canvas.Push( &shape );

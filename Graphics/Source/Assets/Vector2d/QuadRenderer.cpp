@@ -250,18 +250,18 @@ void QuadRenderer::CreateShaderResources( )
     pipelineDesc.Graphics.FillMode = FillMode::Solid;
 
     RenderTargetDesc renderTarget;
-    renderTarget.Blend.Enable               = true;
-    renderTarget.Blend.SrcBlend             = Blend::One; // Premultiplied alpha
-    renderTarget.Blend.DstBlend             = Blend::InvSrcAlpha;
-    renderTarget.Blend.BlendOp              = BlendOp::Add;
-    renderTarget.Blend.SrcBlendAlpha        = Blend::One;
-    renderTarget.Blend.DstBlendAlpha        = Blend::InvSrcAlpha;
-    renderTarget.Blend.BlendOpAlpha         = BlendOp::Add;
-    renderTarget.Format                     = m_desc.RenderTargetFormat;
-    
-    pipelineDesc.Graphics.RenderTargets.Elements = &renderTarget;
+    renderTarget.Blend.Enable        = true;
+    renderTarget.Blend.SrcBlend      = Blend::One; // Premultiplied alpha
+    renderTarget.Blend.DstBlend      = Blend::InvSrcAlpha;
+    renderTarget.Blend.BlendOp       = BlendOp::Add;
+    renderTarget.Blend.SrcBlendAlpha = Blend::One;
+    renderTarget.Blend.DstBlendAlpha = Blend::InvSrcAlpha;
+    renderTarget.Blend.BlendOpAlpha  = BlendOp::Add;
+    renderTarget.Format              = m_desc.RenderTargetFormat;
+
+    pipelineDesc.Graphics.RenderTargets.Elements    = &renderTarget;
     pipelineDesc.Graphics.RenderTargets.NumElements = 1;
-    pipelineDesc.Graphics.PrimitiveTopology = PrimitiveTopology::Triangle;
+    pipelineDesc.Graphics.PrimitiveTopology         = PrimitiveTopology::Triangle;
 
     m_rasterPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 }
@@ -415,12 +415,14 @@ void QuadRenderer::UpdateTextureBindings( const uint32_t frameIndex ) const
     const FrameData &frame = m_frameData[ frameIndex ];
 
     frame.TextureBindGroup->BeginUpdate( );
-    InteropArray<ITextureResource *> textureArray;
+    std::vector<ITextureResource *> textureVector;
+    textureVector.reserve( m_textures.size( ) );
     for ( const auto &texture : m_textures )
     {
-        textureArray.AddElement( texture ? texture : m_nullTexture.get( ) );
+        textureVector.push_back( texture ? texture : m_nullTexture.get( ) );
     }
 
+    const TextureResourceArray textureArray{ textureVector.data( ), static_cast<uint32_t>( textureVector.size( ) ) };
     frame.TextureBindGroup->SrvArray( 0, textureArray );
     frame.TextureBindGroup->Sampler( 0, m_sampler.get( ) );
     frame.TextureBindGroup->EndUpdate( );

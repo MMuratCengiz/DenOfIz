@@ -273,7 +273,12 @@ namespace DenOfIz
         [[nodiscard]] uint32_t      Key( ) const;
         [[nodiscard]] InteropString ToInteropString( ) const;
     };
-    template class DZ_API InteropArray<ResourceBindingSlot>;
+
+    struct DZ_API ResourceBindingSlotArray
+    {
+        ResourceBindingSlot *Elements    = nullptr;
+        uint32_t             NumElements = 0;
+    };
 
     enum class LoadOp
     {
@@ -337,7 +342,6 @@ namespace DenOfIz
         PhysicalDeviceCapabilities Capabilities;
         DeviceConstants            Constants;
     };
-    template class DZ_API InteropArray<PhysicalDevice>;
 
     struct DZ_API PhysicalDeviceArray
     {

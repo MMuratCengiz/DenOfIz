@@ -43,15 +43,15 @@ VulkanResourceBindGroup::VulkanResourceBindGroup( VulkanContext *context, const 
     m_rootConstants.resize( m_rootSignature->NumRootConstants( ) );
 }
 
-void VulkanResourceBindGroup::SetRootConstantsData( uint32_t binding, const InteropArray<Byte> &data )
+void VulkanResourceBindGroup::SetRootConstantsData( uint32_t binding, const ByteArrayView &data )
 {
     const VkPushConstantRange pushConstantRange = m_rootSignature->PushConstantRange( binding );
-    if ( data.NumElements( ) != pushConstantRange.size )
+    if ( data.NumElements != pushConstantRange.size )
     {
-        spdlog::error( "Root constant size mismatch. Expected: {} , Got: {}", pushConstantRange.size, data.NumElements( ) );
+        spdlog::error( "Root constant size mismatch. Expected: {} , Got: {}", pushConstantRange.size, data.NumElements );
         return;
     }
-    SetRootConstants( binding, (void *)data.Data( ) );
+    SetRootConstants( binding, (void *)data.Elements );
 }
 
 void VulkanResourceBindGroup::SetRootConstants( const uint32_t binding, void *data )
@@ -119,18 +119,18 @@ IResourceBindGroup *VulkanResourceBindGroup::Srv( const uint32_t binding, ITextu
     return this;
 }
 
-IResourceBindGroup *VulkanResourceBindGroup::SrvArray( const uint32_t binding, const InteropArray<ITextureResource *> &resources )
+IResourceBindGroup *VulkanResourceBindGroup::SrvArray( const uint32_t binding, const TextureResourceArray &resources )
 {
     const ResourceBindingSlot slot = GetSlot( binding, ResourceBindingType::ShaderResource );
 
     VkWriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor( slot );
-    writeDescriptorSet.descriptorCount       = resources.NumElements( );
+    writeDescriptorSet.descriptorCount       = resources.NumElements;
     writeDescriptorSet.dstArrayElement       = 0;
 
-    auto *imageInfos = m_storage.StoreArray<VkDescriptorImageInfo>( resources.NumElements( ) );
-    for ( uint32_t i = 0; i < resources.NumElements( ); ++i )
+    auto *imageInfos = m_storage.StoreArray<VkDescriptorImageInfo>( resources.NumElements );
+    for ( uint32_t i = 0; i < resources.NumElements; ++i )
     {
-        const auto *vulkanResource  = dynamic_cast<VulkanTextureResource *>( resources.GetElement( i ) );
+        const auto *vulkanResource  = dynamic_cast<VulkanTextureResource *>( resources.Elements[ i ] );
         imageInfos[ i ].imageLayout = vulkanResource->Layout( );
         imageInfos[ i ].imageView   = vulkanResource->ImageView( );
         imageInfos[ i ].sampler     = VK_NULL_HANDLE;

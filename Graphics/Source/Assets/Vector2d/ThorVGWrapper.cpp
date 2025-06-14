@@ -169,14 +169,14 @@ namespace DenOfIz
         ThorVGCheckResult( m_gradient->linear( x1, y1, x2, y2 ) );
     }
 
-    void ThorVGLinearGradient::ColorStops( const InteropArray<ThorVGColorStop> &colorStops )
+    void ThorVGLinearGradient::ColorStops( const ThorVGColorStopArray &colorStops )
     {
         std::vector<tvg::Fill::ColorStop> stops;
-        stops.reserve( colorStops.NumElements( ) );
+        stops.reserve( colorStops.NumElements );
 
-        for ( uint32_t i = 0; i < colorStops.NumElements( ); ++i )
+        for ( uint32_t i = 0; i < colorStops.NumElements; ++i )
         {
-            const auto &stop = colorStops.GetElement( i );
+            const auto &stop = colorStops.Elements[ i ];
             stops.push_back( { stop.Offset, stop.R, stop.G, stop.B, stop.A } );
         }
 
@@ -210,14 +210,14 @@ namespace DenOfIz
         ThorVGCheckResult( m_gradient->radial( cx, cy, radius ) );
     }
 
-    void ThorVGRadialGradient::ColorStops( const InteropArray<ThorVGColorStop> &colorStops )
+    void ThorVGRadialGradient::ColorStops( const ThorVGColorStopArray &colorStops )
     {
         std::vector<tvg::Fill::ColorStop> stops;
-        stops.reserve( colorStops.NumElements( ) );
+        stops.reserve( colorStops.NumElements );
 
-        for ( uint32_t i = 0; i < colorStops.NumElements( ); ++i )
+        for ( uint32_t i = 0; i < colorStops.NumElements; ++i )
         {
-            const auto &stop = colorStops.GetElement( i );
+            const auto &stop = colorStops.Elements[ i ];
             stops.push_back( { stop.Offset, stop.R, stop.G, stop.B, stop.A } );
         }
 
@@ -281,17 +281,17 @@ namespace DenOfIz
         ThorVGCheckResult( m_shape->appendCircle( cx, cy, rx, ry ) );
     }
 
-    void ThorVGShape::AppendPath( const InteropArray<Float_2> &points ) const
+    void ThorVGShape::AppendPath( const Float_2Array &points ) const
     {
         std::vector<tvg::PathCommand> commands;
         std::vector<tvg::Point>       pts;
 
-        pts.push_back( { points.GetElement( 0 ).X, points.GetElement( 0 ).Y } );
+        pts.push_back( { points.Elements[ 0 ].X, points.Elements[ 0 ].Y } );
         commands.push_back( tvg::PathCommand::MoveTo );
 
-        for ( uint32_t i = 1; i < points.NumElements( ); ++i )
+        for ( uint32_t i = 1; i < points.NumElements; ++i )
         {
-            pts.push_back( { points.GetElement( i ).X, points.GetElement( i ).Y } );
+            pts.push_back( { points.Elements[ i ].X, points.Elements[ i ].Y } );
             commands.push_back( tvg::PathCommand::LineTo );
         }
 
@@ -364,19 +364,19 @@ namespace DenOfIz
         ThorVGCheckResult( m_shape->stroke( miterlimit ) );
     }
 
-    void ThorVGShape::StrokeDash( const InteropArray<float> &pattern, float offset ) const
+    void ThorVGShape::StrokeDash( const FloatArray &pattern, float offset ) const
     {
-        if ( pattern.NumElements( ) == 0 )
+        if ( pattern.NumElements == 0 )
         {
             ThorVGCheckResult( m_shape->stroke( nullptr, 0 ) );
         }
 
         std::vector<float> dashPattern;
-        dashPattern.reserve( pattern.NumElements( ) );
+        dashPattern.reserve( pattern.NumElements );
 
-        for ( uint32_t i = 0; i < pattern.NumElements( ); ++i )
+        for ( uint32_t i = 0; i < pattern.NumElements; ++i )
         {
-            dashPattern.push_back( pattern.GetElement( i ) );
+            dashPattern.push_back( pattern.Elements[ i ] );
         }
         ThorVGCheckResult( m_shape->stroke( dashPattern.data( ), static_cast<uint32_t>( dashPattern.size( ) ) ) );
     }
@@ -460,9 +460,9 @@ namespace DenOfIz
         ThorVGCheckResult( m_picture->load( path.Get( ) ) );
     }
 
-    void ThorVGPicture::Load( const InteropArray<Byte> &data, const InteropString &mimeType, const bool copy ) const
+    void ThorVGPicture::Load( const ByteArray &data, const InteropString &mimeType, const bool copy ) const
     {
-        ThorVGCheckResult( m_picture->load( reinterpret_cast<const char *>( data.Data( ) ), static_cast<uint32_t>( data.NumElements( ) ), mimeType.Get( ), copy ) );
+        ThorVGCheckResult( m_picture->load( reinterpret_cast<const char *>( data.Elements ), static_cast<uint32_t>( data.NumElements ), mimeType.Get( ), copy ) );
     }
 
     void ThorVGPicture::Load( uint32_t *data, const uint32_t w, const uint32_t h, const bool premultiplied ) const
@@ -724,6 +724,7 @@ namespace DenOfIz
             m_rbgaData[ i ] = 0;
         }
     }
+
     UInt32ArrayView ThorVGCanvas::GetData( ) const
     {
         return { m_rbgaData.data( ), m_rbgaData.size( ) };

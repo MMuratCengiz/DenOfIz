@@ -49,7 +49,7 @@ namespace DenOfIz
     {
     public:
         virtual ~IResourceBindGroup( )                                                                                                = default;
-        virtual void                SetRootConstantsData( uint32_t binding, const InteropArray<Byte> &data )                          = 0;
+        virtual void                SetRootConstantsData( uint32_t binding, const ByteArrayView &data )                              = 0;
         virtual void                SetRootConstants( uint32_t binding, void *data )                                                  = 0;
         virtual IResourceBindGroup *BeginUpdate( )                                                                                    = 0;
         virtual IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource )                                          = 0;
@@ -58,7 +58,7 @@ namespace DenOfIz
         virtual IResourceBindGroup *Srv( const BindBufferDesc &desc )                                                                 = 0;
         virtual IResourceBindGroup *Srv( const uint32_t binding, ITopLevelAS *accelerationStructure )                                 = 0;
         virtual IResourceBindGroup *Srv( const uint32_t binding, ITextureResource *resource )                                         = 0;
-        virtual IResourceBindGroup *SrvArray( const uint32_t binding, const InteropArray<ITextureResource *> &resources )             = 0;
+        virtual IResourceBindGroup *SrvArray( const uint32_t binding, const TextureResourceArray &resources )                         = 0;
         virtual IResourceBindGroup *SrvArrayIndex( const uint32_t binding, uint32_t arrayIndex, ITextureResource *resource )          = 0;
         virtual IResourceBindGroup *Uav( const uint32_t binding, IBufferResource *resource )                                          = 0;
         virtual IResourceBindGroup *Uav( const BindBufferDesc &desc )                                                                 = 0;

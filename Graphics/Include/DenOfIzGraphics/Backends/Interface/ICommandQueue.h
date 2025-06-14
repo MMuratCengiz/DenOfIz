@@ -42,12 +42,6 @@ namespace DenOfIz
         CommandQueueFlags Flags;
     };
 
-    struct DZ_API ISemaphoreArray
-    {
-        ISemaphore **Elements;
-        uint32_t     NumElements;
-    };
-
     struct DZ_API ExecuteCommandListsDesc
     {
         IFence           *Signal;

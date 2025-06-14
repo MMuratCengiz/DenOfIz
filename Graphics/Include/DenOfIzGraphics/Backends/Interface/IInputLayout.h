@@ -47,7 +47,6 @@ namespace DenOfIz
         uint32_t      SemanticIndex;
         Format        Format;
     };
-    template class DZ_API InteropArray<InputLayoutElementDesc>;
 
     struct DZ_API InputLayoutElementDescArray
     {
@@ -63,7 +62,6 @@ namespace DenOfIz
         StepRate                       StepRate = StepRate::PerVertex;
         InputLayoutElementDescArray    Elements;
     };
-    template class DZ_API InteropArray<InputGroupDesc>;
 
     struct DZ_API InputGroupDescArray
     {

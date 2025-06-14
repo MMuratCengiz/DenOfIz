@@ -80,22 +80,22 @@ DX12ResourceBindGroup::DX12ResourceBindGroup( DX12Context *context, const Resour
     }
 }
 
-void DX12ResourceBindGroup::SetRootConstantsData( const uint32_t binding, const InteropArray<Byte> &data )
+void DX12ResourceBindGroup::SetRootConstantsData( const uint32_t binding, const ByteArrayView &data )
 {
     const size_t numBytes = m_dx12RootSignature->RootConstants( )[ binding ].Constants.Num32BitValues * sizeof( uint32_t );
-    if ( data.NumElements( ) != numBytes )
+    if ( data.NumElements != numBytes )
     {
-        spdlog::error( "Root constant size mismatch. Expected: {} , Got: {}", numBytes, data.NumElements( ) );
+        spdlog::error( "Root constant size mismatch. Expected: {} , Got: {}", numBytes, data.NumElements );
         return;
     }
-    SetRootConstants( binding, (void *)data.Data( ) );
+    SetRootConstants( binding, (void *)data.Elements );
 }
 
 void DX12ResourceBindGroup::SetRootConstants( const uint32_t binding, void *data )
 {
     DZ_NOT_NULL( data );
     ContainerUtilities::EnsureSize( m_rootConstants, binding );
-    if (binding >= m_dx12RootSignature->RootConstants( ).size( ) )
+    if ( binding >= m_dx12RootSignature->RootConstants( ).size( ) )
     {
         spdlog::error( "Root constant binding [ {} ] is out of range.", binding );
         return;
@@ -172,15 +172,15 @@ IResourceBindGroup *DX12ResourceBindGroup::Srv( const uint32_t binding, ITexture
     return this;
 }
 
-IResourceBindGroup *DX12ResourceBindGroup::SrvArray( const uint32_t binding, const InteropArray<ITextureResource *> &resources )
+IResourceBindGroup *DX12ResourceBindGroup::SrvArray( const uint32_t binding, const TextureResourceArray &resources )
 {
-    const ResourceBindingSlot slot = GetSlot( binding, ResourceBindingType::ShaderResource );
-    const uint32_t baseOffset = m_dx12RootSignature->GetResourceOffset( slot );
-    for ( uint32_t i = 0; i < resources.NumElements( ); ++i )
+    const ResourceBindingSlot slot       = GetSlot( binding, ResourceBindingType::ShaderResource );
+    const uint32_t            baseOffset = m_dx12RootSignature->GetResourceOffset( slot );
+    for ( uint32_t i = 0; i < resources.NumElements; ++i )
     {
-        DZ_NOT_NULL( resources.GetElement( i ) );
+        DZ_NOT_NULL( resources.Elements[ i ] );
         const uint32_t descriptorOffset = baseOffset + i;
-        reinterpret_cast<DX12TextureResource *>( resources.GetElement( i ) )->CreateView( CpuHandleCbvSrvUav( descriptorOffset ) );
+        reinterpret_cast<DX12TextureResource *>( resources.Elements[ i ] )->CreateView( CpuHandleCbvSrvUav( descriptorOffset ) );
         m_cbvSrvUavCount++;
     }
     return this;
@@ -188,13 +188,13 @@ IResourceBindGroup *DX12ResourceBindGroup::SrvArray( const uint32_t binding, con
 
 IResourceBindGroup *DX12ResourceBindGroup::SrvArrayIndex( const uint32_t binding, uint32_t arrayIndex, ITextureResource *resource )
 {
-    const ResourceBindingSlot slot = GetSlot( binding, ResourceBindingType::ShaderResource );
-    const uint32_t baseOffset = m_dx12RootSignature->GetResourceOffset( slot );
-    const uint32_t descriptorOffset = baseOffset + arrayIndex;
-    
+    const ResourceBindingSlot slot             = GetSlot( binding, ResourceBindingType::ShaderResource );
+    const uint32_t            baseOffset       = m_dx12RootSignature->GetResourceOffset( slot );
+    const uint32_t            descriptorOffset = baseOffset + arrayIndex;
+
     DZ_NOT_NULL( resource );
     reinterpret_cast<DX12TextureResource *>( resource )->CreateView( CpuHandleCbvSrvUav( descriptorOffset ) );
-    
+
     return this;
 }
 
