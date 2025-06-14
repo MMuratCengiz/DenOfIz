@@ -54,20 +54,20 @@ namespace DenOfIz
         std::unique_ptr<dds::Header, DDSHeaderDeleter> m_ddsHeader;
         Byte                                          *m_contentData{ };
 
-        uint32_t           m_width{ };
-        uint32_t           m_height{ };
-        uint32_t           m_depth{ };
-        uint32_t           m_mipLevels = 1;
-        uint32_t           m_arraySize = 1;
-        uint32_t           m_bitsPerPixel{ };
-        uint32_t           m_blockSize{ };
-        uint32_t           m_rowPitch{ };
-        uint32_t           m_numRows{ };
-        uint32_t           m_slicePitch{ };
-        Format             m_format    = Format::Undefined;
-        TextureDimension   m_dimension = TextureDimension::Undefined;
-        TextureExtension   m_extension = TextureExtension::DDS;
-        InteropArray<Byte> m_data{ };
+        uint32_t          m_width{ };
+        uint32_t          m_height{ };
+        uint32_t          m_depth{ };
+        uint32_t          m_mipLevels = 1;
+        uint32_t          m_arraySize = 1;
+        uint32_t          m_bitsPerPixel{ };
+        uint32_t          m_blockSize{ };
+        uint32_t          m_rowPitch{ };
+        uint32_t          m_numRows{ };
+        uint32_t          m_slicePitch{ };
+        Format            m_format    = Format::Undefined;
+        TextureDimension  m_dimension = TextureDimension::Undefined;
+        TextureExtension  m_extension = TextureExtension::DDS;
+        std::vector<Byte> m_data{ };
 
     public:
         DZ_API explicit Texture( const InteropString &path );
@@ -75,20 +75,20 @@ namespace DenOfIz
         DZ_API static TextureExtension       IdentifyTextureFormat( const InteropArray<Byte> &data );
         DZ_API [[nodiscard]] TextureMipArray ReadMipData( ) const;
 
-        DZ_API [[nodiscard]] uint32_t                  GetWidth( ) const;
-        DZ_API [[nodiscard]] uint32_t                  GetHeight( ) const;
-        DZ_API [[nodiscard]] uint32_t                  GetDepth( ) const;
-        DZ_API [[nodiscard]] uint32_t                  GetMipLevels( ) const;
-        DZ_API [[nodiscard]] uint32_t                  GetArraySize( ) const;
-        DZ_API [[nodiscard]] uint32_t                  GetBitsPerPixel( ) const;
-        DZ_API [[nodiscard]] uint32_t                  GetBlockSize( ) const;
-        DZ_API [[nodiscard]] uint32_t                  GetRowPitch( ) const;
-        DZ_API [[nodiscard]] uint32_t                  GetNumRows( ) const;
-        DZ_API [[nodiscard]] uint32_t                  GetSlicePitch( ) const;
-        DZ_API [[nodiscard]] Format                    GetFormat( ) const;
-        DZ_API [[nodiscard]] TextureDimension          GetDimension( ) const;
-        DZ_API [[nodiscard]] TextureExtension          GetExtension( ) const;
-        DZ_API [[nodiscard]] const InteropArray<Byte> &GetData( ) const;
+        DZ_API [[nodiscard]] uint32_t         GetWidth( ) const;
+        DZ_API [[nodiscard]] uint32_t         GetHeight( ) const;
+        DZ_API [[nodiscard]] uint32_t         GetDepth( ) const;
+        DZ_API [[nodiscard]] uint32_t         GetMipLevels( ) const;
+        DZ_API [[nodiscard]] uint32_t         GetArraySize( ) const;
+        DZ_API [[nodiscard]] uint32_t         GetBitsPerPixel( ) const;
+        DZ_API [[nodiscard]] uint32_t         GetBlockSize( ) const;
+        DZ_API [[nodiscard]] uint32_t         GetRowPitch( ) const;
+        DZ_API [[nodiscard]] uint32_t         GetNumRows( ) const;
+        DZ_API [[nodiscard]] uint32_t         GetSlicePitch( ) const;
+        DZ_API [[nodiscard]] Format           GetFormat( ) const;
+        DZ_API [[nodiscard]] TextureDimension GetDimension( ) const;
+        DZ_API [[nodiscard]] TextureExtension GetExtension( ) const;
+        DZ_API [[nodiscard]] ByteArrayView    GetData( ) const;
 
     private:
         void LoadTextureSTB( );

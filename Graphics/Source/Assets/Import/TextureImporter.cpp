@@ -241,7 +241,7 @@ void TextureImporter::Impl::WriteTextureAsset( const ImportContext &context, Ass
         const size_t      mipOffset = mipData.DataOffset;
 
         ByteArrayView pixelDataArray{ };
-        pixelDataArray.Elements    = m_texture->GetData( ).Data( ) + mipOffset;
+        pixelDataArray.Elements    = m_texture->GetData( ).Elements + mipOffset;
         pixelDataArray.NumElements = mipSize;
         textureWriter.AddPixelData( pixelDataArray, mipData.MipIndex, mipData.ArrayIndex );
     }

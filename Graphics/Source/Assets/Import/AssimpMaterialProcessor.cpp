@@ -222,7 +222,7 @@ ImporterResultCode AssimpMaterialProcessor::WriteTextureAsset( AssimpImportConte
         const size_t      mipOffset = mipData.DataOffset;
 
         ByteArrayView mipDataBuffer{ };
-        mipDataBuffer.Elements    = sourceTexture->GetData( ).Data( ) + mipOffset;
+        mipDataBuffer.Elements    = sourceTexture->GetData( ).Elements + mipOffset;
         mipDataBuffer.NumElements = mipSize;
         assetWriter.AddPixelData( mipDataBuffer, mipData.MipIndex, mipData.ArrayIndex );
     }

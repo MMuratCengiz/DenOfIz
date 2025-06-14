@@ -144,8 +144,8 @@ void Texture::LoadTextureSTB( )
     m_rowPitch     = m_width * 4;
     m_numRows      = m_height;
     m_slicePitch   = m_rowPitch * m_numRows;
-    m_data.Resize( m_slicePitch );
-    m_data.MemCpy( contents, m_slicePitch );
+    m_data.resize( m_slicePitch );
+    std::memcpy( m_data.data( ), contents, m_slicePitch );
 }
 
 Format GetFormatFromDDS( const dds::DXGI_FORMAT &format )
@@ -396,8 +396,8 @@ void Texture::LoadTextureDDS( )
     m_numRows      = std::max( 1U, ( m_height + ( m_blockSize - 1 ) ) / m_blockSize );
     m_slicePitch   = m_rowPitch * m_numRows;
 
-    m_data.Resize( m_ddsHeader->data_size( ) );
-    m_data.MemCpy( fileData + m_ddsHeader->data_offset( ), m_ddsHeader->data_size( ) );
+    m_data.resize( m_ddsHeader->data_size( ) );
+    std::memcpy( m_data.data( ), fileData + m_ddsHeader->data_offset( ), m_ddsHeader->data_size( ) );
 
     if ( m_ddsHeader->is_1d( ) )
     {
@@ -488,9 +488,9 @@ TextureExtension Texture::GetExtension( ) const
     return m_extension;
 }
 
-const InteropArray<Byte> &Texture::GetData( ) const
+ByteArrayView Texture::GetData( ) const
 {
-    return m_data;
+    return { m_data.data( ), m_data.size( ) };
 }
 
 TextureMipArray Texture::ReadMipData( ) const
@@ -585,9 +585,9 @@ void Texture::LoadTextureDDSFromMemory( const Byte *data, const size_t dataNumBy
     m_numRows      = std::max( 1U, ( m_height + ( m_blockSize - 1 ) ) / m_blockSize );
     m_slicePitch   = m_rowPitch * m_numRows;
 
-    m_data.Resize( m_ddsHeader->data_size( ) );
+    m_data.resize( m_ddsHeader->data_size( ) );
     const uint8_t *srcData = data + m_ddsHeader->data_offset( );
-    m_data.MemCpy( srcData, m_ddsHeader->data_size( ) );
+    std::memcpy( m_data.data( ), srcData, m_ddsHeader->data_size( ) );
 
     if ( m_ddsHeader->is_1d( ) )
     {
@@ -637,8 +637,8 @@ void Texture::LoadTextureSTBFromMemory( const Byte *data, const size_t dataNumBy
     m_rowPitch     = m_width * 4;
     m_numRows      = m_height;
     m_slicePitch   = m_rowPitch * m_numRows;
-    m_data.Resize( m_slicePitch );
-    m_data.MemCpy( contents, m_slicePitch );
+    m_data.resize( m_slicePitch );
+    std::memcpy( m_data.data( ), contents, m_slicePitch );
 
     stbi_image_free( contents );
 }
