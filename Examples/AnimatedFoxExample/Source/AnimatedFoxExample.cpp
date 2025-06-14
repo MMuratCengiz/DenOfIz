@@ -152,7 +152,7 @@ void AnimatedFoxExample::LoadFoxAssets( )
     const auto indices = meshAssetReader.ReadIndices32( subMesh.IndexStream );
     m_indices.resize( indices.NumElements );
     std::copy_n( indices.Elements, indices.NumElements, m_indices.begin( ) );
-    indices.Dispose( );
+    std::free( indices.Elements ); // Todo remove this
 }
 
 void AnimatedFoxExample::SetupAnimation( )
