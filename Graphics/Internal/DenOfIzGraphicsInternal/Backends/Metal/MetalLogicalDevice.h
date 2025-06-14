@@ -41,10 +41,10 @@ namespace DenOfIz
         ~MetalLogicalDevice( ) override;
 
         // Override methods
-        void                    CreateDevice( ) override;
-        PhysicalDeviceArray     ListPhysicalDevices( ) override;
-        void                    LoadPhysicalDevice( const PhysicalDevice &device ) override;
-        bool                         IsDeviceLost( ) override;
+        void                CreateDevice( ) override;
+        PhysicalDeviceArray ListPhysicalDevices( ) override;
+        void                LoadPhysicalDevice( const PhysicalDevice &device ) override;
+        bool                IsDeviceLost( ) override;
 
         ICommandQueue       *CreateCommandQueue( const CommandQueueDesc &desc ) override;
         ICommandListPool    *CreateCommandListPool( const CommandListPoolDesc &poolDesc ) override;

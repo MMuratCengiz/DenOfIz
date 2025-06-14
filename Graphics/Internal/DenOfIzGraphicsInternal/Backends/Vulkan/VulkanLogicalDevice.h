@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Assets/Shaders/ShaderCompiler.h"
 #include <unordered_set>
+#include "DenOfIzGraphics/Assets/Shaders/ShaderCompiler.h"
 #include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
 #include "VulkanCommandPool.h"
 #include "VulkanContext.h"
@@ -49,15 +49,15 @@ namespace DenOfIz
         std::unordered_set<const char *> m_enabledInstanceExtensions;
 
         std::unique_ptr<VulkanContext> m_context;
-        std::vector<PhysicalDevice>     m_physicalDevices;
+        std::vector<PhysicalDevice>    m_physicalDevices;
 
     public:
         VulkanLogicalDevice( ) = default;
 
-        void                    CreateDevice( ) override;
-        PhysicalDeviceArray     ListPhysicalDevices( ) override;
-        void                    LoadPhysicalDevice( const PhysicalDevice &device ) override;
-        bool                         IsDeviceLost( ) override;
+        void                CreateDevice( ) override;
+        PhysicalDeviceArray ListPhysicalDevices( ) override;
+        void                LoadPhysicalDevice( const PhysicalDevice &device ) override;
+        bool                IsDeviceLost( ) override;
 
         void                         WaitIdle( ) override;
         [[nodiscard]] VulkanContext *GetContext( ) const;

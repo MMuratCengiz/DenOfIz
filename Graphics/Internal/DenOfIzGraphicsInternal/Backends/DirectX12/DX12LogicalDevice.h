@@ -19,11 +19,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 #ifdef BUILD_DX12
 
-#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
-#include "DenOfIzGraphics/Utilities/Common.h"
 #include "DX12CommandListPool.h"
 #include "DX12Context.h"
 #include "DX12Fence.h"
+#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
+#include "DenOfIzGraphics/Utilities/Common.h"
 
 #ifdef _WIN32
 #undef CreateSemaphore
@@ -43,10 +43,10 @@ namespace DenOfIz
         ~DX12LogicalDevice( ) override;
 
         // Override methods
-        void                    CreateDevice( ) override;
-        PhysicalDeviceArray     ListPhysicalDevices( ) override;
-        void                    LoadPhysicalDevice( const PhysicalDevice &device ) override;
-        bool                         IsDeviceLost( ) override;
+        void                CreateDevice( ) override;
+        PhysicalDeviceArray ListPhysicalDevices( ) override;
+        void                LoadPhysicalDevice( const PhysicalDevice &device ) override;
+        bool                IsDeviceLost( ) override;
 
         ICommandQueue      *CreateCommandQueue( const CommandQueueDesc &desc ) override;
         ICommandListPool   *CreateCommandListPool( const CommandListPoolDesc &poolDesc ) override;
