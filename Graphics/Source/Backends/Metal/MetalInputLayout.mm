@@ -23,22 +23,39 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-MetalInputLayout::MetalInputLayout( MetalContext *context, InputLayoutDesc desc ) : m_context( context ), m_desc( std::move( desc ) )
+MetalInputLayout::MetalInputLayout( MetalContext *context, const InputLayoutDesc &desc ) : m_context( context )
 {
+    m_inputGroups.reserve(desc.InputGroups.NumElements);
+    m_inputElements.reserve(desc.InputGroups.NumElements);
+    
+    for ( uint32_t i = 0; i < desc.InputGroups.NumElements; i++ )
+    {
+        const InputGroupDesc &inputGroup = desc.InputGroups.Elements[i];
+        m_inputGroups.push_back(inputGroup);
+        
+        std::vector<InputLayoutElementDesc> elements;
+        elements.reserve(inputGroup.Elements.NumElements);
+        for ( uint32_t j = 0; j < inputGroup.Elements.NumElements; j++ )
+        {
+            elements.push_back(inputGroup.Elements.Elements[j]);
+        }
+        m_inputElements.push_back(std::move(elements));
+    }
+    
     m_vertexDescriptor    = [[MTLVertexDescriptor alloc] init];
     int      bindingIndex = 0;
     uint32_t location     = kIRStageInAttributeStartIndex;
 
-    for ( int i = 0; i < m_desc.InputGroups.NumElements( ); i++ )
+    for ( uint32_t i = 0; i < m_inputGroups.size(); i++ )
     {
-        const InputGroupDesc &inputGroup = m_desc.InputGroups.GetElement( i );
+        const InputGroupDesc &inputGroup = m_inputGroups[i];
         auto                 *layout     = [m_vertexDescriptor.layouts objectAtIndexedSubscript:bindingIndex];
         layout.stepFunction              = inputGroup.StepRate == StepRate::PerInstance ? MTLVertexStepFunctionPerInstance : MTLVertexStepFunctionPerVertex;
 
         uint32_t offset = 0;
-        for ( int elementIndex = 0; elementIndex < inputGroup.Elements.NumElements( ); ++elementIndex )
+        for ( uint32_t elementIndex = 0; elementIndex < m_inputElements[i].size(); ++elementIndex )
         {
-            const InputLayoutElementDesc &inputElement = inputGroup.Elements.GetElement( elementIndex );
+            const InputLayoutElementDesc &inputElement = m_inputElements[i][elementIndex];
             auto *attribute       = [m_vertexDescriptor.attributes objectAtIndexedSubscript:location];
             attribute.bufferIndex = bindingIndex;
             attribute.offset      = offset;

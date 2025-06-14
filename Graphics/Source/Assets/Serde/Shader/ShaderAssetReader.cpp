@@ -122,17 +122,17 @@ void ShaderAssetReader::ReadHeader( )
 void ShaderAssetReader::ReadInputLayout( InputLayoutDesc &inputLayout ) const
 {
     const uint32_t numInputGroups = m_reader->ReadUInt32( );
-    inputLayout.InputGroups.Resize( numInputGroups );
+    DZArenaArrayHelper<InputGroupDescArray, InputGroupDesc>::AllocateArray( m_shaderAsset->_Arena, inputLayout.InputGroups, numInputGroups );
 
     for ( uint32_t i = 0; i < numInputGroups; ++i )
     {
-        InputGroupDesc &inputGroup  = inputLayout.InputGroups.GetElement( i );
+        InputGroupDesc &inputGroup  = inputLayout.InputGroups.Elements[ i ];
         const uint32_t  numElements = m_reader->ReadUInt32( );
-        inputGroup.Elements.Resize( numElements );
+        DZArenaArrayHelper<InputLayoutElementDescArray, InputLayoutElementDesc>::AllocateArray( m_shaderAsset->_Arena, inputGroup.Elements, numElements );
 
         for ( uint32_t j = 0; j < numElements; ++j )
         {
-            InputLayoutElementDesc &element = inputGroup.Elements.GetElement( j );
+            InputLayoutElementDesc &element = inputGroup.Elements.Elements[ j ];
 
             element.Semantic      = m_reader->ReadString( );
             element.SemanticIndex = m_reader->ReadUInt32( );

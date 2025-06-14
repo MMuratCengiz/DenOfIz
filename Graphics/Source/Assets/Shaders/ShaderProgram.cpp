@@ -90,6 +90,8 @@ public:
     std::vector<LocalRootSignatureDesc>                m_localRootSignatures;
     std::vector<ThreadGroupInfo>                       m_threadGroupInfos;
     std::vector<std::vector<ReflectionResourceField>>  m_reflectionFieldStorage;
+    std::vector<InputGroupDesc>                        m_inputGroups;
+    std::vector<std::vector<InputLayoutElementDesc>>   m_inputElements;
 
     explicit Impl( const ShaderProgramDesc &desc ) : m_desc( desc )
     {
@@ -100,7 +102,7 @@ public:
 
     void Compile( );
     void CreateReflectionData( );
-    void InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
+    void InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc );
     void ReflectShader( ReflectionState &state );
     void ReflectLibrary( ReflectionState &state );
     void ProcessInputBindingDesc( ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex );
@@ -372,6 +374,10 @@ void ShaderProgram::Impl::CreateReflectionData( )
         binding.Stages.Elements    = stages.data( );
         binding.Stages.NumElements = static_cast<uint32_t>( stages.size( ) );
     }
+
+    // Set up input layout arrays
+    m_reflectDesc.InputLayout.InputGroups.NumElements = static_cast<uint32_t>( m_inputGroups.size( ) );
+    m_reflectDesc.InputLayout.InputGroups.Elements    = m_inputGroups.data( );
 
     m_reflectDesc.RootSignature.RootConstants.NumElements     = static_cast<uint32_t>( m_rootSignatureState.RootConstants.size( ) );
     m_reflectDesc.RootSignature.RootConstants.Elements        = m_rootSignatureState.RootConstants.data( );
@@ -695,7 +701,7 @@ bool ShaderProgram::Impl::UpdateBoundResourceStage( const ReflectionState &state
     return found;
 }
 
-void ShaderProgram::Impl::InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const
+void ShaderProgram::Impl::InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc )
 {
     constexpr D3D_NAME providedSemantics[ 8 ] = {
         D3D_NAME_VERTEX_ID, D3D_NAME_INSTANCE_ID,   D3D_NAME_PRIMITIVE_ID, D3D_NAME_RENDER_TARGET_ARRAY_INDEX, D3D_NAME_VIEWPORT_ARRAY_INDEX,
@@ -731,10 +737,15 @@ void ShaderProgram::Impl::InitInputLayout( ID3D12ShaderReflection *shaderReflect
 
     if ( !inputElements.empty( ) )
     {
-        auto &inputElementsArray = inputLayoutDesc.InputGroups.EmplaceElement( );
-        for ( int i = 0; i < inputElements.size( ); ++i )
-        {
-            inputElementsArray.Elements.AddElement( inputElements[ i ] );
-        }
+        m_inputGroups.emplace_back( );
+        auto &inputGroup    = m_inputGroups.back( );
+        inputGroup.StepRate = StepRate::PerVertex;
+
+        m_inputElements.emplace_back( );
+        auto &elementsVector = m_inputElements.back( );
+        elementsVector       = std::move( inputElements );
+
+        inputGroup.Elements.Elements    = elementsVector.data( );
+        inputGroup.Elements.NumElements = static_cast<uint32_t>( elementsVector.size( ) );
     }
 }

@@ -49,22 +49,34 @@ namespace DenOfIz
     };
     template class DZ_API InteropArray<InputLayoutElementDesc>;
 
+    struct DZ_API InputLayoutElementDescArray
+    {
+        InputLayoutElementDesc* Elements;
+        uint32_t                NumElements;
+    };
+
     /**
      * @brief Describes a group of input elements that are bound to a single vertex buffer.
      */
     struct DZ_API InputGroupDesc
     {
-        StepRate                             StepRate = StepRate::PerVertex;
-        InteropArray<InputLayoutElementDesc> Elements;
+        StepRate                       StepRate = StepRate::PerVertex;
+        InputLayoutElementDescArray    Elements;
     };
     template class DZ_API InteropArray<InputGroupDesc>;
+
+    struct DZ_API InputGroupDescArray
+    {
+        InputGroupDesc* Elements;
+        uint32_t        NumElements;
+    };
 
     /**
      * @brief Describes the input layout of a the input assembler stage. The order the groups are added determines the buffer binding.
      */
     struct DZ_API InputLayoutDesc
     {
-        InteropArray<InputGroupDesc> InputGroups;
+        InputGroupDescArray InputGroups;
     };
 
     class DZ_API IInputLayout

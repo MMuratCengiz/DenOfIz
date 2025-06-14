@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Interface/IInputLayout.h>
 #include "MetalContext.h"
+#include <vector>
 
 namespace DenOfIz
 {
@@ -27,10 +28,11 @@ namespace DenOfIz
     class MetalInputLayout final : public IInputLayout
     {
         MetalContext   *m_context;
-        InputLayoutDesc m_desc;
+        std::vector<InputGroupDesc> m_inputGroups;
+        std::vector<std::vector<InputLayoutElementDesc>> m_inputElements;
         MTLVertexDescriptor *m_vertexDescriptor;
     public:
-        MetalInputLayout( MetalContext *context, InputLayoutDesc desc );
+        MetalInputLayout( MetalContext *context, const InputLayoutDesc &desc );
         [[nodiscard]] MTLVertexDescriptor *GetVertexDescriptor( ) const;
         ~MetalInputLayout( ) override;
     };

@@ -25,17 +25,17 @@ VulkanInputLayout::VulkanInputLayout( const InputLayoutDesc &inputLayoutDesc )
     // TODO: !IMPROVEMENT! --fvk-stage-io-order=alpha should be used as a proper solution, but it is not implemented yet. Check ShaderCompiler.CompileHLSL.
     uint32_t location = 0;
     // TODO: !IMPROVEMENT! Does multiple input groups work
-    for ( int bindingIndex = 0; bindingIndex < inputLayoutDesc.InputGroups.NumElements( ); bindingIndex++ )
+    for ( uint32_t bindingIndex = 0; bindingIndex < inputLayoutDesc.InputGroups.NumElements; bindingIndex++ )
     {
-        const InputGroupDesc            &inputGroup         = inputLayoutDesc.InputGroups.GetElement( bindingIndex );
+        const InputGroupDesc            &inputGroup         = inputLayoutDesc.InputGroups.Elements[ bindingIndex ];
         VkVertexInputBindingDescription &bindingDescription = m_bindingDescriptions.emplace_back( VkVertexInputBindingDescription{ } );
         bindingDescription.binding                          = bindingIndex;
         bindingDescription.inputRate                        = inputGroup.StepRate == StepRate::PerInstance ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
 
         uint32_t offset = 0;
-        for ( int inputElementIndex = 0; inputElementIndex < inputGroup.Elements.NumElements( ); inputElementIndex++ )
+        for ( uint32_t inputElementIndex = 0; inputElementIndex < inputGroup.Elements.NumElements; inputElementIndex++ )
         {
-            const InputLayoutElementDesc      &inputElement         = inputGroup.Elements.GetElement( inputElementIndex );
+            const InputLayoutElementDesc      &inputElement         = inputGroup.Elements.Elements[ inputElementIndex ];
             VkVertexInputAttributeDescription &attributeDescription = m_attributeDescriptions.emplace_back( VkVertexInputAttributeDescription{ } );
             attributeDescription.binding                            = bindingIndex;
             attributeDescription.location                           = location++; // Is this correct? !CHECK_VK!

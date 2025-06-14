@@ -105,17 +105,17 @@ void ShaderAssetWriter::WriteHeader( const uint32_t totalNumBytes ) const
 
 void ShaderAssetWriter::WriteInputLayout( const InputLayoutDesc &inputLayout ) const
 {
-    const uint32_t numInputGroups = inputLayout.InputGroups.NumElements( );
+    const uint32_t numInputGroups = inputLayout.InputGroups.NumElements;
     m_writer->WriteUInt32( numInputGroups );
 
     for ( uint32_t i = 0; i < numInputGroups; ++i )
     {
-        const InputGroupDesc &inputGroup = inputLayout.InputGroups.GetElement( i );
-        m_writer->WriteUInt32( inputGroup.Elements.NumElements( ) );
+        const InputGroupDesc &inputGroup = inputLayout.InputGroups.Elements[ i ];
+        m_writer->WriteUInt32( inputGroup.Elements.NumElements );
 
-        for ( int j = 0; j < inputGroup.Elements.NumElements( ); ++j )
+        for ( int j = 0; j < inputGroup.Elements.NumElements; ++j )
         {
-            const InputLayoutElementDesc &element = inputGroup.Elements.GetElement( j );
+            const InputLayoutElementDesc &element = inputGroup.Elements.Elements[ j ];
 
             m_writer->WriteString( element.Semantic );
             m_writer->WriteUInt32( element.SemanticIndex );
