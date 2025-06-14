@@ -66,7 +66,7 @@ ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc ), m_l
         m_pipelineWidgetCommandListPool  = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( pipelinePoolDesc ) );
 
         m_pipelineWidgetData.resize( desc.MaxPipelineWidgets * desc.NumFrames );
-        auto pipelineCommandLists = m_pipelineWidgetCommandListPool->GetCommandLists( );
+        const auto pipelineCommandLists = m_pipelineWidgetCommandListPool->GetCommandLists( );
         for ( uint32_t i = 0; i < pipelineCommandLists.NumElements && i < m_pipelineWidgetData.size( ); ++i )
         {
             m_pipelineWidgetData[ i ].CommandList = pipelineCommandLists.Elements[ i ];
@@ -81,7 +81,7 @@ ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc ), m_l
     CreateRenderTargets( );
     UpdateProjectionMatrix( );
 
-    auto commandLists = m_commandListPool->GetCommandLists( );
+    const auto commandLists = m_commandListPool->GetCommandLists( );
     for ( uint32_t i = 0; i < desc.NumFrames && i < commandLists.NumElements; ++i )
     {
         m_frameData[ i ].CommandList = commandLists.Elements[ i ];
@@ -778,26 +778,30 @@ void ClayRenderer::RenderSingleLineText( const Clay_RenderCommand *command, cons
 
     if ( cachedVertices->vertices.size( ) == 0 )
     {
-        InteropArray<GlyphVertex> glyphVertices;
-        InteropArray<uint32_t>    glyphIndices;
-
-        GenerateTextVerticesDesc generateDesc{ };
-        generateDesc.StartPosition = Float_2{ bounds.x * m_dpiScale, adjustedY };
-        generateDesc.Color         = Float_4{ data.textColor.r / 255.0f, data.textColor.g / 255.0f, data.textColor.b / 255.0f, data.textColor.a / 255.0f };
-        generateDesc.OutVertices   = &glyphVertices;
-        generateDesc.OutIndices    = &glyphIndices;
-        generateDesc.Scale         = effectiveScale;
-        generateDesc.LetterSpacing = data.letterSpacing * m_dpiScale;
-        generateDesc.LineHeight    = data.lineHeight;
-
-        textLayout->GenerateTextVertices( generateDesc );
-
-        if ( glyphVertices.NumElements( ) > 0 && glyphIndices.NumElements( ) > 0 )
+        const TextVertexAllocationInfo allocInfo = textLayout->GetVertexAllocationInfo( );
+        if ( allocInfo.VertexCount > 0 && allocInfo.IndexCount > 0 )
         {
-            for ( uint32_t i = 0; i < glyphVertices.NumElements( ); ++i )
+            std::vector<GlyphVertex> glyphVertices( allocInfo.VertexCount );
+            std::vector<uint32_t>    glyphIndices( allocInfo.IndexCount );
+
+            GenerateTextVerticesDesc generateDesc{ };
+            generateDesc.StartPosition   = Float_2{ bounds.x * m_dpiScale, adjustedY };
+            generateDesc.Color           = Float_4{ data.textColor.r / 255.0f, data.textColor.g / 255.0f, data.textColor.b / 255.0f, data.textColor.a / 255.0f };
+            generateDesc.OutVertices     = glyphVertices.data( );
+            generateDesc.OutIndices      = glyphIndices.data( );
+            generateDesc.BaseVertexIndex = 0;
+            generateDesc.BaseIndexOffset = 0;
+            generateDesc.Scale           = effectiveScale;
+            generateDesc.LetterSpacing   = data.letterSpacing * m_dpiScale;
+            generateDesc.LineHeight      = data.lineHeight;
+
+            textLayout->GenerateTextVertices( generateDesc );
+
+            cachedVertices->vertices.reserve( allocInfo.VertexCount );
+            for ( uint32_t i = 0; i < allocInfo.VertexCount; ++i )
             {
-                const GlyphVertex glyph = glyphVertices.GetElement( i );
-                UIVertex          vertex{ };
+                const GlyphVertex &glyph = glyphVertices[ i ];
+                UIVertex           vertex{ };
                 vertex.Position     = Float_3{ glyph.Position.X, glyph.Position.Y, 0.0f }; // Z will be set in AddVerticesWithDepth
                 vertex.TexCoord     = glyph.UV;
                 vertex.Color        = glyph.Color;
@@ -805,9 +809,10 @@ void ClayRenderer::RenderSingleLineText( const Clay_RenderCommand *command, cons
                 cachedVertices->vertices.push_back( vertex );
             }
 
-            for ( uint32_t i = 0; i < glyphIndices.NumElements( ); ++i )
+            cachedVertices->indices.reserve( allocInfo.IndexCount );
+            for ( uint32_t i = 0; i < allocInfo.IndexCount; ++i )
             {
-                cachedVertices->indices.push_back( glyphIndices.GetElement( i ) );
+                cachedVertices->indices.push_back( glyphIndices[ i ] );
             }
         }
     }

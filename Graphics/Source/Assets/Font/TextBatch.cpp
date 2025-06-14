@@ -100,8 +100,8 @@ TextBatch::~TextBatch( )
 
 void TextBatch::BeginBatch( )
 {
-    m_glyphVertices.Clear( );
-    m_indexData.Clear( );
+    m_glyphVertices.clear( );
+    m_indexData.clear( );
     m_currentVertexCount     = 0;
     m_currentIndexCount      = 0;
     m_currentTextLayoutIndex = 0;
@@ -154,19 +154,36 @@ void TextBatch::AddText( const AddTextDesc &desc )
     const float fontAscent = static_cast<float>( m_font->Asset( )->Metrics.Ascent ) * effectiveScale;
     const float adjustedY  = modifiedParams.Y + fontAscent;
 
+    const TextVertexAllocationInfo allocInfo              = textLayout->GetVertexAllocationInfo( );
+    const size_t                   requiredVertexCapacity = m_currentVertexCount + allocInfo.VertexCount;
+    const size_t                   requiredIndexCapacity  = m_currentIndexCount + allocInfo.IndexCount;
+
+    if ( m_glyphVertices.capacity( ) < requiredVertexCapacity )
+    {
+        m_glyphVertices.reserve( requiredVertexCapacity + 1024 ); // Add some extra to reduce reallocations
+    }
+    if ( m_indexData.capacity( ) < requiredIndexCapacity )
+    {
+        m_indexData.reserve( requiredIndexCapacity + 1024 );
+    }
+    m_glyphVertices.resize( requiredVertexCapacity );
+    m_indexData.resize( requiredIndexCapacity );
+
     GenerateTextVerticesDesc generateDesc{ };
-    generateDesc.StartPosition = { modifiedParams.X, adjustedY };
-    generateDesc.Color         = modifiedParams.Color;
-    generateDesc.OutVertices   = &m_glyphVertices;
-    generateDesc.OutIndices    = &m_indexData;
-    generateDesc.Scale         = effectiveScale;
-    generateDesc.LetterSpacing = desc.LetterSpacing;
-    generateDesc.LineHeight    = desc.LineHeight;
+    generateDesc.StartPosition   = { modifiedParams.X, adjustedY };
+    generateDesc.Color           = modifiedParams.Color;
+    generateDesc.OutVertices     = m_glyphVertices.data( ) + m_currentVertexCount;
+    generateDesc.OutIndices      = m_indexData.data( ) + m_currentIndexCount;
+    generateDesc.BaseVertexIndex = m_currentVertexCount;
+    generateDesc.BaseIndexOffset = m_currentIndexCount;
+    generateDesc.Scale           = effectiveScale;
+    generateDesc.LetterSpacing   = desc.LetterSpacing;
+    generateDesc.LineHeight      = desc.LineHeight;
 
     textLayout->GenerateTextVertices( generateDesc );
 
-    m_currentVertexCount = m_glyphVertices.NumElements( );
-    m_currentIndexCount  = m_indexData.NumElements( );
+    m_currentVertexCount += allocInfo.VertexCount;
+    m_currentIndexCount += allocInfo.IndexCount;
 
     // Resize buffers if needed
     if ( m_currentVertexCount > m_maxVertices || m_currentIndexCount > m_maxIndices )
@@ -248,7 +265,7 @@ Float_2 TextBatch::MeasureText( const InteropString &text, const AddTextDesc &de
 void TextBatch::UpdateBuffers( )
 {
     // Check if we need to resize vertex buffer
-    if ( m_vertexBufferDesc.NumBytes < m_glyphVertices.NumElements( ) * sizeof( GlyphVertex ) )
+    if ( m_vertexBufferDesc.NumBytes < m_currentVertexCount * sizeof( GlyphVertex ) )
     {
         if ( m_vertexBufferMappedMemory )
         {
@@ -264,7 +281,7 @@ void TextBatch::UpdateBuffers( )
     }
 
     // Check if we need to resize index buffer
-    if ( m_indexBufferDesc.NumBytes < m_indexData.NumElements( ) * sizeof( uint32_t ) )
+    if ( m_indexBufferDesc.NumBytes < m_currentIndexCount * sizeof( uint32_t ) )
     {
         if ( m_indexBufferMappedMemory )
         {
@@ -278,8 +295,8 @@ void TextBatch::UpdateBuffers( )
         m_indexBufferMappedMemory  = static_cast<Byte *>( m_indexBuffer->MapMemory( ) );
     }
 
-    memcpy( m_vertexBufferMappedMemory, m_glyphVertices.Data( ), m_glyphVertices.NumElements( ) * sizeof( GlyphVertex ) );
-    memcpy( m_indexBufferMappedMemory, m_indexData.Data( ), m_indexData.NumElements( ) * sizeof( uint32_t ) );
+    memcpy( m_vertexBufferMappedMemory, m_glyphVertices.data( ), m_currentVertexCount * sizeof( GlyphVertex ) );
+    memcpy( m_indexBufferMappedMemory, m_indexData.data( ), m_currentIndexCount * sizeof( uint32_t ) );
 }
 
 void TextBatch::InitializeAtlas( )

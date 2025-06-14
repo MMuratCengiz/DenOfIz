@@ -173,22 +173,31 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
 
 void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateDesc ) const
 {
-    if ( m_shapedGlyphs.empty( ) )
+    if ( !m_font || m_shapedGlyphs.empty( ) )
     {
         spdlog::error( "No glyphs to generate vertices for, call ShapeText first." );
         return;
     }
 
-    float                      x             = generateDesc.StartPosition.X;
-    float                      y             = generateDesc.StartPosition.Y;
-    const Float_4             &color         = generateDesc.Color;
-    InteropArray<GlyphVertex> *outVertices   = generateDesc.OutVertices;
-    InteropArray<uint32_t>    *outIndices    = generateDesc.OutIndices;
-    const float                scale         = generateDesc.Scale;
-    const float                letterSpacing = generateDesc.LetterSpacing;
+    if ( !generateDesc.OutVertices || !generateDesc.OutIndices )
+    {
+        spdlog::error( "Output vertex or index buffer is null" );
+        return;
+    }
 
-    const FontAsset *fontAsset  = m_font->Asset( );
-    uint32_t         baseVertex = outVertices->NumElements( );
+    float          x             = generateDesc.StartPosition.X;
+    float          y             = generateDesc.StartPosition.Y;
+    const Float_4 &color         = generateDesc.Color;
+    GlyphVertex   *outVertices   = generateDesc.OutVertices;
+    uint32_t      *outIndices    = generateDesc.OutIndices;
+    const float    scale         = generateDesc.Scale;
+    const float    letterSpacing = generateDesc.LetterSpacing;
+    const uint32_t baseVertex    = generateDesc.BaseVertexIndex;
+
+    const FontAsset *fontAsset   = m_font->Asset( );
+    uint32_t         vertexIndex = 0;
+    uint32_t         indexIndex  = 0;
+
     for ( const auto &shapedGlyph : m_shapedGlyphs )
     {
         const FontGlyph *metrics = m_font->GetGlyph( shapedGlyph.CodePoint );
@@ -212,25 +221,24 @@ void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateD
         const float v1 = static_cast<float>( metrics->AtlasY + metrics->Height ) / static_cast<float>( fontAsset->AtlasHeight );
 
         // Top-left
-        GlyphVertex vertex1{ Float_2{ x0, y0 }, Float_2{ u0, v0 }, color };
+        outVertices[ vertexIndex + 0 ] = GlyphVertex{ Float_2{ x0, y0 }, Float_2{ u0, v0 }, color };
         // Top-right
-        GlyphVertex vertex2{ Float_2{ x1, y0 }, Float_2{ u1, v0 }, color };
+        outVertices[ vertexIndex + 1 ] = GlyphVertex{ Float_2{ x1, y0 }, Float_2{ u1, v0 }, color };
         // Bottom-left
-        GlyphVertex vertex3{ Float_2{ x0, y1 }, Float_2{ u0, v1 }, color };
+        outVertices[ vertexIndex + 2 ] = GlyphVertex{ Float_2{ x0, y1 }, Float_2{ u0, v1 }, color };
         // Bottom-right
-        GlyphVertex vertex4{ Float_2{ x1, y1 }, Float_2{ u1, v1 }, color };
-        outVertices->AddElement( vertex1 );
-        outVertices->AddElement( vertex2 );
-        outVertices->AddElement( vertex3 );
-        outVertices->AddElement( vertex4 );
+        outVertices[ vertexIndex + 3 ] = GlyphVertex{ Float_2{ x1, y1 }, Float_2{ u1, v1 }, color };
 
-        outIndices->AddElement( baseVertex + 0 );
-        outIndices->AddElement( baseVertex + 1 );
-        outIndices->AddElement( baseVertex + 2 );
-        outIndices->AddElement( baseVertex + 1 );
-        outIndices->AddElement( baseVertex + 3 );
-        outIndices->AddElement( baseVertex + 2 );
-        baseVertex += 4;
+        const uint32_t currentBaseVertex = baseVertex + vertexIndex;
+        outIndices[ indexIndex + 0 ]     = currentBaseVertex + 0;
+        outIndices[ indexIndex + 1 ]     = currentBaseVertex + 1;
+        outIndices[ indexIndex + 2 ]     = currentBaseVertex + 2;
+        outIndices[ indexIndex + 3 ]     = currentBaseVertex + 1;
+        outIndices[ indexIndex + 4 ]     = currentBaseVertex + 3;
+        outIndices[ indexIndex + 5 ]     = currentBaseVertex + 2;
+
+        vertexIndex += 4;
+        indexIndex += 6;
     }
 }
 
@@ -293,6 +301,27 @@ std::u32string TextLayout::Utf8ToUtf32( const std::string &utf8Text )
     }
 
     return result;
+}
+
+TextVertexAllocationInfo TextLayout::GetVertexAllocationInfo( ) const
+{
+    TextVertexAllocationInfo info;
+    if ( !m_font || m_shapedGlyphs.empty( ) )
+    {
+        return info; // Return zeros
+    }
+    uint32_t visibleGlyphCount = 0;
+    for ( const auto &shapedGlyph : m_shapedGlyphs )
+    {
+        const FontGlyph *metrics = m_font->GetGlyph( shapedGlyph.CodePoint );
+        if ( metrics && metrics->Width > 0 && metrics->Height > 0 )
+        {
+            visibleGlyphCount++;
+        }
+    }
+    info.VertexCount = visibleGlyphCount * 4;
+    info.IndexCount  = visibleGlyphCount * 6;
+    return info;
 }
 
 Float_2 TextLayout::GetTextSize( ) const

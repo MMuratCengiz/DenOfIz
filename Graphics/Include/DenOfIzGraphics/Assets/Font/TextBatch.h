@@ -65,8 +65,8 @@ namespace DenOfIz
         uint32_t                  m_maxIndices         = 4096;
         uint32_t                  m_currentVertexCount = 0;
         uint32_t                  m_currentIndexCount  = 0;
-        InteropArray<GlyphVertex> m_glyphVertices;
-        InteropArray<uint32_t>    m_indexData;
+        std::vector<GlyphVertex>  m_glyphVertices;
+        std::vector<uint32_t>     m_indexData;
 
         BufferDesc m_vertexBufferDesc{ };
         BufferDesc m_indexBufferDesc{ };

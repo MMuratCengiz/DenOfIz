@@ -42,7 +42,12 @@ namespace DenOfIz
 
         GlyphVertex( ) = default;
     };
-    template class DZ_API InteropArray<GlyphVertex>;
+
+    struct DZ_API GlyphVertexArray
+    {
+        GlyphVertex *Elements;
+        uint32_t     NumElements;
+    };
 
     enum class TextDirection
     {
@@ -64,11 +69,19 @@ namespace DenOfIz
         Float_2 StartPosition{ 0.0f, 0.0f };
         Float_4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
 
-        InteropArray<GlyphVertex> *OutVertices;
-        InteropArray<uint32_t>    *OutIndices;
-        float                      Scale         = 1.0f;
-        uint16_t                   LetterSpacing = 0; // Additional spacing between characters
-        uint16_t                   LineHeight    = 0; // Custom line height override
+        GlyphVertex *OutVertices;
+        uint32_t    *OutIndices;
+        uint32_t     BaseVertexIndex = 0; // Starting vertex index for this text
+        uint32_t     BaseIndexOffset = 0; // Starting index offset for this text
+        float        Scale         = 1.0f;
+        uint16_t     LetterSpacing = 0; // Additional spacing between characters
+        uint16_t     LineHeight    = 0; // Custom line height override
+    };
+
+    struct DZ_API TextVertexAllocationInfo
+    {
+        uint32_t VertexCount = 0;
+        uint32_t IndexCount  = 0;
     };
     class TextLayout
     {
@@ -99,6 +112,7 @@ namespace DenOfIz
         DZ_API Font *GetFont( ) const;
         DZ_API void  ShapeText( const ShapeTextDesc &shapeDesc );
         DZ_API void  GenerateTextVertices( const GenerateTextVerticesDesc &generateDesc ) const;
+        DZ_API TextVertexAllocationInfo GetVertexAllocationInfo( ) const;
 
         DZ_API Float_2 GetTextSize( ) const;
         DZ_API float   GetTextWidth( ) const;

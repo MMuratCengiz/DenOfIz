@@ -122,8 +122,10 @@ void Spinning3DCubeWidget::CreatePipeline( )
     pipelineDesc.Graphics.CullMode          = CullMode::BackFace;
     pipelineDesc.Graphics.FillMode          = FillMode::Solid;
 
-    RenderTargetDesc &renderTarget = pipelineDesc.Graphics.RenderTargets.EmplaceElement( );
-    renderTarget.Format            = Format::B8G8R8A8Unorm;
+    RenderTargetDesc renderTarget{ };
+    renderTarget.Format                             = Format::B8G8R8A8Unorm;
+    pipelineDesc.Graphics.RenderTargets.Elements    = &renderTarget;
+    pipelineDesc.Graphics.RenderTargets.NumElements = 1;
 
     m_pipeline = std::unique_ptr<IPipeline>( m_device->CreatePipeline( pipelineDesc ) );
 
