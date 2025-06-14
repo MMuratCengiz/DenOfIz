@@ -116,7 +116,7 @@ void VulkanPipeline::CreateRayTracingPipeline( )
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
     shaderStages.reserve( compiledShaders.NumElements );
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> shaderGroups;
-    shaderGroups.reserve( compiledShaders.NumElements + m_desc.RayTracing.HitGroups.NumElements( ) );
+    shaderGroups.reserve( compiledShaders.NumElements + m_desc.RayTracing.HitGroups.NumElements );
 
     std::vector<VkDescriptorSetLayout> allLayouts;
     const auto                         rootSig        = dynamic_cast<VulkanRootSignature *>( m_desc.RootSignature );
@@ -133,7 +133,7 @@ void VulkanPipeline::CreateRayTracingPipeline( )
         }
     };
 
-    for ( int i = 0; i < compiledShaders.NumElements; ++i )
+    for ( uint32_t i = 0; i < compiledShaders.NumElements; ++i )
     {
         const auto                 &compiledShader = compiledShaders.Elements[ i ];
         const VkShaderStageFlagBits stage          = VulkanEnumConverter::ConvertShaderStage( compiledShader->Stage );
@@ -151,9 +151,9 @@ void VulkanPipeline::CreateRayTracingPipeline( )
             continue;
         }
 
-        if ( m_desc.RayTracing.LocalRootSignatures.NumElements( ) > i )
+        if ( m_desc.RayTracing.LocalRootSignatures.NumElements > i )
         {
-            mergeLocalRootSignature( m_desc.RayTracing.LocalRootSignatures.GetElement( i ) );
+            mergeLocalRootSignature( m_desc.RayTracing.LocalRootSignatures.Elements[ i ] );
         }
 
         const VkShaderModule            &shaderModule = m_shaderModules.emplace_back( this->CreateShaderModule( compiledShader->SPIRV ) );
@@ -177,9 +177,9 @@ void VulkanPipeline::CreateRayTracingPipeline( )
         }
     }
 
-    for ( int i = 0; i < m_desc.RayTracing.HitGroups.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < m_desc.RayTracing.HitGroups.NumElements; ++i )
     {
-        const auto &hitGroup = m_desc.RayTracing.HitGroups.GetElement( i );
+        const auto &hitGroup = m_desc.RayTracing.HitGroups.Elements[ i ];
 
         VkRayTracingShaderGroupCreateInfoKHR &group = shaderGroups.emplace_back( );
         group.sType                                 = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
@@ -375,9 +375,9 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigureMeshPipeli
 
 [[nodiscard]] VkPipelineRenderingCreateInfo VulkanPipeline::ConfigureRenderingInfo( std::vector<VkFormat> &colorAttachmentsStore ) const
 {
-    for ( int i = 0; i < m_desc.Graphics.RenderTargets.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < m_desc.Graphics.RenderTargets.NumElements; ++i )
     {
-        colorAttachmentsStore.push_back( VulkanEnumConverter::ConvertImageFormat( m_desc.Graphics.RenderTargets.GetElement( i ).Format ) );
+        colorAttachmentsStore.push_back( VulkanEnumConverter::ConvertImageFormat( m_desc.Graphics.RenderTargets.Elements[ i ].Format ) );
     }
 
     VkPipelineRenderingCreateInfo renderingCreateInfo{ };
@@ -514,12 +514,12 @@ VkPipelineRasterizationStateCreateInfo VulkanPipeline::ConfigureRasterization( )
 
 VkPipelineColorBlendStateCreateInfo VulkanPipeline::ConfigureColorBlend( std::vector<VkPipelineColorBlendAttachmentState> &colorBlendAttachments ) const
 {
-    const uint32_t attachmentCount = m_desc.Graphics.RenderTargets.NumElements( );
+    const uint32_t attachmentCount = m_desc.Graphics.RenderTargets.NumElements;
     colorBlendAttachments.resize( attachmentCount );
 
     for ( uint32_t i = 0; i < attachmentCount; ++i )
     {
-        auto &attachment                               = m_desc.Graphics.RenderTargets.GetElement( i );
+        auto &attachment                               = m_desc.Graphics.RenderTargets.Elements[ i ];
         colorBlendAttachments[ i ].blendEnable         = attachment.Blend.Enable;
         colorBlendAttachments[ i ].srcColorBlendFactor = VulkanEnumConverter::ConvertBlend( attachment.Blend.SrcBlend );
         colorBlendAttachments[ i ].dstColorBlendFactor = VulkanEnumConverter::ConvertBlend( attachment.Blend.DstBlend );

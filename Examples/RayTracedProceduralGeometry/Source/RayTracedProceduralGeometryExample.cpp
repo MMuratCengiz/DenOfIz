@@ -510,15 +510,15 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
     m_hgLocalRootSignature =
         std::unique_ptr<ILocalRootSignature>( m_logicalDevice->CreateLocalRootSignature( reflection.LocalRootSignatures.Elements[ m_closestHitTriangleIndex ] ) );
 
-    InteropArray<HitGroupDesc> hitGroupDescs;
+    std::vector<HitGroupDesc> hitGroupDescs;
     { // Create hit groups
-        HitGroupDesc &hitGroupDesc1         = hitGroupDescs.EmplaceElement( );
+        HitGroupDesc &hitGroupDesc1         = hitGroupDescs.emplace_back( HitGroupDesc{ } );
         hitGroupDesc1.Type                  = HitGroupType::Triangles;
         hitGroupDesc1.Name                  = "MyHitGroup_Triangle";
         hitGroupDesc1.ClosestHitShaderIndex = m_closestHitTriangleIndex;
         hitGroupDesc1.LocalRootSignature    = m_hgLocalRootSignature.get( );
 
-        HitGroupDesc &hitGroupDesc2      = hitGroupDescs.EmplaceElement( );
+        HitGroupDesc &hitGroupDesc2      = hitGroupDescs.emplace_back( HitGroupDesc{ } );
         hitGroupDesc2.Type               = HitGroupType::Triangles;
         hitGroupDesc2.Name               = "MyHitGroup_Triangle_ShadowRay";
         hitGroupDesc2.LocalRootSignature = m_hgLocalRootSignature.get( );
@@ -533,7 +533,7 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
                 {
                     hitGroupName += "_ShadowRay";
                 }
-                HitGroupDesc &hitGroupDesc           = hitGroupDescs.EmplaceElement( );
+                HitGroupDesc &hitGroupDesc           = hitGroupDescs.emplace_back( HitGroupDesc{ } );
                 hitGroupDesc.Type                    = HitGroupType::AABBs;
                 hitGroupDesc.Name                    = hitGroupName.c_str( );
                 hitGroupDesc.ClosestHitShaderIndex   = m_closestHitAABBIndex;
@@ -549,10 +549,11 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
 
     // Create pipeline state object
     PipelineDesc pipelineDesc{ };
-    pipelineDesc.BindPoint            = BindPoint::RayTracing;
-    pipelineDesc.RootSignature        = m_rayTracingRootSignature.get( );
-    pipelineDesc.ShaderProgram        = m_rayTracingProgram.get( );
-    pipelineDesc.RayTracing.HitGroups = std::move( hitGroupDescs );
+    pipelineDesc.BindPoint                        = BindPoint::RayTracing;
+    pipelineDesc.RootSignature                    = m_rayTracingRootSignature.get( );
+    pipelineDesc.ShaderProgram                    = m_rayTracingProgram.get( );
+    pipelineDesc.RayTracing.HitGroups.Elements    = hitGroupDescs.data( );
+    pipelineDesc.RayTracing.HitGroups.NumElements = hitGroupDescs.size( );
 
     m_rayTracingPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 

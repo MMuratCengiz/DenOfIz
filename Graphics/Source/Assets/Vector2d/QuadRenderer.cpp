@@ -249,7 +249,7 @@ void QuadRenderer::CreateShaderResources( )
     pipelineDesc.InputLayout       = m_inputLayout.get( );
     pipelineDesc.Graphics.FillMode = FillMode::Solid;
 
-    RenderTargetDesc &renderTarget          = pipelineDesc.Graphics.RenderTargets.EmplaceElement( );
+    RenderTargetDesc renderTarget;
     renderTarget.Blend.Enable               = true;
     renderTarget.Blend.SrcBlend             = Blend::One; // Premultiplied alpha
     renderTarget.Blend.DstBlend             = Blend::InvSrcAlpha;
@@ -258,6 +258,9 @@ void QuadRenderer::CreateShaderResources( )
     renderTarget.Blend.DstBlendAlpha        = Blend::InvSrcAlpha;
     renderTarget.Blend.BlendOpAlpha         = BlendOp::Add;
     renderTarget.Format                     = m_desc.RenderTargetFormat;
+    
+    pipelineDesc.Graphics.RenderTargets.Elements = &renderTarget;
+    pipelineDesc.Graphics.RenderTargets.NumElements = 1;
     pipelineDesc.Graphics.PrimitiveTopology = PrimitiveTopology::Triangle;
 
     m_rasterPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );

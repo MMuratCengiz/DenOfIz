@@ -49,8 +49,8 @@ TextRenderer::TextRenderer( const TextRendererDesc &desc ) : m_desc( desc )
         // ReSharper disable once CppDFAUnreachableCode
         BinaryReader      binaryReader{ ByteArrayView( shaderAssetBytes.data( ), shaderAssetBytes.size( ) ) };
         ShaderAssetReader assetReader{ { &binaryReader } };
-        auto shaderAsset = std::unique_ptr<ShaderAsset>( assetReader.Read( ) );
-        m_fontShaderProgram = std::make_unique<ShaderProgram>( *shaderAsset );
+        auto              shaderAsset = std::unique_ptr<ShaderAsset>( assetReader.Read( ) );
+        m_fontShaderProgram           = std::make_unique<ShaderProgram>( *shaderAsset );
     }
     // ReSharper disable once CppRedundantElseKeywordInsideCompoundStatement
     else
@@ -89,16 +89,19 @@ TextRenderer::TextRenderer( const TextRendererDesc &desc ) : m_desc( desc )
     pipelineDesc.InputLayout       = m_inputLayout.get( );
     pipelineDesc.Graphics.FillMode = FillMode::Solid;
 
-    RenderTargetDesc &renderTarget          = pipelineDesc.Graphics.RenderTargets.EmplaceElement( );
-    renderTarget.Blend.Enable               = true;
-    renderTarget.Blend.SrcBlend             = Blend::SrcAlpha;
-    renderTarget.Blend.DstBlend             = Blend::InvSrcAlpha;
-    renderTarget.Blend.BlendOp              = BlendOp::Add;
-    renderTarget.Blend.SrcBlendAlpha        = Blend::One;
-    renderTarget.Blend.DstBlendAlpha        = Blend::Zero;
-    renderTarget.Blend.BlendOpAlpha         = BlendOp::Add;
-    renderTarget.Format                     = Format::B8G8R8A8Unorm;
-    pipelineDesc.Graphics.PrimitiveTopology = PrimitiveTopology::Triangle;
+    RenderTargetDesc renderTarget;
+    renderTarget.Blend.Enable        = true;
+    renderTarget.Blend.SrcBlend      = Blend::SrcAlpha;
+    renderTarget.Blend.DstBlend      = Blend::InvSrcAlpha;
+    renderTarget.Blend.BlendOp       = BlendOp::Add;
+    renderTarget.Blend.SrcBlendAlpha = Blend::One;
+    renderTarget.Blend.DstBlendAlpha = Blend::Zero;
+    renderTarget.Blend.BlendOpAlpha  = BlendOp::Add;
+    renderTarget.Format              = Format::B8G8R8A8Unorm;
+
+    pipelineDesc.Graphics.RenderTargets.Elements    = &renderTarget;
+    pipelineDesc.Graphics.RenderTargets.NumElements = 1;
+    pipelineDesc.Graphics.PrimitiveTopology         = PrimitiveTopology::Triangle;
 
     m_fontPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
     m_fonts.reserve( 64 );

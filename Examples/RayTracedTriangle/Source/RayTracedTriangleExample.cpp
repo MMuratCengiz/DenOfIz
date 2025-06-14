@@ -175,8 +175,9 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     pipelineDesc.BindPoint     = BindPoint::RayTracing;
     pipelineDesc.RootSignature = m_rayTracingRootSignature.get( );
     pipelineDesc.ShaderProgram = m_rayTracingProgram.get( );
-    pipelineDesc.RayTracing.HitGroups.AddElement(
-        HitGroupDesc{ .Name = "MyHitGroup", .ClosestHitShaderIndex = 1, .LocalRootSignature = m_hgShaderLayout.get( ), .Type = HitGroupType::Triangles } );
+    HitGroupDesc hitGroupDesc{ .Name = "MyHitGroup", .ClosestHitShaderIndex = 1, .LocalRootSignature = m_hgShaderLayout.get( ), .Type = HitGroupType::Triangles };
+    pipelineDesc.RayTracing.HitGroups.Elements    = &hitGroupDesc;
+    pipelineDesc.RayTracing.HitGroups.NumElements = 1;
 
     m_rayTracingPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 }
@@ -271,9 +272,10 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
     geometryDesc.Flags                  = GeometryFlags::Opaque;
 
     BottomLevelASDesc bottomLevelASDesc{ };
-    bottomLevelASDesc.Geometries.AddElement( geometryDesc );
-    bottomLevelASDesc.BuildFlags = ASBuildFlags::PreferFastTrace;
-    m_bottomLevelAS              = std::unique_ptr<IBottomLevelAS>( m_logicalDevice->CreateBottomLevelAS( bottomLevelASDesc ) );
+    bottomLevelASDesc.Geometries.Elements    = &geometryDesc;
+    bottomLevelASDesc.Geometries.NumElements = 1;
+    bottomLevelASDesc.BuildFlags             = ASBuildFlags::PreferFastTrace;
+    m_bottomLevelAS                          = std::unique_ptr<IBottomLevelAS>( m_logicalDevice->CreateBottomLevelAS( bottomLevelASDesc ) );
 
     ASInstanceDesc instanceDesc{ };
     instanceDesc.BLAS = m_bottomLevelAS.get( );

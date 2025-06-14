@@ -41,11 +41,13 @@ DefaultRenderPipeline::DefaultRenderPipeline( const GraphicsApi *graphicsApi, IL
     m_rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature( programReflection.RootSignature ) );
     m_inputLayout   = std::unique_ptr<IInputLayout>( logicalDevice->CreateInputLayout( programReflection.InputLayout ) );
     PipelineDesc pipelineDesc{ };
-    pipelineDesc.InputLayout       = m_inputLayout.get( );
-    pipelineDesc.RootSignature     = m_rootSignature.get( );
-    pipelineDesc.ShaderProgram     = m_program.get( );
-    pipelineDesc.Graphics.CullMode = CullMode::BackFace;
-    pipelineDesc.Graphics.RenderTargets.AddElement( { .Format = Format::B8G8R8A8Unorm } );
+    pipelineDesc.InputLayout                        = m_inputLayout.get( );
+    pipelineDesc.RootSignature                      = m_rootSignature.get( );
+    pipelineDesc.ShaderProgram                      = m_program.get( );
+    pipelineDesc.Graphics.CullMode                  = CullMode::BackFace;
+    RenderTargetDesc renderTarget                   = { .Format = Format::B8G8R8A8Unorm };
+    pipelineDesc.Graphics.RenderTargets.Elements    = &renderTarget;
+    pipelineDesc.Graphics.RenderTargets.NumElements = 1;
 
     m_pipeline = std::unique_ptr<IPipeline>( logicalDevice->CreatePipeline( pipelineDesc ) );
 

@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "IRootSignature.h"
 #include "ITextureResource.h"
 #include "RayTracing/IBottomLevelAS.h"
+#include "RayTracing/ILocalRootSignature.h"
 
 namespace DenOfIz
 {
@@ -131,6 +132,12 @@ namespace DenOfIz
     };
     template class DZ_API InteropArray<RenderTargetDesc>;
 
+    struct DZ_API RenderTargetDescArray
+    {
+        RenderTargetDesc *Elements;
+        uint32_t          NumElements;
+    };
+
     struct DZ_API DepthTest
     {
         bool      Enable    = false;
@@ -157,13 +164,13 @@ namespace DenOfIz
 
     struct DZ_API GraphicsPipelineDesc
     {
-        uint32_t                       ViewMask               = 0;
-        bool                           AlphaToCoverageEnable  = false; // Todo check if required
-        bool                           IndependentBlendEnable = false; // Todo check if required
-        bool                           BlendLogicOpEnable     = false;
-        LogicOp                        BlendLogicOp           = LogicOp::Noop;
-        InteropArray<RenderTargetDesc> RenderTargets;
-        Format                         DepthStencilAttachmentFormat = Format::Undefined;
+        uint32_t             ViewMask               = 0;
+        bool                 AlphaToCoverageEnable  = false; // Todo check if required
+        bool                 IndependentBlendEnable = false; // Todo check if required
+        bool                 BlendLogicOpEnable     = false;
+        LogicOp              BlendLogicOp           = LogicOp::Noop;
+        RenderTargetDescArray RenderTargets;
+        Format               DepthStencilAttachmentFormat = Format::Undefined;
 
         PrimitiveTopology PrimitiveTopology = PrimitiveTopology::Triangle;
         CullMode          CullMode          = CullMode::None;
@@ -186,11 +193,17 @@ namespace DenOfIz
     };
     template class DZ_API InteropArray<HitGroupDesc>;
 
+    struct DZ_API HitGroupDescArray
+    {
+        HitGroupDesc *Elements;
+        uint32_t      NumElements;
+    };
+
     struct DZ_API RayTracingPipelineDesc
     {
-        InteropArray<HitGroupDesc> HitGroups;
+        HitGroupDescArray HitGroups;
         // Index must match with the index of the shader provided to ShaderProgram
-        InteropArray<ILocalRootSignature *> LocalRootSignatures;
+        ILocalRootSignatureArray LocalRootSignatures;
     };
 
     struct DZ_API ComputePipelineDesc{ };

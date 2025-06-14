@@ -166,7 +166,7 @@ void ClayRenderer::CreatePipeline( )
     pipelineDesc.Graphics.DepthTest.Write              = true;
     pipelineDesc.Graphics.DepthStencilAttachmentFormat = Format::D32Float;
 
-    RenderTargetDesc &renderTarget   = pipelineDesc.Graphics.RenderTargets.EmplaceElement( );
+    RenderTargetDesc renderTarget;
     renderTarget.Format              = m_desc.RenderTargetFormat;
     renderTarget.Blend.Enable        = true;
     renderTarget.Blend.SrcBlend      = Blend::SrcAlpha;
@@ -175,6 +175,9 @@ void ClayRenderer::CreatePipeline( )
     renderTarget.Blend.SrcBlendAlpha = Blend::One;
     renderTarget.Blend.DstBlendAlpha = Blend::Zero;
     renderTarget.Blend.BlendOpAlpha  = BlendOp::Add;
+
+    pipelineDesc.Graphics.RenderTargets.Elements    = &renderTarget;
+    pipelineDesc.Graphics.RenderTargets.NumElements = 1;
 
     m_pipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 }

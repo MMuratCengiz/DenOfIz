@@ -95,9 +95,9 @@ void MetalPipeline::CreateGraphicsPipeline( )
     }
 
     int attachmentIdx = 0;
-    for ( int i = 0; i < m_desc.Graphics.RenderTargets.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < m_desc.Graphics.RenderTargets.NumElements; ++i )
     {
-        const auto                                 &attachment           = m_desc.Graphics.RenderTargets.GetElement( i );
+        const auto                                 &attachment           = m_desc.Graphics.RenderTargets.Elements[ i ];
         MTLRenderPipelineColorAttachmentDescriptor *metalColorAttachment = pipelineStateDescriptor.colorAttachments[ attachmentIdx ];
         metalColorAttachment.pixelFormat                                 = MetalEnumConverter::ConvertFormat( attachment.Format );
 
@@ -254,9 +254,9 @@ void MetalPipeline::CreateRayTracingPipeline( )
         m_visibleFunctions[ shader->EntryPoint.Get( ) ] = i + nullFunctionOffset;
     }
 
-    for ( int i = 0; i < m_desc.RayTracing.HitGroups.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < m_desc.RayTracing.HitGroups.NumElements; ++i )
     {
-        const auto     &hitGroup       = m_desc.RayTracing.HitGroups.GetElement( i );
+        const auto     &hitGroup       = m_desc.RayTracing.HitGroups.Elements[ i ];
         HitGroupExport &hitGroupExport = m_hitGroupExports.emplace( hitGroup.Name.Get( ), HitGroupExport( ) ).first->second;
 
         if ( hitGroup.ClosestHitShaderIndex != -1 )
@@ -566,9 +566,9 @@ void MetalPipeline::CreateMeshPipeline( )
     }
 
     int attachmentIdx = 0;
-    for ( int i = 0; i < m_desc.Graphics.RenderTargets.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < m_desc.Graphics.RenderTargets.NumElements; ++i )
     {
-        const auto &attachment = m_desc.Graphics.RenderTargets.GetElement( i );
+        const auto &attachment = m_desc.Graphics.RenderTargets.Elements[ i ];
         MTLRenderPipelineColorAttachmentDescriptor *metalColorAttachment = pipelineStateDescriptor.colorAttachments[ attachmentIdx ];
         metalColorAttachment.pixelFormat = MetalEnumConverter::ConvertFormat( attachment.Format );
         

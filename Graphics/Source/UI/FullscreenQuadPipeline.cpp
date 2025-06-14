@@ -70,9 +70,12 @@ void FullscreenQuadPipeline::CreatePipeline( const FullscreenQuadPipelineDesc &d
     pipelineDesc.ShaderProgram = m_shaderProgram.get( );
     pipelineDesc.BindPoint     = BindPoint::Graphics;
 
-    RenderTargetDesc &renderTarget = pipelineDesc.Graphics.RenderTargets.EmplaceElement( );
-    renderTarget.Format            = desc.OutputFormat;
-    renderTarget.Blend.Enable      = false;
+    RenderTargetDesc renderTarget;
+    renderTarget.Format       = desc.OutputFormat;
+    renderTarget.Blend.Enable = false;
+
+    pipelineDesc.Graphics.RenderTargets.Elements    = &renderTarget;
+    pipelineDesc.Graphics.RenderTargets.NumElements = 1;
 
     m_pipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 

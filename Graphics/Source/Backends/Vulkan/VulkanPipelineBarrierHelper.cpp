@@ -55,28 +55,28 @@ void VulkanPipelineBarrierHelper::ExecutePipelineBarrier( const VulkanContext *c
     VkAccessFlags srcAccessFlags = { };
     VkAccessFlags dstAccessFlags = { };
 
-    std::vector<VkImageMemoryBarrier>       vkImageBarriers;
-    const InteropArray<TextureBarrierDesc> &textureBarriers = barrier.GetTextureBarriers( );
-    for ( int i = 0; i < textureBarriers.NumElements( ); i++ )
+    std::vector<VkImageMemoryBarrier> vkImageBarriers;
+    const TextureBarrierDescArray    &textureBarriers = barrier.GetTextureBarriers( );
+    for ( int i = 0; i < textureBarriers.NumElements; i++ )
     {
-        const TextureBarrierDesc &imageBarrier       = textureBarriers.GetElement( i );
+        const TextureBarrierDesc &imageBarrier       = textureBarriers.Elements[ i ];
         VkImageMemoryBarrier      imageMemoryBarrier = CreateImageBarrier( context, imageBarrier, srcAccessFlags, dstAccessFlags, commandQueueType );
         vkImageBarriers.push_back( imageMemoryBarrier );
     }
 
-    std::vector<VkBufferMemoryBarrier>     vkBufferBarriers;
-    const InteropArray<BufferBarrierDesc> &bufferBarriers = barrier.GetBufferBarriers( );
-    for ( int i = 0; i < bufferBarriers.NumElements( ); i++ )
+    std::vector<VkBufferMemoryBarrier> vkBufferBarriers;
+    const BufferBarrierDescArray      &bufferBarriers = barrier.GetBufferBarriers( );
+    for ( int i = 0; i < bufferBarriers.NumElements; i++ )
     {
-        const BufferBarrierDesc &bufferBarrier       = bufferBarriers.GetElement( i );
+        const BufferBarrierDesc &bufferBarrier       = bufferBarriers.Elements[ i ];
         memoryBarrier            bufferMemoryBarrier = CreateBufferBarrier( bufferBarrier, srcAccessFlags, dstAccessFlags, commandQueueType );
         vkBufferBarriers.push_back( bufferMemoryBarrier );
     }
-    std::vector<VkMemoryBarrier>           vkMemoryBarriers;
-    const InteropArray<MemoryBarrierDesc> &memoryBarriers = barrier.GetMemoryBarriers( );
-    for ( int i = 0; i < memoryBarriers.NumElements( ); i++ )
+    std::vector<VkMemoryBarrier>  vkMemoryBarriers;
+    const MemoryBarrierDescArray &memoryBarriers = barrier.GetMemoryBarriers( );
+    for ( int i = 0; i < memoryBarriers.NumElements; i++ )
     {
-        const MemoryBarrierDesc &memoryBarrier   = memoryBarriers.GetElement( i );
+        const MemoryBarrierDesc &memoryBarrier   = memoryBarriers.Elements[ i ];
         VkMemoryBarrier         &vkMemoryBarrier = vkMemoryBarriers.emplace_back( VkMemoryBarrier{ } );
         vkMemoryBarrier.sType                    = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
         srcAccessFlags                           = GetAccessFlags( memoryBarrier.OldState, commandQueueType );
@@ -145,7 +145,7 @@ VkBufferMemoryBarrier VulkanPipelineBarrierHelper::CreateBufferBarrier( const Bu
 {
     VkBufferMemoryBarrier memoryBarrier{ };
     memoryBarrier.sType  = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-    memoryBarrier.buffer = dynamic_cast<VulkanBufferResource *>( barrier.Resource )->Instance( );
+    memoryBarrier.buffer = dynamic_cast<VulkanBufferResource const *>( barrier.Resource )->Instance( );
     memoryBarrier.offset = 0;
     memoryBarrier.size   = VK_WHOLE_SIZE;
 

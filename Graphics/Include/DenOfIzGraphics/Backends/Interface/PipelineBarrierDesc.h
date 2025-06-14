@@ -40,15 +40,25 @@ namespace DenOfIz
         uint32_t MipLevel                 = 0;
         uint32_t ArrayLayer               = 0;
     };
-    template class DZ_API InteropArray<TextureBarrierDesc>;
+
+    struct DZ_API TextureBarrierDescArray
+    {
+        TextureBarrierDesc const *Elements;
+        size_t                    NumElements;
+    };
 
     struct DZ_API BufferBarrierDesc
     {
-        IBufferResource *Resource;
-        uint32_t         OldState;
-        uint32_t         NewState;
+        IBufferResource const *Resource;
+        uint32_t               OldState;
+        uint32_t               NewState;
     };
-    template class DZ_API InteropArray<BufferBarrierDesc>;
+
+    struct DZ_API BufferBarrierDescArray
+    {
+        BufferBarrierDesc const *Elements;
+        size_t                   NumElements;
+    };
 
     struct DZ_API MemoryBarrierDesc
     {
@@ -66,53 +76,58 @@ namespace DenOfIz
             return barrier;
         }
     };
-    template class DZ_API InteropArray<MemoryBarrierDesc>;
+
+    struct DZ_API MemoryBarrierDescArray
+    {
+        MemoryBarrierDesc const *Elements;
+        size_t                   NumElements;
+    };
 
     class DZ_API PipelineBarrierDesc
     {
-        InteropArray<TextureBarrierDesc> m_textureBarriers;
-        InteropArray<BufferBarrierDesc>  m_bufferBarriers;
-        InteropArray<MemoryBarrierDesc>  m_memoryBarriers;
+        std::vector<TextureBarrierDesc> m_textureBarriers;
+        std::vector<BufferBarrierDesc>  m_bufferBarriers;
+        std::vector<MemoryBarrierDesc>  m_memoryBarriers;
 
     public:
         void Clear( )
         {
-            m_textureBarriers.Clear( );
-            m_bufferBarriers.Clear( );
-            m_memoryBarriers.Clear( );
+            m_textureBarriers.clear( );
+            m_bufferBarriers.clear( );
+            m_memoryBarriers.clear( );
         }
 
         PipelineBarrierDesc &TextureBarrier( const TextureBarrierDesc &barrier )
         {
-            m_textureBarriers.AddElement( barrier );
+            m_textureBarriers.push_back( barrier );
             return *this;
         }
 
-        PipelineBarrierDesc &BufferBarrier( const BufferBarrierDesc barrier )
+        PipelineBarrierDesc &BufferBarrier( const BufferBarrierDesc &barrier )
         {
-            m_bufferBarriers.AddElement( barrier );
+            m_bufferBarriers.push_back( barrier );
             return *this;
         }
 
-        PipelineBarrierDesc &MemoryBarrier( const MemoryBarrierDesc barrier )
+        PipelineBarrierDesc &MemoryBarrier( const MemoryBarrierDesc &barrier )
         {
-            m_memoryBarriers.AddElement( barrier );
+            m_memoryBarriers.push_back( barrier );
             return *this;
         }
 
-        [[nodiscard]] const InteropArray<TextureBarrierDesc> &GetTextureBarriers( ) const
+        [[nodiscard]] TextureBarrierDescArray GetTextureBarriers( ) const
         {
-            return m_textureBarriers;
+            return TextureBarrierDescArray{ m_textureBarriers.data( ), m_textureBarriers.size( ) };
         }
 
-        [[nodiscard]] const InteropArray<BufferBarrierDesc> &GetBufferBarriers( ) const
+        [[nodiscard]] BufferBarrierDescArray GetBufferBarriers( ) const
         {
-            return m_bufferBarriers;
+            return BufferBarrierDescArray{ m_bufferBarriers.data( ), m_bufferBarriers.size( ) };
         }
 
-        [[nodiscard]] const InteropArray<MemoryBarrierDesc> &GetMemoryBarriers( ) const
+        [[nodiscard]] MemoryBarrierDescArray GetMemoryBarriers( ) const
         {
-            return m_memoryBarriers;
+            return MemoryBarrierDescArray{ m_memoryBarriers.data( ), m_memoryBarriers.size( ) };
         }
 
         static PipelineBarrierDesc Uav( )

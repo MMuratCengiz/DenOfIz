@@ -16,14 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12InputLayout.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12Pipeline.h"
-#include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12LocalRootSignature.h"
-#include "DenOfIzGraphicsInternal/Utilities/Storage.h"
-#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include <codecvt>
 #include <directx/d3dx12.h>
 #include <utility>
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12InputLayout.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12LocalRootSignature.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/Storage.h"
 
 using namespace DenOfIz;
 
@@ -87,10 +87,10 @@ void DX12Pipeline::CreateGraphicsPipeline( )
     psoDesc.BlendState.IndependentBlendEnable = m_desc.Graphics.IndependentBlendEnable;
     psoDesc.SampleMask                        = UINT_MAX;
     psoDesc.PrimitiveTopologyType             = DX12EnumConverter::ConvertPrimitiveTopologyToType( m_desc.Graphics.PrimitiveTopology );
-    psoDesc.NumRenderTargets                  = m_desc.Graphics.RenderTargets.NumElements( );
-    for ( uint32_t i = 0; i < m_desc.Graphics.RenderTargets.NumElements( ); ++i )
+    psoDesc.NumRenderTargets                  = m_desc.Graphics.RenderTargets.NumElements;
+    for ( uint32_t i = 0; i < m_desc.Graphics.RenderTargets.NumElements; ++i )
     {
-        BlendDesc &blendDesc                                       = m_desc.Graphics.RenderTargets.GetElement( i ).Blend;
+        BlendDesc &blendDesc                                       = m_desc.Graphics.RenderTargets.Elements[ i ].Blend;
         psoDesc.BlendState.RenderTarget[ i ].BlendEnable           = blendDesc.Enable;
         psoDesc.BlendState.RenderTarget[ i ].LogicOpEnable         = m_desc.Graphics.BlendLogicOpEnable;
         psoDesc.BlendState.RenderTarget[ i ].SrcBlend              = DX12EnumConverter::ConvertBlend( blendDesc.SrcBlend );
@@ -102,7 +102,7 @@ void DX12Pipeline::CreateGraphicsPipeline( )
         psoDesc.BlendState.RenderTarget[ i ].LogicOp               = DX12EnumConverter::ConvertLogicOp( m_desc.Graphics.BlendLogicOp );
         psoDesc.BlendState.RenderTarget[ i ].RenderTargetWriteMask = blendDesc.RenderTargetWriteMask;
 
-        psoDesc.RTVFormats[ i ] = DX12EnumConverter::ConvertFormat( m_desc.Graphics.RenderTargets.GetElement( i ).Format );
+        psoDesc.RTVFormats[ i ] = DX12EnumConverter::ConvertFormat( m_desc.Graphics.RenderTargets.Elements[ i ].Format );
     }
 
     if ( m_desc.Graphics.DepthStencilAttachmentFormat != Format::Undefined )
@@ -144,7 +144,7 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     storage.Reserve( compiledShaders.NumElements * 2 ); // 2, Local root signature Desc, SubObject to exports association Desc
     std::vector<D3D12_STATE_SUBOBJECT> subObjects;
     subObjects.reserve( 256 );
-    m_hitGroups.reserve( m_desc.RayTracing.HitGroups.NumElements( ) );
+    m_hitGroups.reserve( m_desc.RayTracing.HitGroups.NumElements );
     D3D12_RAYTRACING_SHADER_CONFIG shaderConfig = { };
     shaderConfig.MaxAttributeSizeInBytes        = m_desc.ShaderProgram->Desc( ).RayTracing.MaxNumAttributeBytes;
     shaderConfig.MaxPayloadSizeInBytes          = m_desc.ShaderProgram->Desc( ).RayTracing.MaxNumPayloadBytes;
@@ -179,9 +179,9 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     std::unordered_set<std::wstring>                                processedExports;
     // Handle local root signatures per shader
     auto localRootSignatures = m_desc.RayTracing.LocalRootSignatures;
-    for ( int i = 0; i < localRootSignatures.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < localRootSignatures.NumElements; ++i )
     {
-        if ( auto *localRootSignature = dynamic_cast<DX12LocalRootSignature *>( localRootSignatures.GetElement( i ) ) )
+        if ( auto *localRootSignature = dynamic_cast<DX12LocalRootSignature *>( localRootSignatures.Elements[ i ] ) )
         {
             auto &exports = rootSignatureExports[ localRootSignature->RootSignature( ) ];
             exports.push_back( entryPoints[ i ].c_str( ) );
@@ -189,9 +189,9 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     }
 
     // Handle RootSignatures for hit groups, create said hit groups in the meantime
-    for ( int i = 0; i < m_desc.RayTracing.HitGroups.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < m_desc.RayTracing.HitGroups.NumElements; ++i )
     {
-        const auto &hitGroup = m_desc.RayTracing.HitGroups.GetElement( i );
+        const auto &hitGroup = m_desc.RayTracing.HitGroups.Elements[ i ];
 
         DZ_WS_STRING( hgExport, hitGroup.Name.Get( ) );
         m_exportNames.push_back( hgExport );
@@ -518,9 +518,9 @@ void DX12Pipeline::CreateMeshPipeline( )
     blendDesc.AlphaToCoverageEnable  = m_desc.Graphics.AlphaToCoverageEnable;
     blendDesc.IndependentBlendEnable = m_desc.Graphics.IndependentBlendEnable;
 
-    for ( uint32_t i = 0; i < m_desc.Graphics.RenderTargets.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < m_desc.Graphics.RenderTargets.NumElements; ++i )
     {
-        BlendDesc &pipelineBlendDesc                      = m_desc.Graphics.RenderTargets.GetElement( i ).Blend;
+        BlendDesc &pipelineBlendDesc                      = m_desc.Graphics.RenderTargets.Elements[ i ].Blend;
         blendDesc.RenderTarget[ i ].BlendEnable           = pipelineBlendDesc.Enable;
         blendDesc.RenderTarget[ i ].LogicOpEnable         = m_desc.Graphics.BlendLogicOpEnable;
         blendDesc.RenderTarget[ i ].SrcBlend              = DX12EnumConverter::ConvertBlend( pipelineBlendDesc.SrcBlend );
@@ -561,10 +561,10 @@ void DX12Pipeline::CreateMeshPipeline( )
     meshPipelineStateStream.DepthStencilState = depthStencilDesc;
 
     D3D12_RT_FORMAT_ARRAY rtvFormats = { };
-    rtvFormats.NumRenderTargets      = m_desc.Graphics.RenderTargets.NumElements( );
-    for ( uint32_t i = 0; i < m_desc.Graphics.RenderTargets.NumElements( ); ++i )
+    rtvFormats.NumRenderTargets      = m_desc.Graphics.RenderTargets.NumElements;
+    for ( uint32_t i = 0; i < m_desc.Graphics.RenderTargets.NumElements; ++i )
     {
-        rtvFormats.RTFormats[ i ] = DX12EnumConverter::ConvertFormat( m_desc.Graphics.RenderTargets.GetElement( i ).Format );
+        rtvFormats.RTFormats[ i ] = DX12EnumConverter::ConvertFormat( m_desc.Graphics.RenderTargets.Elements[ i ].Format );
     }
     meshPipelineStateStream.RTVFormats = rtvFormats;
     meshPipelineStateStream.DSVFormat  = DX12EnumConverter::ConvertFormat( m_desc.Graphics.DepthStencilAttachmentFormat );

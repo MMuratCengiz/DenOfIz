@@ -85,9 +85,9 @@ D3D12_BARRIER_SYNC GetSyncFlagsForState( const uint32_t &state )
 
 bool DX12BarrierHelper::NeedsGlobalUavSync( const PipelineBarrierDesc &barrier )
 {
-    for ( int i = 0; i < barrier.GetMemoryBarriers( ).NumElements( ); i++ )
+    for ( int i = 0; i < barrier.GetMemoryBarriers( ).NumElements; i++ )
     {
-        const auto &memoryBarrier = barrier.GetMemoryBarriers( ).GetElement( i );
+        const auto &memoryBarrier = barrier.GetMemoryBarriers( ).Elements[ i ];
         bool        isGlobalUav   = memoryBarrier.OldState == ResourceUsage::UnorderedAccess || memoryBarrier.NewState == ResourceUsage::UnorderedAccess;
         isGlobalUav               = isGlobalUav || memoryBarrier.BufferResource == nullptr;
         isGlobalUav               = isGlobalUav || memoryBarrier.TextureResource == nullptr;
@@ -120,10 +120,10 @@ void DX12BarrierHelper::ExecuteEnhancedResourceBarrier( ID3D12GraphicsCommandLis
         globalBarriers.push_back( globalBarrier );
     }
 
-    for ( int i = 0; i < barrier.GetBufferBarriers( ).NumElements( ); i++ )
+    for ( int i = 0; i < barrier.GetBufferBarriers( ).NumElements; i++ )
     {
-        const auto     &bufferBarrier = barrier.GetBufferBarriers( ).GetElement( i );
-        ID3D12Resource *pResource     = dynamic_cast<DX12BufferResource *>( bufferBarrier.Resource )->Resource( );
+        const auto     &bufferBarrier = barrier.GetBufferBarriers( ).Elements[ i ];
+        ID3D12Resource *pResource     = dynamic_cast<DX12BufferResource const *>( bufferBarrier.Resource )->Resource( );
 
         D3D12_BUFFER_BARRIER dxBufferBarrier = { };
         dxBufferBarrier.pResource            = pResource;
@@ -137,9 +137,9 @@ void DX12BarrierHelper::ExecuteEnhancedResourceBarrier( ID3D12GraphicsCommandLis
         bufferBarriers.push_back( dxBufferBarrier );
     }
 
-    for ( int i = 0; i < barrier.GetTextureBarriers( ).NumElements( ); i++ )
+    for ( int i = 0; i < barrier.GetTextureBarriers( ).NumElements; i++ )
     {
-        const auto     &textureBarrier = barrier.GetTextureBarriers( ).GetElement( i );
+        const auto     &textureBarrier = barrier.GetTextureBarriers( ).Elements[ i ];
         ID3D12Resource *pResource      = dynamic_cast<DX12TextureResource *>( textureBarrier.Resource )->Resource( );
 
         D3D12_TEXTURE_BARRIER dxTextureBarrier = { };
@@ -182,9 +182,9 @@ void DX12BarrierHelper::ExecuteEnhancedResourceBarrier( ID3D12GraphicsCommandLis
         textureBarriers.push_back( dxTextureBarrier );
     }
 
-    for ( int i = 0; i < barrier.GetMemoryBarriers( ).NumElements( ); i++ )
+    for ( int i = 0; i < barrier.GetMemoryBarriers( ).NumElements; i++ )
     {
-        const auto &memoryBarrier = barrier.GetMemoryBarriers( ).GetElement( i );
+        const auto &memoryBarrier = barrier.GetMemoryBarriers( ).Elements[ i ];
         if ( memoryBarrier.BufferResource != nullptr )
         {
             ID3D12Resource *pResource = dynamic_cast<DX12BufferResource *>( memoryBarrier.BufferResource )->Resource( );
@@ -286,9 +286,9 @@ void DX12BarrierHelper::ExecuteLegacyResourceBarrier( ID3D12GraphicsCommandList7
         resourceBarriers.push_back( CD3DX12_RESOURCE_BARRIER::UAV( nullptr ) );
     }
 
-    for ( int i = 0; i < barrier.GetTextureBarriers( ).NumElements( ); i++ )
+    for ( int i = 0; i < barrier.GetTextureBarriers( ).NumElements; i++ )
     {
-        const auto     &textureBarrier = barrier.GetTextureBarriers( ).GetElement( i );
+        const auto     &textureBarrier = barrier.GetTextureBarriers( ).Elements[ i ];
         ID3D12Resource *pResource      = dynamic_cast<DX12TextureResource *>( textureBarrier.Resource )->Resource( );
 
         if ( textureBarrier.OldState & ResourceUsage::UnorderedAccess && textureBarrier.NewState & ResourceUsage::UnorderedAccess )
@@ -310,10 +310,10 @@ void DX12BarrierHelper::ExecuteLegacyResourceBarrier( ID3D12GraphicsCommandList7
         resourceBarriers.push_back( transition );
     }
 
-    for ( int i = 0; i < barrier.GetBufferBarriers( ).NumElements( ); i++ )
+    for ( int i = 0; i < barrier.GetBufferBarriers( ).NumElements; i++ )
     {
-        const auto     &bufferBarrier = barrier.GetBufferBarriers( ).GetElement( i );
-        ID3D12Resource *pResource     = dynamic_cast<DX12BufferResource *>( bufferBarrier.Resource )->Resource( );
+        const auto     &bufferBarrier = barrier.GetBufferBarriers( ).Elements[ i ];
+        ID3D12Resource *pResource     = dynamic_cast<DX12BufferResource const *>( bufferBarrier.Resource )->Resource( );
 
         if ( bufferBarrier.OldState & ResourceUsage::UnorderedAccess && bufferBarrier.NewState & ResourceUsage::UnorderedAccess )
         {
@@ -338,9 +338,9 @@ void DX12BarrierHelper::ExecuteLegacyResourceBarrier( ID3D12GraphicsCommandList7
         }
     }
 
-    for ( int i = 0; i < barrier.GetMemoryBarriers( ).NumElements( ); i++ )
+    for ( int i = 0; i < barrier.GetMemoryBarriers( ).NumElements; i++ )
     {
-        const auto &memoryBarrier = barrier.GetMemoryBarriers( ).GetElement( i );
+        const auto &memoryBarrier = barrier.GetMemoryBarriers( ).Elements[ i ];
         bool        isUavBarrier  = IsUavBarrier( memoryBarrier.OldState, memoryBarrier.NewState );
 
         if ( memoryBarrier.BufferResource != nullptr )

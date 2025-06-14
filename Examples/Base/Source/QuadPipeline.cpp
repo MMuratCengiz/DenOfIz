@@ -42,18 +42,20 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
     m_inputLayout   = std::unique_ptr<IInputLayout>( logicalDevice->CreateInputLayout( programReflection.InputLayout ) );
 
     PipelineDesc pipelineDesc{ };
-    pipelineDesc.InputLayout   = m_inputLayout.get( );
-    pipelineDesc.RootSignature = m_rootSignature.get( );
-    pipelineDesc.ShaderProgram = program.get( );
-    pipelineDesc.Graphics.RenderTargets.AddElement( { .Format = Format::B8G8R8A8Unorm } );
-    pipelineDesc.Graphics.CullMode = CullMode::BackFace;
+    pipelineDesc.InputLayout                        = m_inputLayout.get( );
+    pipelineDesc.RootSignature                      = m_rootSignature.get( );
+    pipelineDesc.ShaderProgram                      = program.get( );
+    RenderTargetDesc renderTarget                   = { .Format = Format::B8G8R8A8Unorm };
+    pipelineDesc.Graphics.RenderTargets.Elements    = &renderTarget;
+    pipelineDesc.Graphics.RenderTargets.NumElements = 1;
+    pipelineDesc.Graphics.CullMode                  = CullMode::BackFace;
 
     m_pipeline = std::unique_ptr<IPipeline>( logicalDevice->CreatePipeline( pipelineDesc ) );
 
     ResourceBindGroupDesc bindGroupDesc{ };
     bindGroupDesc.RootSignature = m_rootSignature.get( );
 
-    for ( int bindingIndex = 0; bindingIndex < programReflection.RootSignature.ResourceBindings.NumElements; ++bindingIndex )
+    for ( uint32_t bindingIndex = 0; bindingIndex < programReflection.RootSignature.ResourceBindings.NumElements; ++bindingIndex )
     {
         const auto &resourceBinding = programReflection.RootSignature.ResourceBindings.Elements[ bindingIndex ];
         bindGroupDesc.RegisterSpace = resourceBinding.RegisterSpace;
