@@ -247,7 +247,7 @@ CompileResult ShaderCompiler::Impl::CompileHLSL( const CompileDesc &compileDesc 
     }
 
     std::vector<std::string> defines( compileDesc.Defines.NumElements );
-    for ( int i = 0; i < compileDesc.Defines.NumElements; ++i )
+    for ( auto i = 0; i < compileDesc.Defines.NumElements; ++i )
     {
         auto               strView   = compileDesc.Defines.Elements[ i ];
         const std::string &defineStr = defines.emplace_back( strView.Chars, strView.Length );

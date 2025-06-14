@@ -90,11 +90,11 @@ namespace DenOfIz
         std::unique_ptr<IBufferResource>  m_aabbPrimitiveAttributeBuffer;
         PrimitiveInstancePerFrameBuffer  *m_aabbPrimitiveAttributeBufferMemory = nullptr;
         // Scene
-        PrimitiveConstantBuffer                        m_planeMaterialCB{ };
-        std::vector<PrimitiveConstantBuffer>           m_aabbMaterials;
-        std::unique_ptr<IBufferResource>               m_sceneConstantBuffer;
-        SceneConstantBuffer                           *m_sceneConstants = nullptr;
-        std::vector<InteropArray<InteropArray<float>>> m_aabbTransformsPerFrame;
+        PrimitiveConstantBuffer                      m_planeMaterialCB{ };
+        std::vector<PrimitiveConstantBuffer>         m_aabbMaterials;
+        std::unique_ptr<IBufferResource>             m_sceneConstantBuffer;
+        SceneConstantBuffer                         *m_sceneConstants = nullptr;
+        std::vector<std::vector<std::vector<float>>> m_aabbTransformsPerFrame;
 
         // Acceleration Structures
         std::unique_ptr<IBottomLevelAS> m_triangleAS;
@@ -116,10 +116,10 @@ namespace DenOfIz
         std::unique_ptr<IShaderLocalData>    m_hitGroupData;
 
         // Constants and state
-        std::vector<AABBBoundingBox>               m_aabbs;
-        std::vector<InteropArray<AABBBoundingBox>> m_aabbPerGeometry;
-        double                                     m_animateGeometryTime = 1.0f;
-        bool                                       m_animateGeometry     = true;
+        std::vector<AABBBoundingBox>              m_aabbs;
+        std::vector<std::vector<AABBBoundingBox>> m_aabbPerGeometry;
+        double                                    m_animateGeometryTime = 1.0f;
+        bool                                      m_animateGeometry     = true;
 
         void CreateRenderTargets( );
         void CreateResources( );

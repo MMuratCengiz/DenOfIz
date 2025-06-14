@@ -24,16 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-template <typename T>
-void AssertInteropArrayEq( const InteropArray<T> &arr1, const InteropArray<T> &arr2 )
-{
-    ASSERT_EQ( arr1.NumElements( ), arr2.NumElements( ) );
-    for ( size_t i = 0; i < arr1.NumElements( ); ++i )
-    {
-        ASSERT_EQ( arr1.GetElement( i ), arr2.GetElement( i ) );
-    }
-}
-
 template<typename T>
 void AssertArrayEq( const T* arr1, const T* arr2, size_t size )
 {

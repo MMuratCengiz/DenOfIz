@@ -196,13 +196,14 @@ void MeshShaderGrassExample::CreateMeshShaderPipeline( )
     pipelineDesc.Graphics.DepthTest.CompareOp          = CompareOp::Less;
 
     RenderTargetDesc rtDesc{ };
-    rtDesc.Format              = Format::B8G8R8A8Unorm;
-    rtDesc.Blend.Enable        = true;
-    rtDesc.Blend.SrcBlend      = Blend::SrcAlpha;
-    rtDesc.Blend.DstBlend      = Blend::InvSrcAlpha;
-    rtDesc.Blend.SrcBlendAlpha = Blend::One;
-    rtDesc.Blend.DstBlendAlpha = Blend::Zero;
-    pipelineDesc.Graphics.RenderTargets.AddElement( rtDesc );
+    rtDesc.Format                                   = Format::B8G8R8A8Unorm;
+    rtDesc.Blend.Enable                             = true;
+    rtDesc.Blend.SrcBlend                           = Blend::SrcAlpha;
+    rtDesc.Blend.DstBlend                           = Blend::InvSrcAlpha;
+    rtDesc.Blend.SrcBlendAlpha                      = Blend::One;
+    rtDesc.Blend.DstBlendAlpha                      = Blend::Zero;
+    pipelineDesc.Graphics.RenderTargets.Elements    = &rtDesc;
+    pipelineDesc.Graphics.RenderTargets.NumElements = 1;
 
     m_meshPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 
@@ -326,14 +327,10 @@ void MeshShaderGrassExample::LoadGrassTexture( )
     BatchResourceCopy batchResourceCopy( m_logicalDevice );
     batchResourceCopy.Begin( );
 
-    InteropArray<Byte> texArray;
-    texArray.Resize( textureData.size( ) );
-    texArray.MemCpy( textureData.data( ), textureData.size( ) );
-
     CopyDataToTextureDesc copyDesc{ };
     copyDesc.DstTexture       = m_grassTexture.get( );
-    copyDesc.Data.Elements    = texArray.Data( );
-    copyDesc.Data.NumElements = texArray.NumElements( );
+    copyDesc.Data.Elements    = textureData.data( );
+    copyDesc.Data.NumElements = textureData.size( );
     batchResourceCopy.CopyDataToTexture( copyDesc );
     batchResourceCopy.Submit( );
 
@@ -468,14 +465,10 @@ void MeshShaderGrassExample::LoadTerrainTexture( )
     BatchResourceCopy batchResourceCopy( m_logicalDevice );
     batchResourceCopy.Begin( );
 
-    InteropArray<Byte> texArray;
-    texArray.Resize( textureData.size( ) );
-    texArray.MemCpy( textureData.data( ), textureData.size( ) );
-
     CopyDataToTextureDesc copyDesc{ };
     copyDesc.DstTexture       = m_terrainTexture.get( );
-    copyDesc.Data.Elements    = texArray.Data( );
-    copyDesc.Data.NumElements = texArray.NumElements( );
+    copyDesc.Data.Elements    = textureData.data( );
+    copyDesc.Data.NumElements = textureData.size( );
     batchResourceCopy.CopyDataToTexture( copyDesc );
     batchResourceCopy.Submit( );
 
@@ -540,8 +533,9 @@ void MeshShaderGrassExample::CreateTerrainPipeline( )
     pipelineDesc.Graphics.DepthTest.CompareOp          = CompareOp::Less;
 
     RenderTargetDesc rtDesc{ };
-    rtDesc.Format = Format::B8G8R8A8Unorm;
-    pipelineDesc.Graphics.RenderTargets.AddElement( rtDesc );
+    rtDesc.Format                                   = Format::B8G8R8A8Unorm;
+    pipelineDesc.Graphics.RenderTargets.Elements    = &rtDesc;
+    pipelineDesc.Graphics.RenderTargets.NumElements = 1;
 
     m_terrainPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 

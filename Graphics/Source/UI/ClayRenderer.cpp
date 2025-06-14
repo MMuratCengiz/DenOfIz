@@ -418,8 +418,8 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
     m_currentDepth     = 0.9f;
     m_pipelineWidgetsToRender.clear( );
 
-    uint32_t                   pipelineWidgetIndex = 0;
-    InteropArray<ISemaphore *> pipelineWidgetSemaphores;
+    uint32_t                  pipelineWidgetIndex = 0;
+    std::vector<ISemaphore *> pipelineWidgetSemaphores;
     for ( int32_t i = 0; i < commands.length; ++i )
     {
         const Clay_RenderCommand *cmd = Clay_RenderCommandArray_Get( &commands, i );
@@ -511,7 +511,7 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
             widgetExecuteDesc.SignalSemaphores.NumElements = 1;
             m_commandQueue->ExecuteCommandLists( widgetExecuteDesc );
 
-            pipelineWidgetSemaphores.AddElement( widgetData.Semaphore.get( ) );
+            pipelineWidgetSemaphores.push_back( widgetData.Semaphore.get( ) );
             pipelineWidgetIndex++;
         }
     }
@@ -578,8 +578,8 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
     executeDesc.CommandLists.Elements      = &uiCmdList;
     executeDesc.CommandLists.NumElements   = 1;
     executeDesc.Signal                     = frame.FrameFence.get( );
-    executeDesc.WaitSemaphores.Elements    = pipelineWidgetSemaphores.Data( );
-    executeDesc.WaitSemaphores.NumElements = pipelineWidgetSemaphores.NumElements( );
+    executeDesc.WaitSemaphores.Elements    = pipelineWidgetSemaphores.data( );
+    executeDesc.WaitSemaphores.NumElements = pipelineWidgetSemaphores.size( );
 
     m_commandQueue->ExecuteCommandLists( executeDesc );
 

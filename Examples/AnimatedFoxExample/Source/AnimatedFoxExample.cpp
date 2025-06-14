@@ -250,7 +250,10 @@ void AnimatedFoxExample::CreateShaders( )
     pipelineDesc.RootSignature     = m_skinnedMeshRootSignature.get( );
     pipelineDesc.ShaderProgram     = skinnedMeshProgram.get( );
     pipelineDesc.Graphics.CullMode = CullMode::BackFace;
-    pipelineDesc.Graphics.RenderTargets.AddElement( { .Format = Format::B8G8R8A8Unorm } );
+    RenderTargetDesc renderTargetDesc{ };
+    renderTargetDesc.Format = Format::B8G8R8A8Unorm;
+    pipelineDesc.Graphics.RenderTargets.Elements    = &renderTargetDesc;
+    pipelineDesc.Graphics.RenderTargets.NumElements = 1;
 
     m_skinnedMeshPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 

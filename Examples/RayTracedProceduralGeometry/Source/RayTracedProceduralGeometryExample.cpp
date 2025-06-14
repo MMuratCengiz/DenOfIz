@@ -584,7 +584,7 @@ void RayTracedProceduralGeometryExample::InitializeScene( )
     m_aabbTransformsPerFrame.resize( 3 );
     for ( int i = 0; i < 3; ++i )
     {
-        m_aabbTransformsPerFrame[ i ].Resize( IntersectionShaderType::TotalPrimitiveCount );
+        m_aabbTransformsPerFrame[ i ].resize( IntersectionShaderType::TotalPrimitiveCount );
     }
 
     // Setup materials

@@ -59,8 +59,6 @@ namespace DenOfIz
         static Float_3               FromOzzTranslation( const ozz::math::Float3 &translation );
         static Float_4               FromOzzRotation( const ozz::math::Quaternion &rotation );
         static Float_3               FromOzzScale( const ozz::math::Float3 &scale );
-        static void                  CopyArrayToOzzVector( const InteropArray<Float_4x4> &src, ozz::vector<ozz::math::Float4x4> &dst );
-        static void                  CopyOzzVectorToArray( const ozz::vector<ozz::math::Float4x4> &src, InteropArray<Float_4x4> &dst );
         static ozz::math::SimdFloat4 ToOzzSimdFloat4( const Float_3 &v );
         static Float_4               FromOzzSimdQuaternion( const ozz::math::SimdQuaternion &q );
         static ozz::math::Float4x4   ToOzzFloat4x4( const Float_4x4 &m );

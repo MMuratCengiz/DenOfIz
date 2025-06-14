@@ -18,11 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include "Common_Macro.h"
-#include "Interop.h"
+#include "Common_Arrays.h"
 
 namespace DenOfIz
 {

@@ -217,19 +217,10 @@ void RayTracedTriangleExample::CreateResources( )
     rayGenCbDesc.DebugName    = "RayGenCB";
     m_rayGenCBResource        = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( rayGenCbDesc ) );
 
-    InteropArray<Byte> vertexArray( sizeof( vertices ) );
-    vertexArray.MemCpy( vertices, sizeof( vertices ) );
-
-    InteropArray<Byte> indexArray( sizeof( indices ) );
-    indexArray.MemCpy( indices, sizeof( indices ) );
-
     float border        = 0.1f;
     float aspect        = static_cast<float>( m_windowDesc.Width ) / static_cast<float>( m_windowDesc.Height );
     m_rayGenCB.Viewport = { -1.0f, -1.0f, 1.0f, 1.0f };
     m_rayGenCB.Stencil  = { -1 + border / aspect, -1 + border, 1 - border / aspect, 1.0f - border };
-
-    InteropArray<Byte> rayGenCBArray( sizeof( m_rayGenCB ) );
-    rayGenCBArray.MemCpy( &m_rayGenCB, sizeof( m_rayGenCB ) );
 
     BatchResourceCopy batchResourceCopy( m_logicalDevice );
     batchResourceCopy.Begin( );
@@ -248,8 +239,8 @@ void RayTracedTriangleExample::CreateResources( )
 
     CopyToGpuBufferDesc rayGenCBCopy{ };
     rayGenCBCopy.DstBuffer        = m_rayGenCBResource.get( );
-    rayGenCBCopy.Data.Elements    = rayGenCBArray.Data( );
-    rayGenCBCopy.Data.NumElements = rayGenCBArray.NumElements( );
+    rayGenCBCopy.Data.Elements    = reinterpret_cast<Byte *>( &m_rayGenCB );
+    rayGenCBCopy.Data.NumElements = sizeof( m_rayGenCB );
     batchResourceCopy.CopyToGPUBuffer( rayGenCBCopy );
     batchResourceCopy.Submit( );
 }

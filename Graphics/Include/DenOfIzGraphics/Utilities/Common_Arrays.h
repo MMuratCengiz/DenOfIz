@@ -18,11 +18,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include "Interop.h"
 
 namespace DenOfIz
 {
+    typedef unsigned char Byte;
+
 #define DZ_ARRAY_METHODS( ARRAY_TYPE, ELEMENT_TYPE )                                                                                                                               \
     static ARRAY_TYPE Create( const size_t NumElements )                                                                                                                           \
     {                                                                                                                                                                              \

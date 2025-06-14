@@ -29,21 +29,19 @@ void BasicCompute( const GraphicsApi &gApi )
     ShaderStageDesc shaderDesc{ };
     shaderDesc.Stage = ShaderStage::Compute;
     shaderDesc.Path  = "Assets/Shaders/Tests/GeneralTests/BasicCompute.hlsl";
-    InteropArray<ShaderStageDesc> shaderStages{ };
-    shaderStages.AddElement( shaderDesc );
-
-    ShaderProgramDesc programDesc{ .ShaderStages = shaderStages };
+    ShaderProgramDesc programDesc{ .ShaderStages.Elements = &shaderDesc, .ShaderStages.NumElements = 1 };
     auto              program = std::make_unique<ShaderProgram>( programDesc );
 
-    InteropArray<ResourceBindingDesc> resourceBindings{ };
-    ResourceBindingDesc              &resourceBindingDesc = resourceBindings.EmplaceElement( );
-    resourceBindingDesc.Name                              = "computeReadBack";
-    resourceBindingDesc.Binding                           = 0;
-    resourceBindingDesc.Descriptor                        = ResourceDescriptor::RWBuffer;
-    resourceBindingDesc.Stages.AddElement( { ShaderStage::Compute } );
-
+    ResourceBindingDesc resourceBindingDesc{ };
+    resourceBindingDesc.Name               = "computeReadBack";
+    resourceBindingDesc.Binding            = 0;
+    resourceBindingDesc.Descriptor         = ResourceDescriptor::RWBuffer;
+    auto computeStage                      = ShaderStage::Compute;
+    resourceBindingDesc.Stages.Elements    = &computeStage;
+    resourceBindingDesc.Stages.NumElements = 1;
     RootSignatureDesc rootSignatureDesc{ };
-    rootSignatureDesc.ResourceBindings = resourceBindings;
+    rootSignatureDesc.ResourceBindings.Elements    = &resourceBindingDesc;
+    rootSignatureDesc.ResourceBindings.NumElements = 1;
 
     auto rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature( rootSignatureDesc ) );
 
@@ -70,9 +68,9 @@ void BasicCompute( const GraphicsApi &gApi )
 
     auto commandQueue    = std::unique_ptr<ICommandQueue>( logicalDevice->CreateCommandQueue( CommandQueueDesc{ .QueueType = QueueType::Compute } ) );
     auto commandListPool = std::unique_ptr<ICommandListPool>( logicalDevice->CreateCommandListPool( CommandListPoolDesc{ commandQueue.get( ) } ) );
-    auto commandList     = commandListPool->GetCommandLists( ).GetElement( 0 );
+    auto commandList     = commandListPool->GetCommandLists( ).Elements[ 0 ];
 
-    bufferDesc.Descriptor   = BitSet<ResourceDescriptor>( );
+    bufferDesc.Descriptor   = 0;
     bufferDesc.HeapType     = HeapType::GPU_CPU;
     bufferDesc.InitialUsage = ResourceUsage::CopyDst;
     auto readBack           = std::unique_ptr<IBufferResource>( logicalDevice->CreateBufferResource( bufferDesc ) );
@@ -97,14 +95,15 @@ void BasicCompute( const GraphicsApi &gApi )
     commandList->PipelineBarrier( barrier );
 
     ExecuteCommandListsDesc executeCommandListsDesc{ };
-    executeCommandListsDesc.Signal = fence.get( );
-    executeCommandListsDesc.CommandLists.AddElement( commandList );
+    executeCommandListsDesc.Signal                   = fence.get( );
+    executeCommandListsDesc.CommandLists.Elements    = &commandList;
+    executeCommandListsDesc.CommandLists.NumElements = 1;
     commandQueue->ExecuteCommandLists( executeCommandListsDesc );
 
     fence->Wait( );
 
     auto *mappedData = static_cast<float *>( readBack->MapMemory( ) );
-    for ( UINT i = 0; i < 1024; i++ )
+    for ( int i = 0; i < 1024; i++ )
     {
         ASSERT_EQ( mappedData[ i ], i * 10.0f );
     }

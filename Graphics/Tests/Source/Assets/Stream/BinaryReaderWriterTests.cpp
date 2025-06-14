@@ -24,31 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-template <typename T>
-void AssertInteropArrayFloatEq( const InteropArray<T> &arr1, const InteropArray<T> &arr2 );
-
-template <>
-void AssertInteropArrayFloatEq<Float_2>( const InteropArray<Float_2> &arr1, const InteropArray<Float_2> &arr2 )
-{
-    ASSERT_EQ( arr1.NumElements( ), arr2.NumElements( ) );
-    for ( size_t i = 0; i < arr1.NumElements( ); ++i )
-    {
-        ASSERT_FLOAT_EQ( arr1.GetElement( i ).X, arr2.GetElement( i ).X );
-        ASSERT_FLOAT_EQ( arr1.GetElement( i ).Y, arr2.GetElement( i ).Y );
-    }
-}
-template <>
-void AssertInteropArrayFloatEq<Float_3>( const InteropArray<Float_3> &arr1, const InteropArray<Float_3> &arr2 )
-{
-    ASSERT_EQ( arr1.NumElements( ), arr2.NumElements( ) );
-    for ( size_t i = 0; i < arr1.NumElements( ); ++i )
-    {
-        ASSERT_FLOAT_EQ( arr1.GetElement( i ).X, arr2.GetElement( i ).X );
-        ASSERT_FLOAT_EQ( arr1.GetElement( i ).Y, arr2.GetElement( i ).Y );
-        ASSERT_FLOAT_EQ( arr1.GetElement( i ).Z, arr2.GetElement( i ).Z );
-    }
-}
-
 TEST( BinarySerdeTest, BasicTypes )
 {
     BinaryContainer container;
