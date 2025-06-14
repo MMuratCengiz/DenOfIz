@@ -18,80 +18,95 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "gtest/gtest.h"
 
+#include "../../../../Internal/DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
+#include "../../TestComparators.h"
 #include "DenOfIzGraphics/Assets/Serde/Animation/AnimationAsset.h"
 #include "DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetReader.h"
 #include "DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetWriter.h"
 #include "DenOfIzGraphics/Assets/Stream/BinaryContainer.h"
-#include "../../TestComparators.h"
 
 using namespace DenOfIz;
 
 class AnimationAssetSerdeTest : public testing::Test
 {
+    std::unique_ptr<AnimationAsset> m_asset;
+
 protected:
-    static AnimationAsset CreateSampleAnimationAsset( )
+    AnimationAsset *CreateSampleAnimationAsset( )
     {
         using namespace DenOfIz;
-        AnimationAsset asset;
-        asset.Name        = "TestAnimation";
-        asset.Uri         = AssetUri::Create( "test/TestAnimation.dzanim" );
-        asset.SkeletonRef = AssetUri::Create( "test/TestSkeleton.dzskel" );
+        m_asset              = std::make_unique<AnimationAsset>( );
+        m_asset->Name        = "TestAnimation";
+        m_asset->Uri         = AssetUri::Create( "test/TestAnimation.dzanim" );
+        m_asset->SkeletonRef = AssetUri::Create( "test/TestSkeleton.dzskel" );
 
-        AnimationClip clip;
+        m_asset->_Arena.EnsureCapacity( 8096 );
+        DZArenaArrayHelper<AnimationClipArray, AnimationClip>::AllocateAndConstructArray( m_asset->_Arena, m_asset->Animations, 2 );
+
+        AnimationClip &clip                 = m_asset->Animations.Elements[ 0 ];
         clip.Name                           = "Walk";
         constexpr double walkTicksPerSecond = 30.0;
         clip.Duration                       = 1.0f; // Duration in seconds
 
-        JointAnimTrack rootTrack;
-        rootTrack.JointName = "Root";
+        DZArenaArrayHelper<JointAnimTrackArray, JointAnimTrack>::AllocateAndConstructArray( m_asset->_Arena, clip.Tracks, 2 );
+        DZArenaArrayHelper<MorphAnimTrackArray, MorphAnimTrack>::AllocateAndConstructArray( m_asset->_Arena, clip.MorphTracks, 2 );
 
-        rootTrack.PositionKeys.AddElement( { 0.0f / static_cast<float>( walkTicksPerSecond ), { 0.0f, 0.0f, 0.0f } } );
-        rootTrack.PositionKeys.AddElement( { 30.0f / static_cast<float>( walkTicksPerSecond ), { 1.0f, 0.0f, 0.0f } } ); // Time = 1.0s
+        JointAnimTrack &rootTrack = clip.Tracks.Elements[ 0 ];
+        rootTrack.JointName       = "Root";
 
-        rootTrack.RotationKeys.AddElement( { 0.0f / static_cast<float>( walkTicksPerSecond ), { 0.0f, 0.0f, 0.0f, 1.0f } } );    // Identity quat
-        rootTrack.RotationKeys.AddElement( { 30.0f / static_cast<float>( walkTicksPerSecond ), { 0.0f, 0.0f, 0.1f, 0.995f } } ); // Time = 1.0s
+        DZArenaArrayHelper<PositionKeyArray, PositionKey>::AllocateAndConstructArray( m_asset->_Arena, rootTrack.PositionKeys, 2 );
+        DZArenaArrayHelper<RotationKeyArray, RotationKey>::AllocateAndConstructArray( m_asset->_Arena, rootTrack.RotationKeys, 2 );
+        DZArenaArrayHelper<ScaleKeyArray, ScaleKey>::AllocateAndConstructArray( m_asset->_Arena, rootTrack.ScaleKeys, 2 );
 
-        rootTrack.ScaleKeys.AddElement( { 0.0f / static_cast<float>( walkTicksPerSecond ), { 1.0f, 1.0f, 1.0f } } );
-        rootTrack.ScaleKeys.AddElement( { 30.0f / static_cast<float>( walkTicksPerSecond ), { 1.0f, 1.0f, 1.0f } } ); // Time = 1.0s
+        rootTrack.PositionKeys.Elements[ 0 ] = { 0.0f / static_cast<float>( walkTicksPerSecond ), { 0.0f, 0.0f, 0.0f } };
+        rootTrack.PositionKeys.Elements[ 1 ] = { 30.0f / static_cast<float>( walkTicksPerSecond ), { 1.0f, 0.0f, 0.0f } }; // Time = 1.0s
 
-        clip.Tracks.AddElement( rootTrack );
+        rootTrack.RotationKeys.Elements[ 0 ] = { 0.0f / static_cast<float>( walkTicksPerSecond ), { 0.0f, 0.0f, 0.0f, 1.0f } };    // Identity quat
+        rootTrack.RotationKeys.Elements[ 1 ] = { 30.0f / static_cast<float>( walkTicksPerSecond ), { 0.0f, 0.0f, 0.1f, 0.995f } }; // Time = 1.0s
 
-        JointAnimTrack legTrack;
-        legTrack.JointName = "LeftLeg";
+        rootTrack.ScaleKeys.Elements[ 0 ] = { 0.0f / static_cast<float>( walkTicksPerSecond ), { 1.0f, 1.0f, 1.0f } };
+        rootTrack.ScaleKeys.Elements[ 1 ] = { 30.0f / static_cast<float>( walkTicksPerSecond ), { 1.0f, 1.0f, 1.0f } }; // Time = 1.0s
 
-        legTrack.PositionKeys.AddElement( { 0.0f / static_cast<float>( walkTicksPerSecond ), { 0.0f, -0.5f, 0.0f } } );
-        legTrack.PositionKeys.AddElement( { 30.0f / static_cast<float>( walkTicksPerSecond ), { 0.0f, -0.5f, 0.5f } } ); // Time = 1.0s
+        JointAnimTrack &legTrack = clip.Tracks.Elements[ 1 ];
+        legTrack.JointName       = "LeftLeg";
 
-        legTrack.RotationKeys.AddElement( { 0.0f / static_cast<float>( walkTicksPerSecond ), { 0.0f, 0.0f, 0.0f, 1.0f } } );    // Identity quat
-        legTrack.RotationKeys.AddElement( { 30.0f / static_cast<float>( walkTicksPerSecond ), { 0.1f, 0.0f, 0.0f, 0.995f } } ); // Time = 1.0s
+        DZArenaArrayHelper<PositionKeyArray, PositionKey>::AllocateAndConstructArray( m_asset->_Arena, legTrack.PositionKeys, 2 );
+        DZArenaArrayHelper<RotationKeyArray, RotationKey>::AllocateAndConstructArray( m_asset->_Arena, legTrack.RotationKeys, 2 );
+        DZArenaArrayHelper<ScaleKeyArray, ScaleKey>::AllocateAndConstructArray( m_asset->_Arena, legTrack.ScaleKeys, 1 );
 
-        legTrack.ScaleKeys.AddElement( { 0.0f / static_cast<float>( walkTicksPerSecond ), { 1.0f, 1.0f, 1.0f } } );
+        legTrack.PositionKeys.Elements[ 0 ] = { 0.0f / static_cast<float>( walkTicksPerSecond ), { 0.0f, -0.5f, 0.0f } };
+        legTrack.PositionKeys.Elements[ 1 ] = { 30.0f / static_cast<float>( walkTicksPerSecond ), { 0.0f, -0.5f, 0.5f } }; // Time = 1.0s
 
-        clip.Tracks.AddElement( legTrack );
+        legTrack.RotationKeys.Elements[ 0 ] = { 0.0f / static_cast<float>( walkTicksPerSecond ), { 0.0f, 0.0f, 0.0f, 1.0f } };    // Identity quat
+        legTrack.RotationKeys.Elements[ 1 ] = { 30.0f / static_cast<float>( walkTicksPerSecond ), { 0.1f, 0.0f, 0.0f, 0.995f } }; // Time = 1.0s
 
-        MorphAnimTrack morphTrack;
-        morphTrack.Name = "Smile";
+        legTrack.ScaleKeys.Elements[ 0 ] = { 0.0f / static_cast<float>( walkTicksPerSecond ), { 1.0f, 1.0f, 1.0f } };
 
-        morphTrack.Keyframes.AddElement( { 0.0f / static_cast<float>( walkTicksPerSecond ), 0.0f } );
-        morphTrack.Keyframes.AddElement( { 15.0f / static_cast<float>( walkTicksPerSecond ), 0.7f } ); // Time = 0.5s
-        morphTrack.Keyframes.AddElement( { 30.0f / static_cast<float>( walkTicksPerSecond ), 0.0f } ); // Time = 1.0s
+        MorphAnimTrack &morphTrack = clip.MorphTracks.Elements[ 0 ];
+        morphTrack.Name            = "Smile";
 
-        clip.MorphTracks.AddElement( morphTrack );
+        DZArenaArrayHelper<MorphKeyframeArray, MorphKeyframe>::AllocateAndConstructArray( m_asset->_Arena, morphTrack.Keyframes, 3 );
 
-        asset.Animations.AddElement( clip );
+        morphTrack.Keyframes.Elements[ 0 ] = { 0.0f / static_cast<float>( walkTicksPerSecond ), 0.0f };
+        morphTrack.Keyframes.Elements[ 1 ] = { 15.0f / static_cast<float>( walkTicksPerSecond ), 0.7f }; // Time = 0.5s
+        morphTrack.Keyframes.Elements[ 2 ] = { 30.0f / static_cast<float>( walkTicksPerSecond ), 0.0f }; // Time = 1.0s
 
-        AnimationClip idleClip;
-        idleClip.Name     = "Idle";
-        idleClip.Duration = 2.0f;
-        JointAnimTrack idleTrack;
-        idleTrack.JointName = "Root";
+        AnimationClip &idleClip   = m_asset->Animations.Elements[ 1 ];
+        idleClip.Name             = "Idle";
+        idleClip.Duration         = 2.0f;
+        JointAnimTrack &idleTrack = idleClip.Tracks.Elements[ 0 ];
+        idleTrack.JointName       = "Root";
 
-        idleTrack.PositionKeys.AddElement( { 0.0f, { 0.0f, 0.0f, 0.0f } } );
-        idleTrack.RotationKeys.AddElement( { 0.0f, { 0.0f, 0.0f, 0.0f, 1.0f } } );
-        idleTrack.ScaleKeys.AddElement( { 0.0f, { 1.0f, 1.0f, 1.0f } } );
-        idleClip.Tracks.AddElement( idleTrack );
-        asset.Animations.AddElement( idleClip );
-        return asset;
+        DZArenaArrayHelper<PositionKeyArray, PositionKey>::AllocateAndConstructArray( m_asset->_Arena, idleTrack.PositionKeys, 1 );
+        DZArenaArrayHelper<RotationKeyArray, RotationKey>::AllocateAndConstructArray( m_asset->_Arena, idleTrack.RotationKeys, 1 );
+        DZArenaArrayHelper<ScaleKeyArray, ScaleKey>::AllocateAndConstructArray( m_asset->_Arena, idleTrack.ScaleKeys, 1 );
+        DZArenaArrayHelper<JointAnimTrackArray, JointAnimTrack>::AllocateAndConstructArray( m_asset->_Arena, idleClip.Tracks, 1 );
+
+        idleTrack.PositionKeys.Elements[ 0 ] = { 0.0f, { 0.0f, 0.0f, 0.0f } };
+        idleTrack.RotationKeys.Elements[ 0 ] = { 0.0f, { 0.0f, 0.0f, 0.0f, 1.0f } };
+        idleTrack.ScaleKeys.Elements[ 0 ]    = { 0.0f, { 1.0f, 1.0f, 1.0f } };
+        idleClip.Tracks.Elements[ 0 ]        = idleTrack;
+        return m_asset.get( );
     }
 };
 
@@ -100,29 +115,29 @@ TEST_F( AnimationAssetSerdeTest, WriteAndReadBack )
     using namespace DenOfIz;
 
     BinaryContainer container;
-    AnimationAsset  sampleAsset = CreateSampleAnimationAsset( );
+    auto  sampleAsset = std::unique_ptr<AnimationAsset>( CreateSampleAnimationAsset( ) );
 
     {
         BinaryWriter         binaryWriter( container );
         AnimationAssetWriter writer( AnimationAssetWriterDesc{ &binaryWriter } );
-        writer.Write( sampleAsset );
+        writer.Write( *sampleAsset );
     }
     BinaryReader         reader( container );
     AnimationAssetReader animReader( AnimationAssetReaderDesc{ &reader } );
-    AnimationAsset       readAsset = animReader.Read( );
+    auto                 readAsset = std::unique_ptr<AnimationAsset>( animReader.Read( ) );
 
-    ASSERT_EQ( readAsset.Magic, AnimationAsset{ }.Magic );
-    ASSERT_EQ( readAsset.Version, AnimationAsset::Latest );
-    ASSERT_STREQ( readAsset.Name.Get( ), sampleAsset.Name.Get( ) );
-    ASSERT_STREQ( readAsset.Uri.ToInteropString( ).Get( ), sampleAsset.Uri.ToInteropString( ).Get( ) );
-    ASSERT_STREQ( readAsset.SkeletonRef.ToInteropString( ).Get( ), sampleAsset.SkeletonRef.ToInteropString( ).Get( ) );
+    ASSERT_EQ( readAsset->Magic, AnimationAsset{ }.Magic );
+    ASSERT_EQ( readAsset->Version, AnimationAsset::Latest );
+    ASSERT_STREQ( readAsset->Name.Get( ), sampleAsset->Name.Get( ) );
+    ASSERT_STREQ( readAsset->Uri.ToInteropString( ).Get( ), sampleAsset->Uri.ToInteropString( ).Get( ) );
+    ASSERT_STREQ( readAsset->SkeletonRef.ToInteropString( ).Get( ), sampleAsset->SkeletonRef.ToInteropString( ).Get( ) );
 
-    ASSERT_EQ( readAsset.Animations.NumElements( ), sampleAsset.Animations.NumElements( ) );
+    ASSERT_EQ( readAsset->Animations.NumElements( ), sampleAsset->Animations.NumElements( ) );
 
-    ASSERT_GE( readAsset.Animations.NumElements( ), 1 );
-    ASSERT_GE( sampleAsset.Animations.NumElements( ), 1 );
-    const AnimationClip &readClip   = readAsset.Animations.GetElement( 0 );
-    const AnimationClip &sampleClip = sampleAsset.Animations.GetElement( 0 );
+    ASSERT_GE( readAsset->Animations.NumElements( ), 1 );
+    ASSERT_GE( sampleAsset->Animations.NumElements( ), 1 );
+    const AnimationClip &readClip   = readAsset->Animations.Elements[ 0 ];
+    const AnimationClip &sampleClip = sampleAsset->Animations.Elements[ 0 ];
 
     ASSERT_STREQ( readClip.Name.Get( ), sampleClip.Name.Get( ) );
     ASSERT_FLOAT_EQ( readClip.Duration, sampleClip.Duration );
@@ -131,16 +146,16 @@ TEST_F( AnimationAssetSerdeTest, WriteAndReadBack )
 
     ASSERT_GE( readClip.Tracks.NumElements( ), 1 );
     ASSERT_GE( sampleClip.Tracks.NumElements( ), 1 );
-    const JointAnimTrack &readRootTrack   = readClip.Tracks.GetElement( 0 );
-    const JointAnimTrack &sampleRootTrack = sampleClip.Tracks.GetElement( 0 );
+    const JointAnimTrack &readRootTrack   = readClip.Tracks.Elements[ 0 ];
+    const JointAnimTrack &sampleRootTrack = sampleClip.Tracks.Elements[ 0 ];
 
     ASSERT_STREQ( readRootTrack.JointName.Get( ), sampleRootTrack.JointName.Get( ) );
 
     ASSERT_EQ( readRootTrack.PositionKeys.NumElements( ), sampleRootTrack.PositionKeys.NumElements( ) );
     for ( size_t i = 0; i < readRootTrack.PositionKeys.NumElements( ); ++i )
     {
-        const PositionKey &readKey   = readRootTrack.PositionKeys.GetElement( i );
-        const PositionKey &sampleKey = sampleRootTrack.PositionKeys.GetElement( i );
+        const PositionKey &readKey   = readRootTrack.PositionKeys.Elements[ i ];
+        const PositionKey &sampleKey = sampleRootTrack.PositionKeys.Elements[ i ];
         ASSERT_FLOAT_EQ( readKey.Timestamp, sampleKey.Timestamp );
         ASSERT_TRUE( Float3Equals( readKey.Value, sampleKey.Value ) ); // Assumes Float3Equals exists
     }
@@ -148,8 +163,8 @@ TEST_F( AnimationAssetSerdeTest, WriteAndReadBack )
     ASSERT_EQ( readRootTrack.RotationKeys.NumElements( ), sampleRootTrack.RotationKeys.NumElements( ) );
     for ( size_t i = 0; i < readRootTrack.RotationKeys.NumElements( ); ++i )
     {
-        const RotationKey &readKey   = readRootTrack.RotationKeys.GetElement( i );
-        const RotationKey &sampleKey = sampleRootTrack.RotationKeys.GetElement( i );
+        const RotationKey &readKey   = readRootTrack.RotationKeys.Elements[ i ];
+        const RotationKey &sampleKey = sampleRootTrack.RotationKeys.Elements[ i ];
         ASSERT_FLOAT_EQ( readKey.Timestamp, sampleKey.Timestamp );
         ASSERT_TRUE( Float4Equals( readKey.Value, sampleKey.Value ) ); // Assumes Float4Equals exists
     }
@@ -157,16 +172,16 @@ TEST_F( AnimationAssetSerdeTest, WriteAndReadBack )
     ASSERT_EQ( readRootTrack.ScaleKeys.NumElements( ), sampleRootTrack.ScaleKeys.NumElements( ) );
     for ( size_t i = 0; i < readRootTrack.ScaleKeys.NumElements( ); ++i )
     {
-        const ScaleKey &readKey   = readRootTrack.ScaleKeys.GetElement( i );
-        const ScaleKey &sampleKey = sampleRootTrack.ScaleKeys.GetElement( i );
+        const ScaleKey &readKey   = readRootTrack.ScaleKeys.Elements[ i ];
+        const ScaleKey &sampleKey = sampleRootTrack.ScaleKeys.Elements[ i ];
         ASSERT_FLOAT_EQ( readKey.Timestamp, sampleKey.Timestamp );
         ASSERT_TRUE( Float3Equals( readKey.Value, sampleKey.Value ) );
     }
 
     ASSERT_GE( readClip.Tracks.NumElements( ), 2 );
     ASSERT_GE( sampleClip.Tracks.NumElements( ), 2 );
-    const JointAnimTrack &readLegTrack   = readClip.Tracks.GetElement( 1 );
-    const JointAnimTrack &sampleLegTrack = sampleClip.Tracks.GetElement( 1 );
+    const JointAnimTrack &readLegTrack   = readClip.Tracks.Elements[ 1 ];
+    const JointAnimTrack &sampleLegTrack = sampleClip.Tracks.Elements[ 1 ];
 
     ASSERT_STREQ( readLegTrack.JointName.Get( ), sampleLegTrack.JointName.Get( ) );
     ASSERT_EQ( readLegTrack.PositionKeys.NumElements( ), sampleLegTrack.PositionKeys.NumElements( ) );
@@ -175,23 +190,23 @@ TEST_F( AnimationAssetSerdeTest, WriteAndReadBack )
     ASSERT_EQ( readClip.MorphTracks.NumElements( ), sampleClip.MorphTracks.NumElements( ) );
     ASSERT_GE( readClip.MorphTracks.NumElements( ), 1 );
     ASSERT_GE( sampleClip.MorphTracks.NumElements( ), 1 );
-    const MorphAnimTrack &readMorphTrack   = readClip.MorphTracks.GetElement( 0 );
-    const MorphAnimTrack &sampleMorphTrack = sampleClip.MorphTracks.GetElement( 0 );
+    const MorphAnimTrack &readMorphTrack   = readClip.MorphTracks.Elements[ 0 ];
+    const MorphAnimTrack &sampleMorphTrack = sampleClip.MorphTracks.Elements[ 0 ];
 
     ASSERT_STREQ( readMorphTrack.Name.Get( ), sampleMorphTrack.Name.Get( ) );
     ASSERT_EQ( readMorphTrack.Keyframes.NumElements( ), sampleMorphTrack.Keyframes.NumElements( ) );
     for ( size_t i = 0; i < readMorphTrack.Keyframes.NumElements( ); ++i )
     {
-        const MorphKeyframe &readKeyframe   = readMorphTrack.Keyframes.GetElement( i );
-        const MorphKeyframe &sampleKeyframe = sampleMorphTrack.Keyframes.GetElement( i );
+        const MorphKeyframe &readKeyframe   = readMorphTrack.Keyframes.Elements[ i ];
+        const MorphKeyframe &sampleKeyframe = sampleMorphTrack.Keyframes.Elements[ i ];
         ASSERT_FLOAT_EQ( readKeyframe.Timestamp, sampleKeyframe.Timestamp );
         ASSERT_FLOAT_EQ( readKeyframe.Weight, sampleKeyframe.Weight );
     }
 
-    ASSERT_GE( readAsset.Animations.NumElements( ), 2 );
-    ASSERT_GE( sampleAsset.Animations.NumElements( ), 2 );
-    const AnimationClip &readIdleClip   = readAsset.Animations.GetElement( 1 );
-    const AnimationClip &sampleIdleClip = sampleAsset.Animations.GetElement( 1 );
+    ASSERT_GE( readAsset->Animations.NumElements( ), 2 );
+    ASSERT_GE( sampleAsset->Animations.NumElements( ), 2 );
+    const AnimationClip &readIdleClip   = readAsset->Animations.Elements[ 1 ];
+    const AnimationClip &sampleIdleClip = sampleAsset->Animations.Elements[ 1 ];
 
     ASSERT_STREQ( readIdleClip.Name.Get( ), sampleIdleClip.Name.Get( ) );
     ASSERT_FLOAT_EQ( readIdleClip.Duration, sampleIdleClip.Duration );
@@ -199,8 +214,8 @@ TEST_F( AnimationAssetSerdeTest, WriteAndReadBack )
     ASSERT_EQ( readIdleClip.Tracks.NumElements( ), sampleIdleClip.Tracks.NumElements( ) );
     ASSERT_GE( readIdleClip.Tracks.NumElements( ), 1 );
     ASSERT_GE( sampleIdleClip.Tracks.NumElements( ), 1 );
-    const JointAnimTrack &readIdleTrack   = readIdleClip.Tracks.GetElement( 0 );
-    const JointAnimTrack &sampleIdleTrack = sampleIdleClip.Tracks.GetElement( 0 );
+    const JointAnimTrack &readIdleTrack   = readIdleClip.Tracks.Elements[ 0 ];
+    const JointAnimTrack &sampleIdleTrack = sampleIdleClip.Tracks.Elements[ 0 ];
 
     ASSERT_STREQ( readIdleTrack.JointName.Get( ), sampleIdleTrack.JointName.Get( ) );
     ASSERT_EQ( readIdleTrack.PositionKeys.NumElements( ), sampleIdleTrack.PositionKeys.NumElements( ) );
