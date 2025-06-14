@@ -35,51 +35,51 @@ protected:
     PhysicsAsset *CreateSamplePhysicsAsset( )
     {
         using namespace DenOfIz;
-        m_asset        = std::make_unique<PhysicsAsset>( );
-        m_asset->Name  = "TestPhysicsAsset";
-        m_asset->Uri   = AssetUri::Create( "test/TestPhysics.dzphys" );
+        m_asset       = std::make_unique<PhysicsAsset>( );
+        m_asset->Name = "TestPhysicsAsset";
+        m_asset->Uri  = AssetUri::Create( "test/TestPhysics.dzphys" );
 
         m_asset->_Arena.EnsureCapacity( 4096 );
         DZArenaArrayHelper<PhysicsColliderArray, PhysicsCollider>::AllocateAndConstructArray( m_asset->_Arena, m_asset->Colliders, 3 );
         DZArenaArrayHelper<UserPropertyArray, UserProperty>::AllocateAndConstructArray( m_asset->_Arena, m_asset->UserProperties, 2 );
 
         PhysicsCollider &boxCollider = m_asset->Colliders.Elements[ 0 ];
-        boxCollider.Type            = PhysicsColliderType::Box;
-        boxCollider.Name            = "BoxCollider";
-        boxCollider.Transform       = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f };
-        boxCollider.Friction        = 0.5f;
-        boxCollider.Restitution     = 0.3f;
-        boxCollider.IsTrigger       = false;
-        boxCollider.Box.HalfExtents = { 1.0f, 1.0f, 1.0f };
+        boxCollider.Type             = PhysicsColliderType::Box;
+        boxCollider.Name             = "BoxCollider";
+        boxCollider.Transform        = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+        boxCollider.Friction         = 0.5f;
+        boxCollider.Restitution      = 0.3f;
+        boxCollider.IsTrigger        = false;
+        boxCollider.Box.HalfExtents  = { 1.0f, 1.0f, 1.0f };
 
         PhysicsCollider &sphereCollider = m_asset->Colliders.Elements[ 1 ];
-        sphereCollider.Type          = PhysicsColliderType::Sphere;
-        sphereCollider.Name          = "SphereCollider";
-        sphereCollider.Transform     = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f, 0.0f, 1.0f };
-        sphereCollider.Friction      = 0.2f;
-        sphereCollider.Restitution   = 0.8f;
-        sphereCollider.IsTrigger     = false;
-        sphereCollider.Sphere.Radius = 0.5f;
+        sphereCollider.Type             = PhysicsColliderType::Sphere;
+        sphereCollider.Name             = "SphereCollider";
+        sphereCollider.Transform        = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f, 0.0f, 1.0f };
+        sphereCollider.Friction         = 0.2f;
+        sphereCollider.Restitution      = 0.8f;
+        sphereCollider.IsTrigger        = false;
+        sphereCollider.Sphere.Radius    = 0.5f;
 
         PhysicsCollider &capsuleCollider = m_asset->Colliders.Elements[ 2 ];
-        capsuleCollider.Type           = PhysicsColliderType::Capsule;
-        capsuleCollider.Name           = "CapsuleCollider";
-        capsuleCollider.Transform      = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f, 0.0f, 1.0f };
-        capsuleCollider.Friction       = 0.1f;
-        capsuleCollider.Restitution    = 0.5f;
-        capsuleCollider.IsTrigger      = true;
-        capsuleCollider.Capsule.Radius = 0.3f;
-        capsuleCollider.Capsule.Height = 1.0f;
+        capsuleCollider.Type             = PhysicsColliderType::Capsule;
+        capsuleCollider.Name             = "CapsuleCollider";
+        capsuleCollider.Transform        = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f, 0.0f, 1.0f };
+        capsuleCollider.Friction         = 0.1f;
+        capsuleCollider.Restitution      = 0.5f;
+        capsuleCollider.IsTrigger        = true;
+        capsuleCollider.Capsule.Radius   = 0.3f;
+        capsuleCollider.Capsule.Height   = 1.0f;
 
         UserProperty &prop1 = m_asset->UserProperties.Elements[ 0 ];
-        prop1.Name         = "Mass";
-        prop1.PropertyType = UserProperty::Type::Float;
-        prop1.FloatValue   = 10.0f;
+        prop1.Name          = "Mass";
+        prop1.PropertyType  = UserProperty::Type::Float;
+        prop1.FloatValue    = 10.0f;
 
         UserProperty &prop2 = m_asset->UserProperties.Elements[ 1 ];
-        prop2.Name         = "IsDynamic";
-        prop2.PropertyType = UserProperty::Type::Bool;
-        prop2.BoolValue    = true;
+        prop2.Name          = "IsDynamic";
+        prop2.PropertyType  = UserProperty::Type::Bool;
+        prop2.BoolValue     = true;
 
         return m_asset.get( );
     }

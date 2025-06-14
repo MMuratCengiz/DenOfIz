@@ -35,9 +35,9 @@ protected:
     MaterialAsset *CreateSampleMaterialAsset( )
     {
         using namespace DenOfIz;
-        m_asset           = std::make_unique<MaterialAsset>( );
-        m_asset->Name     = "TestMaterial";
-        m_asset->Uri      = AssetUri::Create( "test/TestMaterial.dzmat" );
+        m_asset            = std::make_unique<MaterialAsset>( );
+        m_asset->Name      = "TestMaterial";
+        m_asset->Uri       = AssetUri::Create( "test/TestMaterial.dzmat" );
         m_asset->ShaderRef = "shaders/PBR.hlsl";
 
         m_asset->AlbedoMapRef            = AssetUri::Create( "textures/albedo.dztex" );
@@ -58,14 +58,14 @@ protected:
         DZArenaArrayHelper<UserPropertyArray, UserProperty>::AllocateAndConstructArray( m_asset->_Arena, m_asset->Properties, 2 );
 
         UserProperty &textureScaleProp = m_asset->Properties.Elements[ 0 ];
-        textureScaleProp.Name         = "TextureScale";
-        textureScaleProp.PropertyType = UserProperty::Type::Float2;
-        textureScaleProp.Vector2Value = { 2.0f, 2.0f };
+        textureScaleProp.Name          = "TextureScale";
+        textureScaleProp.PropertyType  = UserProperty::Type::Float2;
+        textureScaleProp.Vector2Value  = { 2.0f, 2.0f };
 
         UserProperty &glossinessProp = m_asset->Properties.Elements[ 1 ];
-        glossinessProp.Name         = "UseGlossiness";
-        glossinessProp.PropertyType = UserProperty::Type::Bool;
-        glossinessProp.BoolValue    = true;
+        glossinessProp.Name          = "UseGlossiness";
+        glossinessProp.PropertyType  = UserProperty::Type::Bool;
+        glossinessProp.BoolValue     = true;
 
         return m_asset.get( );
     }

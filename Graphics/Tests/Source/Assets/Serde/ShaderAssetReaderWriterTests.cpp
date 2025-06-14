@@ -18,73 +18,76 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "gtest/gtest.h"
 
+#include "../../../../Internal/DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAsset.h"
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetWriter.h"
+#include "DenOfIzGraphics/Assets/Stream/BinaryContainer.h"
 
 using namespace DenOfIz;
 
 class ShaderAssetSerdeTest : public testing::Test
 {
-protected:
-    static InteropArray<Byte> CreateTestShaderData( const uint32_t size, const uint32_t seed )
-    {
-        InteropArray<Byte> data( size );
+    std::unique_ptr<ShaderAsset> m_asset;
 
-        for ( uint32_t i = 0; i < data.NumElements( ); ++i )
+protected:
+    ByteArray CreateTestShaderData( DZArena &arena, const uint32_t size, const uint32_t seed )
+    {
+        ByteArray data;
+        DZArenaArrayHelper<ByteArray, Byte>::AllocateArray( arena, data, size );
+
+        for ( uint32_t i = 0; i < data.NumElements; ++i )
         {
-            data.SetElement( i, static_cast<Byte>( ( i + seed * 50 ) % 256 ) );
+            data.Elements[ i ] = static_cast<Byte>( ( i + seed * 50 ) % 256 );
         }
 
         return data;
     }
 
-    static ShaderAsset CreateSampleShaderAsset( )
+    ShaderAsset *CreateSampleShaderAsset( )
     {
-        ShaderAsset asset;
-        asset.Uri = AssetUri::Create( "shaders/TestShader.dzshader" );
+        m_asset      = std::make_unique<ShaderAsset>( );
+        m_asset->Uri = AssetUri::Create( "shaders/TestShader.dzshader" );
 
-        ShaderStageAsset vertexStage;
-        vertexStage.Stage      = ShaderStage::Vertex;
-        vertexStage.EntryPoint = "VSMain";
-        vertexStage.DXIL       = CreateTestShaderData( 1024, 1 );
-        vertexStage.SPIRV      = CreateTestShaderData( 2048, 2 );
-        vertexStage.MSL        = CreateTestShaderData( 1536, 3 );
-        vertexStage.Reflection = CreateTestShaderData( 512, 4 );
+        m_asset->_Arena.EnsureCapacity( 16384 );
+        DZArenaArrayHelper<ShaderStageAssetArray, ShaderStageAsset>::AllocateAndConstructArray( m_asset->_Arena, m_asset->Stages, 2 );
 
-        ShaderStageAsset pixelStage;
-        pixelStage.Stage      = ShaderStage::Pixel;
-        pixelStage.EntryPoint = "PSMain";
-        pixelStage.DXIL       = CreateTestShaderData( 768, 5 );
-        pixelStage.SPIRV      = CreateTestShaderData( 1536, 6 );
-        pixelStage.MSL        = CreateTestShaderData( 1024, 7 );
-        pixelStage.Reflection = CreateTestShaderData( 384, 8 );
+        ShaderStageAsset &vertexStage = m_asset->Stages.Elements[ 0 ];
+        vertexStage.Stage             = ShaderStage::Vertex;
+        vertexStage.EntryPoint        = "VSMain";
+        vertexStage.DXIL              = CreateTestShaderData( m_asset->_Arena, 1024, 1 );
+        vertexStage.SPIRV             = CreateTestShaderData( m_asset->_Arena, 2048, 2 );
+        vertexStage.MSL               = CreateTestShaderData( m_asset->_Arena, 1536, 3 );
+        vertexStage.Reflection        = CreateTestShaderData( m_asset->_Arena, 512, 4 );
 
-        asset.Stages.Resize( 2 );
-        asset.Stages.SetElement( 0, vertexStage );
-        asset.Stages.SetElement( 1, pixelStage );
+        ShaderStageAsset &pixelStage = m_asset->Stages.Elements[ 1 ];
+        pixelStage.Stage             = ShaderStage::Pixel;
+        pixelStage.EntryPoint        = "PSMain";
+        pixelStage.DXIL              = CreateTestShaderData( m_asset->_Arena, 768, 5 );
+        pixelStage.SPIRV             = CreateTestShaderData( m_asset->_Arena, 1536, 6 );
+        pixelStage.MSL               = CreateTestShaderData( m_asset->_Arena, 1024, 7 );
+        pixelStage.Reflection        = CreateTestShaderData( m_asset->_Arena, 384, 8 );
 
-        RootSignatureDesc rootSig;
+        RootSignatureDesc &rootSig = m_asset->ReflectDesc.RootSignature;
+        DZArenaArrayHelper<ResourceBindingDescArray, ResourceBindingDesc>::AllocateAndConstructArray( m_asset->_Arena, rootSig.ResourceBindings, 1 );
+        DZArenaArrayHelper<StaticSamplerDescArray, StaticSamplerDesc>::AllocateAndConstructArray( m_asset->_Arena, rootSig.StaticSamplers, 1 );
 
-        ResourceBindingDesc binding;
-        binding.Name          = "g_texture";
-        binding.BindingType   = ResourceBindingType::ShaderResource;
-        binding.Binding       = 0;
-        binding.RegisterSpace = 0;
-        binding.Descriptor    = static_cast<ResourceDescriptor>( 1 );
-        binding.ArraySize     = 1;
+        ResourceBindingDesc &binding = rootSig.ResourceBindings.Elements[ 0 ];
+        binding.Name                 = "g_texture";
+        binding.BindingType          = ResourceBindingType::ShaderResource;
+        binding.Binding              = 0;
+        binding.RegisterSpace        = 0;
+        binding.Descriptor           = ResourceDescriptor::Texture;
+        binding.ArraySize            = 1;
 
-        binding.Stages.Resize( 1 );
-        binding.Stages.SetElement( 0, ShaderStage::Pixel );
+        DZArenaArrayHelper<ShaderStageArray, ShaderStage>::AllocateAndConstructArray( m_asset->_Arena, binding.Stages, 1 );
+        binding.Stages.Elements[ 0 ] = ShaderStage::Pixel;
 
         binding.Reflection.Name     = "Texture2D";
         binding.Reflection.Type     = ReflectionBindingType::Texture;
         binding.Reflection.NumBytes = 8;
 
-        rootSig.ResourceBindings.Resize( 1 );
-        rootSig.ResourceBindings.SetElement( 0, binding );
-
-        StaticSamplerDesc sampler;
+        StaticSamplerDesc &sampler    = rootSig.StaticSamplers.Elements[ 0 ];
         sampler.Sampler.MagFilter     = Filter::Linear;
         sampler.Sampler.MinFilter     = Filter::Linear;
         sampler.Sampler.AddressModeU  = SamplerAddressMode::ClampToBorder;
@@ -102,56 +105,45 @@ protected:
         sampler.Binding.BindingType   = ResourceBindingType::Sampler;
         sampler.Binding.Binding       = 0;
         sampler.Binding.RegisterSpace = 0;
-        sampler.Binding.Descriptor    = static_cast<ResourceDescriptor>( 2 );
+        sampler.Binding.Descriptor    = ResourceDescriptor::Sampler;
         sampler.Binding.ArraySize     = 1;
 
-        sampler.Binding.Stages.Resize( 1 );
-        sampler.Binding.Stages.SetElement( 0, ShaderStage::Pixel );
-
-        rootSig.StaticSamplers.Resize( 1 );
-        rootSig.StaticSamplers.SetElement( 0, sampler );
+        DZArenaArrayHelper<ShaderStageArray, ShaderStage>::AllocateAndConstructArray( m_asset->_Arena, sampler.Binding.Stages, 1 );
+        sampler.Binding.Stages.Elements[ 0 ] = ShaderStage::Pixel;
 
         // Setup input layout
-        InputLayoutDesc inputLayout;
-        InputGroupDesc  inputGroup;
+        InputLayoutDesc &inputLayout = m_asset->ReflectDesc.InputLayout;
+        DZArenaArrayHelper<InputGroupDescArray, InputGroupDesc>::AllocateAndConstructArray( m_asset->_Arena, inputLayout.InputGroups, 1 );
+        InputGroupDesc &inputGroup = inputLayout.InputGroups.Elements[ 0 ];
+        DZArenaArrayHelper<InputLayoutElementDescArray, InputLayoutElementDesc>::AllocateAndConstructArray( m_asset->_Arena, inputGroup.Elements, 2 );
 
         // Position
-        InputLayoutElementDesc posElement;
-        posElement.Semantic      = "POSITION";
-        posElement.SemanticIndex = 0;
-        posElement.Format        = Format::R32G32B32Float;
+        InputLayoutElementDesc &posElement = inputGroup.Elements.Elements[ 0 ];
+        posElement.Semantic                = "POSITION";
+        posElement.SemanticIndex           = 0;
+        posElement.Format                  = Format::R32G32B32Float;
 
         // TexCoord
-        InputLayoutElementDesc texcoordElement;
-        texcoordElement.Semantic      = "TEXCOORD";
-        texcoordElement.SemanticIndex = 0;
-        texcoordElement.Format        = Format::R32G32Float;
+        InputLayoutElementDesc &texcoordElement = inputGroup.Elements.Elements[ 1 ];
+        texcoordElement.Semantic                = "TEXCOORD";
+        texcoordElement.SemanticIndex           = 0;
+        texcoordElement.Format                  = Format::R32G32Float;
 
-        inputGroup.Elements.Resize( 2 );
-        inputGroup.Elements.SetElement( 0, posElement );
-        inputGroup.Elements.SetElement( 1, texcoordElement );
         inputGroup.StepRate = StepRate::PerVertex;
 
-        inputLayout.InputGroups.Resize( 1 );
-        inputLayout.InputGroups.SetElement( 0, inputGroup );
-
-        // Assign reflect descriptors
-        asset.ReflectDesc.RootSignature = rootSig;
-        asset.ReflectDesc.InputLayout   = inputLayout;
-
-        return asset;
+        return m_asset.get( );
     }
 
-    static bool CompareInteropArrays( const InteropArray<Byte> &a, const InteropArray<Byte> &b )
+    static bool CompareByteArrays( const ByteArray &a, const ByteArray &b )
     {
-        if ( a.NumElements( ) != b.NumElements( ) )
+        if ( a.NumElements != b.NumElements )
         {
             return false;
         }
 
-        for ( size_t i = 0; i < a.NumElements( ); ++i )
+        for ( size_t i = 0; i < a.NumElements; ++i )
         {
-            if ( a.GetElement( i ) != b.GetElement( i ) )
+            if ( a.Elements[ i ] != b.Elements[ i ] )
             {
                 return false;
             }
@@ -164,61 +156,60 @@ protected:
 TEST_F( ShaderAssetSerdeTest, WriteAndReadBack )
 {
     BinaryContainer container;
-    BinaryWriter    writer( container );
+    auto            sampleAsset = std::unique_ptr<ShaderAsset>( CreateSampleShaderAsset( ) );
 
-    ShaderAsset sampleAsset = CreateSampleShaderAsset( );
-
-    ShaderAssetWriter shaderWriter( ShaderAssetWriterDesc{ &writer } );
-    shaderWriter.Write( sampleAsset );
-    shaderWriter.End( );
-
+    {
+        BinaryWriter      writer( container );
+        ShaderAssetWriter shaderWriter( ShaderAssetWriterDesc{ &writer } );
+        shaderWriter.Write( *sampleAsset );
+        shaderWriter.End( );
+    }
     BinaryReader      reader( container );
     ShaderAssetReader shaderReader( ShaderAssetReaderDesc{ &reader } );
-
-    ShaderAsset readAsset = shaderReader.Read( );
+    auto              readAsset = std::unique_ptr<ShaderAsset>( shaderReader.Read( ) );
 
     // Verify basic properties
-    ASSERT_EQ( readAsset.Magic, ShaderAsset{ }.Magic );
-    ASSERT_EQ( readAsset.Version, ShaderAsset::Latest );
-    ASSERT_STREQ( readAsset.Uri.ToInteropString( ).Get( ), sampleAsset.Uri.ToInteropString( ).Get( ) );
+    ASSERT_EQ( readAsset->Magic, ShaderAsset{ }.Magic );
+    ASSERT_EQ( readAsset->Version, ShaderAsset::Latest );
+    ASSERT_STREQ( readAsset->Uri.ToInteropString( ).Get( ), sampleAsset->Uri.ToInteropString( ).Get( ) );
 
     // Verify shader stages
-    ASSERT_EQ( readAsset.Stages.NumElements( ), sampleAsset.Stages.NumElements( ) );
+    ASSERT_EQ( readAsset->Stages.NumElements, sampleAsset->Stages.NumElements );
 
-    for ( uint32_t i = 0; i < readAsset.Stages.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < readAsset->Stages.NumElements; ++i )
     {
-        const ShaderStageAsset &readStage   = readAsset.Stages.GetElement( i );
-        const ShaderStageAsset &sampleStage = sampleAsset.Stages.GetElement( i );
+        const ShaderStageAsset &readStage   = readAsset->Stages.Elements[ i ];
+        const ShaderStageAsset &sampleStage = sampleAsset->Stages.Elements[ i ];
 
         ASSERT_EQ( readStage.Stage, sampleStage.Stage );
         ASSERT_STREQ( readStage.EntryPoint.Get( ), sampleStage.EntryPoint.Get( ) );
 
         // Verify shader binary data
-        ASSERT_TRUE( CompareInteropArrays( readStage.DXIL, sampleStage.DXIL ) );
-        ASSERT_TRUE( CompareInteropArrays( readStage.SPIRV, sampleStage.SPIRV ) );
-        ASSERT_TRUE( CompareInteropArrays( readStage.MSL, sampleStage.MSL ) );
-        ASSERT_TRUE( CompareInteropArrays( readStage.Reflection, sampleStage.Reflection ) );
+        ASSERT_TRUE( CompareByteArrays( readStage.DXIL, sampleStage.DXIL ) );
+        ASSERT_TRUE( CompareByteArrays( readStage.SPIRV, sampleStage.SPIRV ) );
+        ASSERT_TRUE( CompareByteArrays( readStage.MSL, sampleStage.MSL ) );
+        ASSERT_TRUE( CompareByteArrays( readStage.Reflection, sampleStage.Reflection ) );
     }
 
     // Verify root signature
-    ASSERT_EQ( readAsset.ReflectDesc.RootSignature.ResourceBindings.NumElements( ), sampleAsset.ReflectDesc.RootSignature.ResourceBindings.NumElements( ) );
+    ASSERT_EQ( readAsset->ReflectDesc.RootSignature.ResourceBindings.NumElements, sampleAsset->ReflectDesc.RootSignature.ResourceBindings.NumElements );
 
-    for ( uint32_t i = 0; i < readAsset.ReflectDesc.RootSignature.ResourceBindings.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < readAsset->ReflectDesc.RootSignature.ResourceBindings.NumElements; ++i )
     {
-        const ResourceBindingDesc &readBinding   = readAsset.ReflectDesc.RootSignature.ResourceBindings.GetElement( i );
-        const ResourceBindingDesc &sampleBinding = sampleAsset.ReflectDesc.RootSignature.ResourceBindings.GetElement( i );
+        const ResourceBindingDesc &readBinding   = readAsset->ReflectDesc.RootSignature.ResourceBindings.Elements[ i ];
+        const ResourceBindingDesc &sampleBinding = sampleAsset->ReflectDesc.RootSignature.ResourceBindings.Elements[ i ];
 
         ASSERT_STREQ( readBinding.Name.Get( ), sampleBinding.Name.Get( ) );
         ASSERT_EQ( readBinding.BindingType, sampleBinding.BindingType );
         ASSERT_EQ( readBinding.Binding, sampleBinding.Binding );
         ASSERT_EQ( readBinding.RegisterSpace, sampleBinding.RegisterSpace );
-        ASSERT_EQ( readBinding.Descriptor.Value( ), sampleBinding.Descriptor.Value( ) );
+        ASSERT_EQ( readBinding.Descriptor, sampleBinding.Descriptor );
         ASSERT_EQ( readBinding.ArraySize, sampleBinding.ArraySize );
 
-        ASSERT_EQ( readBinding.Stages.NumElements( ), sampleBinding.Stages.NumElements( ) );
-        for ( uint32_t j = 0; j < readBinding.Stages.NumElements( ); ++j )
+        ASSERT_EQ( readBinding.Stages.NumElements, sampleBinding.Stages.NumElements );
+        for ( uint32_t j = 0; j < readBinding.Stages.NumElements; ++j )
         {
-            ASSERT_EQ( readBinding.Stages.GetElement( j ), sampleBinding.Stages.GetElement( j ) );
+            ASSERT_EQ( readBinding.Stages.Elements[ j ], sampleBinding.Stages.Elements[ j ] );
         }
 
         ASSERT_STREQ( readBinding.Reflection.Name.Get( ), sampleBinding.Reflection.Name.Get( ) );
@@ -227,12 +218,12 @@ TEST_F( ShaderAssetSerdeTest, WriteAndReadBack )
     }
 
     // Verify static samplers
-    ASSERT_EQ( readAsset.ReflectDesc.RootSignature.StaticSamplers.NumElements( ), sampleAsset.ReflectDesc.RootSignature.StaticSamplers.NumElements( ) );
+    ASSERT_EQ( readAsset->ReflectDesc.RootSignature.StaticSamplers.NumElements, sampleAsset->ReflectDesc.RootSignature.StaticSamplers.NumElements );
 
-    for ( uint32_t i = 0; i < readAsset.ReflectDesc.RootSignature.StaticSamplers.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < readAsset->ReflectDesc.RootSignature.StaticSamplers.NumElements; ++i )
     {
-        const StaticSamplerDesc &readSampler   = readAsset.ReflectDesc.RootSignature.StaticSamplers.GetElement( i );
-        const StaticSamplerDesc &sampleSampler = sampleAsset.ReflectDesc.RootSignature.StaticSamplers.GetElement( i );
+        const StaticSamplerDesc &readSampler   = readAsset->ReflectDesc.RootSignature.StaticSamplers.Elements[ i ];
+        const StaticSamplerDesc &sampleSampler = sampleAsset->ReflectDesc.RootSignature.StaticSamplers.Elements[ i ];
 
         ASSERT_EQ( readSampler.Sampler.MagFilter, sampleSampler.Sampler.MagFilter );
         ASSERT_EQ( readSampler.Sampler.MinFilter, sampleSampler.Sampler.MinFilter );
@@ -251,25 +242,25 @@ TEST_F( ShaderAssetSerdeTest, WriteAndReadBack )
         ASSERT_EQ( readSampler.Binding.BindingType, sampleSampler.Binding.BindingType );
         ASSERT_EQ( readSampler.Binding.Binding, sampleSampler.Binding.Binding );
         ASSERT_EQ( readSampler.Binding.RegisterSpace, sampleSampler.Binding.RegisterSpace );
-        ASSERT_EQ( readSampler.Binding.Descriptor.Value( ), sampleSampler.Binding.Descriptor.Value( ) );
+        ASSERT_EQ( readSampler.Binding.Descriptor, sampleSampler.Binding.Descriptor );
         ASSERT_EQ( readSampler.Binding.ArraySize, sampleSampler.Binding.ArraySize );
     }
 
     // Verify input layout
-    ASSERT_EQ( readAsset.ReflectDesc.InputLayout.InputGroups.NumElements( ), sampleAsset.ReflectDesc.InputLayout.InputGroups.NumElements( ) );
+    ASSERT_EQ( readAsset->ReflectDesc.InputLayout.InputGroups.NumElements, sampleAsset->ReflectDesc.InputLayout.InputGroups.NumElements );
 
-    for ( uint32_t i = 0; i < readAsset.ReflectDesc.InputLayout.InputGroups.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < readAsset->ReflectDesc.InputLayout.InputGroups.NumElements; ++i )
     {
-        const InputGroupDesc &readGroup   = readAsset.ReflectDesc.InputLayout.InputGroups.GetElement( i );
-        const InputGroupDesc &sampleGroup = sampleAsset.ReflectDesc.InputLayout.InputGroups.GetElement( i );
+        const InputGroupDesc &readGroup   = readAsset->ReflectDesc.InputLayout.InputGroups.Elements[ i ];
+        const InputGroupDesc &sampleGroup = sampleAsset->ReflectDesc.InputLayout.InputGroups.Elements[ i ];
 
         ASSERT_EQ( readGroup.StepRate, sampleGroup.StepRate );
-        ASSERT_EQ( readGroup.Elements.NumElements( ), sampleGroup.Elements.NumElements( ) );
+        ASSERT_EQ( readGroup.Elements.NumElements, sampleGroup.Elements.NumElements );
 
-        for ( uint32_t j = 0; j < readGroup.Elements.NumElements( ); ++j )
+        for ( uint32_t j = 0; j < readGroup.Elements.NumElements; ++j )
         {
-            const InputLayoutElementDesc &readElement   = readGroup.Elements.GetElement( j );
-            const InputLayoutElementDesc &sampleElement = sampleGroup.Elements.GetElement( j );
+            const InputLayoutElementDesc &readElement   = readGroup.Elements.Elements[ j ];
+            const InputLayoutElementDesc &sampleElement = sampleGroup.Elements.Elements[ j ];
 
             ASSERT_STREQ( readElement.Semantic.Get( ), sampleElement.Semantic.Get( ) );
             ASSERT_EQ( readElement.SemanticIndex, sampleElement.SemanticIndex );

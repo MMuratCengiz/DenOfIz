@@ -35,10 +35,10 @@ protected:
     MeshAsset *CreateSampleMeshAsset( )
     {
         using namespace DenOfIz;
-        m_asset           = std::make_unique<MeshAsset>( );
-        m_asset->Name     = "TestMesh";
-        m_asset->Uri      = AssetUri::Create( "test/TestMesh.dzmesh" );
-        m_asset->NumLODs  = 1;
+        m_asset          = std::make_unique<MeshAsset>( );
+        m_asset->Name    = "TestMesh";
+        m_asset->Uri     = AssetUri::Create( "test/TestMesh.dzmesh" );
+        m_asset->NumLODs = 1;
 
         m_asset->EnabledAttributes.Position     = true;
         m_asset->EnabledAttributes.Normal       = true;
@@ -58,49 +58,49 @@ protected:
         DZArenaArrayHelper<UserPropertyArray, UserProperty>::AllocateAndConstructArray( m_asset->_Arena, m_asset->UserProperties, 2 );
 
         SubMeshData &sm0 = m_asset->SubMeshes.Elements[ 0 ];
-        sm0.Name        = "Quad";
-        sm0.Topology    = PrimitiveTopology::Triangle;
-        sm0.IndexType   = IndexType::Uint16;
-        sm0.NumVertices = 4;
-        sm0.NumIndices  = 6;
-        sm0.MinBounds   = { -1.0f, -1.0f, 0.0f };
-        sm0.MaxBounds   = { 1.0f, 1.0f, 0.0f };
-        sm0.MaterialRef = AssetUri::Create( "materials/Default.dzmat" );
+        sm0.Name         = "Quad";
+        sm0.Topology     = PrimitiveTopology::Triangle;
+        sm0.IndexType    = IndexType::Uint16;
+        sm0.NumVertices  = 4;
+        sm0.NumIndices   = 6;
+        sm0.MinBounds    = { -1.0f, -1.0f, 0.0f };
+        sm0.MaxBounds    = { 1.0f, 1.0f, 0.0f };
+        sm0.MaterialRef  = AssetUri::Create( "materials/Default.dzmat" );
 
         DZArenaArrayHelper<BoundingVolumeArray, BoundingVolume>::AllocateAndConstructArray( m_asset->_Arena, sm0.BoundingVolumes, 1 );
         BoundingVolume &bv0 = sm0.BoundingVolumes.Elements[ 0 ];
-        bv0.Name    = "BoxBV";
-        bv0.Type    = BoundingVolumeType::Box;
-        bv0.Box.Min = { -1.1f, -1.1f, -0.1f };
-        bv0.Box.Max = { 1.1f, 1.1f, 0.1f };
+        bv0.Name            = "BoxBV";
+        bv0.Type            = BoundingVolumeType::Box;
+        bv0.Box.Min         = { -1.1f, -1.1f, -0.1f };
+        bv0.Box.Max         = { 1.1f, 1.1f, 0.1f };
 
         SubMeshData &sm1 = m_asset->SubMeshes.Elements[ 1 ];
-        sm1.Name        = "Triangle";
-        sm1.Topology    = PrimitiveTopology::Triangle;
-        sm1.IndexType   = IndexType::Uint32;
-        sm1.NumVertices = 3;
-        sm1.NumIndices  = 3;
-        sm1.MinBounds   = { -0.5f, -0.5f, 0.0f };
-        sm1.MaxBounds   = { 0.5f, 0.5f, 0.0f };
+        sm1.Name         = "Triangle";
+        sm1.Topology     = PrimitiveTopology::Triangle;
+        sm1.IndexType    = IndexType::Uint32;
+        sm1.NumVertices  = 3;
+        sm1.NumIndices   = 3;
+        sm1.MinBounds    = { -0.5f, -0.5f, 0.0f };
+        sm1.MaxBounds    = { 0.5f, 0.5f, 0.0f };
 
         DZArenaArrayHelper<BoundingVolumeArray, BoundingVolume>::AllocateAndConstructArray( m_asset->_Arena, sm1.BoundingVolumes, 1 );
         BoundingVolume &bv1 = sm1.BoundingVolumes.Elements[ 0 ];
-        bv1.Name = "HullBV";
-        bv1.Type = BoundingVolumeType::ConvexHull;
+        bv1.Name            = "HullBV";
+        bv1.Type            = BoundingVolumeType::ConvexHull;
 
-        MorphTarget &mt0 = m_asset->MorphTargets.Elements[ 0 ];
+        MorphTarget &mt0  = m_asset->MorphTargets.Elements[ 0 ];
         mt0.Name          = "Smile";
         mt0.DefaultWeight = 0.0f;
 
         UserProperty &up0 = m_asset->UserProperties.Elements[ 0 ];
-        up0.Name         = "DesignerNote";
-        up0.PropertyType = UserProperty::Type::String;
-        up0.StringValue  = "This is a test mesh.";
+        up0.Name          = "DesignerNote";
+        up0.PropertyType  = UserProperty::Type::String;
+        up0.StringValue   = "This is a test mesh.";
 
         UserProperty &up1 = m_asset->UserProperties.Elements[ 1 ];
-        up1.Name         = "ExportScale";
-        up1.PropertyType = UserProperty::Type::Float;
-        up1.FloatValue   = 100.0f;
+        up1.Name          = "ExportScale";
+        up1.PropertyType  = UserProperty::Type::Float;
+        up1.FloatValue    = 100.0f;
 
         return m_asset.get( );
     }
@@ -132,7 +132,7 @@ protected:
 
     const std::vector<uint32_t> triIndices = { 0, 1, 2 };
 
-    DZArena m_tempArena{ 1024 };
+    DZArena           m_tempArena{ 1024 };
     std::vector<Byte> convexHullData;
 
     const std::vector<MorphTargetDelta> smileDeltas = {
