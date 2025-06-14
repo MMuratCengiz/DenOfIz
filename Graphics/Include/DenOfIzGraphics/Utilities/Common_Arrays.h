@@ -94,19 +94,6 @@ namespace DenOfIz
     {
         bool    *Elements;
         uint32_t NumElements;
-
-        static BoolArray Create( const size_t NumElements )
-        {
-            BoolArray Array{ };
-            Array.Elements    = new bool[ NumElements ];
-            Array.NumElements = NumElements;
-            return Array;
-        }
-
-        void Dispose( ) const
-        {
-            delete[] Elements;
-        }
     };
 
     struct DZ_API FloatArray
@@ -121,32 +108,24 @@ namespace DenOfIz
     {
         FloatArray *Elements;
         uint32_t    NumElements;
-
-        DZ_ARRAY_ARRAY_METHODS( FloatArrayArray, FloatArray )
     };
 
     struct DZ_API Int32Array
     {
         int32_t *Elements;
         uint32_t NumElements;
-
-        DZ_ARRAY_METHODS( Int32Array, int32_t )
     };
 
     struct DZ_API UInt16Array
     {
         uint16_t *Elements;
         uint16_t  NumElements;
-
-        DZ_ARRAY_METHODS( UInt16Array, uint16_t )
     };
 
     struct DZ_API UInt32Array
     {
         uint32_t *Elements    = nullptr;
         uint32_t  NumElements = 0;
-
-        DZ_ARRAY_METHODS( UInt32Array, uint32_t )
     };
 
     struct DZ_API UInt32ArrayView
@@ -159,8 +138,6 @@ namespace DenOfIz
     {
         int16_t *Elements;
         uint32_t NumElements;
-
-        DZ_ARRAY_METHODS( Int16Array, int16_t )
     };
 
     struct DZ_API StringView
@@ -185,8 +162,6 @@ namespace DenOfIz
     {
         StringView *Elements;
         uint32_t    NumElements;
-
-        DZ_ARRAY_METHODS( StringArray, StringView )
     };
 
     struct DZ_API InteropStringArray

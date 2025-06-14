@@ -72,7 +72,7 @@ SkeletonAsset *SkeletonAssetReader::Read( )
         joint.ParentIndex       = m_reader->ReadInt32( );
 
         const uint32_t numChildren = m_reader->ReadUInt32( );
-        joint.ChildIndices         = UInt32Array::Create( numChildren );
+        DZArenaArrayHelper<UInt32Array, uint32_t>::AllocateAndConstructArray( m_skeletonAsset->_Arena, joint.ChildIndices, numChildren );
 
         for ( uint32_t j = 0; j < numChildren; ++j )
         {

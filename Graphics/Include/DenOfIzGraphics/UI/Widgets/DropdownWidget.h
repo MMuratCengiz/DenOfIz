@@ -28,14 +28,15 @@ namespace DenOfIz
 
     class DropdownWidget : public Widget
     {
-        StringArray   m_options;
-        int32_t       m_selectedIndex    = -1;
-        bool          m_isOpen           = false;
-        bool          m_selectionChanged = false;
-        float         m_scrollOffset     = 0.0f;
-        DropdownStyle m_style;
-        uint32_t      m_dropdownListId;
-        bool          m_dropdownListCreatedThisFrame = false;
+        StringArray             m_options;
+        std::vector<StringView> m_optionsStorage;
+        int32_t                 m_selectedIndex    = -1;
+        bool                    m_isOpen           = false;
+        bool                    m_selectionChanged = false;
+        float                   m_scrollOffset     = 0.0f;
+        DropdownStyle           m_style;
+        uint32_t                m_dropdownListId;
+        bool                    m_dropdownListCreatedThisFrame = false;
 
     public:
         DZ_API DropdownWidget( IClayContext *clayContext, uint32_t id, const StringArray &options, const DropdownStyle &style = { } );

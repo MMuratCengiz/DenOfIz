@@ -27,13 +27,7 @@ DropdownWidget::DropdownWidget( IClayContext *clayContext, uint32_t id, const St
 {
 }
 
-DropdownWidget::~DropdownWidget( )
-{
-    if ( m_options.Elements )
-    {
-        m_options.Dispose( );
-    }
-}
+DropdownWidget::~DropdownWidget( ) = default;
 
 void DropdownWidget::Update( float deltaTime )
 {
@@ -58,7 +52,7 @@ void DropdownWidget::CreateLayoutElement( )
     m_clayContext->OpenElement( decl );
 
     const std::string &displayText = GetSelectedText( );
-    const ClayColor     &textColor   = m_selectedIndex >= 0 ? m_style.TextColor : m_style.PlaceholderColor;
+    const ClayColor   &textColor   = m_selectedIndex >= 0 ? m_style.TextColor : m_style.PlaceholderColor;
 
     if ( !displayText.empty( ) )
     {
@@ -149,7 +143,7 @@ void DropdownWidget::SetSelectedIndex( const int32_t index )
     }
 }
 
-const char* DropdownWidget::GetSelectedText( ) const
+const char *DropdownWidget::GetSelectedText( ) const
 {
     return m_selectedIndex >= 0 ? m_options.Elements[ m_selectedIndex ].Chars : m_style.PlaceholderText;
 }
@@ -286,11 +280,9 @@ void DropdownWidget::RenderDropdownList( )
 
 void DropdownWidget::UpdateOptions( const StringArray options )
 {
-    if ( m_options.Elements )
-    {
-        m_options.Dispose( );
-    }
-
-    m_options = StringArray::Create( options.NumElements );
-    std::copy_n( options.Elements, options.NumElements, m_options.Elements );
+    // Copy incase user provides temp struings
+    m_optionsStorage.resize( options.NumElements );
+    std::copy_n( options.Elements, options.NumElements, m_optionsStorage.begin( ) );
+    m_options.Elements    = m_optionsStorage.data( );
+    m_options.NumElements = m_optionsStorage.size( );
 }
