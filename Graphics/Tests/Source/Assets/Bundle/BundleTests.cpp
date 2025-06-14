@@ -57,7 +57,7 @@ protected:
     ByteArray CreateTestData( const char *content ) const
     {
         const std::string str  = content;
-        ByteArray         data = ByteArray::Create( str.size( ) );
+        const ByteArray   data = ByteArray::Create( str.size( ) );
         for ( size_t i = 0; i < str.size( ); ++i )
         {
             data.Elements[ i ] = static_cast<Byte>( str[ i ] );
@@ -85,8 +85,8 @@ TEST_F( BundleTest, CreateEmptyBundle )
     const auto bundle = new Bundle( desc );
     ASSERT_TRUE( FileIO::FileExists( desc.Path ) );
 
-    const InteropArray<AssetUri> assets = bundle->GetAllAssets( );
-    ASSERT_EQ( assets.NumElements( ), 0 );
+    const AssetUriArray assets = bundle->GetAllAssets( );
+    ASSERT_EQ( assets.NumElements, 0 );
 
     delete bundle;
 }
@@ -97,17 +97,17 @@ TEST_F( BundleTest, AddAndRetrieveAssets )
     desc.Path              = GetTempPath( "assets.dzbundle" );
     desc.CreateIfNotExists = true;
 
-    auto bundle = new Bundle( desc );
+    const auto bundle = new Bundle( desc );
 
     // Create and add a mesh asset
     // Note that AssetUri::Create adds the "asset://" prefix
-    const AssetUri meshUri  = AssetUri::Create( "models/cube.dzmesh" );
-    ByteArray      meshData = CreateTestData( "This is mesh data" );
+    const AssetUri  meshUri  = AssetUri::Create( "models/cube.dzmesh" );
+    const ByteArray meshData = CreateTestData( "This is mesh data" );
     bundle->AddAsset( meshUri, AssetType::Mesh, ByteArrayView( meshData ) );
 
     // Create and add a texture asset
-    const AssetUri texUri  = AssetUri::Create( "textures/diffuse.dztex" );
-    ByteArray      texData = CreateTestData( "This is texture data" );
+    const AssetUri  texUri  = AssetUri::Create( "textures/diffuse.dztex" );
+    const ByteArray texData = CreateTestData( "This is texture data" );
     bundle->AddAsset( texUri, AssetType::Texture, ByteArrayView( texData ) );
 
     // Save the bundle
@@ -141,8 +141,8 @@ TEST_F( BundleTest, AddAndRetrieveAssets )
     ASSERT_TRUE( reopenedBundle->Exists( meshUri ) );
     ASSERT_TRUE( reopenedBundle->Exists( texUri ) );
 
-    const InteropArray<AssetUri> assets = reopenedBundle->GetAllAssets( );
-    ASSERT_EQ( assets.NumElements( ), 2 );
+    const AssetUriArray assets = reopenedBundle->GetAllAssets( );
+    ASSERT_EQ( assets.NumElements, 2 );
 
     delete reopenedBundle;
 
@@ -183,7 +183,7 @@ TEST_F( BundleTest, GetAssetsByType )
     bundle->Save( );
 
     // Test GetAssetsByType for mesh assets
-    InteropArray<AssetUri> meshAssets = bundle->GetAssetsByType( AssetType::Mesh );
+    AssetUriArray meshAssets = bundle->GetAssetsByType( AssetType::Mesh );
     ASSERT_EQ( meshAssets.NumElements( ), 2 );
 
     // Get the expected URI strings for comparison
@@ -195,9 +195,9 @@ TEST_F( BundleTest, GetAssetsByType )
     bool foundMesh2 = false;
 
     // Loop through results and check against expected URIs
-    for ( size_t i = 0; i < meshAssets.NumElements( ); ++i )
+    for ( size_t i = 0; i < meshAssets.NumElements; ++i )
     {
-        const std::string resultUri = meshAssets.GetElement( i ).ToInteropString( ).Get( );
+        const std::string resultUri = meshAssets.Elements[ i ].ToInteropString( ).Get( );
         std::cout << "Found mesh asset: " << resultUri << std::endl;
 
         if ( resultUri == meshUriStr1 )
@@ -217,12 +217,12 @@ TEST_F( BundleTest, GetAssetsByType )
     }
 
     // Just verify we found the right number of mesh assets
-    ASSERT_EQ( meshAssets.NumElements( ), 2 );
+    ASSERT_EQ( meshAssets.NumElements, 2 );
 
     // Test GetAssetsByType for texture assets
-    InteropArray<AssetUri> texAssets = bundle->GetAssetsByType( AssetType::Texture );
-    ASSERT_EQ( texAssets.NumElements( ), 1 );
-    ASSERT_STREQ( texAssets.GetElement( 0 ).ToInteropString( ).Get( ), texUri.ToInteropString( ).Get( ) );
+    AssetUriArray texAssets = bundle->GetAssetsByType( AssetType::Texture );
+    ASSERT_EQ( texAssets.NumElements, 1 );
+    ASSERT_STREQ( texAssets.Elements[ 0].ToInteropString( ).Get( ), texUri.ToInteropString( ).Get( ) );
 
     delete bundle;
 }
@@ -273,7 +273,7 @@ TEST_F( BundleTest, BundleCompression )
     uncompressedDesc.CreateIfNotExists = true;
     uncompressedDesc.Compress          = false;
 
-    auto uncompressedBundle = new Bundle( uncompressedDesc );
+    const auto uncompressedBundle = new Bundle( uncompressedDesc );
     ASSERT_FALSE( uncompressedBundle->IsCompressed( ) );
 
     uncompressedBundle->AddAsset( assetUri, AssetType::Animation, ByteArrayView( assetData ) );
@@ -307,9 +307,9 @@ TEST_F( BundleTest, CreateFromDirectory )
     const auto meshFile2   = InteropString( ( std::string( meshDir.Get( ) ) + "/sphere.dzmesh" ).c_str( ) );
     const auto textureFile = InteropString( ( std::string( textureDir.Get( ) ) + "/diffuse.dztex" ).c_str( ) );
 
-    ByteArray cubeMeshData   = CreateTestData( "Cube mesh data" );
-    ByteArray sphereMeshData = CreateTestData( "Sphere mesh data" );
-    ByteArray textureData    = CreateTestData( "Texture data" );
+    const ByteArray cubeMeshData   = CreateTestData( "Cube mesh data" );
+    const ByteArray sphereMeshData = CreateTestData( "Sphere mesh data" );
+    const ByteArray textureData    = CreateTestData( "Texture data" );
 
     FileIO::WriteFile( meshFile1, ByteArrayView( cubeMeshData ) );
     FileIO::WriteFile( meshFile2, ByteArrayView( sphereMeshData ) );
@@ -329,19 +329,19 @@ TEST_F( BundleTest, CreateFromDirectory )
     ASSERT_NE( bundle, nullptr );
 
     // Check that all assets were imported by verifying the total count
-    InteropArray<AssetUri> assets = bundle->GetAllAssets( );
-    ASSERT_EQ( assets.NumElements( ), 3 ); // 3 files should be imported
+    const AssetUriArray assets = bundle->GetAllAssets( );
+    ASSERT_EQ( assets.NumElements, 3 ); // 3 files should be imported
 
     // Print all assets in the bundle for debugging
     std::cout << "Bundle contains these assets:" << std::endl;
-    for ( size_t i = 0; i < assets.NumElements( ); ++i )
+    for ( size_t i = 0; i < assets.NumElements; ++i )
     {
-        std::cout << " - " << assets.GetElement( i ).ToInteropString( ).Get( ) << std::endl;
+        std::cout << " - " << assets.Elements[ i ].ToInteropString( ).Get( ) << std::endl;
     }
 
     // Print asset types for verification
-    const InteropArray<AssetUri> meshAssets    = bundle->GetAssetsByType( AssetType::Mesh );
-    const InteropArray<AssetUri> textureAssets = bundle->GetAssetsByType( AssetType::Texture );
+    const AssetUriArray meshAssets    = bundle->GetAssetsByType( AssetType::Mesh );
+    const AssetUriArray textureAssets = bundle->GetAssetsByType( AssetType::Texture );
 
     std::cout << "Found " << meshAssets.NumElements( ) << " mesh assets" << std::endl;
     std::cout << "Found " << textureAssets.NumElements( ) << " texture assets" << std::endl;

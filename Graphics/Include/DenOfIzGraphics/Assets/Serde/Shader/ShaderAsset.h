@@ -34,29 +34,12 @@ namespace DenOfIz
         ByteArray            SPIRV;
         ByteArray            Reflection; // Generated Dxc reflection
         RayTracingShaderDesc RayTracing;
-
-        void Dispose( ) const
-        {
-            DXIL.Dispose( );
-            MSL.Dispose( );
-            SPIRV.Dispose( );
-            Reflection.Dispose( );
-        }
     };
 
     struct DZ_API ShaderStageAssetArray
     {
         ShaderStageAsset *Elements;
         uint32_t          NumElements;
-
-        void Dispose( ) const
-        {
-            for ( uint32_t i = 0; i < NumElements; ++i )
-            {
-                Elements[ i ].Dispose( );
-            }
-            delete[] Elements;
-        }
     };
 
     struct DZ_API ShaderAsset : AssetHeader, NonCopyable
