@@ -69,12 +69,16 @@ namespace DenOfIz
         uint32_t               Flags;
     };
 
-    template class DZ_API InteropArray<ASGeometryDesc>;
+    struct DZ_API ASGeometryDescArray
+    {
+        ASGeometryDesc *Elements;
+        uint32_t        NumElements;
+    };
 
     struct DZ_API BottomLevelASDesc
     {
-        InteropArray<ASGeometryDesc> Geometries;
-        uint32_t                     BuildFlags;
+        ASGeometryDescArray Geometries;
+        uint32_t            BuildFlags;
     };
 
     class DZ_API IBottomLevelAS

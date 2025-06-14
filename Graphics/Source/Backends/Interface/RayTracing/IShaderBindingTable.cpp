@@ -17,19 +17,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Backends/Interface/RayTracing/IShaderBindingTable.h"
-#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include <sstream>
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
-void PrintRecordDebugData( std::stringstream& ss, const std::string &tableName, const InteropArray<ShaderRecordDebugData> &records, uint32_t recordSize )
+void PrintRecordDebugData( std::stringstream &ss, const std::string &tableName, const ShaderRecordDebugDataArray &records, uint32_t recordSize )
 {
     ss << "|--------------------------------------------------------------------\n";
-    ss << "|Shader table - " << tableName << ": " << recordSize << " | " << records.NumElements( ) * recordSize << " bytes\n";
+    ss << "|Shader table - " << tableName << ": " << recordSize << " | " << records.NumElements * recordSize << " bytes\n";
 
-    for ( size_t i = 0; i < records.NumElements( ); i++ )
+    for ( size_t i = 0; i < records.NumElements; i++ )
     {
-        const auto &record = records.GetElement( i );
+        const auto &record = records.Elements[ i ];
         ss << "| [" << i << "]: " << record.Name.Get( ) << ", " << record.IdentifierSize << " + " << record.LocalRootArgsSize << " bytes\n";
     }
     ss << "|--------------------------------------------------------------------\n";

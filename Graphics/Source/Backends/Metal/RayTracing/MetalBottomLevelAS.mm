@@ -24,12 +24,12 @@ using namespace DenOfIz;
 
 MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevelASDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    m_geometryDescriptors = [NSMutableArray arrayWithCapacity:desc.Geometries.NumElements( )];
+    m_geometryDescriptors = [NSMutableArray arrayWithCapacity:desc.Geometries.NumElements];
     m_options             = MTLAccelerationStructureInstanceOptionNone;
 
-    for ( size_t i = 0; i < desc.Geometries.NumElements( ); ++i )
+    for ( size_t i = 0; i < desc.Geometries.NumElements; ++i )
     {
-        const ASGeometryDesc &geometry = desc.Geometries.GetElement( i );
+        const ASGeometryDesc &geometry = desc.Geometries.Elements[ i ];
         m_hitGroupType                 = geometry.Type;
         if ( i > 0 && geometry.Type != m_hitGroupType )
         {

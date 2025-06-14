@@ -31,8 +31,8 @@ namespace DenOfIz
         static bool                IsBindingLocalTo( const RayTracingShaderDesc &rayTracingShaderDesc, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc );
         static bool                IsBindingBindless( const BindlessDesc &bindlessDesc, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc );
         static const BindlessSlot *GetBindlessSlot( const BindlessDesc &bindlessDesc, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc );
-        static void                FillTypeInfo( ID3D12ShaderReflectionType *reflType, InteropArray<ReflectionResourceField> &fields, uint32_t parentIndex, uint32_t level );
-        static void FillReflectionData( ID3D12ShaderReflection *shaderReflection, ID3D12FunctionReflection *functionReflection, ReflectionDesc &reflectionDesc, int resourceIndex );
+        static void                FillTypeInfo( ID3D12ShaderReflectionType *reflType, std::vector<ReflectionResourceField> &fields, uint32_t parentIndex, uint32_t level );
+        static void FillReflectionData( ID3D12ShaderReflection *shaderReflection, ID3D12FunctionReflection *functionReflection, ReflectionDesc &reflectionDesc, int resourceIndex, std::vector<std::vector<ReflectionResourceField>> &fieldStorage );
         static void DxcCheckResult( HRESULT hr );
         static ThreadGroupInfo   ExtractThreadGroupSize( ID3D12ShaderReflection *shaderReflection, ID3D12FunctionReflection *functionReflection );
         static PrimitiveTopology ExtractMeshOutputTopology( ID3D12ShaderReflection *shaderReflection );

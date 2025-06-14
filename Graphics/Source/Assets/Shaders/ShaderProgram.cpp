@@ -51,6 +51,16 @@ using namespace DenOfIz;
     }                                                                                                                                                                              \
     while ( false )
 
+struct RootSignatureState
+{
+    std::vector<StaticSamplerDesc>               StaticSamplers;
+    std::vector<RootConstantResourceBindingDesc> RootConstants;
+    std::vector<ResourceBindingDesc>             ResourceBindings;
+    std::vector<BindlessResourceDesc>            BindlessResources;
+    std::vector<std::vector<ShaderStage>>        RootConstantStages;
+    std::vector<std::vector<ShaderStage>>        ResourceBindingStages;
+};
+
 struct ReflectionState
 {
     InputLayoutDesc                  *InputLayoutDesc;
@@ -60,37 +70,26 @@ struct ReflectionState
     ID3D12ShaderReflection           *ShaderReflection;
     ID3D12LibraryReflection          *LibraryReflection;
     ID3D12FunctionReflection         *FunctionReflection;
-};
-
-struct LocalRootSignatureState
-{
-    std::vector<ResourceBindingDesc> ResourceBindings;
-    LocalRootSignatureDesc           Desc;
-};
-
-struct RootSignatureState
-{
-    std::vector<StaticSamplerDesc>               StaticSamplers;
-    std::vector<RootConstantResourceBindingDesc> RootConstants;
-    std::vector<ResourceBindingDesc>             ResourceBindings;
-    std::vector<BindlessResourceDesc>            BindlessResources;
+    int                               ShaderIndex;
 };
 
 class ShaderProgram::Impl
 {
 public:
-    ShaderCompiler                                    m_compiler;
-    std::vector<std::unique_ptr<CompiledShaderStage>> m_compiledShaders;
-    std::vector<CompiledShaderStage *>                m_compiledShaderPtrs;
-    std::vector<ShaderStageDesc>                      m_shaderDescs; // Index matched with m_compiledShaders
-    ShaderReflectDesc                                 m_reflectDesc;
-    ShaderProgramDesc                                 m_desc;
-    std::vector<ByteArray>                            m_dataToClean;
-    RootSignatureState                                m_rootSignatureState{ };
-    std::vector<ResourceBindingSlotArray>             m_localBindingsToClean;
-    std::vector<std::vector<ResourceBindingDesc>>     m_localResourceBindings;
-    std::vector<LocalRootSignatureDesc>               m_localRootSignatures;
-    std::vector<ThreadGroupInfo>                      m_threadGroupInfos;
+    ShaderCompiler                                     m_compiler;
+    std::vector<std::unique_ptr<CompiledShaderStage>>  m_compiledShaders;
+    std::vector<CompiledShaderStage *>                 m_compiledShaderPtrs;
+    std::vector<ShaderStageDesc>                       m_shaderDescs; // Index matched with m_compiledShaders
+    ShaderReflectDesc                                  m_reflectDesc;
+    ShaderProgramDesc                                  m_desc;
+    std::vector<ByteArray>                             m_dataToClean;
+    RootSignatureState                                 m_rootSignatureState{ };
+    std::vector<ResourceBindingSlotArray>              m_localBindingsToClean;
+    std::vector<std::vector<ResourceBindingDesc>>      m_localResourceBindings;
+    std::vector<std::vector<std::vector<ShaderStage>>> m_localResourceBindingStages;
+    std::vector<LocalRootSignatureDesc>                m_localRootSignatures;
+    std::vector<ThreadGroupInfo>                       m_threadGroupInfos;
+    std::vector<std::vector<ReflectionResourceField>>  m_reflectionFieldStorage;
 
     explicit Impl( const ShaderProgramDesc &desc ) : m_desc( desc )
     {
@@ -107,6 +106,12 @@ public:
     void ProcessInputBindingDesc( ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex );
     bool UpdateBoundResourceStage( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc );
     void ProcessBindlessArrays( RootSignatureDesc &rootSignature );
+};
+
+struct LocalRootSignatureState
+{
+    std::vector<ResourceBindingDesc> ResourceBindings;
+    LocalRootSignatureDesc           Desc;
 };
 
 ShaderProgram::ShaderProgram( ShaderProgramDesc desc ) : m_pImpl( std::make_unique<Impl>( std::move( desc ) ) )
@@ -258,6 +263,7 @@ void ShaderProgram::Impl::CreateReflectionData( )
     m_reflectDesc = { };
     m_localRootSignatures.resize( m_compiledShaders.size( ) );
     m_localResourceBindings.resize( m_compiledShaders.size( ) );
+    m_localResourceBindingStages.resize( m_compiledShaders.size( ) );
     m_threadGroupInfos.resize( m_compiledShaders.size( ) );
 
     InputLayoutDesc   &inputLayout   = m_reflectDesc.InputLayout;
@@ -275,6 +281,7 @@ void ShaderProgram::Impl::CreateReflectionData( )
         auto &shader                          = m_compiledShaders[ stageIndex ];
         reflectionState.CompiledShader        = shader.get( );
         reflectionState.ShaderDesc            = &m_desc.ShaderStages.Elements[ stageIndex ];
+        reflectionState.ShaderIndex           = stageIndex;
         LocalRootSignatureDesc &recordLayout  = m_localRootSignatures[ stageIndex ];
         reflectionState.LocalResourceBindings = &m_localResourceBindings[ stageIndex ];
 
@@ -326,6 +333,15 @@ void ShaderProgram::Impl::CreateReflectionData( )
 
         recordLayout.ResourceBindings.NumElements = static_cast<uint32_t>( m_localResourceBindings[ stageIndex ].size( ) );
         recordLayout.ResourceBindings.Elements    = m_localResourceBindings[ stageIndex ].data( );
+
+        // Set up stages for local resource bindings
+        for ( size_t i = 0; i < m_localResourceBindings[ stageIndex ].size( ); ++i )
+        {
+            auto &binding              = m_localResourceBindings[ stageIndex ][ i ];
+            auto &stages               = m_localResourceBindingStages[ stageIndex ][ i ];
+            binding.Stages.Elements    = stages.data( );
+            binding.Stages.NumElements = static_cast<uint32_t>( stages.size( ) );
+        }
     }
 
     ProcessBindlessArrays( rootSignature );
@@ -337,6 +353,24 @@ void ShaderProgram::Impl::CreateReflectionData( )
     if ( dxcUtils )
     {
         dxcUtils->Release( );
+    }
+
+    // Set up stages for root constants
+    for ( size_t i = 0; i < m_rootSignatureState.RootConstants.size( ); ++i )
+    {
+        auto &binding              = m_rootSignatureState.RootConstants[ i ];
+        auto &stages               = m_rootSignatureState.RootConstantStages[ i ];
+        binding.Stages.Elements    = stages.data( );
+        binding.Stages.NumElements = static_cast<uint32_t>( stages.size( ) );
+    }
+
+    // Set up stages for resource bindings
+    for ( size_t i = 0; i < m_rootSignatureState.ResourceBindings.size( ); ++i )
+    {
+        auto &binding              = m_rootSignatureState.ResourceBindings[ i ];
+        auto &stages               = m_rootSignatureState.ResourceBindingStages[ i ];
+        binding.Stages.Elements    = stages.data( );
+        binding.Stages.NumElements = static_cast<uint32_t>( stages.size( ) );
     }
 
     m_reflectDesc.RootSignature.RootConstants.NumElements     = static_cast<uint32_t>( m_rootSignatureState.RootConstants.size( ) );
@@ -514,7 +548,7 @@ void ShaderProgram::Impl::ProcessInputBindingDesc( ReflectionState &state, const
     if ( shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootConstantRegisterSpace && !isLocal )
     {
         ReflectionDesc rootConstantReflection;
-        ShaderReflectionHelper::FillReflectionData( state.ShaderReflection, state.FunctionReflection, rootConstantReflection, resourceIndex );
+        ShaderReflectionHelper::FillReflectionData( state.ShaderReflection, state.FunctionReflection, rootConstantReflection, resourceIndex, m_reflectionFieldStorage );
         if ( rootConstantReflection.Type != ReflectionBindingType::Pointer && rootConstantReflection.Type != ReflectionBindingType::Struct )
         {
             spdlog::critical( "Root constant reflection type mismatch. RegisterSpace [ {} ] is reserved for root constants. Which cannot be samplers or textures.",
@@ -523,7 +557,7 @@ void ShaderProgram::Impl::ProcessInputBindingDesc( ReflectionState &state, const
         RootConstantResourceBindingDesc &rootConstantBinding = m_rootSignatureState.RootConstants.emplace_back( RootConstantResourceBindingDesc{ } );
         rootConstantBinding.Name                             = shaderInputBindDesc.Name;
         rootConstantBinding.Binding                          = shaderInputBindDesc.BindPoint;
-        rootConstantBinding.Stages.AddElement( state.ShaderDesc->Stage );
+        m_rootSignatureState.RootConstantStages.emplace_back( ).push_back( state.ShaderDesc->Stage );
         rootConstantBinding.NumBytes   = rootConstantReflection.NumBytes;
         rootConstantBinding.Reflection = rootConstantReflection;
         return;
@@ -562,9 +596,17 @@ void ShaderProgram::Impl::ProcessInputBindingDesc( ReflectionState &state, const
     resourceBindingDesc.ArraySize            = isBindless ? UINT_MAX : shaderInputBindDesc.BindCount;
     resourceBindingDesc.BindingType          = bindingType;
     resourceBindingDesc.Descriptor           = DxcEnumConverter::ReflectTypeToRootSignatureType( shaderInputBindDesc.Type, shaderInputBindDesc.Dimension );
-    resourceBindingDesc.Stages.AddElement( state.ShaderDesc->Stage );
+    if ( resourceBindings == &m_rootSignatureState.ResourceBindings )
+    {
+        m_rootSignatureState.ResourceBindingStages.emplace_back( ).push_back( state.ShaderDesc->Stage );
+    }
+    else
+    {
+        // For local resource bindings, track the stage
+        m_localResourceBindingStages[ state.ShaderIndex ].emplace_back( ).push_back( state.ShaderDesc->Stage );
+    }
     resourceBindingDesc.IsBindless = isBindless;
-    ShaderReflectionHelper::FillReflectionData( state.ShaderReflection, state.FunctionReflection, resourceBindingDesc.Reflection, resourceIndex );
+    ShaderReflectionHelper::FillReflectionData( state.ShaderReflection, state.FunctionReflection, resourceBindingDesc.Reflection, resourceIndex, m_reflectionFieldStorage );
 }
 
 void ShaderProgram::Impl::ProcessBindlessArrays( RootSignatureDesc &rootSignature )
@@ -576,7 +618,7 @@ void ShaderProgram::Impl::ProcessBindlessArrays( RootSignatureDesc &rootSignatur
         {
             const auto &bindlessSlot  = shaderStage.Bindless.BindlessArrays.Elements[ i ];
             bool        alreadyExists = false;
-            for ( int j = 0; j < rootSignature.BindlessResources.NumElements; ++j )
+            for ( uint32_t j = 0; j < rootSignature.BindlessResources.NumElements; ++j )
             {
                 const auto &existing = rootSignature.BindlessResources.Elements[ j ];
                 if ( existing.Binding == bindlessSlot.Binding && existing.RegisterSpace == bindlessSlot.RegisterSpace && existing.Type == bindlessSlot.Type )
@@ -617,7 +659,7 @@ bool ShaderProgram::Impl::UpdateBoundResourceStage( const ReflectionState &state
             if ( auto &boundBinding = m_rootSignatureState.RootConstants[ bindingIndex ]; boundBinding.Binding == shaderInputBindDesc.BindPoint )
             {
                 found = true;
-                boundBinding.Stages.AddElement( state.ShaderDesc->Stage );
+                m_rootSignatureState.RootConstantStages[ bindingIndex ].push_back( state.ShaderDesc->Stage );
                 break;
             }
         }
@@ -633,11 +675,12 @@ bool ShaderProgram::Impl::UpdateBoundResourceStage( const ReflectionState &state
         isSameBinding       = isSameBinding && strcmp( boundBinding.Name.Get( ), shaderInputBindDesc.Name ) == 0;
         if ( isSameBinding )
         {
-            found            = true;
-            bool stageExists = false;
-            for ( int stageIndex = 0; stageIndex < boundBinding.Stages.NumElements( ); ++stageIndex )
+            found             = true;
+            auto &stages      = m_rootSignatureState.ResourceBindingStages[ bindingIndex ];
+            bool  stageExists = false;
+            for ( const auto &existingStage : stages )
             {
-                if ( boundBinding.Stages.GetElement( stageIndex ) == state.ShaderDesc->Stage )
+                if ( existingStage == state.ShaderDesc->Stage )
                 {
                     stageExists = true;
                     break;
@@ -645,7 +688,7 @@ bool ShaderProgram::Impl::UpdateBoundResourceStage( const ReflectionState &state
             }
             if ( !stageExists )
             {
-                boundBinding.Stages.AddElement( state.ShaderDesc->Stage );
+                stages.push_back( state.ShaderDesc->Stage );
             }
         }
     }

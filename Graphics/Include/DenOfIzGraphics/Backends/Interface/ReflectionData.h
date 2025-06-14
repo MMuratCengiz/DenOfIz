@@ -90,7 +90,12 @@ namespace DenOfIz
         uint32_t            Level       = 0;          // Nesting level in hierarchy
         uint32_t            ParentIndex = UINT32_MAX; // UINT32_MAX is root
     };
-    template class DZ_API InteropArray<ReflectionResourceField>;
+
+    struct DZ_API ReflectionResourceFieldArray
+    {
+        ReflectionResourceField *Elements;
+        uint32_t                 NumElements;
+    };
 
     enum class ReflectRootParameterType
     {
@@ -101,9 +106,9 @@ namespace DenOfIz
 
     struct DZ_API ReflectionDesc
     {
-        InteropString                         Name;
-        ReflectionBindingType                 Type;
-        InteropArray<ReflectionResourceField> Fields;
-        size_t                                NumBytes = 0;
+        InteropString                  Name;
+        ReflectionBindingType          Type;
+        ReflectionResourceFieldArray   Fields;
+        size_t                         NumBytes = 0;
     };
 } // namespace DenOfIz

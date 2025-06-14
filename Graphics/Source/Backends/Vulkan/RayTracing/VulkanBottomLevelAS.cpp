@@ -17,8 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanBottomLevelAS.h"
-#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanEnumConverter.h"
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanBufferResource.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanEnumConverter.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
@@ -26,14 +26,14 @@ using namespace DenOfIz;
 VulkanBottomLevelAS::VulkanBottomLevelAS( VulkanContext *context, const BottomLevelASDesc &desc ) : m_context( context ), m_desc( desc )
 {
     m_flags              = VulkanEnumConverter::ConvertAccelerationStructureBuildFlags( desc.BuildFlags );
-    size_t numGeometries = desc.Geometries.NumElements( );
+    size_t numGeometries = desc.Geometries.NumElements;
     m_geometryDescs.resize( numGeometries );
     m_buildRangeInfos.resize( numGeometries );
     std::vector<uint32_t> maxPrimitives( numGeometries );
 
     for ( uint32_t i = 0; i < numGeometries; ++i )
     {
-        const ASGeometryDesc              &geometry   = desc.Geometries.GetElement( i );
+        const ASGeometryDesc              &geometry   = desc.Geometries.Elements[ i ];
         VkAccelerationStructureGeometryKHR vkGeometry = { };
         vkGeometry.sType                              = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
         if ( geometry.Flags & GeometryFlags::Opaque )

@@ -130,7 +130,7 @@ void ShaderAssetReader::ReadInputLayout( InputLayoutDesc &inputLayout ) const
         const uint32_t  numElements = m_reader->ReadUInt32( );
         inputGroup.Elements.Resize( numElements );
 
-        for ( int j = 0; j < numElements; ++j )
+        for ( uint32_t j = 0; j < numElements; ++j )
         {
             InputLayoutElementDesc &element = inputGroup.Elements.GetElement( j );
 
@@ -181,10 +181,10 @@ void ShaderAssetReader::ReadRootSignature( RootSignatureDesc &rootSignature ) co
         sampler.Binding.Descriptor    = m_reader->ReadUInt32( );
 
         const uint32_t numStages = m_reader->ReadUInt32( );
-        sampler.Binding.Stages.Resize( numStages );
+        DZArenaArrayHelper<ShaderStageArray, ShaderStage>::AllocateAndConstructArray( m_shaderAsset->_Arena, sampler.Binding.Stages, numStages );
         for ( uint32_t j = 0; j < numStages; ++j )
         {
-            sampler.Binding.Stages.GetElement( j ) = static_cast<ShaderStage>( m_reader->ReadUInt32( ) );
+            sampler.Binding.Stages.Elements[ j ] = static_cast<ShaderStage>( m_reader->ReadUInt32( ) );
         }
 
         sampler.Binding.ArraySize = m_reader->ReadInt32( );
@@ -203,10 +203,10 @@ void ShaderAssetReader::ReadRootSignature( RootSignatureDesc &rootSignature ) co
         constant.NumBytes                         = m_reader->ReadInt32( );
 
         const uint32_t numStages = m_reader->ReadUInt32( );
-        constant.Stages.Resize( numStages );
+        DZArenaArrayHelper<ShaderStageArray, ShaderStage>::AllocateAndConstructArray( m_shaderAsset->_Arena, constant.Stages, numStages );
         for ( uint32_t j = 0; j < numStages; ++j )
         {
-            constant.Stages.GetElement( j ) = static_cast<ShaderStage>( m_reader->ReadUInt32( ) );
+            constant.Stages.Elements[ j ] = static_cast<ShaderStage>( m_reader->ReadUInt32( ) );
         }
 
         ReadResourceReflection( constant.Reflection );
@@ -235,10 +235,10 @@ void ShaderAssetReader::ReadResourceBinding( ResourceBindingDesc &binding ) cons
     binding.Descriptor    = m_reader->ReadUInt32( );
 
     const uint32_t numStages = m_reader->ReadUInt32( );
-    binding.Stages.Resize( numStages );
+    DZArenaArrayHelper<ShaderStageArray, ShaderStage>::AllocateAndConstructArray( m_shaderAsset->_Arena, binding.Stages, numStages );
     for ( uint32_t j = 0; j < numStages; ++j )
     {
-        binding.Stages.GetElement( j ) = static_cast<ShaderStage>( m_reader->ReadUInt32( ) );
+        binding.Stages.Elements[ j ] = static_cast<ShaderStage>( m_reader->ReadUInt32( ) );
     }
 
     binding.ArraySize = m_reader->ReadInt32( );
@@ -251,11 +251,11 @@ void ShaderAssetReader::ReadResourceReflection( ReflectionDesc &reflection ) con
     reflection.Type = static_cast<ReflectionBindingType>( m_reader->ReadUInt32( ) );
 
     const uint32_t numFields = m_reader->ReadUInt32( );
-    reflection.Fields.Resize( numFields );
+    DZArenaArrayHelper<ReflectionResourceFieldArray, ReflectionResourceField>::AllocateAndConstructArray( m_shaderAsset->_Arena, reflection.Fields, numFields );
 
     for ( uint32_t i = 0; i < numFields; ++i )
     {
-        ReflectionResourceField &field = reflection.Fields.GetElement( i );
+        ReflectionResourceField &field = reflection.Fields.Elements[ i ];
         field.Name                     = m_reader->ReadString( );
         field.Type                     = static_cast<ReflectionFieldType>( m_reader->ReadUInt32( ) );
         field.NumColumns               = m_reader->ReadUInt32( );

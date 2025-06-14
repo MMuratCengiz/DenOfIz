@@ -855,12 +855,12 @@ MTLRenderStages MetalEnumConverter::ConvertRenderStage( const ShaderStage &stage
     return MTLRenderStageVertex;
 }
 
-MTLRenderStages MetalEnumConverter::ConvertRenderStages( const InteropArray<ShaderStage> &stages )
+MTLRenderStages MetalEnumConverter::ConvertRenderStages( const ShaderStageArray &stages )
 {
     MTLRenderStages mtlStages = 0;
-    for ( int stageIndex = 0; stageIndex < stages.NumElements( ); ++stageIndex )
+    for ( uint32_t stageIndex = 0; stageIndex < stages.NumElements; ++stageIndex )
     {
-        const auto &stage = stages.GetElement( stageIndex );
+        const auto &stage = stages.Elements[ stageIndex ];
         mtlStages |= ConvertRenderStage( stage );
     }
     return mtlStages;

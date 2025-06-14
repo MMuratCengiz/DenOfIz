@@ -82,7 +82,8 @@ public:
     ID3D12LibraryReflection  *m_libraryReflection  = nullptr;
     ID3D12FunctionReflection *m_functionReflection = nullptr;
 
-    IRCompiler *m_irCompiler = nullptr;
+    IRCompiler                                       *m_irCompiler = nullptr;
+    std::vector<std::vector<ReflectionResourceField>> m_reflectionFieldStorage;
 
     Impl( );
     ~Impl( );
@@ -370,7 +371,7 @@ ByteArrayArray DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
                 rootConstants.ShaderRegister   = shaderInputBindDesc.BindPoint;
 
                 ReflectionDesc rootConstantReflection;
-                ShaderReflectionHelper::FillReflectionData( m_shaderReflection, m_functionReflection, rootConstantReflection, i );
+                ShaderReflectionHelper::FillReflectionData( m_shaderReflection, m_functionReflection, rootConstantReflection, i, m_reflectionFieldStorage );
                 rootConstants.Num32BitValues = rootConstantReflection.NumBytes / 4;
             }
             else if ( shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )

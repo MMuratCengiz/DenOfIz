@@ -161,11 +161,11 @@ void ShaderAssetWriter::WriteRootSignature( const RootSignatureDesc &rootSignatu
         m_writer->WriteUInt32( sampler.Binding.RegisterSpace );
         m_writer->WriteUInt32( sampler.Binding.Descriptor );
 
-        const uint32_t numStages = sampler.Binding.Stages.NumElements( );
+        const uint32_t numStages = sampler.Binding.Stages.NumElements;
         m_writer->WriteUInt32( numStages );
         for ( uint32_t j = 0; j < numStages; ++j )
         {
-            m_writer->WriteUInt32( static_cast<uint32_t>( sampler.Binding.Stages.GetElement( j ) ) );
+            m_writer->WriteUInt32( static_cast<uint32_t>( sampler.Binding.Stages.Elements[ j ] ) );
         }
 
         m_writer->WriteInt32( sampler.Binding.ArraySize );
@@ -182,11 +182,11 @@ void ShaderAssetWriter::WriteRootSignature( const RootSignatureDesc &rootSignatu
         m_writer->WriteUInt32( constant.Binding );
         m_writer->WriteInt32( constant.NumBytes );
 
-        const uint32_t numStages = constant.Stages.NumElements( );
+        const uint32_t numStages = constant.Stages.NumElements;
         m_writer->WriteUInt32( numStages );
         for ( uint32_t j = 0; j < numStages; ++j )
         {
-            m_writer->WriteUInt32( static_cast<uint32_t>( constant.Stages.GetElement( j ) ) );
+            m_writer->WriteUInt32( static_cast<uint32_t>( constant.Stages.Elements[ j ] ) );
         }
         WriteResourceReflection( constant.Reflection );
     }
@@ -212,11 +212,11 @@ void ShaderAssetWriter::WriteResourceBinding( const ResourceBindingDesc &resourc
     m_writer->WriteUInt32( resourceBinding.RegisterSpace );
     m_writer->WriteUInt32( resourceBinding.Descriptor );
 
-    const uint32_t numStages = resourceBinding.Stages.NumElements( );
+    const uint32_t numStages = resourceBinding.Stages.NumElements;
     m_writer->WriteUInt32( numStages );
     for ( uint32_t j = 0; j < numStages; ++j )
     {
-        m_writer->WriteUInt32( static_cast<uint32_t>( resourceBinding.Stages.GetElement( j ) ) );
+        m_writer->WriteUInt32( static_cast<uint32_t>( resourceBinding.Stages.Elements[ j ] ) );
     }
 
     m_writer->WriteInt32( resourceBinding.ArraySize );
@@ -228,12 +228,12 @@ void ShaderAssetWriter::WriteResourceReflection( const ReflectionDesc &reflectio
     m_writer->WriteString( reflection.Name );
     m_writer->WriteUInt32( static_cast<uint32_t>( reflection.Type ) );
 
-    const uint32_t numFields = reflection.Fields.NumElements( );
+    const uint32_t numFields = reflection.Fields.NumElements;
     m_writer->WriteUInt32( numFields );
 
     for ( uint32_t i = 0; i < numFields; ++i )
     {
-        const ReflectionResourceField &field = reflection.Fields.GetElement( i );
+        const ReflectionResourceField &field = reflection.Fields.Elements[ i ];
         m_writer->WriteString( field.Name );
         m_writer->WriteUInt32( static_cast<uint32_t>( field.Type ) );
         m_writer->WriteUInt32( field.NumColumns );

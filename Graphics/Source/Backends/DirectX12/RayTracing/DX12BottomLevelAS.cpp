@@ -25,11 +25,11 @@ using namespace DenOfIz;
 DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, const BottomLevelASDesc &desc ) : m_context( context )
 {
     m_flags                    = DX12EnumConverter::ConvertAccelerationStructureBuildFlags( desc.BuildFlags );
-    const size_t numGeometries = desc.Geometries.NumElements( );
+    const size_t numGeometries = desc.Geometries.NumElements;
     m_geometryDescs.resize( numGeometries );
     for ( uint32_t i = 0; i < numGeometries; ++i )
     {
-        const ASGeometryDesc           &geometry     = desc.Geometries.GetElement( i );
+        const ASGeometryDesc           &geometry     = desc.Geometries.Elements[ i ];
         D3D12_RAYTRACING_GEOMETRY_DESC &dx12Geometry = m_geometryDescs[ i ];
         if ( geometry.Flags & GeometryFlags::Opaque )
         {

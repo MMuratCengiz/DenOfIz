@@ -133,7 +133,6 @@ void ReflectionDebugOutput::DumpIRRootParameters( const std::vector<IRRootParame
     spdlog::info( "{}", output.str( ) );
 }
 
-
 void ReflectionDebugOutput::DumpReflectionInfo( const ShaderReflectDesc &reflection )
 {
     std::stringstream output;
@@ -142,7 +141,7 @@ void ReflectionDebugOutput::DumpReflectionInfo( const ShaderReflectDesc &reflect
     DumpRootSignature( output, reflection.RootSignature );
 
     output << "\n=== Local Root Signatures ===\n";
-    for ( int i = 0; i < reflection.LocalRootSignatures.NumElements; ++i )
+    for ( uint32_t i = 0; i < reflection.LocalRootSignatures.NumElements; ++i )
     {
         if ( auto localRootSignatureDesc = reflection.LocalRootSignatures.Elements[ i ]; localRootSignatureDesc.ResourceBindings.NumElements > 0 )
         {
@@ -168,7 +167,7 @@ void ReflectionDebugOutput::DumpResourceBindings( std::stringstream &output, con
            << "Stages\n";
     output << std::string( 100, '-' ) << '\n';
 
-    for ( int i = 0; i < resourceBindings.NumElements; ++i )
+    for ( uint32_t i = 0; i < resourceBindings.NumElements; ++i )
     {
         const auto &binding = resourceBindings.Elements[ i ];
 
@@ -176,7 +175,7 @@ void ReflectionDebugOutput::DumpResourceBindings( std::stringstream &output, con
                << binding.RegisterSpace << std::setw( 10 ) << binding.Binding << std::setw( 10 ) << binding.Reflection.NumBytes
                << DxcEnumConverter::GetStagesString( binding.Stages ) << '\n';
 
-        if ( binding.Reflection.Fields.NumElements( ) > 0 )
+        if ( binding.Reflection.Fields.NumElements > 0 )
         {
             output << std::string( 100, '-' ) << '\n';
             output << "  Fields for " << binding.Name.Get( ) << ":\n";
@@ -195,7 +194,7 @@ void ReflectionDebugOutput::DumpRootSignature( std::stringstream &output, const 
     DumpResourceBindings( output, sig.ResourceBindings );
 
     output << "\n--- Root Constants --- \n";
-    for ( int i = 0; i < sig.RootConstants.NumElements; ++i )
+    for ( uint32_t i = 0; i < sig.RootConstants.NumElements; ++i )
     {
         const auto &constant = sig.RootConstants.Elements[ i ];
         output << std::setw( 40 ) << constant.Name.Get( ) << std::setw( 10 ) << constant.Binding << std::setw( 10 ) << constant.NumBytes << " "
@@ -203,11 +202,11 @@ void ReflectionDebugOutput::DumpRootSignature( std::stringstream &output, const 
     }
 }
 
-void ReflectionDebugOutput::DumpStructFields( std::stringstream &output, const InteropArray<ReflectionResourceField> &fields )
+void ReflectionDebugOutput::DumpStructFields( std::stringstream &output, const ReflectionResourceFieldArray &fields )
 {
-    for ( int i = 0; i < fields.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < fields.NumElements; ++i )
     {
-        const auto &field = fields.GetElement( i );
+        const auto &field = fields.Elements[ i ];
 
         std::string indent( 2 * field.Level, ' ' );
         output << indent << std::setw( 38 - indent.length( ) ) << std::left << field.Name.Get( ) << std::setw( 15 ) << DxcEnumConverter::GetFieldTypeString( field.Type )

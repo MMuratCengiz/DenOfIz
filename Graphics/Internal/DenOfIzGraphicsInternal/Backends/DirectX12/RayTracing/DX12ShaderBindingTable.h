@@ -46,7 +46,10 @@ namespace DenOfIz
         uint32_t m_missNumBytes     = 0;
         uint32_t m_hitGroupNumBytes = 0;
 
-        ShaderBindingTableDebugData m_debugData;
+        ShaderBindingTableDebugData              m_debugData;
+        std::vector<ShaderRecordDebugData>       m_rayGenerationShaderDebugData;
+        std::vector<ShaderRecordDebugData>       m_missShaderDebugData;
+        std::vector<ShaderRecordDebugData>       m_hitGroupDebugData;
 
     public:
         DX12ShaderBindingTable( DX12Context *context, const ShaderBindingTableDesc &desc );

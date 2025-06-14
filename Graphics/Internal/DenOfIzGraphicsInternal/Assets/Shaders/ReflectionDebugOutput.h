@@ -32,6 +32,6 @@ namespace DenOfIz
         static void DumpReflectionInfo( const ShaderReflectDesc &reflection );
         static void DumpResourceBindings( std::stringstream &output, const ResourceBindingDescArray &resourceBindings );
         static void DumpRootSignature( std::stringstream &output, const RootSignatureDesc &sig );
-        static void DumpStructFields( std::stringstream &output, const InteropArray<ReflectionResourceField> &fields );
+        static void DumpStructFields( std::stringstream &output, const ReflectionResourceFieldArray &fields );
     };
 } // namespace DenOfIz

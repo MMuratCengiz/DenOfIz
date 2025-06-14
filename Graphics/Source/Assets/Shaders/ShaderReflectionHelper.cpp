@@ -66,7 +66,7 @@ const BindlessSlot *ShaderReflectionHelper::GetBindlessSlot( const BindlessDesc 
     return nullptr;
 }
 
-void ShaderReflectionHelper::FillTypeInfo( ID3D12ShaderReflectionType *reflType, InteropArray<ReflectionResourceField> &fields, const uint32_t parentIndex, const uint32_t level )
+void ShaderReflectionHelper::FillTypeInfo( ID3D12ShaderReflectionType *reflType, std::vector<ReflectionResourceField> &fields, const uint32_t parentIndex, const uint32_t level )
 {
     D3D12_SHADER_TYPE_DESC typeDesc;
     DxcCheckResult( reflType->GetDesc( &typeDesc ) );
@@ -79,8 +79,8 @@ void ShaderReflectionHelper::FillTypeInfo( ID3D12ShaderReflectionType *reflType,
             D3D12_SHADER_TYPE_DESC      memberTypeDesc;
             DxcCheckResult( memberType->GetDesc( &memberTypeDesc ) );
 
-            const uint32_t           currentIndex = fields.NumElements( );
-            ReflectionResourceField &memberField  = fields.EmplaceElement( );
+            const uint32_t           currentIndex = fields.size( );
+            ReflectionResourceField &memberField  = fields.emplace_back( );
             memberField.Name                      = reflType->GetMemberTypeName( i );
             memberField.Type                      = DxcEnumConverter::VariableTypeToReflectionType( memberTypeDesc.Type );
             memberField.NumColumns                = memberTypeDesc.Columns;
@@ -99,7 +99,7 @@ void ShaderReflectionHelper::FillTypeInfo( ID3D12ShaderReflectionType *reflType,
 }
 
 void ShaderReflectionHelper::FillReflectionData( ID3D12ShaderReflection *shaderReflection, ID3D12FunctionReflection *functionReflection, ReflectionDesc &reflectionDesc,
-                                                 const int resourceIndex )
+                                                 const int resourceIndex, std::vector<std::vector<ReflectionResourceField>> &fieldStorage )
 {
     D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
     if ( shaderReflection )
@@ -135,6 +135,9 @@ void ShaderReflectionHelper::FillReflectionData( ID3D12ShaderReflection *shaderR
     DxcCheckResult( constantBuffer->GetDesc( &bufferDesc ) );
     reflectionDesc.NumBytes = ( bufferDesc.Size + 15 ) & ~( 16 - 1 ); // Align 16
 
+    // Create a new vector to store fields for this reflection
+    std::vector<ReflectionResourceField> &fields = fieldStorage.emplace_back( );
+
     for ( const uint32_t i : std::views::iota( 0u, bufferDesc.Variables ) )
     {
         ID3D12ShaderReflectionVariable *variable = constantBuffer->GetVariableByIndex( i );
@@ -145,8 +148,8 @@ void ShaderReflectionHelper::FillReflectionData( ID3D12ShaderReflection *shaderR
         D3D12_SHADER_TYPE_DESC      typeDesc;
         DxcCheckResult( reflectionType->GetDesc( &typeDesc ) );
 
-        const uint32_t           currentIndex = reflectionDesc.Fields.NumElements( );
-        ReflectionResourceField &field        = reflectionDesc.Fields.EmplaceElement( );
+        const uint32_t           currentIndex = fields.size( );
+        ReflectionResourceField &field        = fields.emplace_back( );
         field.Name                            = variableDesc.Name;
         field.Type                            = DxcEnumConverter::VariableTypeToReflectionType( typeDesc.Type );
         field.NumColumns                      = typeDesc.Columns;
@@ -158,9 +161,13 @@ void ShaderReflectionHelper::FillReflectionData( ID3D12ShaderReflection *shaderR
 
         if ( typeDesc.Members > 0 )
         {
-            FillTypeInfo( reflectionType, reflectionDesc.Fields, currentIndex, 1 );
+            FillTypeInfo( reflectionType, fields, currentIndex, 1 );
         }
     }
+
+    // Now point the ReflectionDesc to the vector data
+    reflectionDesc.Fields.Elements    = fields.data( );
+    reflectionDesc.Fields.NumElements = fields.size( );
 }
 
 void ShaderReflectionHelper::DxcCheckResult( const HRESULT hr )

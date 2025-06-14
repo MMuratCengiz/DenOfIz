@@ -237,18 +237,20 @@ void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
         BottomLevelASDesc bottomLevelDesc{ };
         bottomLevelDesc.BuildFlags = ASBuildFlags::PreferFastTrace;
 
+        std::array<ASGeometryDesc, IntersectionShaderType::TotalPrimitiveCount> aabbGeometries{ {} };
         for ( UINT i = 0; i < IntersectionShaderType::TotalPrimitiveCount; i++ )
         {
-            ASGeometryDesc aabbGeometryDesc{ };
-            aabbGeometryDesc.Type           = HitGroupType::AABBs;
-            aabbGeometryDesc.AABBs.Buffer   = m_aabbBuffer.get( );
-            aabbGeometryDesc.AABBs.Stride   = sizeof( AABBBoundingBox );
-            aabbGeometryDesc.AABBs.NumAABBs = 1;
-            aabbGeometryDesc.AABBs.Offset   = i * sizeof( AABBBoundingBox );
-            aabbGeometryDesc.Flags          = GeometryFlags::Opaque;
-
-            bottomLevelDesc.Geometries.AddElement( aabbGeometryDesc );
+            ASGeometryDesc &aabbGeometryDesc = aabbGeometries[ i ];
+            aabbGeometryDesc.Type            = HitGroupType::AABBs;
+            aabbGeometryDesc.AABBs.Buffer    = m_aabbBuffer.get( );
+            aabbGeometryDesc.AABBs.Stride    = sizeof( AABBBoundingBox );
+            aabbGeometryDesc.AABBs.NumAABBs  = 1;
+            aabbGeometryDesc.AABBs.Offset    = i * sizeof( AABBBoundingBox );
+            aabbGeometryDesc.Flags           = GeometryFlags::Opaque;
         }
+
+        bottomLevelDesc.Geometries.Elements    = aabbGeometries.data( );
+        bottomLevelDesc.Geometries.NumElements = aabbGeometries.size( );
 
         m_aabbAS = std::unique_ptr<IBottomLevelAS>( m_logicalDevice->CreateBottomLevelAS( bottomLevelDesc ) );
     }
@@ -266,9 +268,10 @@ void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
         triangleGeometryDesc.Flags                  = GeometryFlags::Opaque;
 
         BottomLevelASDesc bottomLevelDesc{ };
-        bottomLevelDesc.BuildFlags = ASBuildFlags::PreferFastTrace;
-        bottomLevelDesc.Geometries.AddElement( triangleGeometryDesc );
-        m_triangleAS = std::unique_ptr<IBottomLevelAS>( m_logicalDevice->CreateBottomLevelAS( bottomLevelDesc ) );
+        bottomLevelDesc.BuildFlags             = ASBuildFlags::PreferFastTrace;
+        bottomLevelDesc.Geometries.Elements    = &triangleGeometryDesc;
+        bottomLevelDesc.Geometries.NumElements = 1;
+        m_triangleAS                           = std::unique_ptr<IBottomLevelAS>( m_logicalDevice->CreateBottomLevelAS( bottomLevelDesc ) );
     }
 
     {

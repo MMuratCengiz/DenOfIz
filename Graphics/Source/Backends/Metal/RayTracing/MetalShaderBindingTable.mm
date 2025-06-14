@@ -77,7 +77,7 @@ void MetalShaderBindingTable::BindRayGenerationShader( const RayGenerationBindin
         numBytes = EncodeData( sizeof( IRShaderIdentifier ), desc.Data );
     }
 #ifndef NDEBUG
-    m_debugData.RayGenerationShaders.AddElement( { &shaderIdentifier, sizeof( IRShaderIdentifier ), numBytes, desc.ShaderName.Get( ) } );
+    m_rayGenerationShaderDebugData.push_back( { &shaderIdentifier, sizeof( IRShaderIdentifier ), numBytes, desc.ShaderName.Get( ) } );
 #endif
 }
 
@@ -108,7 +108,7 @@ void MetalShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
     }
 
 #ifndef NDEBUG
-    m_debugData.HitGroups.AddElement( { &shaderIdentifier, sizeof( IRShaderIdentifier ), numBytes, desc.HitGroupExportName.Get( ) } );
+    m_hitGroupDebugData.push_back( { &shaderIdentifier, sizeof( IRShaderIdentifier ), numBytes, desc.HitGroupExportName.Get( ) } );
 #endif
 }
 
@@ -124,13 +124,19 @@ void MetalShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
     }
 
 #ifndef NDEBUG
-    m_debugData.MissShaders.AddElement( { &shaderIdentifier, sizeof( IRShaderIdentifier ), numBytes, desc.ShaderName.Get( ) } );
+    m_missShaderDebugData.push_back( { &shaderIdentifier, sizeof( IRShaderIdentifier ), numBytes, desc.ShaderName.Get( ) } );
 #endif
 }
 
 void MetalShaderBindingTable::Build( )
 {
 #ifndef NDEBUG
+    m_debugData.RayGenerationShaders.Elements    = m_rayGenerationShaderDebugData.data( );
+    m_debugData.RayGenerationShaders.NumElements = static_cast<uint32_t>( m_rayGenerationShaderDebugData.size( ) );
+    m_debugData.MissShaders.Elements             = m_missShaderDebugData.data( );
+    m_debugData.MissShaders.NumElements          = static_cast<uint32_t>( m_missShaderDebugData.size( ) );
+    m_debugData.HitGroups.Elements               = m_hitGroupDebugData.data( );
+    m_debugData.HitGroups.NumElements            = static_cast<uint32_t>( m_hitGroupDebugData.size( ) );
     PrintShaderBindingTableDebugData( m_debugData );
 #endif
 }

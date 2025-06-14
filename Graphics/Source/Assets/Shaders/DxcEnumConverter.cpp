@@ -275,14 +275,14 @@ std::string DxcEnumConverter::GetBindingTypeString( const ResourceBindingType ty
     }
 }
 
-std::string DxcEnumConverter::GetStagesString( const InteropArray<ShaderStage> &stages )
+std::string DxcEnumConverter::GetStagesString( const ShaderStageArray &stages )
 {
     std::string result;
-    for ( int i = 0; i < stages.NumElements( ); ++i )
+    for ( int i = 0; i < stages.NumElements; ++i )
     {
         if ( i > 0 )
             result += "|";
-        switch ( stages.GetElement( i ) )
+        switch ( stages.Elements[ i ] )
         {
         case ShaderStage::Vertex:
             result += "Vertex";

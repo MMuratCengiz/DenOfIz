@@ -22,8 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanFence.h"
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanPipeline.h"
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanPipelineBarrierHelper.h"
-#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;
 
@@ -102,7 +102,7 @@ void VulkanShaderBindingTable::BindRayGenerationShader( const RayGenerationBindi
     EncodeData( entry, desc.Data );
 
 #ifndef NDEBUG
-    m_debugData.RayGenerationShaders.AddElement(
+    m_rayGenerationShaderDebugData.push_back(
         { shaderIdentifier, m_shaderGroupHandleSize, desc.Data ? dynamic_cast<VulkanShaderLocalData *>( desc.Data )->DataNumBytes( ) : 0, desc.ShaderName.Get( ) } );
 #endif
 }
@@ -129,11 +129,11 @@ void VulkanShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
         const VulkanShaderLocalData *data = dynamic_cast<VulkanShaderLocalData *>( desc.Data );
         EncodeData( hitGroupEntry, desc.Data );
 #ifndef NDEBUG
-        m_debugData.HitGroups.AddElement( { hitGroupIdentifier, m_shaderGroupHandleSize, data->DataNumBytes( ), desc.HitGroupExportName.Get( ) } );
+        m_hitGroupDebugData.push_back( { hitGroupIdentifier, m_shaderGroupHandleSize, data->DataNumBytes( ), desc.HitGroupExportName.Get( ) } );
     }
     else
     {
-        m_debugData.HitGroups.AddElement( { hitGroupIdentifier, m_shaderGroupHandleSize, 0, desc.HitGroupExportName.Get( ) } );
+        m_hitGroupDebugData.push_back( { hitGroupIdentifier, m_shaderGroupHandleSize, 0, desc.HitGroupExportName.Get( ) } );
 #endif
     }
 }
@@ -148,7 +148,7 @@ void VulkanShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
     EncodeData( missShaderEntry, desc.Data );
 
 #ifndef NDEBUG
-    m_debugData.MissShaders.AddElement(
+    m_missShaderDebugData.push_back(
         { shaderIdentifier, m_shaderGroupHandleSize, desc.Data ? dynamic_cast<VulkanShaderLocalData *>( desc.Data )->DataNumBytes( ) : 0, desc.ShaderName.Get( ) } );
 #endif
 }
@@ -156,6 +156,12 @@ void VulkanShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 void VulkanShaderBindingTable::Build( )
 {
 #ifndef NDEBUG
+    m_debugData.RayGenerationShaders.Elements    = m_rayGenerationShaderDebugData.data( );
+    m_debugData.RayGenerationShaders.NumElements = static_cast<uint32_t>( m_rayGenerationShaderDebugData.size( ) );
+    m_debugData.MissShaders.Elements             = m_missShaderDebugData.data( );
+    m_debugData.MissShaders.NumElements          = static_cast<uint32_t>( m_missShaderDebugData.size( ) );
+    m_debugData.HitGroups.Elements               = m_hitGroupDebugData.data( );
+    m_debugData.HitGroups.NumElements            = static_cast<uint32_t>( m_hitGroupDebugData.size( ) );
     PrintShaderBindingTableDebugData( m_debugData );
 #endif
     m_stagingBuffer->UnmapMemory( );

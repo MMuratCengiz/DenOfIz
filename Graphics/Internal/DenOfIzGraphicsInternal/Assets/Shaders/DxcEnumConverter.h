@@ -51,7 +51,7 @@ namespace DenOfIz
         static uint32_t              ReflectTypeToRootSignatureType( D3D_SHADER_INPUT_TYPE type, D3D_SRV_DIMENSION dimension );
         static std::string           GetFieldTypeString( ReflectionFieldType type );
         static std::string           GetBindingTypeString( ResourceBindingType type );
-        static std::string           GetStagesString( const InteropArray<ShaderStage> &stages );
+        static std::string           GetStagesString( const ShaderStageArray &stages );
         static ReflectionFieldType   VariableTypeToReflectionType( const D3D_SHADER_VARIABLE_TYPE &type );
         // MSL specific
 #if defined( _WIN32 ) || defined( __APPLE__ ) // TODO metal shader converter on linux: not yet supported

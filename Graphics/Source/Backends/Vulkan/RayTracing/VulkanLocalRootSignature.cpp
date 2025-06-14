@@ -75,9 +75,9 @@ VulkanLocalRootSignature::VulkanLocalRootSignature( VulkanContext *context, cons
         layoutBinding.descriptorType  = VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType( binding.Descriptor );
         layoutBinding.stageFlags      = 0;
 
-        for ( uint32_t j = 0; j < binding.Stages.NumElements( ); ++j )
+        for ( uint32_t j = 0; j < binding.Stages.NumElements; ++j )
         {
-            layoutBinding.stageFlags |= VulkanEnumConverter::ConvertShaderStage( binding.Stages.GetElement( j ) );
+            layoutBinding.stageFlags |= VulkanEnumConverter::ConvertShaderStage( binding.Stages.Elements[ j ] );
         }
 
         // Store binding by register space

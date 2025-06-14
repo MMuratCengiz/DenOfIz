@@ -26,26 +26,26 @@ using namespace DenOfIz;
 
 VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc ) : m_desc( std::move( desc ) ), m_context( context )
 {
-    for ( int i = 0; i < m_desc.BindlessResources.NumElements; ++i )
+    for ( uint32_t i = 0; i < m_desc.BindlessResources.NumElements; ++i )
     {
         const auto &bindlessResource = m_desc.BindlessResources.Elements[ i ];
         AddBindlessResource( bindlessResource );
     }
 
-    for ( int i = 0; i < m_desc.ResourceBindings.NumElements; ++i )
+    for ( uint32_t i = 0; i < m_desc.ResourceBindings.NumElements; ++i )
     {
         const ResourceBindingDesc &binding = m_desc.ResourceBindings.Elements[ i ];
         AddResourceBinding( binding );
     }
 
-    for ( int i = 0; i < m_desc.StaticSamplers.NumElements; ++i )
+    for ( uint32_t i = 0; i < m_desc.StaticSamplers.NumElements; ++i )
     {
         const StaticSamplerDesc &staticSamplerDesc = m_desc.StaticSamplers.Elements[ i ];
         AddStaticSampler( staticSamplerDesc );
     }
 
     m_pushConstants.resize( m_desc.RootConstants.NumElements );
-    for ( int i = 0; i < m_desc.RootConstants.NumElements; ++i )
+    for ( uint32_t i = 0; i < m_desc.RootConstants.NumElements; ++i )
     {
         const RootConstantResourceBindingDesc &rootConstantBinding = m_desc.RootConstants.Elements[ i ];
         AddRootConstant( rootConstantBinding );
@@ -143,9 +143,9 @@ VkDescriptorSetLayoutBinding VulkanRootSignature::CreateDescriptorSetLayoutBindi
     layoutBinding.descriptorType  = VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType( binding.Descriptor );
     layoutBinding.descriptorCount = binding.ArraySize;
     layoutBinding.stageFlags      = 0;
-    for ( int i = 0; i < binding.Stages.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < binding.Stages.NumElements; ++i )
     {
-        auto &stage = binding.Stages.GetElement( i );
+        const auto &stage = binding.Stages.Elements[ i ];
         layoutBinding.stageFlags |= VulkanEnumConverter::ConvertShaderStage( stage );
     }
 
@@ -168,7 +168,7 @@ void VulkanRootSignature::AddRootConstant( const RootConstantResourceBindingDesc
     }
 
     uint32_t offset = 0;
-    for ( int i = 0; i < m_desc.RootConstants.NumElements; ++i )
+    for ( uint32_t i = 0; i < m_desc.RootConstants.NumElements; ++i )
     {
         const RootConstantResourceBindingDesc &binding = m_desc.RootConstants.Elements[ i ];
         if ( binding.Binding < rootConstantBinding.Binding )
@@ -180,9 +180,9 @@ void VulkanRootSignature::AddRootConstant( const RootConstantResourceBindingDesc
     VkPushConstantRange &pushConstantRange = m_pushConstants[ rootConstantBinding.Binding ];
     pushConstantRange.offset               = offset;
     pushConstantRange.size                 = rootConstantBinding.NumBytes;
-    for ( int i = 0; i < rootConstantBinding.Stages.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < rootConstantBinding.Stages.NumElements; ++i )
     {
-        const auto &stage = rootConstantBinding.Stages.GetElement( i );
+        const auto &stage = rootConstantBinding.Stages.Elements[ i ];
         pushConstantRange.stageFlags |= VulkanEnumConverter::ConvertShaderStage( stage );
     }
 }
@@ -276,11 +276,9 @@ void VulkanRootSignature::AddBindlessResource( const BindlessResourceDesc &bindl
     }
 
     // Add all shader stages for bindless resources
-    bindingDesc.Stages.AddElement( ShaderStage::Vertex );
-    bindingDesc.Stages.AddElement( ShaderStage::Pixel );
-    bindingDesc.Stages.AddElement( ShaderStage::Compute );
-    bindingDesc.Stages.AddElement( ShaderStage::Mesh );
-    bindingDesc.Stages.AddElement( ShaderStage::Task );
+    static ShaderStage bindlessStages[] = { ShaderStage::Vertex, ShaderStage::Pixel, ShaderStage::Compute, ShaderStage::Mesh, ShaderStage::Task };
+    bindingDesc.Stages.Elements         = bindlessStages;
+    bindingDesc.Stages.NumElements      = 5;
 
     // Reuse the existing AddResourceBinding method which properly handles the offset
     AddResourceBinding( bindingDesc );

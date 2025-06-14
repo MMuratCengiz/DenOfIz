@@ -47,10 +47,14 @@ namespace DenOfIz
         uint32_t m_hitGroupNumBytes  = 0;
         uint32_t m_missGroupNumBytes = 0;
 
-        ShaderBindingTableDebugData m_debugData;
+        ShaderBindingTableDebugData        m_debugData;
+        std::vector<ShaderRecordDebugData> m_rayGenerationShaderDebugData;
+        std::vector<ShaderRecordDebugData> m_missShaderDebugData;
+        std::vector<ShaderRecordDebugData> m_hitGroupDebugData;
+
     public:
         VulkanShaderBindingTable( VulkanContext *context, const ShaderBindingTableDesc &desc );
-        void                                Resize( const SBTSizeDesc                                &) override;
+        void                                Resize( const SBTSizeDesc & ) override;
         void                                BindRayGenerationShader( const RayGenerationBindingDesc &desc ) override;
         void                                BindHitGroup( const HitGroupBindingDesc &desc ) override;
         void                                BindMissShader( const MissBindingDesc &desc ) override;

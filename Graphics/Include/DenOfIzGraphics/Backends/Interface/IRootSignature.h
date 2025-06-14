@@ -35,22 +35,20 @@ namespace DenOfIz
         Compute
     };
 
-    template class DZ_API InteropArray<ShaderStage>;
-
     /// \brief Not recommended create this structure manually, instead rely on ShaderProgram to provide you an instance after compiling a shader instead.
     /// Due to differences in layouts between DX12, Vulkan and Metal, the Reflection field is very important for the functionality of rest of the API, while you can fill the data
     /// in as well, some of it might feel cryptic to the end user.
     struct DZ_API ResourceBindingDesc
     {
-        InteropString             Name;
-        ResourceBindingType       BindingType = ResourceBindingType::ConstantBuffer;
-        uint32_t                  Binding{ };
-        uint32_t                  RegisterSpace = 0;
-        uint32_t                  Descriptor;
-        InteropArray<ShaderStage> Stages;
-        int                       ArraySize = 1; // 1 is both 'Arr[1]'(Size of 1) and Simply 'Var'(Non array variable)
-        ReflectionDesc            Reflection{ };
-        bool                      IsBindless = false;
+        InteropString       Name;
+        ResourceBindingType BindingType = ResourceBindingType::ConstantBuffer;
+        uint32_t            Binding{ };
+        uint32_t            RegisterSpace = 0;
+        uint32_t            Descriptor;
+        ShaderStageArray    Stages;
+        int                 ArraySize = 1; // 1 is both 'Arr[1]'(Size of 1) and Simply 'Var'(Non array variable)
+        ReflectionDesc      Reflection{ };
+        bool                IsBindless = false;
     };
 
     struct DZ_API ResourceBindingDescArray
@@ -74,11 +72,11 @@ namespace DenOfIz
     // For cross api compatibility the RegisterSpace is hardcoded to 99, make sure to use the same value in the HLSL Shader
     struct DZ_API RootConstantResourceBindingDesc
     {
-        InteropString             Name;
-        uint32_t                  Binding{ };
-        int                       NumBytes{ };
-        InteropArray<ShaderStage> Stages;
-        ReflectionDesc            Reflection{ };
+        InteropString    Name;
+        uint32_t         Binding{ };
+        int              NumBytes{ };
+        ShaderStageArray Stages;
+        ReflectionDesc   Reflection{ };
     };
 
     struct DZ_API RootConstantResourceBindingDescArray
@@ -86,10 +84,6 @@ namespace DenOfIz
         RootConstantResourceBindingDesc *Elements;
         uint32_t                         NumElements;
     };
-
-    template class DZ_API InteropArray<ResourceBindingDesc>;
-    template class DZ_API InteropArray<StaticSamplerDesc>;
-    template class DZ_API InteropArray<RootConstantResourceBindingDesc>;
 
     /// \brief Describes a bindless resource array that should be pre-allocated in the root signature
     struct DZ_API BindlessResourceDesc

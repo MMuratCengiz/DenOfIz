@@ -84,7 +84,7 @@ void DX12ShaderBindingTable::BindRayGenerationShader( const RayGenerationBinding
     memcpy( m_mappedMemory, shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
 
 #ifndef NDEBUG
-    m_debugData.RayGenerationShaders.AddElement( { shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, 0, desc.ShaderName.Get( ) } );
+    m_rayGenerationShaderDebugData.push_back( { shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, 0, desc.ShaderName.Get( ) } );
 #endif
 }
 
@@ -116,7 +116,7 @@ void DX12ShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
     }
 
 #ifndef NDEBUG
-    m_debugData.HitGroups.AddElement( { hitGroupIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, hitGroupDataSize, desc.HitGroupExportName.Get( ) } );
+    m_hitGroupDebugData.push_back( { hitGroupIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, hitGroupDataSize, desc.HitGroupExportName.Get( ) } );
 #endif
 }
 
@@ -128,7 +128,7 @@ void DX12ShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
     memcpy( missShaderEntry, shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
 
 #ifndef NDEBUG
-    m_debugData.MissShaders.AddElement( { shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, 0, desc.ShaderName.Get( ) } );
+    m_missShaderDebugData.push_back( { shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, 0, desc.ShaderName.Get( ) } );
 #endif
 }
 
@@ -139,6 +139,14 @@ uint32_t DX12ShaderBindingTable::AlignRecord( const uint32_t size ) const
 
 void DX12ShaderBindingTable::Build( )
 {
+#ifndef NDEBUG
+    m_debugData.RayGenerationShaders.Elements    = m_rayGenerationShaderDebugData.data( );
+    m_debugData.RayGenerationShaders.NumElements = static_cast<uint32_t>( m_rayGenerationShaderDebugData.size( ) );
+    m_debugData.MissShaders.Elements             = m_missShaderDebugData.data( );
+    m_debugData.MissShaders.NumElements          = static_cast<uint32_t>( m_missShaderDebugData.size( ) );
+    m_debugData.HitGroups.Elements               = m_hitGroupDebugData.data( );
+    m_debugData.HitGroups.NumElements            = static_cast<uint32_t>( m_hitGroupDebugData.size( ) );
+#endif
     PrintShaderBindingTableDebugData( m_debugData );
     m_stagingBuffer->UnmapMemory( );
 

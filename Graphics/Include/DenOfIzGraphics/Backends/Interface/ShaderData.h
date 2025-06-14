@@ -49,6 +49,12 @@ namespace DenOfIz
         Mesh
     };
 
+    struct DZ_API ShaderStageArray
+    {
+        ShaderStage *Elements;
+        uint32_t     NumElements;
+    };
+
     /// <summary>
     /// Thread group information for compute, mesh, and task shaders
     /// </summary>

@@ -45,7 +45,10 @@ namespace DenOfIz
         uint32_t m_hitGroupNumBytes = 0;
         uint32_t m_missNumBytes     = 0;
 
-        ShaderBindingTableDebugData m_debugData;
+        ShaderBindingTableDebugData        m_debugData;
+        std::vector<ShaderRecordDebugData> m_rayGenerationShaderDebugData;
+        std::vector<ShaderRecordDebugData> m_missShaderDebugData;
+        std::vector<ShaderRecordDebugData> m_hitGroupDebugData;
 
     public:
         MetalShaderBindingTable( MetalContext *context, const ShaderBindingTableDesc &desc );
@@ -65,6 +68,6 @@ namespace DenOfIz
     private:
         IRShaderIdentifier EncodeShaderIndex( uint32_t offset, uint32_t shaderIndex, int customIntersectionIndex = -1 );
         uint32_t           EncodeData( uint32_t offset, const IShaderLocalData *data );
-        uint32_t AlignRecord( const uint32_t& size );
+        uint32_t           AlignRecord( const uint32_t &size );
     };
 } // namespace DenOfIz

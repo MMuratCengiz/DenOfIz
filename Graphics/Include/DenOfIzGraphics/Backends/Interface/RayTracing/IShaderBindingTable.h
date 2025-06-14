@@ -69,16 +69,21 @@ namespace DenOfIz
         uint32_t      LocalRootArgsSize;
         InteropString Name;
     };
-    template class DZ_API InteropArray<ShaderRecordDebugData>;
+
+    struct DZ_API ShaderRecordDebugDataArray
+    {
+        ShaderRecordDebugData *Elements;
+        uint32_t               NumElements;
+    };
 
     struct DZ_API ShaderBindingTableDebugData
     {
-        size_t                              HitGroupNumBytes;
-        size_t                              MissNumBytes;
-        size_t                              RayGenNumBytes;
-        InteropArray<ShaderRecordDebugData> RayGenerationShaders;
-        InteropArray<ShaderRecordDebugData> MissShaders;
-        InteropArray<ShaderRecordDebugData> HitGroups;
+        size_t                     HitGroupNumBytes;
+        size_t                     MissNumBytes;
+        size_t                     RayGenNumBytes;
+        ShaderRecordDebugDataArray RayGenerationShaders;
+        ShaderRecordDebugDataArray MissShaders;
+        ShaderRecordDebugDataArray HitGroups;
     };
 
     class DZ_API IShaderBindingTable
