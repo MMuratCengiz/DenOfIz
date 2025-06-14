@@ -32,6 +32,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "RayTracing/IShaderBindingTable.h"
 #include "RayTracing/IShaderLocalData.h"
 
+#ifdef _WIN32
+#undef CreateSemaphore
+#endif
+
 namespace DenOfIz
 {
     class DZ_API ILogicalDevice

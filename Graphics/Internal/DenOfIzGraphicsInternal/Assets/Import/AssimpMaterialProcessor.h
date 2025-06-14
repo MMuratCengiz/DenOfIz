@@ -47,6 +47,6 @@ namespace DenOfIz
         [[nodiscard]] Float_4 ConvertColor( const aiColor4D &color ) const;
         [[nodiscard]] Float_3 ConvertColor3( const aiColor3D &color ) const;
 
-        TextureExtension IdentifyTextureFormat( const aiTexture *texture, const InteropArray<Byte> &data ) const;
+        TextureExtension IdentifyTextureFormat( const aiTexture *texture, const ByteArrayView &data ) const;
     };
 } // namespace DenOfIz

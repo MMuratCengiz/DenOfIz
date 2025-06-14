@@ -181,13 +181,12 @@ ImporterResultCode AssimpMaterialProcessor::WriteTextureAsset( AssimpImportConte
     std::unique_ptr<Texture> sourceTexture = nullptr;
     if ( texture )
     {
-        const bool isCompressed = texture->mHeight == 0;
-        size_t     numBytes     = isCompressed ? texture->mWidth : texture->mWidth * texture->mHeight * 4;
-
-        InteropArray<Byte> textureData( numBytes );
-        textureData.MemCpy( texture->pcData, numBytes );
-
-        sourceTexture = std::make_unique<Texture>( textureData, IdentifyTextureFormat( texture, textureData ) );
+        const bool    isCompressed = texture->mHeight == 0;
+        size_t        numBytes     = isCompressed ? texture->mWidth : texture->mWidth * texture->mHeight * 4;
+        ByteArrayView textureData{ };
+        textureData.Elements    = reinterpret_cast<Byte *>( texture->pcData );
+        textureData.NumElements = numBytes;
+        sourceTexture           = std::make_unique<Texture>( textureData, IdentifyTextureFormat( texture, textureData ) );
     }
     else
     {
@@ -305,7 +304,7 @@ Float_3 AssimpMaterialProcessor::ConvertColor3( const aiColor3D &color ) const
     return { color.r, color.g, color.b };
 }
 
-TextureExtension AssimpMaterialProcessor::IdentifyTextureFormat( const aiTexture *texture, const InteropArray<Byte> &data ) const
+TextureExtension AssimpMaterialProcessor::IdentifyTextureFormat( const aiTexture *texture, const ByteArrayView &data ) const
 {
     const std::string formatHint( texture->achFormatHint );
     auto              texExtension = TextureExtension::DDS;

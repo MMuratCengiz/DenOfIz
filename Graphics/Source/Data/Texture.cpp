@@ -89,22 +89,22 @@ Texture::Texture( const InteropString &path ) : m_path( Utilities::AppPath( path
     }
 }
 
-Texture::Texture( const InteropArray<Byte> &data, const TextureExtension extension )
+Texture::Texture( const ByteArrayView &data, const TextureExtension extension )
 {
     m_extension = extension;
-    LoadTextureFromMemory( data.Data( ), data.NumElements( ) );
+    LoadTextureFromMemory( data.Elements, data.NumElements );
 }
 
-TextureExtension Texture::IdentifyTextureFormat( const InteropArray<Byte> &data )
+TextureExtension Texture::IdentifyTextureFormat( const ByteArrayView &data )
 {
-    const size_t dataNumBytes = data.NumElements( );
+    const size_t dataNumBytes = data.NumElements;
     if ( dataNumBytes == 0 )
     {
         spdlog::error( "Data array is empty" );
         return TextureExtension::DDS;
     }
 
-    const auto *bytes = data.Data( );
+    const auto *bytes = data.Elements;
     if ( dataNumBytes >= 4 && bytes[ 0 ] == 'D' && bytes[ 1 ] == 'D' && bytes[ 2 ] == 'S' && bytes[ 3 ] == ' ' )
     {
         return TextureExtension::DDS;
