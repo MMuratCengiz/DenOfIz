@@ -184,7 +184,7 @@ MeshVertex MeshAssetReader::ReadSingleVertex( ) const
     }
     if ( attributes.UV )
     {
-        vertex.UVs = Float_2Array::Create( config.NumUVAttributes );
+        DZArenaArrayHelper<Float_2Array, Float_2>::AllocateAndConstructArray( m_meshAsset->_Arena, vertex.UVs, config.NumUVAttributes );
         for ( uint32_t i = 0; i < config.NumUVAttributes; ++i )
         {
             vertex.UVs.Elements[ i ] = m_reader->ReadFloat_2( );
@@ -192,7 +192,7 @@ MeshVertex MeshAssetReader::ReadSingleVertex( ) const
     }
     if ( attributes.Color )
     {
-        vertex.Colors = Float_4Array::Create( config.ColorFormats.NumElements );
+        DZArenaArrayHelper<Float_4Array, Float_4>::AllocateAndConstructArray( m_meshAsset->_Arena, vertex.Colors, config.ColorFormats.NumElements );
         for ( size_t i = 0; i < config.ColorFormats.NumElements; ++i )
         {
             Float_4 colorRead = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -301,7 +301,7 @@ MeshAsset *MeshAssetReader::Read( )
     m_meshAsset->AttributeConfig.NumPositionComponents = m_reader->ReadUInt32( );
     m_meshAsset->AttributeConfig.NumUVAttributes       = m_reader->ReadUInt32( );
     const uint32_t uvChanCount                         = m_reader->ReadUInt32( );
-    m_meshAsset->AttributeConfig.UVChannels            = UVChannelArray::Create( uvChanCount );
+    DZArenaArrayHelper<UVChannelArray, UVChannel>::AllocateAndConstructArray( m_meshAsset->_Arena, m_meshAsset->AttributeConfig.UVChannels, uvChanCount );
     for ( size_t i = 0; i < uvChanCount; ++i )
     {
         auto &channel        = m_meshAsset->AttributeConfig.UVChannels.Elements[ i ];

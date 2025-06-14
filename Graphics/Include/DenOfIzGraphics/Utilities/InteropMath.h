@@ -53,8 +53,6 @@ namespace DenOfIz
     {
         Float_3 *Elements;
         uint32_t NumElements;
-
-        DZ_ARRAY_METHODS( Float_3Array, Float_3 )
     };
 
     struct DZ_API Float_4
@@ -164,7 +162,7 @@ namespace DenOfIz
         float _31 = 0, _32 = 0, _33 = 1, _34 = 0;
         float _41 = 0, _42 = 0, _43 = 0, _44 = 1;
 
-        float GetElement( const uint32_t major, const uint32_t minor ) const
+        [[nodiscard]] float GetElement( const uint32_t major, const uint32_t minor ) const
         {
             if ( major >= 4 || minor >= 4 )
             {

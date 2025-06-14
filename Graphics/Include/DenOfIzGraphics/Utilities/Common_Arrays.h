@@ -39,24 +39,6 @@ namespace DenOfIz
         delete[] Elements;                                                                                                                                                         \
     }
 
-#define DZ_ARRAY_ARRAY_METHODS( ARRAY_TYPE, ELEMENT_TYPE )                                                                                                                         \
-    static ARRAY_TYPE Create( const size_t NumElements )                                                                                                                           \
-    {                                                                                                                                                                              \
-        ARRAY_TYPE Array{ };                                                                                                                                                       \
-        Array.Elements    = new ELEMENT_TYPE[ NumElements ];                                                                                                                       \
-        Array.NumElements = NumElements;                                                                                                                                           \
-        return Array;                                                                                                                                                              \
-    }                                                                                                                                                                              \
-                                                                                                                                                                                   \
-    void Dispose( ) const                                                                                                                                                          \
-    {                                                                                                                                                                              \
-        for ( uint32_t i = 0; i < NumElements; ++i )                                                                                                                               \
-        {                                                                                                                                                                          \
-            Elements[ i ].Dispose( );                                                                                                                                              \
-        }                                                                                                                                                                          \
-        delete[] Elements;                                                                                                                                                         \
-    }
-
     struct DZ_API ByteArray
     {
         Byte  *Elements;
@@ -87,7 +69,21 @@ namespace DenOfIz
         ByteArray *Elements;
         uint32_t   NumElements;
 
-        DZ_ARRAY_ARRAY_METHODS( ByteArrayArray, ByteArray )
+        static ByteArrayArray Create( const size_t NumElements )
+        {
+            ByteArrayArray Array{ };
+            Array.Elements    = new ByteArray[ NumElements ];
+            Array.NumElements = NumElements;
+            return Array;
+        }
+        void Dispose( ) const
+        {
+            for ( uint32_t i = 0; i < NumElements; ++i )
+            {
+                Elements[ i ].Dispose( );
+            }
+            delete[] Elements;
+        }
     };
 
     struct DZ_API BoolArray

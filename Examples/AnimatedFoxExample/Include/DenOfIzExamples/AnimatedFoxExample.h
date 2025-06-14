@@ -86,7 +86,7 @@ namespace DenOfIz
         std::unique_ptr<TextureAssetReader> m_textureAssetReader;
 
         std::vector<SkinnedVertex>             m_vertices;
-        UInt32Array                            m_indices{ };
+        std::vector<uint32_t>                  m_indices{ };
         SkinnedModelConstantBuffer            *m_boneTransformsData = nullptr;
         PerFrameConstantBuffer                *m_perFrameData       = nullptr;
         MaterialConstantBuffer                *m_materialData       = nullptr;

@@ -44,8 +44,6 @@ namespace DenOfIz
     {
         AssetType *Elements;
         uint32_t   NumElements;
-
-        DZ_ARRAY_METHODS( AssetTypeArray, AssetType )
     };
 
     struct DZ_API AssetEntry
@@ -61,8 +59,6 @@ namespace DenOfIz
     {
         AssetEntry *Elements;
         uint32_t    NumElements;
-
-        DZ_ARRAY_METHODS( AssetEntryArray, AssetEntry )
     };
 
     struct DZ_API BundleHeader : AssetHeader

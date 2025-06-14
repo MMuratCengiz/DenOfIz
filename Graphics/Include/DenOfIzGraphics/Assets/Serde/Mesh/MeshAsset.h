@@ -109,8 +109,6 @@ namespace DenOfIz
     {
         UVChannel *Elements;
         uint32_t   NumElements;
-
-        DZ_ARRAY_METHODS( UVChannelArray, UVChannel )
     };
 
     struct DZ_API VertexAttributeConfig

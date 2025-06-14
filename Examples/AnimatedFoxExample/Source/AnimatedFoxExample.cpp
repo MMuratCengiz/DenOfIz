@@ -42,10 +42,7 @@ void AnimatedFoxExample::Init( )
     m_camera->SetFront( XMVECTOR{ 0.0f, 0.0f, 1.0f, 0.0f } );
 }
 
-AnimatedFoxExample::~AnimatedFoxExample( )
-{
-    m_indices.Dispose( );
-}
+AnimatedFoxExample::~AnimatedFoxExample( ) = default;
 
 void AnimatedFoxExample::ModifyApiPreferences( APIPreference &apiPreference )
 {
@@ -123,12 +120,7 @@ void AnimatedFoxExample::LoadFoxAssets( )
     const auto &subMesh = subMeshes.Elements[ 0 ];
 
     m_vertices.clear( );
-    if ( m_indices.Elements != nullptr )
-    {
-        m_indices.Dispose( );
-    }
-    m_indices.Elements    = nullptr;
-    m_indices.NumElements = 0;
+    m_indices.clear( );
 
     const MeshVertexArray meshVertices = meshAssetReader.ReadVertices( subMesh.VertexStream );
     m_vertices.resize( meshVertices.NumElements );
@@ -157,7 +149,9 @@ void AnimatedFoxExample::LoadFoxAssets( )
         skinnedVertex.BlendIndices = { mv.BlendIndices.X, mv.BlendIndices.Y, mv.BlendIndices.Z, mv.BlendIndices.W };
         skinnedVertex.BoneWeights  = { mv.BoneWeights.X, mv.BoneWeights.Y, mv.BoneWeights.Z, mv.BoneWeights.W };
     }
-    m_indices = meshAssetReader.ReadIndices32( subMesh.IndexStream );
+    const auto indices = meshAssetReader.ReadIndices32( subMesh.IndexStream );
+    m_indices.resize( indices.NumElements );
+    std::copy_n( indices.Elements, indices.NumElements, m_indices.begin( ) );
 }
 
 void AnimatedFoxExample::SetupAnimation( )
@@ -180,7 +174,7 @@ void AnimatedFoxExample::CreateBuffers( )
 
     BufferDesc ibDesc;
     ibDesc.Descriptor = ResourceDescriptor::IndexBuffer;
-    ibDesc.NumBytes   = m_indices.NumElements * sizeof( uint32_t );
+    ibDesc.NumBytes   = m_indices.size( ) * sizeof( uint32_t );
     ibDesc.DebugName  = "FoxMesh_IndexBuffer";
     m_indexBuffer     = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( ibDesc ) );
 
@@ -214,8 +208,8 @@ void AnimatedFoxExample::CreateBuffers( )
     CopyToGpuBufferDesc indexCopyDesc;
     indexCopyDesc.DstBuffer        = m_indexBuffer.get( );
     indexCopyDesc.DstBufferOffset  = 0;
-    indexCopyDesc.Data.Elements    = reinterpret_cast<Byte *>( m_indices.Elements );
-    indexCopyDesc.Data.NumElements = m_indices.NumElements * sizeof( uint32_t );
+    indexCopyDesc.Data.Elements    = reinterpret_cast<Byte *>( m_indices.data( ) );
+    indexCopyDesc.Data.NumElements = m_indices.size( ) * sizeof( uint32_t );
     batchCopy.CopyToGPUBuffer( indexCopyDesc );
 
     batchCopy.Submit( );
@@ -251,7 +245,7 @@ void AnimatedFoxExample::CreateShaders( )
     pipelineDesc.ShaderProgram     = skinnedMeshProgram.get( );
     pipelineDesc.Graphics.CullMode = CullMode::BackFace;
     RenderTargetDesc renderTargetDesc{ };
-    renderTargetDesc.Format = Format::B8G8R8A8Unorm;
+    renderTargetDesc.Format                         = Format::B8G8R8A8Unorm;
     pipelineDesc.Graphics.RenderTargets.Elements    = &renderTargetDesc;
     pipelineDesc.Graphics.RenderTargets.NumElements = 1;
 
@@ -365,7 +359,7 @@ void AnimatedFoxExample::Render( const uint32_t frameIndex, ICommandList *comman
     commandList->BindResourceGroup( m_resourceBindGroup.get( ) );
     commandList->BindVertexBuffer( m_vertexBuffer.get( ) );
     commandList->BindIndexBuffer( m_indexBuffer.get( ), IndexType::Uint32 );
-    commandList->DrawIndexed( static_cast<uint32_t>( m_indices.NumElements ), 1, 0, 0, 0 );
+    commandList->DrawIndexed( static_cast<uint32_t>( m_indices.size( ) ), 1, 0, 0, 0 );
     commandList->EndRendering( );
 
     batchTransition = BatchTransitionDesc( commandList );
