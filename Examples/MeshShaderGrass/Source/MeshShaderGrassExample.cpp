@@ -108,7 +108,7 @@ void MeshShaderGrassExample::Render( uint32_t frameIndex, ICommandList *commandL
     commandList->BindVertexBuffer( m_terrainVertexBuffer.get( ) );
     commandList->BindIndexBuffer( m_terrainIndexBuffer.get( ), IndexType::Uint32 );
 
-    commandList->DrawIndexed( m_terrainGeometry.Indices.NumElements( ), 1, 0 );
+    commandList->DrawIndexed( m_terrainGeometry->Indices.NumElements, 1, 0 );
     // Draw the terrain
 
     commandList->EndRendering( );
@@ -364,12 +364,12 @@ void MeshShaderGrassExample::CreateTerrainGeometry( )
     quadDesc.Width     = 100.0f;
     quadDesc.Height    = 100.0f;
     quadDesc.BuildDesc = BuildDesc::BuildNormal | BuildDesc::BuildTexCoord;
-    m_terrainGeometry  = Geometry::BuildQuadXZ( quadDesc );
+    m_terrainGeometry.reset( Geometry::BuildQuadXZ( quadDesc ) );
 
     BufferDesc vertexDesc{ };
     vertexDesc.HeapType   = HeapType::GPU;
     vertexDesc.Descriptor = ResourceDescriptor::VertexBuffer;
-    vertexDesc.NumBytes   = m_terrainGeometry.Vertices.NumElements( ) * sizeof( GeometryVertexData );
+    vertexDesc.NumBytes   = m_terrainGeometry->Vertices.NumElements * sizeof( GeometryVertexData );
     vertexDesc.Usages     = ResourceUsage::CopyDst | ResourceUsage::VertexAndConstantBuffer;
     vertexDesc.DebugName  = "TerrainVertexBuffer";
     m_terrainVertexBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( vertexDesc ) );
@@ -377,7 +377,7 @@ void MeshShaderGrassExample::CreateTerrainGeometry( )
     BufferDesc indexDesc{ };
     indexDesc.HeapType   = HeapType::GPU;
     indexDesc.Descriptor = ResourceDescriptor::IndexBuffer;
-    indexDesc.NumBytes   = m_terrainGeometry.Indices.NumElements( ) * sizeof( uint32_t );
+    indexDesc.NumBytes   = m_terrainGeometry->Indices.NumElements * sizeof( uint32_t );
     indexDesc.Usages     = ResourceUsage::CopyDst | ResourceUsage::IndexBuffer;
     indexDesc.DebugName  = "TerrainIndexBuffer";
     m_terrainIndexBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( indexDesc ) );
@@ -387,14 +387,14 @@ void MeshShaderGrassExample::CreateTerrainGeometry( )
 
     CopyToGpuBufferDesc vertexCopyDesc{ };
     vertexCopyDesc.DstBuffer        = m_terrainVertexBuffer.get( );
-    vertexCopyDesc.Data.Elements    = reinterpret_cast<const Byte *>( m_terrainGeometry.Vertices.Data( ) );
-    vertexCopyDesc.Data.NumElements = m_terrainGeometry.Vertices.NumElements( ) * sizeof( GeometryVertexData );
+    vertexCopyDesc.Data.Elements    = reinterpret_cast<const Byte *>( m_terrainGeometry->Vertices.Elements );
+    vertexCopyDesc.Data.NumElements = m_terrainGeometry->Vertices.NumElements * sizeof( GeometryVertexData );
     batchResourceCopy.CopyToGPUBuffer( vertexCopyDesc );
 
     CopyToGpuBufferDesc indexCopyDesc{ };
     indexCopyDesc.DstBuffer        = m_terrainIndexBuffer.get( );
-    indexCopyDesc.Data.Elements    = reinterpret_cast<const Byte *>( m_terrainGeometry.Indices.Data( ) );
-    indexCopyDesc.Data.NumElements = m_terrainGeometry.Indices.NumElements( ) * sizeof( uint32_t );
+    indexCopyDesc.Data.Elements    = reinterpret_cast<const Byte *>( m_terrainGeometry->Indices.Elements );
+    indexCopyDesc.Data.NumElements = m_terrainGeometry->Indices.NumElements * sizeof( uint32_t );
     batchResourceCopy.CopyToGPUBuffer( indexCopyDesc );
 
     batchResourceCopy.Submit( );

@@ -260,7 +260,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const ByteArrayView &da
 
 [[nodiscard]] IBufferResource *BatchResourceCopy::CreateGeometryVertexBuffer( const GeometryData &geometryData )
 {
-    const size_t numBytes = geometryData.Vertices.NumElements( ) * sizeof( GeometryVertexData );
+    const size_t numBytes = geometryData.Vertices.NumElements * sizeof( GeometryVertexData );
 
     BufferDesc vBufferDesc{ };
     vBufferDesc.HeapType     = HeapType::GPU;
@@ -273,8 +273,8 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const ByteArrayView &da
 
     CopyToGpuBufferDesc vbCopyDesc{ };
     vbCopyDesc.DstBuffer        = vertexBuffer;
-    vbCopyDesc.Data.Elements    = reinterpret_cast<const Byte *>( geometryData.Vertices.Data( ) );
-    vbCopyDesc.Data.NumElements = geometryData.Vertices.NumElements( ) * sizeof( GeometryVertexData );
+    vbCopyDesc.Data.Elements    = reinterpret_cast<const Byte *>( geometryData.Vertices.Elements );
+    vbCopyDesc.Data.NumElements = geometryData.Vertices.NumElements * sizeof( GeometryVertexData );
     CopyToGPUBuffer( vbCopyDesc );
 
     if ( m_issueBarriers )
@@ -289,7 +289,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const ByteArrayView &da
 
 [[nodiscard]] IBufferResource *BatchResourceCopy::CreateGeometryIndexBuffer( const GeometryData &geometryData )
 {
-    const size_t numBytes = geometryData.Indices.NumElements( ) * sizeof( uint32_t );
+    const size_t numBytes = geometryData.Indices.NumElements * sizeof( uint32_t );
 
     BufferDesc iBufferDesc{ };
     iBufferDesc.HeapType     = HeapType::GPU;
@@ -302,8 +302,8 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const ByteArrayView &da
 
     CopyToGpuBufferDesc ibCopyDesc{ };
     ibCopyDesc.DstBuffer        = indexBuffer;
-    ibCopyDesc.Data.Elements    = reinterpret_cast<const Byte *>( geometryData.Indices.Data( ) );
-    ibCopyDesc.Data.NumElements = geometryData.Indices.NumElements( ) * sizeof( uint32_t );
+    ibCopyDesc.Data.Elements    = reinterpret_cast<const Byte *>( geometryData.Indices.Elements );
+    ibCopyDesc.Data.NumElements = geometryData.Indices.NumElements * sizeof( uint32_t );
     CopyToGPUBuffer( ibCopyDesc );
 
     if ( m_issueBarriers )

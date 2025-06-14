@@ -136,16 +136,16 @@ void Spinning3DCubeWidget::CreatePipeline( )
 void Spinning3DCubeWidget::CreateGeometry( )
 {
     BoxDesc boxDesc{ };
-    boxDesc.Width         = 1.0f;
-    boxDesc.Height        = 1.0f;
-    boxDesc.Depth         = 1.0f;
-    boxDesc.BuildDesc     = BuildDesc::BuildNormal;
-    GeometryData geometry = Geometry::BuildBox( boxDesc );
+    boxDesc.Width     = 1.0f;
+    boxDesc.Height    = 1.0f;
+    boxDesc.Depth     = 1.0f;
+    boxDesc.BuildDesc = BuildDesc::BuildNormal;
+    std::unique_ptr<GeometryData> geometry( Geometry::BuildBox( boxDesc ) );
 
-    std::vector<CubeVertex> formattedVertices( geometry.Vertices.NumElements( ) );
-    for ( int i = 0; i < geometry.Vertices.NumElements( ); i++ )
+    std::vector<CubeVertex> formattedVertices( geometry->Vertices.NumElements );
+    for ( uint32_t i = 0; i < geometry->Vertices.NumElements; i++ )
     {
-        const GeometryVertexData &vertexData = geometry.Vertices.GetElement( i );
+        const GeometryVertexData &vertexData = geometry->Vertices.Elements[ i ];
         formattedVertices[ i ]               = { { vertexData.Position.X, vertexData.Position.Y, vertexData.Position.Z },
                                                  { vertexData.Normal.X, vertexData.Normal.Y, vertexData.Normal.Z },
                                                  m_cubeColor };
@@ -159,7 +159,7 @@ void Spinning3DCubeWidget::CreateGeometry( )
     vertexBufferDesc.DebugName  = InteropString( "3D Cube Vertex Buffer" );
     m_vertexBuffer              = std::unique_ptr<IBufferResource>( m_device->CreateBufferResource( vertexBufferDesc ) );
 
-    m_indexCount = geometry.Indices.NumElements( );
+    m_indexCount = geometry->Indices.NumElements;
     BufferDesc indexBufferDesc{ };
     indexBufferDesc.NumBytes   = m_indexCount * sizeof( uint32_t ); // Fix: multiply by size of index
     indexBufferDesc.Descriptor = ResourceDescriptor::IndexBuffer;
@@ -181,8 +181,8 @@ void Spinning3DCubeWidget::CreateGeometry( )
     CopyToGpuBufferDesc indexCopyDesc;
     indexCopyDesc.DstBuffer        = m_indexBuffer.get( );
     indexCopyDesc.DstBufferOffset  = 0;
-    indexCopyDesc.Data.Elements    = reinterpret_cast<const Byte *>( geometry.Indices.Data( ) );
-    indexCopyDesc.Data.NumElements = geometry.Indices.NumElements( ) * sizeof( uint32_t );
+    indexCopyDesc.Data.Elements    = reinterpret_cast<const Byte *>( geometry->Indices.Elements );
+    indexCopyDesc.Data.NumElements = geometry->Indices.NumElements * sizeof( uint32_t );
     batchCopy.CopyToGPUBuffer( indexCopyDesc );
 
     batchCopy.Submit( );

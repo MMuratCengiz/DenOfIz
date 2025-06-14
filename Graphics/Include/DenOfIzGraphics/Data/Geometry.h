@@ -32,6 +32,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cmath>
 #include <cstdint>
 #include <map>
+
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
+#include "DenOfIzGraphics/Utilities/Common_Macro.h"
+#include "DenOfIzGraphics/Utilities/DZArena.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
 
 namespace DenOfIz
@@ -150,10 +154,20 @@ namespace DenOfIz
         GeometryTextureCoordinateVertexData TextureCoordinate{ };
     };
 
-    struct DZ_API GeometryData
+    struct DZ_API GeometryVertexDataArray
     {
-        InteropArray<GeometryVertexData> Vertices;
-        InteropArray<uint32_t>           Indices;
+        GeometryVertexData *Elements;
+        uint32_t            NumElements;
+
+        DZ_ARRAY_METHODS( GeometryVertexDataArray, GeometryVertexData )
+    };
+
+    struct DZ_API GeometryData : NonCopyable
+    {
+        DZArena _Arena{ sizeof( GeometryData ) };
+
+        GeometryVertexDataArray Vertices;
+        UInt32Array             Indices;
     };
 
     class DZ_API Geometry
@@ -162,20 +176,17 @@ namespace DenOfIz
         Geometry( )  = delete;
         ~Geometry( ) = delete;
 
-        static GeometryData BuildQuadXY( const QuadDesc &quadDesc );
-        static GeometryData BuildQuadXZ( const QuadDesc &quadDesc );
-        static GeometryData BuildBox( const BoxDesc &desc );
-        static GeometryData BuildSphere( const SphereDesc &desc );
-        static GeometryData BuildGeoSphere( const GeoSphereDesc &desc );
-        static GeometryData BuildCylinder( const CylinderDesc &desc );
-        static GeometryData BuildCone( const ConeDesc &desc );
-        static GeometryData BuildTorus( const TorusDesc &desc );
-        static GeometryData BuildTetrahedron( const TetrahedronDesc &tetrahedronDesc );
-        static GeometryData BuildOctahedron( const OctahedronDesc &octahedronDesc );
-        static GeometryData BuildDodecahedron( const DodecahedronDesc &dodecahedronDesc );
-        static GeometryData BuildIcosahedron( const IcosahedronDesc &desc );
+        static GeometryData *BuildQuadXY( const QuadDesc &quadDesc );
+        static GeometryData *BuildQuadXZ( const QuadDesc &quadDesc );
+        static GeometryData *BuildBox( const BoxDesc &desc );
+        static GeometryData *BuildSphere( const SphereDesc &desc );
+        static GeometryData *BuildGeoSphere( const GeoSphereDesc &desc );
+        static GeometryData *BuildCylinder( const CylinderDesc &desc );
+        static GeometryData *BuildCone( const ConeDesc &desc );
+        static GeometryData *BuildTorus( const TorusDesc &desc );
+        static GeometryData *BuildTetrahedron( const TetrahedronDesc &tetrahedronDesc );
+        static GeometryData *BuildOctahedron( const OctahedronDesc &octahedronDesc );
+        static GeometryData *BuildDodecahedron( const DodecahedronDesc &dodecahedronDesc );
+        static GeometryData *BuildIcosahedron( const IcosahedronDesc &desc );
     };
 } // namespace DenOfIz
-
-template class DZ_API DenOfIz::InteropArray<DenOfIz::GeometryVertexData>;
-template class DZ_API DenOfIz::InteropArray<uint32_t>;

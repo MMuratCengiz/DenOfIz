@@ -34,36 +34,36 @@ SphereAsset::SphereAsset( ILogicalDevice *device, BatchResourceCopy *batchResour
     materialDesc.AoTexture        = ( baseTexturePath + "ambientOcclusion.png" ).c_str( );
     m_materialData                = std::make_unique<MaterialData>( materialDesc );
 
-    const GeometryData sphere = Geometry::BuildSphere( { .Diameter = 1.0f, .Tessellation = 64 } );
+    const std::unique_ptr<GeometryData> sphere( Geometry::BuildSphere( { .Diameter = 1.0f, .Tessellation = 64 } ) );
 
     AssetDataDesc assetDataDesc{ };
     assetDataDesc.Device       = device;
     assetDataDesc.BatchCopy    = batchResourceCopy;
-    assetDataDesc.GeometryData = sphere;
+    assetDataDesc.GeometryData = sphere.get( );
     m_assetData                = std::make_unique<AssetData>( assetDataDesc );
     m_assetData->UpdateMaterialData( m_materialData.get( ) );
 
     XMStoreFloat4x4( &m_modelMatrix, XMMatrixIdentity( ) );
 }
 
-void SphereAsset::Translate( XMFLOAT4 translation )
+void SphereAsset::Translate( const XMFLOAT4 translation )
 {
-    XMMATRIX translationMatrix = XMMatrixTranslation( translation.x, translation.y, translation.z );
-    XMMATRIX currentMatrix     = XMLoadFloat4x4( &m_modelMatrix );
+    const XMMATRIX translationMatrix = XMMatrixTranslation( translation.x, translation.y, translation.z );
+    const XMMATRIX currentMatrix     = XMLoadFloat4x4( &m_modelMatrix );
     XMStoreFloat4x4( &m_modelMatrix, currentMatrix * translationMatrix );
 }
 
-void SphereAsset::Rotate( XMFLOAT4 rotation )
+void SphereAsset::Rotate( const XMFLOAT4 rotation )
 {
-    XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYaw( rotation.x, rotation.y, rotation.z );
-    XMMATRIX currentMatrix  = XMLoadFloat4x4( &m_modelMatrix );
+    const XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYaw( rotation.x, rotation.y, rotation.z );
+    const XMMATRIX currentMatrix  = XMLoadFloat4x4( &m_modelMatrix );
     XMStoreFloat4x4( &m_modelMatrix, currentMatrix * rotationMatrix );
 }
 
-void SphereAsset::Scale( XMFLOAT4 scale )
+void SphereAsset::Scale( const XMFLOAT4 scale )
 {
-    XMMATRIX scaleMatrix   = XMMatrixScaling( scale.x, scale.y, scale.z );
-    XMMATRIX currentMatrix = XMLoadFloat4x4( &m_modelMatrix );
+    const XMMATRIX scaleMatrix   = XMMatrixScaling( scale.x, scale.y, scale.z );
+    const XMMATRIX currentMatrix = XMLoadFloat4x4( &m_modelMatrix );
     XMStoreFloat4x4( &m_modelMatrix, currentMatrix * scaleMatrix );
 }
 

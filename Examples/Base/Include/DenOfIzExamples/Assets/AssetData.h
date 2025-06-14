@@ -30,7 +30,7 @@ namespace DenOfIz
     {
         ILogicalDevice    *Device{ };
         BatchResourceCopy *BatchCopy{ };
-        GeometryData       GeometryData;
+        GeometryData      *GeometryData{ };
     };
 
     class AssetData

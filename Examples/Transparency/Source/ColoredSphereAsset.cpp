@@ -22,12 +22,12 @@ using namespace DenOfIz;
 
 ColoredSphereAsset::ColoredSphereAsset( ILogicalDevice *device, BatchResourceCopy *batchResourceCopy, const XMFLOAT4 color ) : m_color( color )
 {
-    const GeometryData sphere = Geometry::BuildSphere( { .Diameter = 1.0f, .Tessellation = 64 } );
+    std::unique_ptr<GeometryData> sphere( Geometry::BuildSphere( { .Diameter = 1.0f, .Tessellation = 64 } ) );
 
     AssetDataDesc assetDataDesc{ };
     assetDataDesc.Device       = device;
     assetDataDesc.BatchCopy    = batchResourceCopy;
-    assetDataDesc.GeometryData = sphere;
+    assetDataDesc.GeometryData = sphere.get( );
     m_assetData                = std::make_unique<AssetData>( assetDataDesc );
 
     XMStoreFloat4x4( &m_modelMatrix, XMMatrixIdentity( ) );

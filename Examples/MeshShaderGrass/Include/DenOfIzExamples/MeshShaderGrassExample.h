@@ -48,8 +48,8 @@ namespace DenOfIz
 
         // Parameters for the LOD system
         float MaxDistance;
-        float TerrainScale;   // Scale of the terrain 
-        float TerrainHeight;  // Maximum height of the terrain
+        float TerrainScale;     // Scale of the terrain
+        float TerrainHeight;    // Maximum height of the terrain
         float TerrainRoughness; // Roughness of the terrain
     };
 
@@ -74,7 +74,7 @@ namespace DenOfIz
         std::unique_ptr<IBufferResource>    m_terrainIndexBuffer;
         std::unique_ptr<ITextureResource>   m_terrainTexture;
         std::unique_ptr<ISampler>           m_terrainSampler;
-        GeometryData                        m_terrainGeometry;
+        std::unique_ptr<GeometryData>       m_terrainGeometry;
 
         GrassConstants *m_grassConstants = nullptr;
 
