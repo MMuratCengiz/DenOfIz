@@ -115,7 +115,7 @@ TEST_F( AnimationAssetSerdeTest, WriteAndReadBack )
     using namespace DenOfIz;
 
     BinaryContainer container;
-    auto  sampleAsset = std::unique_ptr<AnimationAsset>( CreateSampleAnimationAsset( ) );
+    auto            sampleAsset = std::unique_ptr<AnimationAsset>( CreateSampleAnimationAsset( ) );
 
     {
         BinaryWriter         binaryWriter( container );
@@ -132,27 +132,27 @@ TEST_F( AnimationAssetSerdeTest, WriteAndReadBack )
     ASSERT_STREQ( readAsset->Uri.ToInteropString( ).Get( ), sampleAsset->Uri.ToInteropString( ).Get( ) );
     ASSERT_STREQ( readAsset->SkeletonRef.ToInteropString( ).Get( ), sampleAsset->SkeletonRef.ToInteropString( ).Get( ) );
 
-    ASSERT_EQ( readAsset->Animations.NumElements( ), sampleAsset->Animations.NumElements( ) );
+    ASSERT_EQ( readAsset->Animations.NumElements, sampleAsset->Animations.NumElements );
 
-    ASSERT_GE( readAsset->Animations.NumElements( ), 1 );
-    ASSERT_GE( sampleAsset->Animations.NumElements( ), 1 );
+    ASSERT_GE( readAsset->Animations.NumElements, 1 );
+    ASSERT_GE( sampleAsset->Animations.NumElements, 1 );
     const AnimationClip &readClip   = readAsset->Animations.Elements[ 0 ];
     const AnimationClip &sampleClip = sampleAsset->Animations.Elements[ 0 ];
 
     ASSERT_STREQ( readClip.Name.Get( ), sampleClip.Name.Get( ) );
     ASSERT_FLOAT_EQ( readClip.Duration, sampleClip.Duration );
 
-    ASSERT_EQ( readClip.Tracks.NumElements( ), sampleClip.Tracks.NumElements( ) );
+    ASSERT_EQ( readClip.Tracks.NumElements, sampleClip.Tracks.NumElements );
 
-    ASSERT_GE( readClip.Tracks.NumElements( ), 1 );
-    ASSERT_GE( sampleClip.Tracks.NumElements( ), 1 );
+    ASSERT_GE( readClip.Tracks.NumElements, 1 );
+    ASSERT_GE( sampleClip.Tracks.NumElements, 1 );
     const JointAnimTrack &readRootTrack   = readClip.Tracks.Elements[ 0 ];
     const JointAnimTrack &sampleRootTrack = sampleClip.Tracks.Elements[ 0 ];
 
     ASSERT_STREQ( readRootTrack.JointName.Get( ), sampleRootTrack.JointName.Get( ) );
 
-    ASSERT_EQ( readRootTrack.PositionKeys.NumElements( ), sampleRootTrack.PositionKeys.NumElements( ) );
-    for ( size_t i = 0; i < readRootTrack.PositionKeys.NumElements( ); ++i )
+    ASSERT_EQ( readRootTrack.PositionKeys.NumElements, sampleRootTrack.PositionKeys.NumElements );
+    for ( size_t i = 0; i < readRootTrack.PositionKeys.NumElements; ++i )
     {
         const PositionKey &readKey   = readRootTrack.PositionKeys.Elements[ i ];
         const PositionKey &sampleKey = sampleRootTrack.PositionKeys.Elements[ i ];
@@ -160,8 +160,8 @@ TEST_F( AnimationAssetSerdeTest, WriteAndReadBack )
         ASSERT_TRUE( Float3Equals( readKey.Value, sampleKey.Value ) ); // Assumes Float3Equals exists
     }
 
-    ASSERT_EQ( readRootTrack.RotationKeys.NumElements( ), sampleRootTrack.RotationKeys.NumElements( ) );
-    for ( size_t i = 0; i < readRootTrack.RotationKeys.NumElements( ); ++i )
+    ASSERT_EQ( readRootTrack.RotationKeys.NumElements, sampleRootTrack.RotationKeys.NumElements );
+    for ( size_t i = 0; i < readRootTrack.RotationKeys.NumElements; ++i )
     {
         const RotationKey &readKey   = readRootTrack.RotationKeys.Elements[ i ];
         const RotationKey &sampleKey = sampleRootTrack.RotationKeys.Elements[ i ];
@@ -169,8 +169,8 @@ TEST_F( AnimationAssetSerdeTest, WriteAndReadBack )
         ASSERT_TRUE( Float4Equals( readKey.Value, sampleKey.Value ) ); // Assumes Float4Equals exists
     }
 
-    ASSERT_EQ( readRootTrack.ScaleKeys.NumElements( ), sampleRootTrack.ScaleKeys.NumElements( ) );
-    for ( size_t i = 0; i < readRootTrack.ScaleKeys.NumElements( ); ++i )
+    ASSERT_EQ( readRootTrack.ScaleKeys.NumElements, sampleRootTrack.ScaleKeys.NumElements );
+    for ( size_t i = 0; i < readRootTrack.ScaleKeys.NumElements; ++i )
     {
         const ScaleKey &readKey   = readRootTrack.ScaleKeys.Elements[ i ];
         const ScaleKey &sampleKey = sampleRootTrack.ScaleKeys.Elements[ i ];
@@ -178,24 +178,24 @@ TEST_F( AnimationAssetSerdeTest, WriteAndReadBack )
         ASSERT_TRUE( Float3Equals( readKey.Value, sampleKey.Value ) );
     }
 
-    ASSERT_GE( readClip.Tracks.NumElements( ), 2 );
-    ASSERT_GE( sampleClip.Tracks.NumElements( ), 2 );
+    ASSERT_GE( readClip.Tracks.NumElements, 2 );
+    ASSERT_GE( sampleClip.Tracks.NumElements, 2 );
     const JointAnimTrack &readLegTrack   = readClip.Tracks.Elements[ 1 ];
     const JointAnimTrack &sampleLegTrack = sampleClip.Tracks.Elements[ 1 ];
 
     ASSERT_STREQ( readLegTrack.JointName.Get( ), sampleLegTrack.JointName.Get( ) );
-    ASSERT_EQ( readLegTrack.PositionKeys.NumElements( ), sampleLegTrack.PositionKeys.NumElements( ) );
-    ASSERT_EQ( readLegTrack.RotationKeys.NumElements( ), sampleLegTrack.RotationKeys.NumElements( ) );
-    ASSERT_EQ( readLegTrack.ScaleKeys.NumElements( ), sampleLegTrack.ScaleKeys.NumElements( ) );
-    ASSERT_EQ( readClip.MorphTracks.NumElements( ), sampleClip.MorphTracks.NumElements( ) );
-    ASSERT_GE( readClip.MorphTracks.NumElements( ), 1 );
-    ASSERT_GE( sampleClip.MorphTracks.NumElements( ), 1 );
+    ASSERT_EQ( readLegTrack.PositionKeys.NumElements, sampleLegTrack.PositionKeys.NumElements );
+    ASSERT_EQ( readLegTrack.RotationKeys.NumElements, sampleLegTrack.RotationKeys.NumElements );
+    ASSERT_EQ( readLegTrack.ScaleKeys.NumElements, sampleLegTrack.ScaleKeys.NumElements );
+    ASSERT_EQ( readClip.MorphTracks.NumElements, sampleClip.MorphTracks.NumElements );
+    ASSERT_GE( readClip.MorphTracks.NumElements, 1 );
+    ASSERT_GE( sampleClip.MorphTracks.NumElements, 1 );
     const MorphAnimTrack &readMorphTrack   = readClip.MorphTracks.Elements[ 0 ];
     const MorphAnimTrack &sampleMorphTrack = sampleClip.MorphTracks.Elements[ 0 ];
 
     ASSERT_STREQ( readMorphTrack.Name.Get( ), sampleMorphTrack.Name.Get( ) );
-    ASSERT_EQ( readMorphTrack.Keyframes.NumElements( ), sampleMorphTrack.Keyframes.NumElements( ) );
-    for ( size_t i = 0; i < readMorphTrack.Keyframes.NumElements( ); ++i )
+    ASSERT_EQ( readMorphTrack.Keyframes.NumElements, sampleMorphTrack.Keyframes.NumElements );
+    for ( size_t i = 0; i < readMorphTrack.Keyframes.NumElements; ++i )
     {
         const MorphKeyframe &readKeyframe   = readMorphTrack.Keyframes.Elements[ i ];
         const MorphKeyframe &sampleKeyframe = sampleMorphTrack.Keyframes.Elements[ i ];
@@ -203,24 +203,24 @@ TEST_F( AnimationAssetSerdeTest, WriteAndReadBack )
         ASSERT_FLOAT_EQ( readKeyframe.Weight, sampleKeyframe.Weight );
     }
 
-    ASSERT_GE( readAsset->Animations.NumElements( ), 2 );
-    ASSERT_GE( sampleAsset->Animations.NumElements( ), 2 );
+    ASSERT_GE( readAsset->Animations.NumElements, 2 );
+    ASSERT_GE( sampleAsset->Animations.NumElements, 2 );
     const AnimationClip &readIdleClip   = readAsset->Animations.Elements[ 1 ];
     const AnimationClip &sampleIdleClip = sampleAsset->Animations.Elements[ 1 ];
 
     ASSERT_STREQ( readIdleClip.Name.Get( ), sampleIdleClip.Name.Get( ) );
     ASSERT_FLOAT_EQ( readIdleClip.Duration, sampleIdleClip.Duration );
 
-    ASSERT_EQ( readIdleClip.Tracks.NumElements( ), sampleIdleClip.Tracks.NumElements( ) );
-    ASSERT_GE( readIdleClip.Tracks.NumElements( ), 1 );
-    ASSERT_GE( sampleIdleClip.Tracks.NumElements( ), 1 );
+    ASSERT_EQ( readIdleClip.Tracks.NumElements, sampleIdleClip.Tracks.NumElements );
+    ASSERT_GE( readIdleClip.Tracks.NumElements, 1 );
+    ASSERT_GE( sampleIdleClip.Tracks.NumElements, 1 );
     const JointAnimTrack &readIdleTrack   = readIdleClip.Tracks.Elements[ 0 ];
     const JointAnimTrack &sampleIdleTrack = sampleIdleClip.Tracks.Elements[ 0 ];
 
     ASSERT_STREQ( readIdleTrack.JointName.Get( ), sampleIdleTrack.JointName.Get( ) );
-    ASSERT_EQ( readIdleTrack.PositionKeys.NumElements( ), sampleIdleTrack.PositionKeys.NumElements( ) );
-    ASSERT_EQ( readIdleTrack.RotationKeys.NumElements( ), sampleIdleTrack.RotationKeys.NumElements( ) );
-    ASSERT_EQ( readIdleTrack.ScaleKeys.NumElements( ), sampleIdleTrack.ScaleKeys.NumElements( ) );
-    ASSERT_EQ( readIdleClip.MorphTracks.NumElements( ), sampleIdleClip.MorphTracks.NumElements( ) );
-    ASSERT_EQ( readIdleClip.MorphTracks.NumElements( ), 0 ); // Expecting 0 morph tracks for idle clip
+    ASSERT_EQ( readIdleTrack.PositionKeys.NumElements, sampleIdleTrack.PositionKeys.NumElements );
+    ASSERT_EQ( readIdleTrack.RotationKeys.NumElements, sampleIdleTrack.RotationKeys.NumElements );
+    ASSERT_EQ( readIdleTrack.ScaleKeys.NumElements, sampleIdleTrack.ScaleKeys.NumElements );
+    ASSERT_EQ( readIdleClip.MorphTracks.NumElements, sampleIdleClip.MorphTracks.NumElements );
+    ASSERT_EQ( readIdleClip.MorphTracks.NumElements, 0 ); // Expecting 0 morph tracks for idle clip
 }
