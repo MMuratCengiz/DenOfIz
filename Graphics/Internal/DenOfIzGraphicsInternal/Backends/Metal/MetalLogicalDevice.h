@@ -34,15 +34,16 @@ namespace DenOfIz
     class MetalLogicalDevice final : public ILogicalDevice
     {
         std::unique_ptr<MetalContext> m_context;
+        std::vector<PhysicalDevice>   m_physicalDevices;
 
     public:
         MetalLogicalDevice( );
         ~MetalLogicalDevice( ) override;
 
         // Override methods
-        void                         CreateDevice( ) override;
-        InteropArray<PhysicalDevice> ListPhysicalDevices( ) override;
-        void                         LoadPhysicalDevice( const PhysicalDevice &device ) override;
+        void                    CreateDevice( ) override;
+        PhysicalDeviceArray     ListPhysicalDevices( ) override;
+        void                    LoadPhysicalDevice( const PhysicalDevice &device ) override;
         bool                         IsDeviceLost( ) override;
 
         ICommandQueue       *CreateCommandQueue( const CommandQueueDesc &desc ) override;

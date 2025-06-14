@@ -49,13 +49,14 @@ namespace DenOfIz
         std::unordered_set<const char *> m_enabledInstanceExtensions;
 
         std::unique_ptr<VulkanContext> m_context;
+        std::vector<PhysicalDevice>     m_physicalDevices;
 
     public:
         VulkanLogicalDevice( ) = default;
 
-        void                         CreateDevice( ) override;
-        InteropArray<PhysicalDevice> ListPhysicalDevices( ) override;
-        void                         LoadPhysicalDevice( const PhysicalDevice &device ) override;
+        void                    CreateDevice( ) override;
+        PhysicalDeviceArray     ListPhysicalDevices( ) override;
+        void                    LoadPhysicalDevice( const PhysicalDevice &device ) override;
         bool                         IsDeviceLost( ) override;
 
         void                         WaitIdle( ) override;

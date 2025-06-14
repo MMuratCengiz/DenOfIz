@@ -339,6 +339,12 @@ namespace DenOfIz
     };
     template class DZ_API InteropArray<PhysicalDevice>;
 
+    struct DZ_API PhysicalDeviceArray
+    {
+        PhysicalDevice *Elements;
+        uint32_t        NumElements;
+    };
+
     /**
      * Modifiable configuration to configure backend specific settings.
      * This class is not thread safe and should be configured before any backend is initialized to avoid any undefined behavior.

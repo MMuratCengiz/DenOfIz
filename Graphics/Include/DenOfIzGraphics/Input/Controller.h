@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Input/InputData.h"
 #include "DenOfIzGraphics/Utilities/Engine.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 
 namespace DenOfIz
 {
@@ -69,9 +70,9 @@ namespace DenOfIz
         DZ_API [[nodiscard]] bool                 SetPlayerIndex( int playerIndex ) const;
         DZ_API [[nodiscard]] int                  GetPlayerIndex( ) const;
 
-        DZ_API static void              InitializeSDL( );
-        DZ_API static InteropArray<int> GetConnectedControllerIndices( );
-        DZ_API static bool              IsGameController( int joystickIndex );
+        DZ_API static void        InitializeSDL( );
+        DZ_API static Int32Array  GetConnectedControllerIndices( );
+        DZ_API static bool        IsGameController( int joystickIndex );
         DZ_API static int               GetControllerCount( );
         DZ_API static InteropString     GetControllerNameForIndex( int joystickIndex );
     };

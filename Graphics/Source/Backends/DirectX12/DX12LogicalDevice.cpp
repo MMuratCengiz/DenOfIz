@@ -65,16 +65,20 @@ void DX12LogicalDevice::CreateDevice( )
     DX_CHECK_RESULT( CreateDXGIFactory2( dxgiFactoryFlags, IID_PPV_ARGS( m_context->DXGIFactory.put( ) ) ) );
 }
 
-InteropArray<PhysicalDevice> DX12LogicalDevice::ListPhysicalDevices( )
+PhysicalDeviceArray DX12LogicalDevice::ListPhysicalDevices( )
 {
-    InteropArray<PhysicalDevice> result;
+    m_physicalDevices.clear( );
     wil::com_ptr<IDXGIAdapter1>  adapter;
     for ( UINT adapterIndex = 0; SUCCEEDED( m_context->DXGIFactory->EnumAdapters1( adapterIndex, adapter.put( ) ) ); adapterIndex++ )
     {
         PhysicalDevice deviceInfo{ };
         CreateDeviceInfo( *adapter.get( ), deviceInfo );
-        result.AddElement( deviceInfo );
+        m_physicalDevices.push_back( deviceInfo );
     }
+    
+    PhysicalDeviceArray result;
+    result.Elements = m_physicalDevices.data( );
+    result.NumElements = static_cast<uint32_t>( m_physicalDevices.size( ) );
     return result;
 }
 

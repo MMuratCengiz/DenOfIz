@@ -36,15 +36,16 @@ namespace DenOfIz
     {
         D3D_FEATURE_LEVEL            m_minFeatureLevel = D3D_FEATURE_LEVEL_12_0;
         std::unique_ptr<DX12Context> m_context;
+        std::vector<PhysicalDevice>  m_physicalDevices;
 
     public:
         DX12LogicalDevice( );
         ~DX12LogicalDevice( ) override;
 
         // Override methods
-        void                         CreateDevice( ) override;
-        InteropArray<PhysicalDevice> ListPhysicalDevices( ) override;
-        void                         LoadPhysicalDevice( const PhysicalDevice &device ) override;
+        void                    CreateDevice( ) override;
+        PhysicalDeviceArray     ListPhysicalDevices( ) override;
+        void                    LoadPhysicalDevice( const PhysicalDevice &device ) override;
         bool                         IsDeviceLost( ) override;
 
         ICommandQueue      *CreateCommandQueue( const CommandQueueDesc &desc ) override;

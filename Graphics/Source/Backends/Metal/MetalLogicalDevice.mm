@@ -42,12 +42,14 @@ void MetalLogicalDevice::CreateDevice( )
 {
 }
 
-InteropArray<PhysicalDevice> MetalLogicalDevice::ListPhysicalDevices( )
+PhysicalDeviceArray MetalLogicalDevice::ListPhysicalDevices( )
 {
     NSArray<id<MTLDevice>> *devices     = MTLCopyAllDevices( );
     auto                    deviceCount = (uint32_t)[devices count];
 
-    InteropArray<PhysicalDevice> physicalDevices( deviceCount );
+    m_physicalDevices.clear( );
+    m_physicalDevices.reserve( deviceCount );
+    
     for ( uint32_t i = 0; i < deviceCount; i++ )
     {
         auto          *device = [devices objectAtIndex:i];
@@ -70,10 +72,13 @@ InteropArray<PhysicalDevice> MetalLogicalDevice::ListPhysicalDevices( )
         physicalDevice.Capabilities.ConservativeRasterization = false;
         physicalDevice.Properties.IsDedicated                 = ![device isLowPower];
         physicalDevice.Properties.MemoryAvailableInMb         = 0;
-        physicalDevices.SetElement( i, physicalDevice );
+        m_physicalDevices.push_back( physicalDevice );
     }
 
-    return physicalDevices;
+    PhysicalDeviceArray result;
+    result.Elements = m_physicalDevices.data( );
+    result.NumElements = static_cast<uint32_t>( m_physicalDevices.size( ) );
+    return result;
 }
 
 void MetalLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )

@@ -176,7 +176,7 @@ void VulkanLogicalDevice::CreateDevice( )
     }
 
     std::vector<const char *> enabledExtensions( m_enabledInstanceExtensions.size( ) );
-    std::copy( m_enabledInstanceExtensions.begin( ), m_enabledInstanceExtensions.end( ), enabledExtensions.begin( ) );
+    std::ranges::copy( m_enabledInstanceExtensions, enabledExtensions.begin( ) );
 
     createInfo.enabledExtensionCount   = enabledExtensions.size( );
     createInfo.ppEnabledExtensionNames = enabledExtensions.data( );
@@ -267,24 +267,29 @@ void VulkanLogicalDevice::InitSupportedLayers( std::vector<const char *> &layers
     }
 }
 
-InteropArray<PhysicalDevice> VulkanLogicalDevice::ListPhysicalDevices( )
+PhysicalDeviceArray VulkanLogicalDevice::ListPhysicalDevices( )
 {
     uint32_t count = 0;
     vkEnumeratePhysicalDevices( m_context->Instance, &count, nullptr );
     std::vector<VkPhysicalDevice> devices( count );
     vkEnumeratePhysicalDevices( m_context->Instance, &count, devices.data( ) );
-    InteropArray<PhysicalDevice> result( count );
+
     DZ_ASSERTM( count > 0, "No Vulkan Devices Found." );
     DZ_ASSERTM( count < 4, "Too many devices, consider upgrading library limits." );
 
-    int index = 0;
+    m_physicalDevices.clear( );
+    m_physicalDevices.reserve( count );
+
     for ( const auto &device : devices )
     {
         PhysicalDevice deviceInfo{ };
         CreateDeviceInfo( device, deviceInfo );
-        result.SetElement( index++, deviceInfo );
+        m_physicalDevices.push_back( deviceInfo );
     }
 
+    PhysicalDeviceArray result;
+    result.Elements    = m_physicalDevices.data( );
+    result.NumElements = static_cast<uint32_t>( m_physicalDevices.size( ) );
     return result;
 }
 

@@ -82,10 +82,10 @@ namespace DenOfIz
         static bool IsCursorShown( );
 
         // Controller
-        [[nodiscard]] static InteropArray<int> GetConnectedControllerIndices( );
-        [[nodiscard]] static int               GetNumControllers( );
-        bool                                   OpenController( int playerIndex, int controllerIndex );
-        void                                   CloseController( int playerIndex );
+        [[nodiscard]] static Int32Array GetConnectedControllerIndices( );
+        [[nodiscard]] static int        GetNumControllers( );
+        bool                                   OpenController( int playerIndex, int controllerIndex ) const;
+        void                                   CloseController( int playerIndex ) const;
         [[nodiscard]] bool                     IsControllerConnected( int playerIndex ) const;
         [[nodiscard]] Controller              *GetController( int playerIndex );
         [[nodiscard]] const Controller        *GetController( int playerIndex ) const;

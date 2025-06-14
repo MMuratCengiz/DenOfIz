@@ -42,11 +42,11 @@ namespace DenOfIz
     public:
         virtual ~ILogicalDevice( ) = default;
 
-        virtual void                         CreateDevice( )                                    = 0;
-        virtual InteropArray<PhysicalDevice> ListPhysicalDevices( )                             = 0;
-        virtual void                         LoadPhysicalDevice( const PhysicalDevice &device ) = 0;
-        virtual bool                         IsDeviceLost( )                                    = 0;
-        virtual void                         WaitIdle( )                                        = 0;
+        virtual void                CreateDevice( )                                    = 0;
+        virtual PhysicalDeviceArray ListPhysicalDevices( )                             = 0;
+        virtual void                LoadPhysicalDevice( const PhysicalDevice &device ) = 0;
+        virtual bool                IsDeviceLost( )                                    = 0;
+        virtual void                WaitIdle( )                                        = 0;
 
         const PhysicalDevice &DeviceInfo( )
         {

@@ -379,11 +379,12 @@ int Controller::GetPlayerIndex( ) const
 #endif
 }
 
-InteropArray<int> Controller::GetConnectedControllerIndices( )
+Int32Array Controller::GetConnectedControllerIndices( )
 {
     InitializeSDL( );
 
-    InteropArray<int> result;
+    static std::vector<int32_t> s_connectedControllers;
+    s_connectedControllers.clear( );
 
 #ifdef WINDOW_MANAGER_SDL
     const int numJoysticks = SDL_NumJoysticks( );
@@ -391,11 +392,14 @@ InteropArray<int> Controller::GetConnectedControllerIndices( )
     {
         if ( IsGameController( i ) )
         {
-            result.AddElement( i );
+            s_connectedControllers.push_back( i );
         }
     }
 #endif
 
+    Int32Array result;
+    result.Elements    = s_connectedControllers.data( );
+    result.NumElements = static_cast<uint32_t>( s_connectedControllers.size( ) );
     return result;
 }
 

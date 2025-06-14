@@ -542,8 +542,7 @@ MouseCoords InputSystem::GetRelativeMouseState( )
 
 void InputSystem::WarpMouseInWindow( const Window &window, const int x, const int y )
 {
-    SDL_Window *sdlWindow = SDL_GetWindowFromID( window.GetWindowID( ) );
-    if ( sdlWindow )
+    if ( SDL_Window *sdlWindow = SDL_GetWindowFromID( window.GetWindowID( ) ) )
     {
         SDL_WarpMouseInWindow( sdlWindow, x, y );
     }
@@ -588,7 +587,7 @@ bool InputSystem::IsCursorShown( )
     return SDL_ShowCursor( SDL_QUERY ) == SDL_ENABLE;
 }
 
-InteropArray<int> InputSystem::GetConnectedControllerIndices( )
+Int32Array InputSystem::GetConnectedControllerIndices( )
 {
     return Controller::GetConnectedControllerIndices( );
 }
@@ -598,7 +597,7 @@ int InputSystem::GetNumControllers( )
     return Controller::GetControllerCount( );
 }
 
-bool InputSystem::OpenController( const int playerIndex, const int controllerIndex )
+bool InputSystem::OpenController( const int playerIndex, const int controllerIndex ) const
 {
     if ( playerIndex < 0 || playerIndex >= 4 )
     {
@@ -621,7 +620,7 @@ bool InputSystem::OpenController( const int playerIndex, const int controllerInd
     return result;
 }
 
-void InputSystem::CloseController( const int playerIndex )
+void InputSystem::CloseController( const int playerIndex ) const
 {
     if ( playerIndex < 0 || playerIndex >= 4 )
     {
