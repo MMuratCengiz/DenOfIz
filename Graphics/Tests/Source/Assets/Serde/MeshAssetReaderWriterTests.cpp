@@ -18,37 +18,46 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "gtest/gtest.h"
 
+#include "../../../../Internal/DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
 #include "../../TestComparators.h"
 #include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAsset.h"
 #include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h"
 #include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetWriter.h"
+#include "DenOfIzGraphics/Assets/Stream/BinaryContainer.h"
 
 using namespace DenOfIz;
 
 class MeshAssetSerdeTest : public testing::Test
 {
+    std::unique_ptr<MeshAsset> m_asset;
+
 protected:
-    static MeshAsset CreateSampleMeshAsset( )
+    MeshAsset *CreateSampleMeshAsset( )
     {
         using namespace DenOfIz;
-        MeshAsset asset;
-        asset.Name    = "TestMesh";
-        asset.Uri     = AssetUri::Create( "test/TestMesh.dzmesh" );
-        asset.NumLODs = 1;
+        m_asset           = std::make_unique<MeshAsset>( );
+        m_asset->Name     = "TestMesh";
+        m_asset->Uri      = AssetUri::Create( "test/TestMesh.dzmesh" );
+        m_asset->NumLODs  = 1;
 
-        asset.EnabledAttributes.Position     = true;
-        asset.EnabledAttributes.Normal       = true;
-        asset.EnabledAttributes.UV           = true;
-        asset.EnabledAttributes.Tangent      = false;
-        asset.EnabledAttributes.Bitangent    = false;
-        asset.EnabledAttributes.Color        = false;
-        asset.EnabledAttributes.BlendIndices = false;
-        asset.EnabledAttributes.BlendWeights = false;
+        m_asset->EnabledAttributes.Position     = true;
+        m_asset->EnabledAttributes.Normal       = true;
+        m_asset->EnabledAttributes.UV           = true;
+        m_asset->EnabledAttributes.Tangent      = false;
+        m_asset->EnabledAttributes.Bitangent    = false;
+        m_asset->EnabledAttributes.Color        = false;
+        m_asset->EnabledAttributes.BlendIndices = false;
+        m_asset->EnabledAttributes.BlendWeights = false;
 
-        asset.AttributeConfig.NumPositionComponents = 3;
-        asset.AttributeConfig.NumUVAttributes       = 1;
+        m_asset->AttributeConfig.NumPositionComponents = 3;
+        m_asset->AttributeConfig.NumUVAttributes       = 1;
 
-        SubMeshData sm0;
+        m_asset->_Arena.EnsureCapacity( 8096 );
+        DZArenaArrayHelper<SubMeshDataArray, SubMeshData>::AllocateAndConstructArray( m_asset->_Arena, m_asset->SubMeshes, 2 );
+        DZArenaArrayHelper<MorphTargetArray, MorphTarget>::AllocateAndConstructArray( m_asset->_Arena, m_asset->MorphTargets, 1 );
+        DZArenaArrayHelper<UserPropertyArray, UserProperty>::AllocateAndConstructArray( m_asset->_Arena, m_asset->UserProperties, 2 );
+
+        SubMeshData &sm0 = m_asset->SubMeshes.Elements[ 0 ];
         sm0.Name        = "Quad";
         sm0.Topology    = PrimitiveTopology::Triangle;
         sm0.IndexType   = IndexType::Uint16;
@@ -58,15 +67,14 @@ protected:
         sm0.MaxBounds   = { 1.0f, 1.0f, 0.0f };
         sm0.MaterialRef = AssetUri::Create( "materials/Default.dzmat" );
 
-        BoundingVolume bv0;
+        DZArenaArrayHelper<BoundingVolumeArray, BoundingVolume>::AllocateAndConstructArray( m_asset->_Arena, sm0.BoundingVolumes, 1 );
+        BoundingVolume &bv0 = sm0.BoundingVolumes.Elements[ 0 ];
         bv0.Name    = "BoxBV";
         bv0.Type    = BoundingVolumeType::Box;
         bv0.Box.Min = { -1.1f, -1.1f, -0.1f };
         bv0.Box.Max = { 1.1f, 1.1f, 0.1f };
-        sm0.BoundingVolumes.AddElement( bv0 );
-        asset.SubMeshes.AddElement( sm0 );
 
-        SubMeshData sm1;
+        SubMeshData &sm1 = m_asset->SubMeshes.Elements[ 1 ];
         sm1.Name        = "Triangle";
         sm1.Topology    = PrimitiveTopology::Triangle;
         sm1.IndexType   = IndexType::Uint32;
@@ -75,35 +83,30 @@ protected:
         sm1.MinBounds   = { -0.5f, -0.5f, 0.0f };
         sm1.MaxBounds   = { 0.5f, 0.5f, 0.0f };
 
-        BoundingVolume bv1;
+        DZArenaArrayHelper<BoundingVolumeArray, BoundingVolume>::AllocateAndConstructArray( m_asset->_Arena, sm1.BoundingVolumes, 1 );
+        BoundingVolume &bv1 = sm1.BoundingVolumes.Elements[ 0 ];
         bv1.Name = "HullBV";
         bv1.Type = BoundingVolumeType::ConvexHull;
 
-        sm1.BoundingVolumes.AddElement( bv1 );
-        asset.SubMeshes.AddElement( sm1 );
-
-        MorphTarget mt0;
+        MorphTarget &mt0 = m_asset->MorphTargets.Elements[ 0 ];
         mt0.Name          = "Smile";
         mt0.DefaultWeight = 0.0f;
-        asset.MorphTargets.AddElement( mt0 );
 
-        UserProperty up0;
+        UserProperty &up0 = m_asset->UserProperties.Elements[ 0 ];
         up0.Name         = "DesignerNote";
         up0.PropertyType = UserProperty::Type::String;
         up0.StringValue  = "This is a test mesh.";
-        asset.UserProperties.AddElement( up0 );
 
-        UserProperty up1;
+        UserProperty &up1 = m_asset->UserProperties.Elements[ 1 ];
         up1.Name         = "ExportScale";
         up1.PropertyType = UserProperty::Type::Float;
         up1.FloatValue   = 100.0f;
-        asset.UserProperties.AddElement( up1 );
 
-        return asset;
+        return m_asset.get( );
     }
 
-    static MeshVertex CreateMeshVertex( const float posX, const float posY, const float posZ, const float normalX, const float normalY, const float normalZ, const float uvX,
-                                        const float uvY )
+    MeshVertex CreateMeshVertex( const float posX, const float posY, const float posZ, const float normalX, const float normalY, const float normalZ, const float uvX,
+                                 const float uvY )
     {
         MeshVertex vertex;
         vertex.Position.X = posX;
@@ -112,7 +115,8 @@ protected:
         vertex.Normal.X   = normalX;
         vertex.Normal.Y   = normalY;
         vertex.Normal.Z   = normalZ;
-        vertex.UVs.AddElement( Float_2{ uvX, uvY } );
+        DZArenaArrayHelper<Float_2Array, Float_2>::AllocateAndConstructArray( m_tempArena, vertex.UVs, 1 );
+        vertex.UVs.Elements[ 0 ] = Float_2{ uvX, uvY };
         return vertex;
     }
 
@@ -128,6 +132,7 @@ protected:
 
     const std::vector<uint32_t> triIndices = { 0, 1, 2 };
 
+    DZArena m_tempArena{ 1024 };
     std::vector<Byte> convexHullData;
 
     const std::vector<MorphTargetDelta> smileDeltas = {
@@ -136,8 +141,8 @@ protected:
 
     void SetUp( ) override
     {
-
         constexpr float hullVerts[] = { 0.0f, 0.5f, 0.0f, -0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f };
+        convexHullData.resize( sizeof( hullVerts ) );
         std::memcpy( convexHullData.data( ), hullVerts, sizeof( hullVerts ) );
     }
 };
@@ -147,13 +152,13 @@ TEST_F( MeshAssetSerdeTest, WriteAndReadBack )
     using namespace DenOfIz;
 
     BinaryContainer container;
-    BinaryWriter    binaryWriter( container );
-    MeshAsset       sampleAsset = CreateSampleMeshAsset( );
+    auto            sampleAsset = std::unique_ptr<MeshAsset>( CreateSampleMeshAsset( ) );
 
     {
+        BinaryWriter    binaryWriter( container );
         MeshAssetWriter writer( MeshAssetWriterDesc{ &binaryWriter } );
 
-        writer.Write( sampleAsset );
+        writer.Write( *sampleAsset );
         for ( const auto &v : quadVertices )
         {
             writer.AddVertex( v );
@@ -172,7 +177,7 @@ TEST_F( MeshAssetSerdeTest, WriteAndReadBack )
             writer.AddIndex32( i );
         }
 
-        ASSERT_EQ( sampleAsset.SubMeshes.GetElement( 1 ).BoundingVolumes.GetElement( 0 ).Type, BoundingVolumeType::ConvexHull );
+        ASSERT_EQ( sampleAsset->SubMeshes.Elements[ 1 ].BoundingVolumes.Elements[ 0 ].Type, BoundingVolumeType::ConvexHull );
         writer.AddConvexHullData( 0, ByteArrayView( convexHullData.data( ), convexHullData.size( ) ) );
         for ( const auto &d : smileDeltas )
         {
@@ -183,27 +188,28 @@ TEST_F( MeshAssetSerdeTest, WriteAndReadBack )
 
     BinaryReader    reader( container );
     MeshAssetReader meshReader( MeshAssetReaderDesc{ &reader } );
+    auto            readAsset = std::unique_ptr<MeshAsset>( meshReader.Read( ) );
 
-    MeshAsset readAsset = meshReader.Read( );
+    ASSERT_EQ( readAsset->Magic, MeshAsset{ }.Magic );
+    ASSERT_EQ( readAsset->Version, MeshAsset::Latest );
+    ASSERT_STREQ( readAsset->Name.Get( ), sampleAsset->Name.Get( ) );
+    ASSERT_STREQ( readAsset->Uri.ToInteropString( ).Get( ), sampleAsset->Uri.ToInteropString( ).Get( ) );
+    ASSERT_EQ( readAsset->NumLODs, sampleAsset->NumLODs );
 
-    ASSERT_EQ( readAsset.Magic, MeshAsset{ }.Magic );
-    ASSERT_EQ( readAsset.Version, MeshAsset::Latest );
-    ASSERT_STREQ( readAsset.Name.Get( ), sampleAsset.Name.Get( ) );
-    ASSERT_STREQ( readAsset.Uri.ToInteropString( ).Get( ), sampleAsset.Uri.ToInteropString( ).Get( ) );
-    ASSERT_EQ( readAsset.NumLODs, sampleAsset.NumLODs );
+    ASSERT_EQ( readAsset->EnabledAttributes.Position, sampleAsset->EnabledAttributes.Position );
+    ASSERT_EQ( readAsset->EnabledAttributes.Normal, sampleAsset->EnabledAttributes.Normal );
+    ASSERT_EQ( readAsset->EnabledAttributes.UV, sampleAsset->EnabledAttributes.UV );
+    ASSERT_EQ( readAsset->EnabledAttributes.Tangent, sampleAsset->EnabledAttributes.Tangent );
 
-    ASSERT_EQ( readAsset.EnabledAttributes.Position, sampleAsset.EnabledAttributes.Position );
-    ASSERT_EQ( readAsset.EnabledAttributes.Normal, sampleAsset.EnabledAttributes.Normal );
-    ASSERT_EQ( readAsset.EnabledAttributes.UV, sampleAsset.EnabledAttributes.UV );
-    ASSERT_EQ( readAsset.EnabledAttributes.Tangent, sampleAsset.EnabledAttributes.Tangent );
+    ASSERT_EQ( readAsset->AttributeConfig.NumPositionComponents, sampleAsset->AttributeConfig.NumPositionComponents );
+    ASSERT_EQ( readAsset->AttributeConfig.NumUVAttributes, sampleAsset->AttributeConfig.NumUVAttributes );
 
-    ASSERT_EQ( readAsset.AttributeConfig.NumPositionComponents, sampleAsset.AttributeConfig.NumPositionComponents );
-    ASSERT_EQ( readAsset.AttributeConfig.NumUVAttributes, sampleAsset.AttributeConfig.NumUVAttributes );
+    ASSERT_EQ( readAsset->SubMeshes.NumElements, sampleAsset->SubMeshes.NumElements );
 
-    ASSERT_EQ( readAsset.SubMeshes.NumElements( ), sampleAsset.SubMeshes.NumElements( ) );
-
-    const SubMeshData &readSM0   = readAsset.SubMeshes.GetElement( 0 );
-    const SubMeshData &sampleSM0 = sampleAsset.SubMeshes.GetElement( 0 );
+    ASSERT_GE( readAsset->SubMeshes.NumElements, 1 );
+    ASSERT_GE( sampleAsset->SubMeshes.NumElements, 1 );
+    const SubMeshData &readSM0   = readAsset->SubMeshes.Elements[ 0 ];
+    const SubMeshData &sampleSM0 = sampleAsset->SubMeshes.Elements[ 0 ];
     ASSERT_STREQ( readSM0.Name.Get( ), sampleSM0.Name.Get( ) );
     ASSERT_EQ( readSM0.Topology, sampleSM0.Topology );
     ASSERT_EQ( readSM0.IndexType, sampleSM0.IndexType );
@@ -212,36 +218,48 @@ TEST_F( MeshAssetSerdeTest, WriteAndReadBack )
     ASSERT_FLOAT_EQ( readSM0.MinBounds.X, sampleSM0.MinBounds.X );
     ASSERT_STREQ( readSM0.MaterialRef.ToInteropString( ).Get( ), sampleSM0.MaterialRef.ToInteropString( ).Get( ) );
     ASSERT_EQ( readSM0.LODLevel, sampleSM0.LODLevel );
-    ASSERT_EQ( readSM0.BoundingVolumes.NumElements( ), sampleSM0.BoundingVolumes.NumElements( ) );
-    ASSERT_EQ( readSM0.BoundingVolumes.GetElement( 0 ).Type, BoundingVolumeType::Box );
-    ASSERT_STREQ( readSM0.BoundingVolumes.GetElement( 0 ).Name.Get( ), sampleSM0.BoundingVolumes.GetElement( 0 ).Name.Get( ) );
-    ASSERT_FLOAT_EQ( readSM0.BoundingVolumes.GetElement( 0 ).Box.Min.X, sampleSM0.BoundingVolumes.GetElement( 0 ).Box.Min.X );
+    ASSERT_EQ( readSM0.BoundingVolumes.NumElements, sampleSM0.BoundingVolumes.NumElements );
+    ASSERT_GE( readSM0.BoundingVolumes.NumElements, 1 );
+    ASSERT_GE( sampleSM0.BoundingVolumes.NumElements, 1 );
+    ASSERT_EQ( readSM0.BoundingVolumes.Elements[ 0 ].Type, BoundingVolumeType::Box );
+    ASSERT_STREQ( readSM0.BoundingVolumes.Elements[ 0 ].Name.Get( ), sampleSM0.BoundingVolumes.Elements[ 0 ].Name.Get( ) );
+    ASSERT_FLOAT_EQ( readSM0.BoundingVolumes.Elements[ 0 ].Box.Min.X, sampleSM0.BoundingVolumes.Elements[ 0 ].Box.Min.X );
 
-    const SubMeshData &readSM1   = readAsset.SubMeshes.GetElement( 1 );
-    const SubMeshData &sampleSM1 = sampleAsset.SubMeshes.GetElement( 1 );
+    ASSERT_GE( readAsset->SubMeshes.NumElements, 2 );
+    ASSERT_GE( sampleAsset->SubMeshes.NumElements, 2 );
+    const SubMeshData &readSM1   = readAsset->SubMeshes.Elements[ 1 ];
+    const SubMeshData &sampleSM1 = sampleAsset->SubMeshes.Elements[ 1 ];
     ASSERT_STREQ( readSM1.Name.Get( ), sampleSM1.Name.Get( ) );
     ASSERT_EQ( readSM1.IndexType, sampleSM1.IndexType );
     ASSERT_EQ( readSM1.NumVertices, triVertices.size( ) );
     ASSERT_EQ( readSM1.NumIndices, triIndices.size( ) );
-    ASSERT_EQ( readSM1.BoundingVolumes.NumElements( ), sampleSM1.BoundingVolumes.NumElements( ) );
-    ASSERT_EQ( readSM1.BoundingVolumes.GetElement( 0 ).Type, BoundingVolumeType::ConvexHull );
+    ASSERT_EQ( readSM1.BoundingVolumes.NumElements, sampleSM1.BoundingVolumes.NumElements );
+    ASSERT_GE( readSM1.BoundingVolumes.NumElements, 1 );
+    ASSERT_GE( sampleSM1.BoundingVolumes.NumElements, 1 );
+    ASSERT_EQ( readSM1.BoundingVolumes.Elements[ 0 ].Type, BoundingVolumeType::ConvexHull );
 
-    ASSERT_EQ( readAsset.MorphTargets.NumElements( ), sampleAsset.MorphTargets.NumElements( ) );
-    const MorphTarget &readMT0   = readAsset.MorphTargets.GetElement( 0 );
-    const MorphTarget &sampleMT0 = sampleAsset.MorphTargets.GetElement( 0 );
+    ASSERT_EQ( readAsset->MorphTargets.NumElements, sampleAsset->MorphTargets.NumElements );
+    ASSERT_GE( readAsset->MorphTargets.NumElements, 1 );
+    ASSERT_GE( sampleAsset->MorphTargets.NumElements, 1 );
+    const MorphTarget &readMT0   = readAsset->MorphTargets.Elements[ 0 ];
+    const MorphTarget &sampleMT0 = sampleAsset->MorphTargets.Elements[ 0 ];
     ASSERT_STREQ( readMT0.Name.Get( ), sampleMT0.Name.Get( ) );
     ASSERT_FLOAT_EQ( readMT0.DefaultWeight, sampleMT0.DefaultWeight );
     ASSERT_EQ( readMT0.VertexDeltaStream.NumBytes, smileDeltas.size( ) * meshReader.MorphDeltaEntryNumBytes( ) );
 
-    ASSERT_EQ( readAsset.UserProperties.NumElements( ), sampleAsset.UserProperties.NumElements( ) );
-    const UserProperty &readUP0   = readAsset.UserProperties.GetElement( 0 );
-    const UserProperty &sampleUP0 = sampleAsset.UserProperties.GetElement( 0 );
+    ASSERT_EQ( readAsset->UserProperties.NumElements, sampleAsset->UserProperties.NumElements );
+    ASSERT_GE( readAsset->UserProperties.NumElements, 1 );
+    ASSERT_GE( sampleAsset->UserProperties.NumElements, 1 );
+    const UserProperty &readUP0   = readAsset->UserProperties.Elements[ 0 ];
+    const UserProperty &sampleUP0 = sampleAsset->UserProperties.Elements[ 0 ];
     ASSERT_EQ( readUP0.PropertyType, sampleUP0.PropertyType );
     ASSERT_STREQ( readUP0.Name.Get( ), sampleUP0.Name.Get( ) );
     ASSERT_STREQ( readUP0.StringValue.Get( ), sampleUP0.StringValue.Get( ) );
 
-    const UserProperty &readUP1   = readAsset.UserProperties.GetElement( 1 );
-    const UserProperty &sampleUP1 = sampleAsset.UserProperties.GetElement( 1 );
+    ASSERT_GE( readAsset->UserProperties.NumElements, 2 );
+    ASSERT_GE( sampleAsset->UserProperties.NumElements, 2 );
+    const UserProperty &readUP1   = readAsset->UserProperties.Elements[ 1 ];
+    const UserProperty &sampleUP1 = sampleAsset->UserProperties.Elements[ 1 ];
     ASSERT_EQ( readUP1.PropertyType, sampleUP1.PropertyType );
     ASSERT_STREQ( readUP1.Name.Get( ), sampleUP1.Name.Get( ) );
     ASSERT_FLOAT_EQ( readUP1.FloatValue, sampleUP1.FloatValue );
@@ -256,9 +274,9 @@ TEST_F( MeshAssetSerdeTest, WriteAndReadBack )
 
         ASSERT_FLOAT_EQ( readVerts0.Elements[ i ].Normal.X, quadVertices[ i ].Normal.X );
 
-        ASSERT_EQ( readVerts0.Elements[ i ].UVs.NumElements( ), 1 );
-        ASSERT_FLOAT_EQ( readVerts0.Elements[ i ].UVs.GetElement( 0 ).X, quadVertices[ i ].UVs.GetElement( 0 ).X );
-        ASSERT_FLOAT_EQ( readVerts0.Elements[ i ].UVs.GetElement( 0 ).Y, quadVertices[ i ].UVs.GetElement( 0 ).Y );
+        ASSERT_EQ( readVerts0.Elements[ i ].UVs.NumElements, 1 );
+        ASSERT_FLOAT_EQ( readVerts0.Elements[ i ].UVs.Elements[ 0 ].X, quadVertices[ i ].UVs.Elements[ 0 ].X );
+        ASSERT_FLOAT_EQ( readVerts0.Elements[ i ].UVs.Elements[ 0 ].Y, quadVertices[ i ].UVs.Elements[ 0 ].Y );
     }
     std::free( readVerts0.Elements );
 
@@ -274,14 +292,14 @@ TEST_F( MeshAssetSerdeTest, WriteAndReadBack )
     ASSERT_EQ( readVerts1.NumElements, triVertices.size( ) );
 
     UInt32Array readIndices1 = meshReader.ReadIndices32( readSM1.IndexStream );
-    ASSERT_EQ( readIndices1.NumElements( ), triIndices.size( ) );
-    for ( size_t i = 0; i < readIndices1.NumElements( ); ++i )
+    ASSERT_EQ( readIndices1.NumElements, triIndices.size( ) );
+    for ( size_t i = 0; i < readIndices1.NumElements; ++i )
     {
         ASSERT_EQ( readIndices1.Elements[ i ], triIndices[ i ] );
     }
     std::free( readIndices1.Elements );
 
-    ByteArray readHullData = meshReader.ReadConvexHullData( readSM1.BoundingVolumes.GetElement( 0 ).ConvexHull.VertexStream );
+    ByteArray readHullData = meshReader.ReadConvexHullData( readSM1.BoundingVolumes.Elements[ 0 ].ConvexHull.VertexStream );
     AssertArrayEq( readHullData.Elements, convexHullData.data( ), readHullData.NumElements );
 
     MorphTargetDeltaArray readDeltas0 = meshReader.ReadMorphTargetDeltas( readMT0.VertexDeltaStream );
