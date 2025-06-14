@@ -159,7 +159,7 @@ TEST( BinarySerdeTest, InteropArrayByteSupport )
         writer.Flush( );
     }
 
-    const InteropArray<Byte> byteData = container.GetData( );
+    const ByteArrayView byteData = container.GetData( );
 
     BinaryReader reader( byteData );
     ASSERT_EQ( reader.ReadUInt32( ), 12345 );
