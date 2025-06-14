@@ -61,13 +61,6 @@ namespace DenOfIz
         Float_4x4Array *OutTransforms{ };
     };
 
-    struct DZ_API SkinningJobResult
-    {
-        bool        Success{ false };
-        FloatArray  Vertices{ };
-        FloatArray  Weights{ };
-        UInt16Array Indices{ };
-    };
     struct DZ_API SkinningJobDesc
     {
         OzzContext          *Context = nullptr;
@@ -76,6 +69,10 @@ namespace DenOfIz
         const FloatArray     Weights;
         const UInt16Array    Indices;
         int                  InfluenceCount = 0;
+
+        FloatArray *OutVertices{ };
+        FloatArray *OutNormals{ };
+        FloatArray *OutTangents{ };
     };
 
     struct DZ_API IkTwoBoneJobResult
@@ -178,7 +175,7 @@ namespace DenOfIz
         DZ_API [[nodiscard]] bool           RunSamplingJob( const SamplingJobDesc &desc ) const;
         DZ_API [[nodiscard]] bool           RunBlendingJob( const BlendingJobDesc &desc ) const;
         DZ_API [[nodiscard]] bool           RunLocalToModelJob( const LocalToModelJobDesc &desc ) const;
-        DZ_API static SkinningJobResult     RunSkinningJob( const SkinningJobDesc &desc );
+        DZ_API static bool                  RunSkinningJob( const SkinningJobDesc &desc );
         DZ_API static IkTwoBoneJobResult    RunIkTwoBoneJob( const IkTwoBoneJobDesc &desc );
         DZ_API [[nodiscard]] IkAimJobResult RunIkAimJob( const IkAimJobDesc &desc ) const;
         DZ_API static TrackSamplingResult   RunTrackSamplingJob( const TrackSamplingJobDesc &desc );

@@ -753,14 +753,13 @@ namespace DenOfIz
         return true;
     }
 
-    SkinningJobResult OzzAnimation::RunSkinningJob( const SkinningJobDesc &desc )
+    bool OzzAnimation::RunSkinningJob( const SkinningJobDesc &desc )
     {
-        SkinningJobResult result{ };
         if ( !desc.Context || desc.JointTransforms.NumElements == 0 || desc.Vertices.NumElements == 0 || desc.Weights.NumElements == 0 || desc.Indices.NumElements == 0 ||
              desc.InfluenceCount <= 0 )
         {
             spdlog::error( "Invalid skinning job parameters" );
-            return result;
+            return false;
         }
 
         const size_t                     numJoints = desc.JointTransforms.NumElements;
@@ -782,17 +781,25 @@ namespace DenOfIz
         skinningJob.joint_weights = ozz::span( desc.Weights.Elements, numVertices * desc.InfluenceCount );
         skinningJob.joint_indices = ozz::span( desc.Indices.Elements, numVertices * desc.InfluenceCount );
 
-        result.Vertices           = FloatArray::Create( numVertices * 3 );
-        skinningJob.out_positions = ozz::span( result.Vertices.Elements, numVertices * 3 ); // Todo validate result
-
+        if ( !desc.OutVertices || desc.OutVertices->NumElements < numVertices * 3 )
+        {
+            spdlog::error( "desc.OutVertices is null or too small" );
+            return false;
+        }
+        skinningJob.out_positions = ozz::span( desc.OutVertices->Elements, numVertices * 3 ); // Todo validate result
+        if ( !desc.OutNormals || desc.OutNormals->NumElements < numVertices * 3 )
+        {
+            spdlog::error( "desc.OutIndices is null or too small" );
+            return false;
+        }
+        // TODO
         if ( !skinningJob.Run( ) )
         {
             spdlog::error( "Skinning job failed" );
-            return result;
+            return false;
         }
 
-        result.Success = true;
-        return result;
+        return true;
     }
 
     IkTwoBoneJobResult OzzAnimation::RunIkTwoBoneJob( const IkTwoBoneJobDesc &desc )
@@ -1063,7 +1070,7 @@ namespace DenOfIz
             ++it;
         }
 
-        result.Triggered = FloatArray::Create( static_cast<uint32_t>( edgeCount ) );
+        result.Triggered = FloatArray::Create( static_cast<uint32_t>( edgeCount ) ); // Todo find a way to remove this leak
         edgeCount        = 0;
         it               = job.iterator;
         while ( it && *it != job.end( ) )
@@ -1088,11 +1095,11 @@ namespace DenOfIz
         }
 
         const int numJoints = m_impl->skeleton->num_joints( );
-        if ( outNames.Elements )
+        if ( outNames.NumElements < numJoints )
         {
-            outNames.Dispose( );
+            spdlog::error( "Output string array is too small, Create enough memory to fit InteropString * GetNumJoints( )" );
+            return;
         }
-        outNames = InteropStringArray::Create( numJoints );
 
         for ( int i = 0; i < numJoints; ++i )
         {
