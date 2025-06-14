@@ -316,28 +316,6 @@ namespace DenOfIz
             return Float_3{ scale.x, scale.y, scale.z };
         }
 
-        static void CopyArrayToOzzVector( const Float_4x4Array &src, ozz::vector<ozz::math::Float4x4> &dst )
-        {
-            dst.resize( src.NumElements );
-            for ( size_t i = 0; i < src.NumElements; ++i )
-            {
-                dst[ i ] = ToOzzFloat4x4( src.Elements[ i ] );
-            }
-        }
-
-        static void CopyOzzVectorToArray( const ozz::vector<ozz::math::Float4x4> &src, Float_4x4Array &dst )
-        {
-            if ( dst.Elements )
-            {
-                dst.Dispose( );
-            }
-            dst = Float_4x4Array::Create( static_cast<uint32_t>( src.size( ) ) );
-            for ( size_t i = 0; i < src.size( ); ++i )
-            {
-                dst.Elements[ i ] = FromOzzFloat4x4( src[ i ] );
-            }
-        }
-
         static ozz::math::SimdFloat4 ToOzzSimdFloat4( const Float_3 &v )
         {
             return ozz::math::simd_float4::Load3PtrU( &v.X );
@@ -589,20 +567,31 @@ namespace DenOfIz
         }
     }
 
-    SamplingJobResult OzzAnimation::RunSamplingJob( const SamplingJobDesc &desc ) const
+    bool OzzAnimation::RunSamplingJob( const SamplingJobDesc &desc ) const
     {
-        SamplingJobResult result{ };
         if ( !desc.Context )
         {
             spdlog::error( "Invalid sampling job parameters" );
-            return result;
+            return false;
         }
 
         auto *internalContext = reinterpret_cast<InternalContext *>( desc.Context );
         if ( !internalContext->animation || !internalContext->samplingContext )
         {
             spdlog::error( "No animation loaded in context or sampling context not initialized" );
-            return result;
+            return false;
+        }
+
+        if ( !desc.OutTransforms )
+        {
+            spdlog::error( "desc.OutTransforms is null" );
+            return false;
+        }
+
+        if ( desc.OutTransforms->NumElements != m_impl->skeleton->num_joints( ) )
+        {
+            spdlog::error( "desc.OutTransforms has incorrect number of elements, use GetNumJoints( )" );
+            return false;
         }
 
         const float ratio = ozz::math::Clamp( 0.f, desc.Ratio, 1.f );
@@ -620,7 +609,7 @@ namespace DenOfIz
         if ( !samplingJob.Run( ) )
         {
             spdlog::error( "Animation sampling failed" );
-            return result;
+            return false;
         }
 
         ozz::animation::LocalToModelJob ltmJob;
@@ -631,16 +620,16 @@ namespace DenOfIz
         if ( !ltmJob.Run( ) )
         {
             spdlog::error( "Local to model transformation failed" );
-            return result;
+            return false;
         }
 
         using namespace DirectX;
-        result.Transforms                      = Float_4x4Array::Create( static_cast<uint32_t>( internalContext->modelTransforms.size( ) ) );
+
         static const XMMATRIX correctionMatrix = XMMatrixRotationX( XM_PIDIV2 );
         for ( size_t i = 0; i < internalContext->modelTransforms.size( ); ++i )
         {
             const ozz::math::Float4x4 &ozzMat = internalContext->modelTransforms[ i ];
-            Float_4x4                 &out    = result.Transforms.Elements[ i ];
+            Float_4x4                 &out    = desc.OutTransforms->Elements[ i ];
             ozz::math::Float3          ozzTranslation;
             ozz::math::Quaternion      ozzQuat;
             ozz::math::Float3          ozzScale;
@@ -660,17 +649,15 @@ namespace DenOfIz
             }
         }
 
-        result.Success = true;
-        return result;
+        return true;
     }
 
-    BlendingJobResult OzzAnimation::RunBlendingJob( const BlendingJobDesc &desc ) const
+    bool OzzAnimation::RunBlendingJob( const BlendingJobDesc &desc ) const
     {
-        BlendingJobResult result{ };
         if ( !desc.Context || desc.Layers.NumElements == 0 )
         {
             spdlog::error( "Invalid blending job parameters" );
-            return result;
+            return false;
         }
 
         auto *internalContext = reinterpret_cast<InternalContext *>( desc.Context );
@@ -686,7 +673,7 @@ namespace DenOfIz
             if ( layer.Transforms.NumElements == 0 )
             {
                 spdlog::error( "Invalid transforms in layer {}", i );
-                return result;
+                return false;
             }
 
             layerTransforms[ i ].resize( numSoaJoints );
@@ -713,7 +700,7 @@ namespace DenOfIz
         if ( !blendingJob.Run( ) )
         {
             spdlog::error( "Blending job failed" );
-            return result;
+            return false;
         }
 
         ozz::animation::LocalToModelJob ltmJob;
@@ -724,21 +711,21 @@ namespace DenOfIz
         if ( !ltmJob.Run( ) )
         {
             spdlog::error( "Local to model transformation failed after blending" );
-            return result;
+            return false;
         }
-
-        result.Success = true;
-        OzzUtils::CopyOzzVectorToArray( internalContext->modelTransforms, result.Transforms );
-        return result;
+        for ( size_t i = 0; i < internalContext->modelTransforms.size( ); ++i )
+        {
+            desc.OutTransforms->Elements[ i ] = OzzUtils::FromOzzFloat4x4( internalContext->modelTransforms[ i ] );
+        }
+        return true;
     }
 
-    LocalToModelJobResult OzzAnimation::RunLocalToModelJob( const LocalToModelJobDesc &desc ) const
+    bool OzzAnimation::RunLocalToModelJob( const LocalToModelJobDesc &desc ) const
     {
-        LocalToModelJobResult result{ };
         if ( !desc.Context )
         {
             spdlog::error( "Invalid local to model job parameters" );
-            return result;
+            return false;
         }
 
         auto *internalContext = reinterpret_cast<InternalContext *>( desc.Context );
@@ -749,20 +736,21 @@ namespace DenOfIz
         ozz::animation::LocalToModelJob ltmJob;
         ltmJob.skeleton = m_impl->skeleton.get( );
 
-        // Use local transforms directly from the skeleton
         ltmJob.input  = m_impl->skeleton->joint_rest_poses( );
         ltmJob.output = ozz::make_span( internalContext->modelTransforms );
 
         if ( !ltmJob.Run( ) )
         {
             spdlog::error( "Local to model transformation failed" );
-            return result;
+            return false;
         }
 
-        // Copy to output
-        result.Success = true;
-        OzzUtils::CopyOzzVectorToArray( internalContext->modelTransforms, result.Transforms );
-        return result;
+        for ( size_t i = 0; i < internalContext->modelTransforms.size( ); ++i )
+        {
+            desc.OutTransforms->Elements[ i ] = OzzUtils::FromOzzFloat4x4( internalContext->modelTransforms[ i ] );
+        }
+
+        return true;
     }
 
     SkinningJobResult OzzAnimation::RunSkinningJob( const SkinningJobDesc &desc )
@@ -1112,7 +1100,12 @@ namespace DenOfIz
         }
     }
 
-    int OzzAnimation::GetJointCount( ) const
+    int OzzAnimation::GetNumSoaJoints( ) const
+    {
+        return m_impl->skeleton->num_soa_joints( );
+    }
+
+    int OzzAnimation::GetNumJoints( ) const
     {
         return m_impl->skeleton ? m_impl->skeleton->num_joints( ) : 0;
     }

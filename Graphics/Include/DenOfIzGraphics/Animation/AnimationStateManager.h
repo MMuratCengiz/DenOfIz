@@ -57,7 +57,9 @@ namespace DenOfIz
         std::unordered_map<std::string, AnimationState> m_animations;
         InteropString                                   m_currentAnimation;
         BlendingState                                   m_blendingState;
-        Float_4x4Array                                  m_modelTransforms;
+        std::vector<Float_4x4>                          m_modelTransforms;
+        std::vector<Float_4x4>                          m_blendSourceTransforms;
+        std::vector<Float_4x4>                          m_blendTargetTransforms;
 
     public:
         DZ_API explicit AnimationStateManager( const AnimationStateManagerDesc &desc );
@@ -70,7 +72,7 @@ namespace DenOfIz
         DZ_API void                               Resume( );
         DZ_API void                               Update( float deltaTime );
         DZ_API [[nodiscard]] bool                 HasAnimation( const InteropString &animationName ) const;
-        DZ_API Float_4x4Array                     GetModelSpaceTransforms( ) const;
+        DZ_API Float_4x4Array                     GetModelSpaceTransforms( );
         DZ_API [[nodiscard]] const InteropString &GetCurrentAnimationName( ) const;
         DZ_API [[nodiscard]] int                  GetNumJoints( ) const;
 

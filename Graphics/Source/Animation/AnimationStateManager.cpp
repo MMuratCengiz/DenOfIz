@@ -17,6 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Animation/AnimationStateManager.h"
+
+#include <array>
 #include <ranges>
 #include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
@@ -32,6 +34,9 @@ AnimationStateManager::AnimationStateManager( const AnimationStateManagerDesc &d
     }
 
     m_ozzAnimation = new OzzAnimation( desc.Skeleton );
+    m_modelTransforms.resize( m_ozzAnimation->GetNumJoints( ) );
+    m_blendSourceTransforms.resize( m_ozzAnimation->GetNumJoints( ) );
+    m_blendTargetTransforms.resize( m_ozzAnimation->GetNumJoints( ) );
 }
 
 AnimationStateManager::~AnimationStateManager( )
@@ -192,16 +197,16 @@ void AnimationStateManager::Update( const float deltaTime )
             }
         }
 
+        Float_4x4Array  transforms{ m_modelTransforms.data( ), m_modelTransforms.size( ) };
         SamplingJobDesc samplingDesc;
-        samplingDesc.Context = anim.Context;
-        samplingDesc.Ratio   = anim.CurrentTime / duration;
+        samplingDesc.Context       = anim.Context;
+        samplingDesc.Ratio         = anim.CurrentTime / duration;
+        samplingDesc.OutTransforms = &transforms;
 
-        const SamplingJobResult result = m_ozzAnimation->RunSamplingJob( samplingDesc );
-        if ( !result.Success )
+        if ( !m_ozzAnimation->RunSamplingJob( samplingDesc ) )
         {
             spdlog::error( "Failed to sample animation ' {} '", anim.Name.Get( ) );
         }
-        m_modelTransforms = result.Transforms;
     }
 }
 
@@ -210,14 +215,14 @@ bool AnimationStateManager::HasAnimation( const InteropString &animationName ) c
     return m_animations.contains( animationName.Get( ) );
 }
 
-Float_4x4Array AnimationStateManager::GetModelSpaceTransforms( ) const
+Float_4x4Array AnimationStateManager::GetModelSpaceTransforms( )
 {
-    if ( m_modelTransforms.NumElements == 0 )
+    if ( m_modelTransforms.empty( ) )
     {
         return { nullptr, 0 };
     }
 
-    return m_modelTransforms;
+    return { m_modelTransforms.data( ), static_cast<uint32_t>( m_modelTransforms.size( ) ) };
 }
 
 void AnimationStateManager::UpdateBlending( const float deltaTime )
@@ -249,47 +254,49 @@ void AnimationStateManager::UpdateBlending( const float deltaTime )
     sourceAnim.Weight = 1.0f - blendFactor;
     targetAnim.Weight = blendFactor;
 
+    Float_4x4Array  blendSourceTransforms{ m_blendSourceTransforms.data( ), m_blendSourceTransforms.size( ) };
     SamplingJobDesc sourceSamplingDesc;
-    sourceSamplingDesc.Context = sourceAnim.Context;
-    sourceSamplingDesc.Ratio   = sourceAnim.CurrentTime / OzzAnimation::GetAnimationDuration( sourceAnim.Context );
+    sourceSamplingDesc.Context       = sourceAnim.Context;
+    sourceSamplingDesc.Ratio         = sourceAnim.CurrentTime / OzzAnimation::GetAnimationDuration( sourceAnim.Context );
+    sourceSamplingDesc.OutTransforms = &blendSourceTransforms;
 
+    Float_4x4Array  blendTargetTransforms{ m_blendTargetTransforms.data( ), m_blendTargetTransforms.size( ) };
     SamplingJobDesc targetSamplingDesc;
-    targetSamplingDesc.Context = targetAnim.Context;
-    targetSamplingDesc.Ratio   = targetAnim.CurrentTime / OzzAnimation::GetAnimationDuration( targetAnim.Context );
+    targetSamplingDesc.Context       = targetAnim.Context;
+    targetSamplingDesc.Ratio         = targetAnim.CurrentTime / OzzAnimation::GetAnimationDuration( targetAnim.Context );
+    targetSamplingDesc.OutTransforms = &blendTargetTransforms;
 
-    const SamplingJobResult sourceResult = m_ozzAnimation->RunSamplingJob( sourceSamplingDesc );
-    const SamplingJobResult targetResult = m_ozzAnimation->RunSamplingJob( targetSamplingDesc );
-    if ( !sourceResult.Success || !targetResult.Success )
+    const bool sourceSuccess = m_ozzAnimation->RunSamplingJob( sourceSamplingDesc );
+    const bool targetSuccess = m_ozzAnimation->RunSamplingJob( targetSamplingDesc );
+    if ( !sourceSuccess || !targetSuccess )
     {
         spdlog::error( "Failed to sample animations for blending" );
         return;
     }
-
-    const Float_4x4Array sourceTransforms = sourceResult.Transforms;
-    const Float_4x4Array targetTransforms = targetResult.Transforms;
 
     BlendingJobDesc blendingDesc;
     blendingDesc.Context   = sourceAnim.Context; // Can use either context
     blendingDesc.Threshold = 0.1f;
 
     BlendingJobLayerDesc sourceLayer;
-    sourceLayer.Transforms = sourceTransforms;
+    sourceLayer.Transforms = blendSourceTransforms;
     sourceLayer.Weight     = sourceAnim.Weight;
 
     BlendingJobLayerDesc targetLayer;
-    targetLayer.Transforms = targetTransforms;
+    targetLayer.Transforms = blendTargetTransforms;
     targetLayer.Weight     = targetAnim.Weight;
 
-    blendingDesc.Layers               = BlendingJobLayerDescArray::Create( 2 );
-    blendingDesc.Layers.Elements[ 0 ] = sourceLayer;
-    blendingDesc.Layers.Elements[ 1 ] = targetLayer;
-
-    const BlendingJobResult result = m_ozzAnimation->RunBlendingJob( blendingDesc );
-    if ( !result.Success )
+    std::array<BlendingJobLayerDesc, 2> layers{ };
+    layers[ 0 ]                     = sourceLayer;
+    layers[ 1 ]                     = targetLayer;
+    blendingDesc.Layers.Elements    = layers.data( );
+    blendingDesc.Layers.NumElements = layers.size( );
+    Float_4x4Array transforms{ m_modelTransforms.data( ), m_modelTransforms.size( ) };
+    blendingDesc.OutTransforms = &transforms;
+    if ( !m_ozzAnimation->RunBlendingJob( blendingDesc ) )
     {
         spdlog::error( "Failed to blend animations" );
     }
-    m_modelTransforms = result.Transforms;
 }
 
 const InteropString &AnimationStateManager::GetCurrentAnimationName( ) const
@@ -299,5 +306,5 @@ const InteropString &AnimationStateManager::GetCurrentAnimationName( ) const
 
 int AnimationStateManager::GetNumJoints( ) const
 {
-    return m_ozzAnimation ? m_ozzAnimation->GetJointCount( ) : 0;
+    return m_ozzAnimation ? m_ozzAnimation->GetNumJoints( ) : 0;
 }

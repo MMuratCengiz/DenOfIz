@@ -26,22 +26,11 @@ namespace DenOfIz
 {
     struct DZ_API OzzContext{ };
 
-    struct DZ_API SamplingJobResult
-    {
-        bool           Success{ false };
-        Float_4x4Array Transforms{ };
-    };
-
     struct DZ_API SamplingJobDesc
     {
-        OzzContext *Context = nullptr;
-        float       Ratio   = 0.0f;
-    };
-
-    struct DZ_API BlendingJobResult
-    {
-        bool           Success{ false };
-        Float_4x4Array Transforms{ };
+        OzzContext     *Context = nullptr;
+        float           Ratio   = 0.0f;
+        Float_4x4Array *OutTransforms{ };
     };
 
     struct DZ_API BlendingJobLayerDesc
@@ -63,17 +52,13 @@ namespace DenOfIz
         OzzContext               *Context = nullptr;
         BlendingJobLayerDescArray Layers;
         float                     Threshold = 0.1f;
-    };
-
-    struct DZ_API LocalToModelJobResult
-    {
-        bool           Success{ false };
-        Float_4x4Array Transforms{ };
+        Float_4x4Array           *OutTransforms{ };
     };
 
     struct DZ_API LocalToModelJobDesc
     {
-        OzzContext *Context = nullptr;
+        OzzContext     *Context = nullptr;
+        Float_4x4Array *OutTransforms{ };
     };
 
     struct DZ_API SkinningJobResult
@@ -190,17 +175,18 @@ namespace DenOfIz
         DZ_API static void LoadTrack( const Float_3Array &keys, const FloatArray &timestamps, OzzContext *context );
         DZ_API static void LoadTrack( const Float_4Array &keys, const FloatArray &timestamps, OzzContext *context );
 
-        DZ_API [[nodiscard]] SamplingJobResult     RunSamplingJob( const SamplingJobDesc &desc ) const;
-        DZ_API [[nodiscard]] BlendingJobResult     RunBlendingJob( const BlendingJobDesc &desc ) const;
-        DZ_API [[nodiscard]] LocalToModelJobResult RunLocalToModelJob( const LocalToModelJobDesc &desc ) const;
-        DZ_API static SkinningJobResult            RunSkinningJob( const SkinningJobDesc &desc );
-        DZ_API static IkTwoBoneJobResult           RunIkTwoBoneJob( const IkTwoBoneJobDesc &desc );
-        DZ_API [[nodiscard]] IkAimJobResult        RunIkAimJob( const IkAimJobDesc &desc ) const;
-        DZ_API static TrackSamplingResult          RunTrackSamplingJob( const TrackSamplingJobDesc &desc );
-        DZ_API static TrackTriggeringResult        RunTrackTriggeringJob( const TrackTriggeringJobDesc &desc );
+        DZ_API [[nodiscard]] bool           RunSamplingJob( const SamplingJobDesc &desc ) const;
+        DZ_API [[nodiscard]] bool           RunBlendingJob( const BlendingJobDesc &desc ) const;
+        DZ_API [[nodiscard]] bool           RunLocalToModelJob( const LocalToModelJobDesc &desc ) const;
+        DZ_API static SkinningJobResult     RunSkinningJob( const SkinningJobDesc &desc );
+        DZ_API static IkTwoBoneJobResult    RunIkTwoBoneJob( const IkTwoBoneJobDesc &desc );
+        DZ_API [[nodiscard]] IkAimJobResult RunIkAimJob( const IkAimJobDesc &desc ) const;
+        DZ_API static TrackSamplingResult   RunTrackSamplingJob( const TrackSamplingJobDesc &desc );
+        DZ_API static TrackTriggeringResult RunTrackTriggeringJob( const TrackTriggeringJobDesc &desc );
 
         DZ_API void              GetJointNames( InteropStringArray &outNames ) const;
-        DZ_API [[nodiscard]] int GetJointCount( ) const;
+        DZ_API [[nodiscard]] int GetNumSoaJoints( ) const;
+        DZ_API [[nodiscard]] int GetNumJoints( ) const;
         DZ_API static float      GetAnimationDuration( OzzContext *context );
     };
 } // namespace DenOfIz
