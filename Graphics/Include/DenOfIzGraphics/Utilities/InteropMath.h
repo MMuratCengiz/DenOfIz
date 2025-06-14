@@ -38,8 +38,6 @@ namespace DenOfIz
     {
         Float_2 *Elements;
         uint32_t NumElements;
-
-        DZ_ARRAY_METHODS( Float_2Array, Float_2 )
     };
 
     struct DZ_API Float_3
@@ -67,8 +65,6 @@ namespace DenOfIz
     {
         Float_4 *Elements;
         uint32_t NumElements;
-
-        DZ_ARRAY_METHODS( Float_4Array, Float_4 )
     };
 
     struct DZ_API Int16_2
@@ -189,7 +185,5 @@ namespace DenOfIz
     {
         Float_4x4 *Elements;
         uint32_t   NumElements;
-
-        DZ_ARRAY_METHODS( Float_4x4Array, Float_4x4 )
     };
 } // namespace DenOfIz

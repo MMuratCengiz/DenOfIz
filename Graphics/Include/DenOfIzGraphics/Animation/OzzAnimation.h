@@ -43,8 +43,6 @@ namespace DenOfIz
     {
         BlendingJobLayerDesc *Elements;
         uint32_t              NumElements;
-
-        DZ_ARRAY_METHODS( BlendingJobLayerDescArray, BlendingJobLayerDesc )
     };
 
     struct DZ_API BlendingJobDesc

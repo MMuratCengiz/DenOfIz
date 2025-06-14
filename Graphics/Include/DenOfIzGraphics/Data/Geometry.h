@@ -158,8 +158,6 @@ namespace DenOfIz
     {
         GeometryVertexData *Elements;
         uint32_t            NumElements;
-
-        DZ_ARRAY_METHODS( GeometryVertexDataArray, GeometryVertexData )
     };
 
     struct DZ_API GeometryData : NonCopyable

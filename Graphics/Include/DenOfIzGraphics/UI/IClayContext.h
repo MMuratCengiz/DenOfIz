@@ -35,8 +35,6 @@ namespace DenOfIz
     {
         UIVertex *Elements;
         uint64_t  NumElements;
-
-        DZ_ARRAY_METHODS( UIVertexArray, UIVertex )
     };
 
     class IRenderBatch
