@@ -17,6 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h"
+
+#include "DenOfIzGraphics/Assets/Serde/Physics/PhysicsAsset.h"
 #include "DenOfIzGraphicsInternal/Assets/Serde/Common/AssetReaderHelpers.h"
 #include "DenOfIzGraphicsInternal/Utilities/DZArenaHelper.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
@@ -388,7 +390,32 @@ void MeshAssetReader::LoadStreamToMemory( LoadToMemoryDesc &desc ) const
     }
 }
 
-MeshVertexArray MeshAssetReader::ReadVertices( const AssetDataStream &stream ) const
+size_t MeshAssetReader::NumVertices( const AssetDataStream &stream ) const
+{
+    return stream.NumBytes / VertexEntryNumBytes( );
+}
+
+size_t MeshAssetReader::NumIndices16( const AssetDataStream &stream ) const
+{
+    return stream.NumBytes / sizeof( uint16_t );
+}
+
+size_t MeshAssetReader::NumIndices32( const AssetDataStream &stream ) const
+{
+    return stream.NumBytes / sizeof( uint32_t );
+}
+
+size_t MeshAssetReader::NumMorphTargets( const AssetDataStream &stream ) const
+{
+    return stream.NumBytes / MorphDeltaEntryNumBytes( );
+}
+
+size_t MeshAssetReader::NumConvexHulls( const AssetDataStream &stream ) const
+{
+    return stream.NumBytes /* TODO */;
+}
+
+void MeshAssetReader::ReadVertices( const AssetDataStream &stream, const MeshVertexArray &result ) const
 {
     if ( !m_metadataRead )
     {
@@ -397,122 +424,108 @@ MeshVertexArray MeshAssetReader::ReadVertices( const AssetDataStream &stream ) c
     const uint32_t vertexSize = VertexEntryNumBytes( );
     if ( vertexSize == 0 || stream.NumBytes == 0 )
     {
-        return { };
+        return;
     }
-    if ( stream.NumBytes % vertexSize != 0 )
+    const uint64_t numVertices = NumVertices( stream );
+    if ( result.NumElements < numVertices )
     {
-        spdlog::warn( "Vertex stream size warning for stream with offset {}", stream.Offset );
+        spdlog::critical( "Destination memory array is too small, allocate at least NumVertices( ) amount of elements" );
     }
-    const uint64_t numVertices = stream.NumBytes / vertexSize;
-
     m_reader->Seek( stream.Offset );
-    MeshVertexArray result{ };
-    result.Elements    = new MeshVertex[ numVertices ];
-    result.NumElements = static_cast<uint32_t>( numVertices );
     for ( uint64_t i = 0; i < numVertices; ++i )
     {
         result.Elements[ i ] = ReadSingleVertex( );
     }
-
-    return result;
 }
 
-UInt16Array MeshAssetReader::ReadIndices16( const AssetDataStream &stream ) const
+void MeshAssetReader::ReadIndices16( const AssetDataStream &stream, const UInt16Array &result ) const
 {
     if ( !m_metadataRead )
     {
         spdlog::critical( "ReadMetadata must be called first." );
     }
-
     constexpr uint32_t indexSize = sizeof( uint16_t );
     if ( stream.NumBytes == 0 )
     {
-        return { };
-    }
-    if ( stream.NumBytes % indexSize != 0 )
-    {
-        spdlog::warn( "Index stream size warning for stream with offset {}", stream.Offset );
+        return;
     }
     const uint64_t numIndices = stream.NumBytes / indexSize;
+    if ( result.NumElements < numIndices )
+    {
+        spdlog::critical( "Destination memory array is too small, allocate at least NumIndices16( ) amount of elements" );
+    }
     m_reader->Seek( stream.Offset );
-    UInt16Array result{ };
-    result.Elements    = static_cast<uint16_t *>( std::malloc( numIndices * sizeof( uint16_t ) ) );
-    result.NumElements = static_cast<uint32_t>( numIndices );
     for ( uint64_t i = 0; i < numIndices; ++i )
     {
         result.Elements[ i ] = m_reader->ReadUInt16( );
     }
-    return result;
 }
 
-UInt32Array MeshAssetReader::ReadIndices32( const AssetDataStream &stream ) const
+void MeshAssetReader::ReadIndices32( const AssetDataStream &stream, const UInt32Array &result ) const
 {
     if ( !m_metadataRead )
     {
         spdlog::critical( "ReadMetadata must be called first." );
     }
-
     constexpr uint32_t indexSize = sizeof( uint32_t );
     if ( stream.NumBytes == 0 )
     {
-        return { };
+        return;
     }
+    const uint64_t numIndices = stream.NumBytes / indexSize;
     if ( stream.NumBytes % indexSize != 0 )
     {
         spdlog::warn( "Index stream size warning for stream with offset {}", stream.Offset );
     }
-    const uint64_t numIndices = stream.NumBytes / indexSize;
+    if ( result.NumElements < numIndices )
+    {
+        spdlog::critical( "Destination memory array is too small, allocate at least NumIndices32( ) amount of elements" );
+        return;
+    }
     m_reader->Seek( stream.Offset );
-    UInt32Array result{ };
-    result.Elements    = static_cast<uint32_t *>( std::malloc( numIndices * sizeof( uint32_t ) ) );
-    result.NumElements = static_cast<uint32_t>( numIndices );
     for ( uint64_t i = 0; i < numIndices; ++i )
     {
         result.Elements[ i ] = m_reader->ReadUInt32( );
     }
-    return result;
 }
 
-MorphTargetDeltaArray MeshAssetReader::ReadMorphTargetDeltas( const AssetDataStream &stream ) const
+void MeshAssetReader::ReadMorphTargetDeltas( const AssetDataStream &stream, const MorphTargetDeltaArray &result ) const
 {
     if ( !m_metadataRead )
     {
         spdlog::critical( "ReadMetadata must be called first." );
     }
-
     const uint32_t deltaSize = MorphDeltaEntryNumBytes( );
     if ( deltaSize == 0 || stream.NumBytes == 0 )
     {
-        return { };
+        return;
     }
-    if ( stream.NumBytes % deltaSize != 0 )
+    const uint64_t numDeltas = NumMorphTargets( stream );
+    if ( result.NumElements < numDeltas )
     {
-        spdlog::warn( "Morph delta stream size warning for stream with offset {}", stream.Offset );
+        spdlog::critical( "Destination memory array is too small, allocate at least NumMorphTargets( ) amount of data" );
     }
-    const uint64_t numDeltas = stream.NumBytes / deltaSize;
-
     m_reader->Seek( stream.Offset );
-    MorphTargetDeltaArray deltas{ };
-    deltas.Elements    = static_cast<MorphTargetDelta *>( std::malloc( numDeltas * sizeof( MorphTargetDelta ) ) );
-    deltas.NumElements = numDeltas;
     for ( uint64_t i = 0; i < numDeltas; ++i )
     {
-        deltas.Elements[ i ] = ReadSingleMorphTargetDelta( );
+        result.Elements[ i ] = ReadSingleMorphTargetDelta( );
     }
-    return deltas;
 }
 
-ByteArray MeshAssetReader::ReadConvexHullData( const AssetDataStream &stream ) const
+void MeshAssetReader::ReadConvexHullData( const AssetDataStream &stream, ByteArray &result ) const
 {
     if ( !m_metadataRead )
     {
         spdlog::critical( "ReadMetadata must be called first." );
     }
+    if ( result.NumElements < stream.NumBytes )
+    {
+        spdlog::critical( "Destination memory array is too small, allocate at least stream.NumBytes amount of bytes" /*TODO explain size requirements*/ );
+    }
     if ( stream.NumBytes == 0 )
     {
-        return { };
+        return;
     }
-
     m_reader->Seek( stream.Offset );
-    return m_reader->ReadBytes( static_cast<uint32_t>( stream.NumBytes ) );
+    result = m_reader->ReadBytes( static_cast<uint32_t>( stream.NumBytes ) );
 }

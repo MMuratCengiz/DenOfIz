@@ -53,7 +53,7 @@ namespace DenOfIz
     struct DZ_API FontGlyphArray
     {
         FontGlyph *Elements;
-        uint32_t   NumElements;
+        size_t     NumElements;
     };
 
     struct DZ_API FontMetrics

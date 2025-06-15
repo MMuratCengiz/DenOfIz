@@ -59,11 +59,17 @@ namespace DenOfIz
 
         DZ_API void LoadStreamToMemory( LoadToMemoryDesc &desc ) const;
 
-        [[nodiscard]] DZ_API MeshVertexArray       ReadVertices( const AssetDataStream &stream ) const;
-        [[nodiscard]] DZ_API UInt16Array           ReadIndices16( const AssetDataStream &stream ) const;
-        [[nodiscard]] DZ_API UInt32Array           ReadIndices32( const AssetDataStream &stream ) const;
-        [[nodiscard]] DZ_API MorphTargetDeltaArray ReadMorphTargetDeltas( const AssetDataStream &stream ) const;
-        [[nodiscard]] DZ_API ByteArray             ReadConvexHullData( const AssetDataStream &stream ) const; // Todo maybe use proper types
+        [[nodiscard]] DZ_API size_t NumVertices( const AssetDataStream &stream ) const;
+        [[nodiscard]] DZ_API size_t NumIndices16( const AssetDataStream &stream ) const;
+        [[nodiscard]] DZ_API size_t NumIndices32( const AssetDataStream &stream ) const;
+        [[nodiscard]] DZ_API size_t NumMorphTargets( const AssetDataStream &stream ) const;
+        [[nodiscard]] DZ_API size_t NumConvexHulls( const AssetDataStream &stream ) const;
+
+        [[nodiscard]] DZ_API void ReadVertices( const AssetDataStream &stream, const MeshVertexArray &result ) const;
+        [[nodiscard]] DZ_API void ReadIndices16( const AssetDataStream &stream, const UInt16Array &result ) const;
+        [[nodiscard]] DZ_API void ReadIndices32( const AssetDataStream &stream, const UInt32Array &result ) const;
+        [[nodiscard]] DZ_API void ReadMorphTargetDeltas( const AssetDataStream &stream, const MorphTargetDeltaArray &result ) const;
+        [[nodiscard]] DZ_API void ReadConvexHullData( const AssetDataStream &stream, ByteArray &result ) const; // Todo maybe use proper types
 
         [[nodiscard]] DZ_API uint32_t VertexEntryNumBytes( ) const;
         [[nodiscard]] DZ_API uint32_t MorphDeltaEntryNumBytes( ) const;

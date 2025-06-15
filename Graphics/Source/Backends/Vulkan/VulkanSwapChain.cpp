@@ -228,7 +228,7 @@ PresentResult VulkanSwapChain::Present( const PresentDesc &presentDesc )
     std::vector<VkSemaphore> waitSemaphores;
     waitSemaphores.reserve( presentDesc.WaitSemaphores.NumElements );
 
-    for ( int i = 0; i < presentDesc.WaitSemaphores.NumElements; i++ )
+    for ( uint32_t i = 0; i < presentDesc.WaitSemaphores.NumElements; i++ )
     {
         const auto *vulkanSemaphore = dynamic_cast<VulkanSemaphore *>( presentDesc.WaitSemaphores.Elements[ i ] );
         waitSemaphores.push_back( vulkanSemaphore->GetSemaphore( ) );

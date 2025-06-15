@@ -50,8 +50,8 @@ namespace DenOfIz
 
     struct DZ_API InputLayoutElementDescArray
     {
-        InputLayoutElementDesc* Elements;
-        uint32_t                NumElements;
+        InputLayoutElementDesc *Elements;
+        size_t                  NumElements;
     };
 
     /**
@@ -59,14 +59,14 @@ namespace DenOfIz
      */
     struct DZ_API InputGroupDesc
     {
-        StepRate                       StepRate = StepRate::PerVertex;
-        InputLayoutElementDescArray    Elements;
+        StepRate                    StepRate = StepRate::PerVertex;
+        InputLayoutElementDescArray Elements;
     };
 
     struct DZ_API InputGroupDescArray
     {
-        InputGroupDesc* Elements;
-        uint32_t        NumElements;
+        InputGroupDesc *Elements;
+        size_t          NumElements;
     };
 
     /**

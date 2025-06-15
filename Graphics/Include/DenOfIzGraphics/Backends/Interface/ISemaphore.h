@@ -36,6 +36,6 @@ namespace DenOfIz
     struct DZ_API ISemaphoreArray
     {
         ISemaphore **Elements;
-        uint32_t     NumElements;
+        size_t       NumElements;
     };
 } // namespace DenOfIz

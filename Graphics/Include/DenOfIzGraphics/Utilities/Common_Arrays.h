@@ -88,14 +88,14 @@ namespace DenOfIz
 
     struct DZ_API BoolArray
     {
-        bool    *Elements;
-        uint32_t NumElements;
+        bool  *Elements;
+        size_t NumElements;
     };
 
     struct DZ_API FloatArray
     {
-        float   *Elements;
-        uint32_t NumElements;
+        float *Elements;
+        size_t NumElements;
 
         DZ_ARRAY_METHODS( FloatArray, float )
     };
@@ -103,25 +103,25 @@ namespace DenOfIz
     struct DZ_API FloatArrayArray
     {
         FloatArray *Elements;
-        uint32_t    NumElements;
+        size_t      NumElements;
     };
 
     struct DZ_API Int32Array
     {
         int32_t *Elements;
-        uint32_t NumElements;
+        size_t   NumElements;
     };
 
     struct DZ_API UInt16Array
     {
         uint16_t *Elements;
-        uint16_t  NumElements;
+        size_t    NumElements;
     };
 
     struct DZ_API UInt32Array
     {
         uint32_t *Elements    = nullptr;
-        uint32_t  NumElements = 0;
+        size_t    NumElements = 0;
     };
 
     struct DZ_API UInt32ArrayView
@@ -133,7 +133,7 @@ namespace DenOfIz
     struct DZ_API Int16Array
     {
         int16_t *Elements;
-        uint32_t NumElements;
+        size_t   NumElements;
     };
 
     struct DZ_API StringView
@@ -157,13 +157,13 @@ namespace DenOfIz
     struct DZ_API StringArray
     {
         StringView *Elements;
-        uint32_t    NumElements;
+        size_t      NumElements;
     };
 
     struct DZ_API InteropStringArray
     {
         InteropString *Elements;
-        uint32_t       NumElements;
+        size_t         NumElements;
 
         DZ_ARRAY_METHODS( InteropStringArray, InteropString )
     };

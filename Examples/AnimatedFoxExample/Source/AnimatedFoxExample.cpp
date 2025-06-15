@@ -122,11 +122,13 @@ void AnimatedFoxExample::LoadFoxAssets( )
     m_vertices.clear( );
     m_indices.clear( );
 
-    const MeshVertexArray meshVertices = meshAssetReader.ReadVertices( subMesh.VertexStream );
-    m_vertices.resize( meshVertices.NumElements );
-    for ( size_t i = 0; i < meshVertices.NumElements; ++i )
+    m_vertices.resize( meshAssetReader.NumVertices( subMesh.VertexStream ) );
+
+    std::vector<MeshVertex> tempVertices( m_vertices.size( ) );
+    meshAssetReader.ReadVertices( subMesh.VertexStream, { tempVertices.data( ), tempVertices.size( ) } );
+    for ( size_t i = 0; i < tempVertices.size( ); ++i )
     {
-        const MeshVertex &mv            = meshVertices.Elements[ i ];
+        const MeshVertex &mv            = tempVertices[ i ];
         SkinnedVertex    &skinnedVertex = m_vertices[ i ];
 
         skinnedVertex.Position.X = mv.Position.X;
@@ -149,10 +151,8 @@ void AnimatedFoxExample::LoadFoxAssets( )
         skinnedVertex.BlendIndices = { mv.BlendIndices.X, mv.BlendIndices.Y, mv.BlendIndices.Z, mv.BlendIndices.W };
         skinnedVertex.BoneWeights  = { mv.BoneWeights.X, mv.BoneWeights.Y, mv.BoneWeights.Z, mv.BoneWeights.W };
     }
-    const auto indices = meshAssetReader.ReadIndices32( subMesh.IndexStream );
-    m_indices.resize( indices.NumElements );
-    std::copy_n( indices.Elements, indices.NumElements, m_indices.begin( ) );
-    std::free( indices.Elements ); // Todo remove this
+    m_indices.resize( meshAssetReader.NumIndices32( subMesh.IndexStream ) );
+    meshAssetReader.ReadIndices32( subMesh.IndexStream, { m_indices.data( ), m_indices.size( ) } );
 }
 
 void AnimatedFoxExample::SetupAnimation( )

@@ -72,7 +72,7 @@ void FrameSync::ExecuteCommandList( const uint32_t frame, const ISemaphoreArray&
 {
     std::vector<ISemaphore*> waitSemaphores;
     waitSemaphores.push_back( m_imageAvailableSemaphores[ frame ].get( ) );
-    for ( int i = 0; i < additionalSemaphores.NumElements; ++i )
+    for ( uint32_t i = 0; i < additionalSemaphores.NumElements; ++i )
     {
         waitSemaphores.push_back( additionalSemaphores.Elements[ i ] );
     }

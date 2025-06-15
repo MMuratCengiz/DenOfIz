@@ -19,9 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Assets/Serde/Asset.h"
+#include "DenOfIzGraphics/Utilities/DZArena.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
 #include "DenOfIzGraphics/Utilities/InteropMath.h"
-#include "DenOfIzGraphics/Utilities/DZArena.h"
 
 namespace DenOfIz
 {
@@ -49,7 +49,7 @@ namespace DenOfIz
     struct DZ_API TextureMipArray
     {
         TextureMip *Elements;
-        uint32_t    NumElements;
+        size_t      NumElements;
     };
 
     struct DZ_API TextureAsset : AssetHeader, NonCopyable

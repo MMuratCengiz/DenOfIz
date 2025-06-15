@@ -27,7 +27,7 @@ AlignedDataWriter::AlignedDataWriter( ) : BinaryWriter( m_container )
 
 void AlignedDataWriter::AddPadding( const uint32_t &numBytes ) const
 {
-    for ( int i = 0; i < numBytes; i++ )
+    for ( uint32_t i = 0; i < numBytes; i++ )
     {
         WriteByte( 0 );
     }

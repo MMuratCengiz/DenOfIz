@@ -203,7 +203,7 @@ void QuadRenderer::SetCanvas( const uint32_t width, const uint32_t height )
     m_projectionMatrix             = InteropMathConverter::Float_4X4FromXMMATRIX( projection );
     const auto     mappedData      = static_cast<Byte *>( m_constantsBuffer->MapMemory( ) );
     const uint32_t alignedMemBytes = Utilities::Align( sizeof( FrameConstants ), 256 );
-    for ( int i = 0; i < m_desc.NumFrames; ++i )
+    for ( uint32_t i = 0; i < m_desc.NumFrames; ++i )
     {
         std::memcpy( mappedData + i * alignedMemBytes, &m_projectionMatrix, sizeof( FrameConstants ) );
     }
@@ -359,7 +359,7 @@ void QuadRenderer::AddQuad( const QuadDataDesc &desc )
         return;
     }
 
-    for ( int i = 0; i < m_desc.NumFrames; ++i )
+    for ( uint32_t i = 0; i < m_desc.NumFrames; ++i )
     {
         UpdateQuad( i, desc );
     }

@@ -48,7 +48,7 @@ namespace DenOfIz
     struct DZ_API BlendingJobDesc
     {
         OzzContext               *Context = nullptr;
-        BlendingJobLayerDescArray Layers;
+        BlendingJobLayerDescArray Layers{ };
         float                     Threshold = 0.1f;
         Float_4x4Array           *OutTransforms{ };
     };

@@ -139,7 +139,7 @@ uint32_t DX12LocalRootSignature::UavIndex( const uint32_t bindingIndex ) const
 
 bool DX12LocalRootSignature::HasBinding( const ResourceBindingType type, const uint32_t bindingIndex ) const
 {
-    for ( int i = 0; i < m_desc.ResourceBindings.NumElements; ++i )
+    for ( uint32_t i = 0; i < m_desc.ResourceBindings.NumElements; ++i )
     {
         if ( const auto &binding = m_desc.ResourceBindings.Elements[ i ]; binding.BindingType == type && binding.Binding == bindingIndex )
         {
