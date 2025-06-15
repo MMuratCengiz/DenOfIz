@@ -138,6 +138,10 @@ namespace DenOfIz
 
     struct DZ_API TrackTriggeringResult
     {
+    private:
+        std::vector<float> m_triggered;
+        friend class OzzAnimation;
+    public:
         bool       Success{ false };
         FloatArray Triggered;
     };
@@ -179,9 +183,9 @@ namespace DenOfIz
         DZ_API static TrackSamplingResult   RunTrackSamplingJob( const TrackSamplingJobDesc &desc );
         DZ_API static TrackTriggeringResult RunTrackTriggeringJob( const TrackTriggeringJobDesc &desc );
 
-        DZ_API void              GetJointNames( InteropStringArray &outNames ) const;
-        DZ_API [[nodiscard]] int GetNumSoaJoints( ) const;
-        DZ_API [[nodiscard]] int GetNumJoints( ) const;
-        DZ_API static float      GetAnimationDuration( OzzContext *context );
+        DZ_API InteropStringArray GetJointNames( ) const;
+        DZ_API [[nodiscard]] int  GetNumSoaJoints( ) const;
+        DZ_API [[nodiscard]] int  GetNumJoints( ) const;
+        DZ_API static float       GetAnimationDuration( OzzContext *context );
     };
 } // namespace DenOfIz

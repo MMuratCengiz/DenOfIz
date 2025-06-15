@@ -25,26 +25,10 @@ namespace DenOfIz
 {
     typedef unsigned char Byte;
 
-#define DZ_ARRAY_METHODS( ARRAY_TYPE, ELEMENT_TYPE )                                                                                                                               \
-    static ARRAY_TYPE Create( const size_t NumElements )                                                                                                                           \
-    {                                                                                                                                                                              \
-        ARRAY_TYPE Array{ };                                                                                                                                                       \
-        Array.Elements    = new ELEMENT_TYPE[ NumElements ];                                                                                                                       \
-        Array.NumElements = NumElements;                                                                                                                                           \
-        return Array;                                                                                                                                                              \
-    }                                                                                                                                                                              \
-                                                                                                                                                                                   \
-    void Dispose( ) const                                                                                                                                                          \
-    {                                                                                                                                                                              \
-        delete[] Elements;                                                                                                                                                         \
-    }
-
     struct DZ_API ByteArray
     {
         Byte  *Elements;
         size_t NumElements;
-
-        DZ_ARRAY_METHODS( ByteArray, Byte )
     };
 
     struct DZ_API ByteArrayView
@@ -68,22 +52,6 @@ namespace DenOfIz
     {
         ByteArray *Elements;
         uint32_t   NumElements;
-
-        static ByteArrayArray Create( const size_t NumElements )
-        {
-            ByteArrayArray Array{ };
-            Array.Elements    = new ByteArray[ NumElements ];
-            Array.NumElements = NumElements;
-            return Array;
-        }
-        void Dispose( ) const
-        {
-            for ( uint32_t i = 0; i < NumElements; ++i )
-            {
-                Elements[ i ].Dispose( );
-            }
-            delete[] Elements;
-        }
     };
 
     struct DZ_API BoolArray
@@ -96,8 +64,6 @@ namespace DenOfIz
     {
         float *Elements;
         size_t NumElements;
-
-        DZ_ARRAY_METHODS( FloatArray, float )
     };
 
     struct DZ_API FloatArrayArray
@@ -162,9 +128,7 @@ namespace DenOfIz
 
     struct DZ_API InteropStringArray
     {
-        InteropString *Elements;
-        size_t         NumElements;
-
-        DZ_ARRAY_METHODS( InteropStringArray, InteropString )
+        InteropString const *Elements;
+        size_t               NumElements;
     };
 } // namespace DenOfIz

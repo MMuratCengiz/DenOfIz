@@ -33,24 +33,16 @@ namespace DenOfIz
     class DZ_API FileIO
     {
     public:
+        static uint64_t GetFileNumBytes( const InteropString &path );
         /**
          * @brief Read entire file into a byte array
          * @param path Path to the file (relative to resources or absolute)
+         * @param buffer Contents will be written here, make
          * @return Byte array containing file contents
          * @throws std::runtime_error if file cannot be read
          * @note For binary files. Does not add null termination.
          */
-        static ByteArray ReadFile( const InteropString &path );
-
-        /**
-         * @brief Read entire text file into a byte array
-         * @param path Path to the file (relative to resources or absolute)
-         * @return Byte array containing file contents with null termination
-         * @throws std::runtime_error if file cannot be read
-         * @note Specifically for text files. Ensures null termination for compatibility
-         *       with text processing functions and shader compilers.
-         */
-        static ByteArray ReadTextFile( const InteropString &path );
+        static bool ReadFile( const InteropString &path, const ByteArray &buffer );
 
         /**
          * @brief Write byte array to file
@@ -66,14 +58,6 @@ namespace DenOfIz
          * @return true if file exists
          */
         static bool FileExists( const InteropString &path );
-
-        /**
-         * @brief Get size of file in bytes
-         * @param path Path to file
-         * @return Size in bytes
-         * @throws std::runtime_error if file cannot be accessed
-         */
-        static size_t GetFileSize( const InteropString &path );
 
         /**
          * @brief Create directory and any needed parent directories

@@ -18,58 +18,44 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include <fstream>
+#include <spdlog/spdlog.h>
+
 #include "DenOfIzGraphics/Assets/FileSystem/FSConfig.h"
 #include "DenOfIzGraphics/Utilities/Common.h"
 
 using namespace DenOfIz;
 
-ByteArray FileIO::ReadFile( const InteropString &path )
+uint64_t FileIO::GetFileNumBytes( const InteropString &path )
 {
     const std::string resolvedPath = PlatformResourcePath( path.Get( ) );
-
-    std::ifstream file( resolvedPath, std::ios::binary | std::ios::ate );
-    if ( !file )
+    std::error_code   ec;
+    const auto        numBytes = std::filesystem::file_size( resolvedPath, ec );
+    if ( ec )
     {
-        throw std::runtime_error( "Failed to open file: " + resolvedPath );
+        spdlog::error( "Failed to get file size: {}", ec.message( ) );
+        return 0;
     }
-
-    const size_t fileSize = file.tellg( );
-    file.seekg( 0, std::ios::beg );
-
-    const ByteArray buffer = ByteArray::Create( fileSize );
-    file.read( reinterpret_cast<char *>( buffer.Elements ), fileSize );
-    if ( !file )
-    {
-        buffer.Dispose( );
-        return { nullptr, 0 };
-    }
-    return buffer;
+    return numBytes;
 }
 
-ByteArray FileIO::ReadTextFile( const InteropString &path )
+bool FileIO::ReadFile( const InteropString &path, const ByteArray &buffer )
 {
     const std::string resolvedPath = PlatformResourcePath( path.Get( ) );
-
-    std::ifstream file( resolvedPath, std::ios::binary | std::ios::ate );
+    std::ifstream     file( resolvedPath, std::ios::binary | std::ios::ate );
     if ( !file )
     {
-        throw std::runtime_error( "Failed to open file: " + resolvedPath );
+        spdlog::error( "Failed to open file: {}", resolvedPath );
+        return false;
     }
-
     const size_t fileSize = file.tellg( );
-    file.seekg( 0, std::ios::beg );
-
-    const ByteArray buffer = ByteArray::Create( fileSize + 1 );
-    file.read( reinterpret_cast<char *>( buffer.Elements ), fileSize );
-
-    if ( !file )
+    if ( buffer.NumElements < fileSize )
     {
-        buffer.Dispose( );
-        return { nullptr, 0 };
+        spdlog::error( "Failed to read file: buffer is too small, use GetFileNumBytes( ) to correctly allocate memory" );
+        return false;
     }
-
-    buffer.Elements[ fileSize ] = '\0';
-    return buffer;
+    file.seekg( 0, std::ios::beg );
+    file.read( reinterpret_cast<char *>( buffer.Elements ), fileSize );
+    return true;
 }
 
 void FileIO::WriteFile( const InteropString &path, const ByteArrayView &data )
@@ -94,21 +80,6 @@ bool FileIO::FileExists( const InteropString &path )
 {
     const std::string resolvedPath = PlatformResourcePath( path.Get( ) );
     return std::filesystem::exists( resolvedPath );
-}
-
-size_t FileIO::GetFileSize( const InteropString &path )
-{
-    const std::string resolvedPath = PlatformResourcePath( path.Get( ) );
-
-    std::error_code ec;
-    const auto      size = std::filesystem::file_size( resolvedPath, ec );
-
-    if ( ec )
-    {
-        throw std::runtime_error( "Failed to get file size: " + resolvedPath + " - " + ec.message( ) );
-    }
-
-    return size;
 }
 
 bool FileIO::CreateDirectories( const InteropString &path )

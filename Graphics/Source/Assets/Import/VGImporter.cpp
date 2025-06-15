@@ -31,9 +31,9 @@ using namespace DenOfIz;
 class VGImporter::Impl
 {
 public:
-    InteropString         m_name;
-    InteropStringArray    m_supportedExtensions{ };
-    std::vector<AssetUri> m_createdAssets;
+    InteropString              m_name;
+    std::vector<InteropString> m_supportedExtensions{ };
+    std::vector<AssetUri>      m_createdAssets;
 
     struct ImportContext
     {
@@ -55,15 +55,11 @@ public:
 
     explicit Impl( ) : m_name( "Vector Graphics Importer (Simplified)" )
     {
-        m_supportedExtensions               = InteropStringArray::Create( 1 );
-        m_supportedExtensions.Elements[ 0 ] = ".svg";
+        m_supportedExtensions.resize( 1 );
+        m_supportedExtensions[ 0 ] = ".svg";
     }
 
-    ~Impl( )
-    {
-        m_supportedExtensions.Dispose( );
-    }
-
+    ~Impl( ) = default;
     ImporterResult Import( const VGImportDesc &desc );
 
 private:
@@ -85,20 +81,15 @@ InteropString VGImporter::GetName( ) const
 
 InteropStringArray VGImporter::GetSupportedExtensions( ) const
 {
-    const InteropStringArray copy = InteropStringArray::Create( m_pImpl->m_supportedExtensions.NumElements );
-    for ( size_t i = 0; i < m_pImpl->m_supportedExtensions.NumElements; ++i )
-    {
-        copy.Elements[ i ] = m_pImpl->m_supportedExtensions.Elements[ i ];
-    }
-    return copy;
+    return { m_pImpl->m_supportedExtensions.data( ), m_pImpl->m_supportedExtensions.size( ) };
 }
 
 bool VGImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
     const InteropString lowerExt = extension.ToLower( );
-    for ( size_t i = 0; i < m_pImpl->m_supportedExtensions.NumElements; ++i )
+    for ( size_t i = 0; i < m_pImpl->m_supportedExtensions.size( ); ++i )
     {
-        if ( m_pImpl->m_supportedExtensions.Elements[ i ].Equals( lowerExt ) )
+        if ( m_pImpl->m_supportedExtensions[ i ].Equals( lowerExt ) )
         {
             return true;
         }

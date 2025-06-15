@@ -231,23 +231,26 @@ void ShaderProgram::Impl::Compile( )
         dxilToMslDesc.DXILShaders.Elements[ i ] = m_compiledShaders[ i ].get( );
     }
 
-    DxilToMsl            dxilToMsl{ };
-    const ByteArrayArray mslShaders = dxilToMsl.Convert( dxilToMslDesc );
-    if ( mslShaders.NumElements != m_desc.ShaderStages.NumElements )
+    const std::vector<ByteArray> mslShaders( m_compiledShaders.size( ) );
+    ByteArrayArray               mslShadersArray{ };
+    mslShadersArray.NumElements = static_cast<uint32_t>( mslShaders.size( ) );
+    mslShadersArray.NumElements = static_cast<uint32_t>( m_compiledShaders.size( ) );
+    dxilToMslDesc.OutMSLShaders = &mslShadersArray;
+    const DxilToMsl dxilToMsl{ };
+    dxilToMsl.Convert( dxilToMslDesc );
+    if ( mslShaders.size( ) != m_desc.ShaderStages.NumElements )
     {
         spdlog::error( "Num DXIL shaders != Num MSL Shaders, probable bug in DxilToMsl" );
         std::free( dxilToMslDesc.DXILShaders.Elements );
-        std::free( mslShaders.Elements );
         return;
     }
 
-    for ( uint32_t i = 0; i < mslShaders.NumElements; ++i )
+    for ( uint32_t i = 0; i < mslShaders.size( ); ++i )
     {
-        m_compiledShaders[ i ]->MSL = mslShaders.Elements[ i ];
-        m_dataToClean.push_back( mslShaders.Elements[ i ] );
+        m_compiledShaders[ i ]->MSL = mslShaders[ i ];
+        m_dataToClean.push_back( mslShaders[ i ] );
     }
     std::free( dxilToMslDesc.DXILShaders.Elements );
-    std::free( mslShaders.Elements );
 #else
     spdlog::error( "MSL compilation is not supported on this platform" );
 #endif

@@ -52,7 +52,7 @@ namespace DenOfIz
     struct DZ_API ShaderStageArray
     {
         ShaderStage *Elements;
-        uint32_t     NumElements;
+        size_t       NumElements;
     };
 
     /// <summary>
@@ -68,7 +68,7 @@ namespace DenOfIz
     struct DZ_API ThreadGroupInfoArray
     {
         ThreadGroupInfo *Elements;
-        uint32_t         NumElements;
+        size_t           NumElements;
     };
 
     enum class TargetIL
@@ -117,7 +117,7 @@ namespace DenOfIz
     struct DZ_API BindlessSlotArray
     {
         BindlessSlot *Elements;
-        uint32_t      NumElements;
+        size_t        NumElements;
     };
 
     struct DZ_API BindlessDesc
@@ -150,7 +150,7 @@ namespace DenOfIz
     struct DZ_API ShaderStageDescArray
     {
         ShaderStageDesc *Elements;
-        uint32_t         NumElements;
+        size_t           NumElements;
     };
 
     // Needs to be used as a pointer as Blob/Reflection might be deleted multiple times otherwise
@@ -169,6 +169,6 @@ namespace DenOfIz
     struct DZ_API CompiledShaderStageArray
     {
         CompiledShaderStage **Elements;
-        uint32_t              NumElements;
+        size_t                NumElements;
     };
 } // namespace DenOfIz

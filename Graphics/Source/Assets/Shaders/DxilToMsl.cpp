@@ -87,7 +87,7 @@ public:
 
     Impl( );
     ~Impl( );
-    ByteArrayArray Convert( const DxilToMslDesc &desc );
+    void Convert( const DxilToMslDesc &desc );
 
 private:
     [[nodiscard]] ByteArray Compile( const CompileDesc &compileDesc, const ByteArray &dxil, const CompileMslDesc &compileMslDesc,
@@ -306,12 +306,18 @@ DxilToMsl::Impl::~Impl( )
     }
 }
 
-ByteArrayArray DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
+void DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
 {
     // Check for empty input
     if ( desc.Shaders.NumElements == 0 || desc.DXILShaders.NumElements == 0 )
     {
-        return { nullptr, 0 };
+        spdlog::error( "Empty input" );
+        return;
+    }
+    if ( desc.Shaders.NumElements != desc.OutMSLShaders->NumElements )
+    {
+        spdlog::error( "desc.Shaders.NumElements != desc.OutMSLShaders.NumElements" );
+        return;
     }
 
     IDxcUtils    *dxcUtils = nullptr;
@@ -319,7 +325,7 @@ ByteArrayArray DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
     if ( FAILED( hr ) )
     {
         spdlog::error( "Failed to create DxcUtils" );
-        return { nullptr, 0 };
+        return;
     }
 
     const CompiledShaderStageArray &dxilShaders = desc.DXILShaders;
@@ -412,10 +418,9 @@ ByteArrayArray DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
         IterateBoundResources( dxilShader, processResources );
     }
 
-    const ByteArrayArray result = ByteArrayArray::Create( desc.Shaders.NumElements );
-    for ( uint32_t i = 0; i < result.NumElements; ++i )
+    for ( uint32_t i = 0; i < desc.OutMSLShaders->NumElements; ++i )
     {
-        result.Elements[ i ] = { nullptr, 0 };
+        desc.OutMSLShaders->Elements[ i ] = { nullptr, 0 };
     }
 
     CompileMslDesc compileMslDesc{ };
@@ -451,8 +456,8 @@ ByteArrayArray DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
             dxcUtils->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &m_shaderReflection ) );
         }
 
-        auto mslBlob                   = Compile( compileDesc, dxilShader->DXIL, compileMslDesc, shader.RayTracing );
-        result.Elements[ shaderIndex ] = mslBlob;
+        const auto mslBlob                          = Compile( compileDesc, dxilShader->DXIL, compileMslDesc, shader.RayTracing );
+        desc.OutMSLShaders->Elements[ shaderIndex ] = mslBlob;
     }
 
     IRRootSignatureDestroy( compileMslDesc.LocalRootSignature );
@@ -462,8 +467,6 @@ ByteArrayArray DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
     {
         dxcUtils->Release( );
     }
-
-    return result;
 }
 
 ByteArray DxilToMsl::Impl::Compile( const CompileDesc &compileDesc, const ByteArray &dxil, const CompileMslDesc &compileMslDesc,
@@ -567,7 +570,7 @@ DxilToMsl::DxilToMsl( ) : m_pImpl( std::make_unique<Impl>( ) )
 
 DxilToMsl::~DxilToMsl( ) = default;
 
-ByteArrayArray DxilToMsl::Convert( const DxilToMslDesc &desc )
+void DxilToMsl::Convert( const DxilToMslDesc &desc ) const
 {
-    return m_pImpl->Convert( desc );
+    m_pImpl->Convert( desc );
 }

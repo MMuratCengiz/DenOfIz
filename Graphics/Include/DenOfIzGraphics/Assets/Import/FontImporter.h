@@ -51,7 +51,7 @@ namespace DenOfIz
 
     private:
         InteropString                     m_name;
-        InteropStringArray                m_supportedExtensions;
+        std::vector<InteropString>        m_supportedExtensions;
         std::unique_ptr<FontImporterImpl> m_impl;
     };
 } // namespace DenOfIz

@@ -34,10 +34,10 @@ using namespace DenOfIz;
 class TextureImporter::Impl
 {
 public:
-    InteropString            m_name;
-    InteropStringArray       m_supportedExtensions;
-    std::vector<AssetUri>    m_createdAssets;
-    std::unique_ptr<Texture> m_texture = nullptr;
+    InteropString              m_name;
+    std::vector<InteropString> m_supportedExtensions;
+    std::vector<AssetUri>      m_createdAssets;
+    std::unique_ptr<Texture>   m_texture = nullptr;
 
     struct ImportContext
     {
@@ -58,22 +58,19 @@ public:
 
     explicit Impl( ) : m_name( "Texture Importer" )
     {
-        m_supportedExtensions               = InteropStringArray::Create( 9 );
-        m_supportedExtensions.Elements[ 0 ] = ".png";
-        m_supportedExtensions.Elements[ 1 ] = ".jpg";
-        m_supportedExtensions.Elements[ 2 ] = ".jpeg";
-        m_supportedExtensions.Elements[ 3 ] = ".bmp";
-        m_supportedExtensions.Elements[ 4 ] = ".tga";
-        m_supportedExtensions.Elements[ 5 ] = ".dds";
-        m_supportedExtensions.Elements[ 6 ] = ".hdr";
-        m_supportedExtensions.Elements[ 7 ] = ".gif";
-        m_supportedExtensions.Elements[ 8 ] = ".psd";
+        m_supportedExtensions.resize( 9 );
+        m_supportedExtensions[ 0 ] = ".png";
+        m_supportedExtensions[ 1 ] = ".jpg";
+        m_supportedExtensions[ 2 ] = ".jpeg";
+        m_supportedExtensions[ 3 ] = ".bmp";
+        m_supportedExtensions[ 4 ] = ".tga";
+        m_supportedExtensions[ 5 ] = ".dds";
+        m_supportedExtensions[ 6 ] = ".hdr";
+        m_supportedExtensions[ 7 ] = ".gif";
+        m_supportedExtensions[ 8 ] = ".psd";
     }
 
-    ~Impl( )
-    {
-        m_supportedExtensions.Dispose( );
-    }
+    ~Impl( ) = default;
 
     ImporterResult Import( const TextureImportDesc &desc );
 
@@ -96,20 +93,15 @@ InteropString TextureImporter::GetName( ) const
 
 InteropStringArray TextureImporter::GetSupportedExtensions( ) const
 {
-    const InteropStringArray copy = InteropStringArray::Create( m_pImpl->m_supportedExtensions.NumElements );
-    for ( size_t i = 0; i < m_pImpl->m_supportedExtensions.NumElements; ++i )
-    {
-        copy.Elements[ i ] = m_pImpl->m_supportedExtensions.Elements[ i ];
-    }
-    return copy;
+    return { m_pImpl->m_supportedExtensions.data( ), m_pImpl->m_supportedExtensions.size( ) };
 }
 
 bool TextureImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
     const InteropString lowerExt = extension.ToLower( );
-    for ( size_t i = 0; i < m_pImpl->m_supportedExtensions.NumElements; ++i )
+    for ( const auto &m_supportedExtension : m_pImpl->m_supportedExtensions )
     {
-        if ( m_pImpl->m_supportedExtensions.Elements[ i ].Equals( lowerExt ) )
+        if ( m_supportedExtension.Equals( lowerExt ) )
         {
             return true;
         }

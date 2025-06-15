@@ -113,10 +113,10 @@ Bundle::Bundle( const BundleDirectoryDesc &directoryDesc ) : m_bundleFile( nullp
         const InteropString filePath( path.string( ).c_str( ) );
         if ( FileIO::FileExists( filePath ) )
         {
-            const ByteArray fileData = FileIO::ReadFile( filePath );
-            const AssetUri  assetUri = AssetUri::Create( InteropString( relPathStr.c_str( ) ) );
-            AddAsset( assetUri, assetType, ByteArrayView( fileData ) );
-            fileData.Dispose( );
+            std::vector<Byte> fileData( FileIO::GetFileNumBytes( filePath ) );
+            FileIO::ReadFile( filePath, { fileData.data( ), fileData.size( ) } );
+            const AssetUri assetUri = AssetUri::Create( InteropString( relPathStr.c_str( ) ) );
+            AddAsset( assetUri, assetType, ByteArrayView( fileData.data( ), fileData.size( ) ) );
         }
         else
         {

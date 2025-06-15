@@ -42,6 +42,7 @@ public:
     std::unique_ptr<AssimpMaterialProcessor>  m_materialProcessor;
     std::unique_ptr<AssimpSkeletonProcessor>  m_skeletonProcessor;
     std::unique_ptr<AssimpAnimationProcessor> m_animationProcessor;
+    std::vector<InteropString>                m_supportedExtensions;
 
     explicit Impl( )
     {
@@ -75,43 +76,40 @@ InteropString AssimpImporter::GetName( ) const
 
 InteropStringArray AssimpImporter::GetSupportedExtensions( ) const
 {
-    const InteropStringArray extensions = InteropStringArray::Create( 20 );
-    extensions.Elements[ 0 ]            = ".fbx";
-    extensions.Elements[ 1 ]            = ".gltf";
-    extensions.Elements[ 2 ]            = ".glb";
-    extensions.Elements[ 3 ]            = ".obj";
-    extensions.Elements[ 4 ]            = ".dae";
-    extensions.Elements[ 5 ]            = ".blend";
-    extensions.Elements[ 6 ]            = ".3ds";
-    extensions.Elements[ 7 ]            = ".ase";
-    extensions.Elements[ 8 ]            = ".ifc";
-    extensions.Elements[ 9 ]            = ".xgl";
-    extensions.Elements[ 10 ]           = ".zgl";
-    extensions.Elements[ 11 ]           = ".ply";
-    extensions.Elements[ 12 ]           = ".dxf";
-    extensions.Elements[ 13 ]           = ".lwo";
-    extensions.Elements[ 14 ]           = ".lws";
-    extensions.Elements[ 15 ]           = ".lxo";
-    extensions.Elements[ 16 ]           = ".stl";
-    extensions.Elements[ 17 ]           = ".x";
-    extensions.Elements[ 18 ]           = ".ac";
-    extensions.Elements[ 19 ]           = ".ms3d";
-    return extensions;
+    m_pImpl->m_supportedExtensions.resize( 20 );
+    m_pImpl->m_supportedExtensions[ 0 ]  = ".fbx";
+    m_pImpl->m_supportedExtensions[ 1 ]  = ".gltf";
+    m_pImpl->m_supportedExtensions[ 2 ]  = ".glb";
+    m_pImpl->m_supportedExtensions[ 3 ]  = ".obj";
+    m_pImpl->m_supportedExtensions[ 4 ]  = ".dae";
+    m_pImpl->m_supportedExtensions[ 5 ]  = ".blend";
+    m_pImpl->m_supportedExtensions[ 6 ]  = ".3ds";
+    m_pImpl->m_supportedExtensions[ 7 ]  = ".ase";
+    m_pImpl->m_supportedExtensions[ 8 ]  = ".ifc";
+    m_pImpl->m_supportedExtensions[ 9 ]  = ".xgl";
+    m_pImpl->m_supportedExtensions[ 10 ] = ".zgl";
+    m_pImpl->m_supportedExtensions[ 11 ] = ".ply";
+    m_pImpl->m_supportedExtensions[ 12 ] = ".dxf";
+    m_pImpl->m_supportedExtensions[ 13 ] = ".lwo";
+    m_pImpl->m_supportedExtensions[ 14 ] = ".lws";
+    m_pImpl->m_supportedExtensions[ 15 ] = ".lxo";
+    m_pImpl->m_supportedExtensions[ 16 ] = ".stl";
+    m_pImpl->m_supportedExtensions[ 17 ] = ".x";
+    m_pImpl->m_supportedExtensions[ 18 ] = ".ac";
+    m_pImpl->m_supportedExtensions[ 19 ] = ".ms3d";
+    return { m_pImpl->m_supportedExtensions.data( ), m_pImpl->m_supportedExtensions.size( ) };
 }
 
 bool AssimpImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
-    const InteropString      lowerExt   = extension.ToLower( );
-    const InteropStringArray extensions = GetSupportedExtensions( );
-    for ( size_t i = 0; i < extensions.NumElements; ++i )
+    const InteropString lowerExt = extension.ToLower( );
+    for ( const auto &m_supportedExtension : m_pImpl->m_supportedExtensions )
     {
-        if ( extensions.Elements[ i ].Equals( lowerExt ) )
+        if ( m_supportedExtension.Equals( lowerExt ) )
         {
-            extensions.Dispose( );
             return true;
         }
     }
-    extensions.Dispose( );
     return false;
 }
 

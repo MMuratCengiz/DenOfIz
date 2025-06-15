@@ -30,9 +30,9 @@ using namespace DenOfIz;
 class ShaderImporter::Impl
 {
 public:
-    InteropString         m_name;
-    InteropStringArray    m_supportedExtensions{ };
-    std::vector<AssetUri> m_createdAssets;
+    InteropString              m_name;
+    std::vector<InteropString> m_supportedExtensions{ };
+    std::vector<AssetUri>      m_createdAssets;
 
     struct ImportContext
     {
@@ -50,20 +50,17 @@ public:
 
     explicit Impl( ) : m_name( "Shader Importer" )
     {
-        m_supportedExtensions               = InteropStringArray::Create( 7 );
-        m_supportedExtensions.Elements[ 0 ] = "hlsl";
-        m_supportedExtensions.Elements[ 1 ] = "vs.hlsl";
-        m_supportedExtensions.Elements[ 2 ] = "ps.hlsl";
-        m_supportedExtensions.Elements[ 3 ] = "gs.hlsl";
-        m_supportedExtensions.Elements[ 4 ] = "hs.hlsl";
-        m_supportedExtensions.Elements[ 5 ] = "ds.hlsl";
-        m_supportedExtensions.Elements[ 6 ] = "cs.hlsl";
+        m_supportedExtensions.resize( 7 );
+        m_supportedExtensions[ 0 ] = "hlsl";
+        m_supportedExtensions[ 1 ] = "vs.hlsl";
+        m_supportedExtensions[ 2 ] = "ps.hlsl";
+        m_supportedExtensions[ 3 ] = "gs.hlsl";
+        m_supportedExtensions[ 4 ] = "hs.hlsl";
+        m_supportedExtensions[ 5 ] = "ds.hlsl";
+        m_supportedExtensions[ 6 ] = "cs.hlsl";
     }
 
-    ~Impl( )
-    {
-        m_supportedExtensions.Dispose( );
-    }
+    ~Impl( ) = default;
 
     ImporterResult Import( const ShaderImportDesc &desc );
 
@@ -87,14 +84,14 @@ InteropString ShaderImporter::GetName( ) const
 
 InteropStringArray ShaderImporter::GetSupportedExtensions( ) const
 {
-    return m_pImpl->m_supportedExtensions;
+    return { m_pImpl->m_supportedExtensions.data( ), m_pImpl->m_supportedExtensions.size( ) };
 }
 
 bool ShaderImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
-    for ( int i = 0; i < m_pImpl->m_supportedExtensions.NumElements; ++i )
+    for ( const auto &m_supportedExtension : m_pImpl->m_supportedExtensions )
     {
-        if ( strcmp( extension.Get( ), m_pImpl->m_supportedExtensions.Elements[ i ].Get( ) ) == 0 )
+        if ( strcmp( extension.Get( ), m_supportedExtension.Get( ) ) == 0 )
         {
             return true;
         }

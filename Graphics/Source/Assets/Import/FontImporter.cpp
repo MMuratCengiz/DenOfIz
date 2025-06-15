@@ -64,7 +64,8 @@ namespace DenOfIz
             ImporterResult Result;
             InteropString  ErrorMessage;
 
-            FontAsset *FontAsset;
+            FontAsset        *FontAsset;
+            std::vector<Byte> AtlasDataStorage; // Could potentially grow afterwards so not using Arena
 
             uint32_t CurrentAtlasX = 0;
             uint32_t CurrentAtlasY = 0;
@@ -105,10 +106,10 @@ FontImporter::FontImporter( ) : m_name( "Font Importer" ), m_impl( std::make_uni
         spdlog::critical( "Failed to initialize MSDF Freetype library" );
     }
 
-    m_supportedExtensions               = InteropStringArray::Create( 3 );
-    m_supportedExtensions.Elements[ 0 ] = "ttf";
-    m_supportedExtensions.Elements[ 1 ] = "otf";
-    m_supportedExtensions.Elements[ 2 ] = "ttc";
+    m_supportedExtensions.resize( 3 );
+    m_supportedExtensions[ 0 ] = "ttf";
+    m_supportedExtensions[ 1 ] = "otf";
+    m_supportedExtensions[ 2 ] = "ttc";
 }
 
 FontImporter::~FontImporter( )
@@ -118,7 +119,6 @@ FontImporter::~FontImporter( )
         msdfgen::deinitializeFreetype( m_impl->m_msdfFtHandle );
         m_impl->m_msdfFtHandle = nullptr;
     }
-    m_supportedExtensions.Dispose( );
 }
 
 InteropString FontImporter::GetName( ) const
@@ -128,20 +128,15 @@ InteropString FontImporter::GetName( ) const
 
 InteropStringArray FontImporter::GetSupportedExtensions( ) const
 {
-    const InteropStringArray copy = InteropStringArray::Create( m_supportedExtensions.NumElements );
-    for ( size_t i = 0; i < m_supportedExtensions.NumElements; ++i )
-    {
-        copy.Elements[ i ] = m_supportedExtensions.Elements[ i ];
-    }
-    return copy;
+    return { m_supportedExtensions.data( ), m_supportedExtensions.size( ) };
 }
 
 bool FontImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
     const std::string ext = extension.Get( );
-    for ( size_t i = 0; i < m_supportedExtensions.NumElements; ++i )
+    for ( const auto &m_supportedExtension : m_supportedExtensions )
     {
-        if ( strcmp( extension.Get( ), m_supportedExtensions.Elements[ i ].Get( ) ) == 0 )
+        if ( strcmp( extension.Get( ), m_supportedExtension.Get( ) ) == 0 )
         {
             return true;
         }
@@ -162,9 +157,8 @@ ImporterResult FontImporter::Import( const FontImportDesc &desc ) const
     context.FontAsset         = new FontAsset( );
     context.FontAsset->_Arena.EnsureCapacity( stats.EstimatedArenaSize );
 
-    const size_t atlasSize       = stats.AtlasWidth * stats.AtlasHeight * FontAsset::NumChannels;
-    context.FontAsset->AtlasData = ByteArray::Create( atlasSize );
-    memset( context.FontAsset->AtlasData.Elements, 0, atlasSize );
+    const size_t atlasSize = stats.AtlasWidth * stats.AtlasHeight * FontAsset::NumChannels;
+    DZArenaArrayHelper<ByteArray, Byte>::AllocateAndConstructArray( context.FontAsset->_Arena, context.FontAsset->AtlasData, atlasSize );
 
     context.FontAsset->InitialFontSize   = context.Desc.InitialFontSize;
     context.FontAsset->AtlasWidth        = stats.AtlasWidth;
@@ -210,9 +204,10 @@ namespace
     {
         FontImporterImpl::FontStats stats;
 
-        const std::string    resolvedPath = PathResolver::ResolvePath( desc.SourceFilePath.Get( ) );
-        const ByteArray      fontData     = FileIO::ReadFile( InteropString( resolvedPath.c_str( ) ) );
-        msdfgen::FontHandle *msdfFont     = msdfgen::loadFontData( impl.m_msdfFtHandle, fontData.Elements, fontData.NumElements );
+        const std::string resolvedPath = PathResolver::ResolvePath( desc.SourceFilePath.Get( ) );
+        std::vector<Byte> fontData( FileIO::GetFileNumBytes( resolvedPath.c_str( ) ) );
+        FileIO::ReadFile( resolvedPath.c_str( ), { fontData.data( ), fontData.size( ) } );
+        msdfgen::FontHandle *msdfFont = msdfgen::loadFontData( impl.m_msdfFtHandle, fontData.data( ), fontData.size( ) );
         if ( !msdfFont )
         {
             spdlog::warn( "Failed to load font for pre-calculation, using default estimates" );
@@ -256,10 +251,10 @@ namespace
             msdfgen::destroyFont( msdfFont );
         }
 
-        fontData.Dispose( );
-
         stats.EstimatedArenaSize = sizeof( FontGlyph ) * stats.GlyphCount;
         stats.EstimatedArenaSize += sizeof( UserProperty ) * 10;
+        stats.EstimatedArenaSize += FileIO::GetFileNumBytes( resolvedPath.c_str( ) );
+        stats.EstimatedArenaSize += stats.AtlasWidth * stats.AtlasHeight * FontAsset::NumChannels;
         stats.EstimatedArenaSize += 4096;
         return stats;
     }
@@ -270,8 +265,8 @@ namespace
         const std::string resolvedPath = PathResolver::ResolvePath( context.SourceFilePath.Get( ) );
 
         context.FontAsset->Uri.Path = context.SourceFilePath;
-
-        context.FontAsset->Data         = FileIO::ReadFile( InteropString( resolvedPath.c_str( ) ) );
+        DZArenaArrayHelper<ByteArray, Byte>::AllocateAndConstructArray( context.FontAsset->_Arena, context.FontAsset->Data, FileIO::GetFileNumBytes( resolvedPath.c_str( ) ) );
+        FileIO::ReadFile( resolvedPath.c_str( ), context.FontAsset->Data );
         context.FontAsset->DataNumBytes = context.FontAsset->Data.NumElements;
 
         FT_Error error = FT_New_Face( impl.m_ftLibrary, resolvedPath.c_str( ), 0, &face );
@@ -351,14 +346,14 @@ namespace
         if ( width != static_cast<int>( context.FontAsset->AtlasWidth ) || height != static_cast<int>( context.FontAsset->AtlasHeight ) )
         {
             spdlog::warn( "Atlas dimensions mismatch - expected {}x{}, got {}x{}", context.FontAsset->AtlasWidth, context.FontAsset->AtlasHeight, width, height );
-            if ( static_cast<size_t>( width * height * FontAsset::NumChannels ) > context.FontAsset->AtlasData.NumElements )
+            if ( width * height * FontAsset::NumChannels > context.FontAsset->AtlasData.NumElements )
             {
-                context.FontAsset->AtlasData.Dispose( );
                 context.FontAsset->AtlasWidth        = width;
                 context.FontAsset->AtlasHeight       = height;
                 context.FontAsset->NumAtlasDataBytes = width * height * FontAsset::NumChannels;
-                context.FontAsset->AtlasData         = ByteArray::Create( context.FontAsset->NumAtlasDataBytes );
-                memset( context.FontAsset->AtlasData.Elements, 0, context.FontAsset->NumAtlasDataBytes );
+                context.AtlasDataStorage.resize( context.FontAsset->NumAtlasDataBytes );
+                context.FontAsset->AtlasData.Elements    = context.AtlasDataStorage.data( );
+                context.FontAsset->AtlasData.NumElements = context.FontAsset->NumAtlasDataBytes;
             }
         }
 

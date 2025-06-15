@@ -26,9 +26,10 @@ namespace DenOfIz
 {
     struct DZ_API DxilToMslDesc
     {
-        ShaderStageDescArray       Shaders;
-        CompiledShaderStageArray   DXILShaders;
-        ShaderRayTracingDesc       RayTracing;
+        ShaderStageDescArray     Shaders;
+        CompiledShaderStageArray DXILShaders;
+        ShaderRayTracingDesc     RayTracing;
+        ByteArrayArray          *OutMSLShaders;
     };
 
     class DxilToMsl
@@ -36,11 +37,7 @@ namespace DenOfIz
     public:
         DZ_API DxilToMsl( );
         DZ_API ~DxilToMsl( );
-        /// @brief Convert DXIL shaders to MSL (Metal Shading Language)
-        /// @param desc Description of shaders to convert
-        /// @return Array of converted MSL bytecode. Caller is responsible for deleting the ByteArrayArray.Elements 
-        ///         array and each ByteArray.Elements within it
-        DZ_API ByteArrayArray Convert( const DxilToMslDesc &desc );
+        DZ_API void Convert( const DxilToMslDesc &desc ) const;
 
     private:
         class Impl;

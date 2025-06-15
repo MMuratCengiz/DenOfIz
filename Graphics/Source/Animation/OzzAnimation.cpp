@@ -85,6 +85,7 @@ namespace DenOfIz
     public:
         ozz::unique_ptr<ozz::animation::Skeleton> skeleton;
         ozz::vector<InternalContext *>            contexts;
+        std::vector<InteropString>                m_jointNames;
 
         explicit Impl( const SkeletonAsset *skeletonAsset )
         {
@@ -1070,13 +1071,14 @@ namespace DenOfIz
             ++it;
         }
 
-        result.Triggered = FloatArray::Create( static_cast<uint32_t>( edgeCount ) ); // Todo find a way to remove this leak
+        result.m_triggered.resize( edgeCount );
+        result.Triggered = { result.m_triggered.data( ), result.m_triggered.size( ) };
         edgeCount        = 0;
         it               = job.iterator;
         while ( it && *it != job.end( ) )
         {
-            const auto &edge                       = *it;
-            result.Triggered.Elements[ edgeCount ] = edge->ratio;
+            const auto &edge                = *it;
+            result.m_triggered[ edgeCount ] = edge->ratio;
             ++edgeCount;
             ++it;
         }
@@ -1086,25 +1088,24 @@ namespace DenOfIz
         return result;
     }
 
-    void OzzAnimation::GetJointNames( InteropStringArray &outNames ) const
+    InteropStringArray OzzAnimation::GetJointNames( ) const
     {
         if ( !m_impl->skeleton )
         {
             spdlog::error( "Skeleton not initialized" );
-            return;
+            return { nullptr, 0 };
         }
 
-        const int numJoints = m_impl->skeleton->num_joints( );
-        if ( outNames.NumElements < numJoints )
+        if ( m_impl->m_jointNames.empty( ) )
         {
-            spdlog::error( "Output string array is too small, Create enough memory to fit InteropString * GetNumJoints( )" );
-            return;
+            const int numJoints = m_impl->skeleton->num_joints( );
+            for ( int i = 0; i < numJoints; ++i )
+            {
+                m_impl->m_jointNames[ i ] = InteropString( m_impl->skeleton->joint_names( )[ i ] );
+            }
         }
 
-        for ( int i = 0; i < numJoints; ++i )
-        {
-            outNames.Elements[ i ] = InteropString( m_impl->skeleton->joint_names( )[ i ] );
-        }
+        return { m_impl->m_jointNames.data( ), m_impl->m_jointNames.size( ) };
     }
 
     int OzzAnimation::GetNumSoaJoints( ) const

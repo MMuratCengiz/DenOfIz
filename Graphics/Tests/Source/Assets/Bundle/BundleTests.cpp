@@ -29,7 +29,8 @@ using namespace DenOfIz;
 class BundleTest : public testing::Test
 {
 protected:
-    InteropString tempDir;
+    InteropString                  tempDir;
+    std::vector<std::vector<Byte>> m_testDatas;
 
     void SetUp( ) override
     {
@@ -54,15 +55,16 @@ protected:
         return InteropString( path.c_str( ) );
     }
 
-    ByteArray CreateTestData( const char *content ) const
+    ByteArray CreateTestData( const char *content )
     {
-        const std::string str  = content;
-        const ByteArray   data = ByteArray::Create( str.size( ) );
+        const std::string  str      = content;
+        std::vector<Byte> &testData = m_testDatas.emplace_back( std::vector<Byte>{ } );
+        testData.resize( str.size( ) );
         for ( size_t i = 0; i < str.size( ); ++i )
         {
-            data.Elements[ i ] = static_cast<Byte>( str[ i ] );
+            testData[ i ] = static_cast<Byte>( str[ i ] );
         }
-        return data;
+        return { testData.data( ), testData.size( ) };
     }
 
     InteropString GetStringFromData( const ByteArray &data ) const
@@ -222,7 +224,7 @@ TEST_F( BundleTest, GetAssetsByType )
     // Test GetAssetsByType for texture assets
     AssetUriArray texAssets = bundle->GetAssetsByType( AssetType::Texture );
     ASSERT_EQ( texAssets.NumElements, 1 );
-    ASSERT_STREQ( texAssets.Elements[ 0].ToInteropString( ).Get( ), texUri.ToInteropString( ).Get( ) );
+    ASSERT_STREQ( texAssets.Elements[ 0 ].ToInteropString( ).Get( ), texUri.ToInteropString( ).Get( ) );
 
     delete bundle;
 }
@@ -281,8 +283,8 @@ TEST_F( BundleTest, BundleCompression )
     uncompressedBundle->Save( );
 
     // Verify both bundles have the same data but different sizes
-    const size_t compressedSize   = FileIO::GetFileSize( compressedDesc.Path );
-    const size_t uncompressedSize = FileIO::GetFileSize( uncompressedDesc.Path );
+    const size_t compressedSize   = FileIO::GetFileNumBytes( compressedDesc.Path );
+    const size_t uncompressedSize = FileIO::GetFileNumBytes( uncompressedDesc.Path );
 
     // The compressed bundle should be smaller
     ASSERT_LT( compressedSize, uncompressedSize );
