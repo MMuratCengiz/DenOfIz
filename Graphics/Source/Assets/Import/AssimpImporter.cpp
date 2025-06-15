@@ -51,6 +51,28 @@ public:
         m_materialProcessor  = std::make_unique<AssimpMaterialProcessor>( );
         m_skeletonProcessor  = std::make_unique<AssimpSkeletonProcessor>( );
         m_animationProcessor = std::make_unique<AssimpAnimationProcessor>( );
+
+        m_supportedExtensions.resize( 20 );
+        m_supportedExtensions[ 0 ]  = ".fbx";
+        m_supportedExtensions[ 1 ]  = ".gltf";
+        m_supportedExtensions[ 2 ]  = ".glb";
+        m_supportedExtensions[ 3 ]  = ".obj";
+        m_supportedExtensions[ 4 ]  = ".dae";
+        m_supportedExtensions[ 5 ]  = ".blend";
+        m_supportedExtensions[ 6 ]  = ".3ds";
+        m_supportedExtensions[ 7 ]  = ".ase";
+        m_supportedExtensions[ 8 ]  = ".ifc";
+        m_supportedExtensions[ 9 ]  = ".xgl";
+        m_supportedExtensions[ 10 ] = ".zgl";
+        m_supportedExtensions[ 11 ] = ".ply";
+        m_supportedExtensions[ 12 ] = ".dxf";
+        m_supportedExtensions[ 13 ] = ".lwo";
+        m_supportedExtensions[ 14 ] = ".lws";
+        m_supportedExtensions[ 15 ] = ".lxo";
+        m_supportedExtensions[ 16 ] = ".stl";
+        m_supportedExtensions[ 17 ] = ".x";
+        m_supportedExtensions[ 18 ] = ".ac";
+        m_supportedExtensions[ 19 ] = ".ms3d";
     }
 
     ~Impl( ) = default;
@@ -76,27 +98,6 @@ InteropString AssimpImporter::GetName( ) const
 
 InteropStringArray AssimpImporter::GetSupportedExtensions( ) const
 {
-    m_pImpl->m_supportedExtensions.resize( 20 );
-    m_pImpl->m_supportedExtensions[ 0 ]  = ".fbx";
-    m_pImpl->m_supportedExtensions[ 1 ]  = ".gltf";
-    m_pImpl->m_supportedExtensions[ 2 ]  = ".glb";
-    m_pImpl->m_supportedExtensions[ 3 ]  = ".obj";
-    m_pImpl->m_supportedExtensions[ 4 ]  = ".dae";
-    m_pImpl->m_supportedExtensions[ 5 ]  = ".blend";
-    m_pImpl->m_supportedExtensions[ 6 ]  = ".3ds";
-    m_pImpl->m_supportedExtensions[ 7 ]  = ".ase";
-    m_pImpl->m_supportedExtensions[ 8 ]  = ".ifc";
-    m_pImpl->m_supportedExtensions[ 9 ]  = ".xgl";
-    m_pImpl->m_supportedExtensions[ 10 ] = ".zgl";
-    m_pImpl->m_supportedExtensions[ 11 ] = ".ply";
-    m_pImpl->m_supportedExtensions[ 12 ] = ".dxf";
-    m_pImpl->m_supportedExtensions[ 13 ] = ".lwo";
-    m_pImpl->m_supportedExtensions[ 14 ] = ".lws";
-    m_pImpl->m_supportedExtensions[ 15 ] = ".lxo";
-    m_pImpl->m_supportedExtensions[ 16 ] = ".stl";
-    m_pImpl->m_supportedExtensions[ 17 ] = ".x";
-    m_pImpl->m_supportedExtensions[ 18 ] = ".ac";
-    m_pImpl->m_supportedExtensions[ 19 ] = ".ms3d";
     return { m_pImpl->m_supportedExtensions.data( ), m_pImpl->m_supportedExtensions.size( ) };
 }
 

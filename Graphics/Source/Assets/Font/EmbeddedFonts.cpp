@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h"
 #include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
@@ -43,18 +44,18 @@ const std::vector<Byte> &EmbeddedFonts::GetInterData( )
     std::lock_guard lock( g_decompressionMutex );
     if ( !g_isDecompressed )
     {
-        // Get the uncompressed size (stored in first 8 bytes)
-        mz_ulong uncompressedSize = 0;
-        memcpy( &uncompressedSize, g_InterFontCompressed, sizeof( mz_ulong ) );
+        uint32_t uncompressedSize = 0;
+        memcpy( &uncompressedSize, g_InterFontCompressed, sizeof( uint32_t ) );
 
         std::vector<Byte> decompressedBuffer( uncompressedSize );
         // Decompress the data (skip the first 8 bytes which contain the size)
         mz_ulong  destLen = uncompressedSize;
-        const int result  = mz_uncompress( decompressedBuffer.data( ), &destLen, g_InterFontCompressed + sizeof( mz_ulong ), g_InterFontCompressedSize - sizeof( mz_ulong ) );
+        const int result  = mz_uncompress( decompressedBuffer.data( ), &destLen, g_InterFontCompressed + sizeof( uint32_t ), g_InterFontCompressedSize - sizeof( uint32_t ) );
 
         if ( result != MZ_OK || destLen != uncompressedSize )
         {
-            throw std::runtime_error( "Failed to decompress embedded font data" );
+            spdlog::error( "Failed to decompress embedded font data" );
+            return g_decompressedData;
         }
         g_decompressedData.resize( uncompressedSize );
         std::memcpy( &g_decompressedData[ 0 ], decompressedBuffer.data( ), uncompressedSize );
@@ -63,7 +64,7 @@ const std::vector<Byte> &EmbeddedFonts::GetInterData( )
     return g_decompressedData;
 }
 
-FontAsset* EmbeddedFonts::GetInterVarInternal( )
+FontAsset *EmbeddedFonts::GetInterVarInternal( )
 {
     const auto &interData = GetInterData( );
 

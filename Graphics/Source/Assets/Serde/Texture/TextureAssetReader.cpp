@@ -140,7 +140,7 @@ void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc 
     const ByteArray    bufferArray{ buffer.data( ), buffer.size( ) };
 
     const auto stagingBuffer  = desc.StagingBuffer;
-    uint64_t   remainingBytes = std::min( desc.StagingBuffer->NumBytes( ), m_textureAsset->Data.NumBytes );
+    uint64_t   remainingBytes = std::min<uint64_t>( desc.StagingBuffer->NumBytes( ), m_textureAsset->Data.NumBytes );
     auto       mappedMemory   = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
 
     m_reader->Seek( m_textureAsset->Data.Offset );

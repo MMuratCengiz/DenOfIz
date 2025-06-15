@@ -231,10 +231,10 @@ void ShaderProgram::Impl::Compile( )
         dxilToMslDesc.DXILShaders.Elements[ i ] = m_compiledShaders[ i ].get( );
     }
 
-    const std::vector<ByteArray> mslShaders( m_compiledShaders.size( ) );
+    std::vector<ByteArray> mslShaders( m_compiledShaders.size( ) );
     ByteArrayArray               mslShadersArray{ };
-    mslShadersArray.NumElements = static_cast<uint32_t>( mslShaders.size( ) );
-    mslShadersArray.NumElements = static_cast<uint32_t>( m_compiledShaders.size( ) );
+    mslShadersArray.NumElements = mslShaders.size( );
+    mslShadersArray.Elements    = mslShaders.data( );
     dxilToMslDesc.OutMSLShaders = &mslShadersArray;
     const DxilToMsl dxilToMsl{ };
     dxilToMsl.Convert( dxilToMslDesc );
