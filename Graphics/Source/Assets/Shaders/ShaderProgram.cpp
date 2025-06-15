@@ -156,7 +156,7 @@ ShaderProgram::~ShaderProgram( )
 CompiledShaderStageArray ShaderProgram::CompiledShaders( ) const
 {
     CompiledShaderStageArray compiledShaders{ };
-    compiledShaders.NumElements = static_cast<uint32_t>( m_pImpl->m_compiledShaders.size( ) );
+    compiledShaders.NumElements = m_pImpl->m_compiledShaders.size( );
     compiledShaders.Elements    = m_pImpl->m_compiledShaderPtrs.data( );
     return compiledShaders;
 }
@@ -224,7 +224,7 @@ void ShaderProgram::Impl::Compile( )
     dxilToMslDesc.Shaders    = m_desc.ShaderStages;
     dxilToMslDesc.RayTracing = m_desc.RayTracing;
 
-    dxilToMslDesc.DXILShaders.NumElements = static_cast<uint32_t>( m_compiledShaders.size( ) );
+    dxilToMslDesc.DXILShaders.NumElements = m_compiledShaders.size( );
     dxilToMslDesc.DXILShaders.Elements    = static_cast<CompiledShaderStage **>( std::malloc( dxilToMslDesc.DXILShaders.NumElements * sizeof( CompiledShaderStage * ) ) );
     for ( uint32_t i = 0; i < dxilToMslDesc.DXILShaders.NumElements; ++i )
     {
@@ -232,7 +232,7 @@ void ShaderProgram::Impl::Compile( )
     }
 
     std::vector<ByteArray> mslShaders( m_compiledShaders.size( ) );
-    ByteArrayArray               mslShadersArray{ };
+    ByteArrayArray         mslShadersArray{ };
     mslShadersArray.NumElements = mslShaders.size( );
     mslShadersArray.Elements    = mslShaders.data( );
     dxilToMslDesc.OutMSLShaders = &mslShadersArray;
@@ -336,7 +336,7 @@ void ShaderProgram::Impl::CreateReflectionData( )
             libraryReflection->Release( );
         }
 
-        recordLayout.ResourceBindings.NumElements = static_cast<uint32_t>( m_localResourceBindings[ stageIndex ].size( ) );
+        recordLayout.ResourceBindings.NumElements = m_localResourceBindings[ stageIndex ].size( );
         recordLayout.ResourceBindings.Elements    = m_localResourceBindings[ stageIndex ].data( );
 
         // Set up stages for local resource bindings
@@ -345,7 +345,7 @@ void ShaderProgram::Impl::CreateReflectionData( )
             auto &binding              = m_localResourceBindings[ stageIndex ][ i ];
             auto &stages               = m_localResourceBindingStages[ stageIndex ][ i ];
             binding.Stages.Elements    = stages.data( );
-            binding.Stages.NumElements = static_cast<uint32_t>( stages.size( ) );
+            binding.Stages.NumElements = stages.size( );
         }
     }
 
@@ -366,7 +366,7 @@ void ShaderProgram::Impl::CreateReflectionData( )
         auto &binding              = m_rootSignatureState.RootConstants[ i ];
         auto &stages               = m_rootSignatureState.RootConstantStages[ i ];
         binding.Stages.Elements    = stages.data( );
-        binding.Stages.NumElements = static_cast<uint32_t>( stages.size( ) );
+        binding.Stages.NumElements = stages.size( );
     }
 
     // Set up stages for resource bindings
@@ -375,22 +375,22 @@ void ShaderProgram::Impl::CreateReflectionData( )
         auto &binding              = m_rootSignatureState.ResourceBindings[ i ];
         auto &stages               = m_rootSignatureState.ResourceBindingStages[ i ];
         binding.Stages.Elements    = stages.data( );
-        binding.Stages.NumElements = static_cast<uint32_t>( stages.size( ) );
+        binding.Stages.NumElements = stages.size( );
     }
 
     // Set up input layout arrays
-    m_reflectDesc.InputLayout.InputGroups.NumElements = static_cast<uint32_t>( m_inputGroups.size( ) );
+    m_reflectDesc.InputLayout.InputGroups.NumElements = m_inputGroups.size( );
     m_reflectDesc.InputLayout.InputGroups.Elements    = m_inputGroups.data( );
 
-    m_reflectDesc.RootSignature.RootConstants.NumElements     = static_cast<uint32_t>( m_rootSignatureState.RootConstants.size( ) );
+    m_reflectDesc.RootSignature.RootConstants.NumElements     = m_rootSignatureState.RootConstants.size( );
     m_reflectDesc.RootSignature.RootConstants.Elements        = m_rootSignatureState.RootConstants.data( );
-    m_reflectDesc.RootSignature.ResourceBindings.NumElements  = static_cast<uint32_t>( m_rootSignatureState.ResourceBindings.size( ) );
+    m_reflectDesc.RootSignature.ResourceBindings.NumElements  = m_rootSignatureState.ResourceBindings.size( );
     m_reflectDesc.RootSignature.ResourceBindings.Elements     = m_rootSignatureState.ResourceBindings.data( );
-    m_reflectDesc.RootSignature.BindlessResources.NumElements = static_cast<uint32_t>( m_rootSignatureState.BindlessResources.size( ) );
+    m_reflectDesc.RootSignature.BindlessResources.NumElements = m_rootSignatureState.BindlessResources.size( );
     m_reflectDesc.RootSignature.BindlessResources.Elements    = m_rootSignatureState.BindlessResources.data( );
-    m_reflectDesc.LocalRootSignatures.NumElements             = static_cast<uint32_t>( m_localRootSignatures.size( ) );
+    m_reflectDesc.LocalRootSignatures.NumElements             = m_localRootSignatures.size( );
     m_reflectDesc.LocalRootSignatures.Elements                = m_localRootSignatures.data( );
-    m_reflectDesc.ThreadGroups.NumElements                    = static_cast<uint32_t>( m_threadGroupInfos.size( ) );
+    m_reflectDesc.ThreadGroups.NumElements                    = m_threadGroupInfos.size( );
     m_reflectDesc.ThreadGroups.Elements                       = m_threadGroupInfos.data( );
 }
 
@@ -749,6 +749,6 @@ void ShaderProgram::Impl::InitInputLayout( ID3D12ShaderReflection *shaderReflect
         elementsVector       = std::move( inputElements );
 
         inputGroup.Elements.Elements    = elementsVector.data( );
-        inputGroup.Elements.NumElements = static_cast<uint32_t>( elementsVector.size( ) );
+        inputGroup.Elements.NumElements = elementsVector.size( );
     }
 }

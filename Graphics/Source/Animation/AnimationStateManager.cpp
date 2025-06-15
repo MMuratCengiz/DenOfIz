@@ -222,7 +222,7 @@ Float_4x4Array AnimationStateManager::GetModelSpaceTransforms( )
         return { nullptr, 0 };
     }
 
-    return { m_modelTransforms.data( ), static_cast<uint32_t>( m_modelTransforms.size( ) ) };
+    return { m_modelTransforms.data( ), m_modelTransforms.size( ) };
 }
 
 void AnimationStateManager::UpdateBlending( const float deltaTime )

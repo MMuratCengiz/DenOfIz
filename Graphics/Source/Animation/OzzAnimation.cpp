@@ -771,7 +771,7 @@ namespace DenOfIz
             jointMatrices[ i ] = OzzUtils::ToOzzFloat4x4( desc.JointTransforms.Elements[ i ] );
         }
 
-        const uint32_t numVertices = desc.Vertices.NumElements;
+        const size_t numVertices = desc.Vertices.NumElements;
 
         ozz::geometry::SkinningJob skinningJob;
         skinningJob.vertex_count     = desc.Vertices.NumElements;

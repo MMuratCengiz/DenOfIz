@@ -122,7 +122,7 @@ TEST_F( BundleTest, AddAndRetrieveAssets )
     // Read the assets back
     BinaryReader *meshReader = bundle->OpenReader( meshUri );
     ASSERT_NE( meshReader, nullptr );
-    const ByteArray readMeshData = meshReader->ReadBytes( static_cast<uint32_t>( meshData.NumElements ) );
+    const ByteArray readMeshData = meshReader->ReadBytes( meshData.NumElements );
     ASSERT_EQ( readMeshData.NumElements, meshData.NumElements );
     AssertArrayEq( readMeshData.Elements, meshData.Elements, meshData.NumElements );
     readMeshData.Dispose( );
@@ -130,7 +130,7 @@ TEST_F( BundleTest, AddAndRetrieveAssets )
 
     BinaryReader *texReader = bundle->OpenReader( texUri );
     ASSERT_NE( texReader, nullptr );
-    const ByteArray readTexData = texReader->ReadBytes( static_cast<uint32_t>( texData.NumElements ) );
+    const ByteArray readTexData = texReader->ReadBytes( texData.NumElements);
     ASSERT_EQ( readTexData.NumElements, texData.NumElements );
     AssertArrayEq( readTexData.Elements, texData.Elements, texData.NumElements );
     readTexData.Dispose( );
@@ -261,7 +261,7 @@ TEST_F( BundleTest, BundleCompression )
     BinaryReader *reader = compressedBundle->OpenReader( assetUri );
     ASSERT_NE( reader, nullptr );
 
-    const ByteArray readData = reader->ReadBytes( static_cast<uint32_t>( assetData.NumElements ) );
+    const ByteArray readData = reader->ReadBytes( assetData.NumElements );
     ASSERT_EQ( readData.NumElements, assetData.NumElements );
     AssertArrayEq( readData.Elements, assetData.Elements, assetData.NumElements );
     readData.Dispose( );
