@@ -1,0 +1,25 @@
+# ClangSharp Response File for @CLANGSHARP_LIBRARY_NAME@
+-n
+@CLANGSHARP_NAMESPACE@
+-o
+@CLANGSHARP_OUTPUT_DIRECTORY@
+-c
+@CLANGSHARP_CODEGEN_PROFILE@
+-l
+@CLANGSHARP_LIBRARY_NAME@
+-I
+@CLANGSHARP_INCLUDE_DIRECTORY@
+-std
+@CLANGSHARP_LANGUAGE_STANDARD@
+
+# Additional Clang arguments to handle system headers more gracefully
+-a
+-Wno-error
+-a
+-ferror-limit=0
+
+# Configuration options
+@CLANGSHARP_CONFIG_OPTIONS_STR@
+
+# Header files to generate bindings for (system headers will be parsed but not generated)
+@CLANGSHARP_HEADER_ENTRIES@

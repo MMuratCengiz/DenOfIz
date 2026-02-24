@@ -1,0 +1,81 @@
+{
+  "name": "den-of-iz",
+  "version": "0.0.1",
+  "dependencies": [
+    "cgltf",
+    "wil",
+    "miniz",
+    "spdlog",
+    "stb",
+    {
+      "name": "volk",
+      "platform": "windows|linux"
+    },
+    {
+      "name": "vulkan",
+      "platform": "windows|linux"
+    },
+    {
+      "name": "vulkan-memory-allocator",
+      "platform": "windows|linux"
+    },
+    "gtest",
+    "directxmath",
+    "freetype",
+    "harfbuzz",
+    {
+      "name": "msdfgen",
+      "features": [
+        "extensions"
+      ],
+      "default-features": false
+    },
+    {
+      "name": "imgui",
+      "features": [
+        "docking-experimental"
+      ]
+    },
+    {
+      "name": "sdl3",
+      "features": [
+        "vulkan"
+      ],
+      "platform": "!osx"
+    },
+    {
+      "name": "sdl3",
+      "platform": "osx"
+    },
+    {
+      "name": "directx-headers",
+      "platform": "windows|linux"
+    }
+  ],
+  "features": {
+    "d3d12-agility": {
+      "description": "Use D3D12 Agility SDK",
+      "dependencies": [
+        {
+          "name": "directx12-agility",
+          "platform": "windows"
+        }
+      ]
+    },
+    "examples": {
+      "description": "Build examples with additional asset import support",
+      "dependencies": [
+        "assimp"
+      ]
+    },
+    "pix": {
+      "description": "Enable PIX profiler support",
+      "dependencies": [
+        {
+          "name": "winpixevent",
+          "platform": "windows"
+        }
+      ]
+    }
+  }
+}

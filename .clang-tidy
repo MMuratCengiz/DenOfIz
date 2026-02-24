@@ -1,0 +1,27 @@
+---
+# Configuration for C-style codebase that calls C++ libraries (e.g., DirectX12, COM)
+# Disables C++ modernization checks while keeping code quality checks
+Checks: >
+  readability-braces-around-statements,
+  readability-*,
+  performance-*,
+  bugprone-*,
+  -modernize-*,
+  -cppcoreguidelines-pro-type-cstyle-cast,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-no-malloc,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-identifier-naming
+
+CheckOptions:
+  - key: readability-braces-around-statements.ShortStatementLines
+    value: '0'
+
+WarningsAsErrors: 'readability-braces-around-statements'
+
+HeaderFilterRegex: '.*/(Graphics|Examples|AssetBrowser|Workbench|Workbench_Demo)/.*\.(h|hpp)$'
+
+FormatStyle: file

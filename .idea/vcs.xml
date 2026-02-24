@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/D3D12MemoryAllocator" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/DirectXShaderCompiler" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/DirectXShaderCompiler/external/DirectX-Headers" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/DirectXShaderCompiler/external/SPIRV-Headers" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/DirectXShaderCompiler/external/SPIRV-Tools" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/msdf-atlas-gen" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/msdf-atlas-gen/artery-font-format" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/msdf-atlas-gen/msdfgen" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/ozz-animation" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vcpkg" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vcpkg/downloads/git-tmp" vcs="Git" />
+  </component>
+  <component name="VcsProjectSettings">
+    <option name="detectVcsMappingsAutomatically" value="false" />
+  </component>
+</project>

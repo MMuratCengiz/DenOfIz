@@ -1,0 +1,91 @@
+name: Linux Build Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'Graphics/**'
+      - 'CMakeLists.txt'
+      - 'vcpkg.json'
+      - 'build-linux.yml'
+
+env:
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common wget gpg lsb-release
+          sudo apt-get install -y ninja-build build-essential
+          sudo apt-get install -y libglu1-mesa-dev freeglut3-dev libvulkan-dev libsdl2-dev
+          sudo apt-get install -y libfreetype-dev libharfbuzz-dev
+          sudo apt-get install -y libltdl-dev libtool autoconf automake autoconf-archive
+          sudo apt-get install -y libwayland-dev libxkbcommon-dev libegl1-mesa-dev
+          sudo apt-get install -y libibus-1.0-dev
+          sudo apt-get install -y python3 python3-pip python3-jinja2 python3-packaging
+          sudo apt-get install -y libcap-dev libmount-dev libsystemd-dev
+          sudo apt-get install -y gperf m4
+
+      - name: Install Clang 18
+        run: |
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+          sudo add-apt-repository "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-18 main"
+          sudo apt-get update
+          sudo apt-get install -y clang-18 clang++-18 lld-18
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100
+          sudo update-alternatives --install /usr/bin/lld lld /usr/bin/lld-18 100
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          doNotCache: false
+
+      - name: Configure CMake
+        uses: lukka/run-cmake@v10
+        env:
+          CC: clang-18
+          CXX: clang++-18
+        with:
+          configurePreset: 'Install_Linux'
+          configurePresetAdditionalArgs: "['-DBUILD_EXAMPLES=OFF']"
+
+      - name: Build and Install Native Library
+        uses: lukka/run-cmake@v10
+        env:
+          CC: clang-18
+          CXX: clang++-18
+        with:
+          configurePreset: 'Install_Linux'
+          buildPreset: 'Install_Linux'
+
+      - name: Verify build output
+        run: |
+          INSTALL_DIR="install/DenOfIz/Install_Linux"
+          echo "=== Checking build output ==="
+          if [ -f "$INSTALL_DIR/lib/libDenOfIzGraphics.so" ]; then
+              echo "SUCCESS: libDenOfIzGraphics.so built!"
+              ls -la "$INSTALL_DIR/lib/"
+          else
+              echo "ERROR: libDenOfIzGraphics.so not found!"
+              find install -name "*.so" 2>/dev/null || echo "No .so files found"
+              exit 1
+          fi

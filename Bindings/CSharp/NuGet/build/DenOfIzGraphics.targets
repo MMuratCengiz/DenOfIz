@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <PropertyGroup>
+        <DenOfIzGraphicsPackageRoot>$(MSBuildThisFileDirectory)..\</DenOfIzGraphicsPackageRoot>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <DenOfIzRuntimeIdentifier Condition="'$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</DenOfIzRuntimeIdentifier>
+        <DenOfIzRuntimeIdentifier Condition="'$(DenOfIzRuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Windows'))">win-x64</DenOfIzRuntimeIdentifier>
+        <DenOfIzRuntimeIdentifier Condition="'$(DenOfIzRuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Linux'))">linux-x64</DenOfIzRuntimeIdentifier>
+        <DenOfIzRuntimeIdentifier Condition="'$(DenOfIzRuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('OSX')) And '$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' == 'Arm64'">osx-arm64</DenOfIzRuntimeIdentifier>
+        <DenOfIzRuntimeIdentifier Condition="'$(DenOfIzRuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('OSX'))">osx-x64</DenOfIzRuntimeIdentifier>
+        <DenOfIzNativeDir>$(DenOfIzGraphicsPackageRoot)runtimes\$(DenOfIzRuntimeIdentifier)\native\</DenOfIzNativeDir>
+    </PropertyGroup>
+
+    <Target Name="CopyDenOfIzNativeLibraries" AfterTargets="Build" Condition="Exists('$(DenOfIzNativeDir)')">
+        <ItemGroup>
+            <DenOfIzNativeFiles Include="$(DenOfIzNativeDir)**\*.*" />
+        </ItemGroup>
+        <Copy SourceFiles="@(DenOfIzNativeFiles)"
+              DestinationFolder="$(OutputPath)"
+              SkipUnchangedFiles="true"
+              Condition="'@(DenOfIzNativeFiles)' != ''" />
+    </Target>
+
+    <Target Name="CopyDenOfIzNativeLibrariesOnPublish" AfterTargets="Publish" Condition="Exists('$(DenOfIzNativeDir)')">
+        <ItemGroup>
+            <DenOfIzNativeFilesPublish Include="$(DenOfIzNativeDir)**\*.*" />
+        </ItemGroup>
+        <Copy SourceFiles="@(DenOfIzNativeFilesPublish)"
+              DestinationFolder="$(PublishDir)"
+              SkipUnchangedFiles="true"
+              Condition="'@(DenOfIzNativeFilesPublish)' != ''" />
+    </Target>
+
+</Project>

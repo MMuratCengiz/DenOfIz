@@ -1,0 +1,596 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "Base",
+      "hidden": true,
+      "installDir": "install/DenOfIz/${presetName}",
+      "binaryDir": "build/DenOfIz/${presetName}",
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "OFF",
+        "CMAKE_TOOLCHAIN_FILE": "vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "BUILD_WEBGPU_NATIVE": "ON"
+      }
+    },
+    {
+      "name": "Windows_Base",
+      "hidden": true,
+      "inherits": "Base",
+      "generator": "Visual Studio 17 2022"
+    },
+    {
+      "name": "Windows_Common_Flags",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "/MP -DNOMINMAX /wd\"4267\" /wd\"4244\""
+      }
+    },
+    {
+      "name": "Windows_Debug_Flags",
+      "hidden": true,
+      "inherits": "Windows_Common_Flags",
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "-D_DEBUG -Od -Zi -W3 /c /EHsc /MP -DNOMINMAX /wd\"4267\" /wd\"4244\""
+      }
+    },
+    {
+      "name": "Windows_Release_Flags",
+      "hidden": true,
+      "inherits": "Windows_Common_Flags",
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "/MP -DNOMINMAX /O2 /Gy /GF /Gw /Zc:inline /GL /wd\"4267\" /wd\"4244\"",
+        "CMAKE_EXE_LINKER_FLAGS": "/OPT:REF /OPT:ICF /LTCG",
+        "CMAKE_SHARED_LINKER_FLAGS": "/OPT:REF /OPT:ICF /LTCG",
+        "CMAKE_STATIC_LINKER_FLAGS": "/LTCG"
+      }
+    },
+    {
+      "name": "Debug_MSVC",
+      "inherits": [
+        "Windows_Base",
+        "Windows_Debug_Flags"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CRT_LINKAGE_STATIC": "0",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md",
+        "VCPKG_MANIFEST_FEATURES": "pix;examples",
+        "BUILD_TESTS": "ON",
+        "BUILD_TOOLS": "ON",
+        "BUILD_EXAMPLES": "ON"
+      }
+    },
+    {
+      "name": "Debug_Shared_MSVC",
+      "inherits": [
+        "Windows_Base",
+        "Windows_Debug_Flags"
+      ],
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CRT_LINKAGE_STATIC": "0",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_MANIFEST_FEATURES": "pix;examples",
+        "BUILD_TESTS": "ON",
+        "BUILD_EXAMPLES": "ON"
+      }
+    },
+    {
+      "name": "Release_MSVC",
+      "inherits": [
+        "Windows_Base",
+        "Windows_Release_Flags"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static",
+        "CRT_LINKAGE_STATIC": "1"
+      }
+    },
+    {
+      "name": "Release_Shared_MSVC",
+      "inherits": [
+        "Windows_Base",
+        "Windows_Release_Flags"
+      ],
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON",
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_MANIFEST_FEATURES": "pix",
+        "CRT_LINKAGE_STATIC": "0",
+        "CMAKE_CXX_FLAGS": "/O2 /Gy /GF /Gw /Zc:inline /GL /W3 /c /EHsc /MP -DNOMINMAX /wd\"4267\" /wd\"4244\""
+      }
+    },
+    {
+      "name": "Debug_MSVC_ARM64",
+      "inherits": [
+        "Windows_Base",
+        "Windows_Debug_Flags"
+      ],
+      "architecture": {
+        "value": "ARM64",
+        "strategy": "set"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CRT_LINKAGE_STATIC": "0",
+        "VCPKG_TARGET_TRIPLET": "arm64-windows-static-md",
+        "VCPKG_MANIFEST_FEATURES": "examples",
+        "BUILD_TESTS": "ON",
+        "BUILD_EXAMPLES": "ON"
+      }
+    },
+    {
+      "name": "Release_MSVC_ARM64",
+      "inherits": [
+        "Windows_Base",
+        "Windows_Release_Flags"
+      ],
+      "architecture": {
+        "value": "ARM64",
+        "strategy": "set"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "arm64-windows-static",
+        "CRT_LINKAGE_STATIC": "1"
+      }
+    },
+    {
+      "name": "MacOS_Base",
+      "hidden": true,
+      "inherits": "Base",
+      "generator": "Xcode"
+    },
+    {
+      "name": "MacOS_Common_Flags",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "-ffunction-sections -fdata-sections -fmerge-all-constants"
+      }
+    },
+    {
+      "name": "MacOS_Release_Flags",
+      "hidden": true,
+      "inherits": "MacOS_Common_Flags",
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "-O3 -ffunction-sections -fdata-sections -fmerge-all-constants",
+        "CMAKE_EXE_LINKER_FLAGS": "-Wl,-dead_strip",
+        "CMAKE_SHARED_LINKER_FLAGS": "-Wl,-dead_strip"
+      }
+    },
+    {
+      "name": "Debug_OSX",
+      "inherits": "MacOS_Base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "arm64-osx",
+        "VCPKG_MANIFEST_FEATURES": "examples",
+        "BUILD_TESTS": "ON",
+        "BUILD_EXAMPLES": "ON"
+      }
+    },
+    {
+      "name": "Release_OSX",
+      "inherits": [
+        "MacOS_Base",
+        "MacOS_Release_Flags"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "arm64-osx"
+      }
+    },
+    {
+      "name": "Linux_Base",
+      "hidden": true,
+      "inherits": "Base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CC": "clang",
+        "CXX": "clang++"
+      }
+    },
+    {
+      "name": "Linux_Common_Flags",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "-Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-error=ignored-qualifiers "
+      }
+    },
+    {
+      "name": "Linux_Debug_Flags",
+      "hidden": true,
+      "inherits": "Linux_Common_Flags",
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "-D_DEBUG -g -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-error=ignored-qualifiers"
+      }
+    },
+    {
+      "name": "Linux_Release_Flags",
+      "hidden": true,
+      "inherits": "Linux_Common_Flags",
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "-O3 -ffunction-sections -fdata-sections -fmerge-all-constants -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-error=ignored-qualifiers -Wno-ignored-qualifiers -Wno-missing-field-initializers",
+        "CMAKE_EXE_LINKER_FLAGS": "-Wl,--gc-sections",
+        "CMAKE_SHARED_LINKER_FLAGS": "-Wl,--gc-sections"
+      }
+    },
+    {
+      "name": "Debug_Linux",
+      "inherits": [
+        "Linux_Base",
+        "Linux_Debug_Flags"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "x64-linux",
+        "VCPKG_MANIFEST_FEATURES": "examples",
+        "BUILD_TESTS": "ON",
+        "BUILD_EXAMPLES": "ON"
+      }
+    },
+    {
+      "name": "Debug_Shared_Linux",
+      "inherits": [
+        "Linux_Base",
+        "Linux_Debug_Flags"
+      ],
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "x64-linux",
+        "VCPKG_MANIFEST_FEATURES": "examples",
+        "BUILD_TESTS": "ON",
+        "BUILD_EXAMPLES": "ON"
+      }
+    },
+    {
+      "name": "Release_Linux",
+      "inherits": [
+        "Linux_Base",
+        "Linux_Release_Flags"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-linux"
+      }
+    },
+    {
+      "name": "Release_Shared_Linux",
+      "inherits": [
+        "Linux_Base",
+        "Linux_Release_Flags"
+      ],
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON",
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-linux"
+      }
+    },
+    {
+      "name": "Debug_Linux_ARM64",
+      "inherits": [
+        "Linux_Base",
+        "Linux_Debug_Flags"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "arm64-linux",
+        "VCPKG_MANIFEST_FEATURES": "examples",
+        "BUILD_TESTS": "ON",
+        "BUILD_EXAMPLES": "ON"
+      }
+    },
+    {
+      "name": "Release_Linux_ARM64",
+      "inherits": [
+        "Linux_Base",
+        "Linux_Release_Flags"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "arm64-linux"
+      }
+    },
+    {
+      "name": "Install_Base",
+      "hidden": true,
+      "inherits": "Base",
+      "installDir": "install/${presetName}",
+      "cacheVariables": {
+        "BUILD_TESTS": "OFF",
+        "BUILD_EXAMPLES": "OFF",
+        "CMAKE_BUILD_TYPE": "Release",
+        "DZ_INSTALL": "ON",
+        "BUILD_BINDINGS": "ON"
+      }
+    },
+    {
+      "name": "Install_Windows",
+      "inherits": [
+        "Windows_Base",
+        "Install_Base",
+        "Windows_Release_Flags"
+      ],
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON",
+        "CRT_LINKAGE_STATIC": "0",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md",
+        "CMAKE_CXX_FLAGS": "/MP /EHsc -DNOMINMAX /O2 /Gy /GF /Gw /Zc:inline /GL"
+      }
+    },
+    {
+      "name": "Install_Windows_Debug",
+      "inherits": [
+        "Windows_Base",
+        "Install_Base",
+        "Windows_Debug_Flags"
+      ],
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON",
+        "CRT_LINKAGE_STATIC": "0",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md",
+        "VCPKG_MANIFEST_FEATURES": "pix",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "Install_OSX",
+      "inherits": [
+        "MacOS_Base",
+        "Install_Base",
+        "MacOS_Release_Flags"
+      ],
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON",
+        "VCPKG_TARGET_TRIPLET": "arm64-osx"
+      }
+    },
+    {
+      "name": "Install_Linux",
+      "inherits": [
+        "Linux_Base",
+        "Install_Base",
+        "Linux_Release_Flags"
+      ],
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON",
+        "VCPKG_TARGET_TRIPLET": "x64-linux"
+      }
+    },
+    {
+      "name": "Install_Windows_ARM64",
+      "inherits": [
+        "Windows_Base",
+        "Install_Base",
+        "Windows_Release_Flags"
+      ],
+      "architecture": {
+        "value": "ARM64",
+        "strategy": "set"
+      },
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON",
+        "CRT_LINKAGE_STATIC": "0",
+        "VCPKG_TARGET_TRIPLET": "arm64-windows-static-md",
+        "CMAKE_CXX_FLAGS": "/MP /EHsc -DNOMINMAX /O2 /Gy /GF /Gw /Zc:inline /GL"
+      }
+    },
+    {
+      "name": "Install_Linux_ARM64",
+      "inherits": [
+        "Linux_Base",
+        "Install_Base",
+        "Linux_Release_Flags"
+      ],
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON",
+        "VCPKG_TARGET_TRIPLET": "arm64-linux"
+      }
+    },
+    {
+      "name": "Emscripten_Base",
+      "hidden": true,
+      "inherits": "Base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "wasm32-emscripten",
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+        "BUILD_SHARED_LIBS": "OFF",
+        "BUILD_TESTS": "OFF",
+        "BUILD_TOOLS": "OFF",
+        "BUILD_WEBGPU_NATIVE": "OFF"
+      },
+      "environment": {
+        "VCPKG_ENV_PASSTHROUGH_UNTRACKED": "EMSCRIPTEN_ROOT;EMSDK;PATH"
+      }
+    },
+    {
+      "name": "Emscripten_Common_Flags",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "-O3"
+      }
+    },
+    {
+      "name": "Debug_Emscripten",
+      "inherits": "Emscripten_Base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_MANIFEST_FEATURES": "examples",
+        "BUILD_EXAMPLES": "ON"
+      }
+    },
+    {
+      "name": "Release_Emscripten",
+      "inherits": [
+        "Emscripten_Base",
+        "Emscripten_Common_Flags"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_MANIFEST_FEATURES": "examples",
+        "BUILD_EXAMPLES": "ON"
+      }
+    },
+    {
+      "name": "Install_Emscripten",
+      "inherits": [
+        "Emscripten_Base",
+        "Install_Base",
+        "Emscripten_Common_Flags"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "Debug_MSVC",
+      "configurePreset": "Debug_MSVC",
+      "displayName": "Build Debug MSVC"
+    },
+    {
+      "name": "Debug_Shared_MSVC",
+      "configurePreset": "Debug_Shared_MSVC",
+      "displayName": "Build Debug Shared MSVC"
+    },
+    {
+      "name": "Release_MSVC",
+      "configurePreset": "Release_MSVC",
+      "displayName": "Build Release MSVC"
+    },
+    {
+      "name": "Release_Shared_MSVC",
+      "configurePreset": "Release_Shared_MSVC",
+      "displayName": "Build Release Shared MSVC"
+    },
+    {
+      "name": "Debug_MSVC_ARM64",
+      "configurePreset": "Debug_MSVC_ARM64",
+      "displayName": "Build Debug MSVC ARM64"
+    },
+    {
+      "name": "Release_MSVC_ARM64",
+      "configurePreset": "Release_MSVC_ARM64",
+      "displayName": "Build Release MSVC ARM64"
+    },
+    {
+      "name": "Debug_OSX",
+      "configurePreset": "Debug_OSX",
+      "displayName": "Build Debug OSX"
+    },
+    {
+      "name": "Release_OSX",
+      "configurePreset": "Release_OSX",
+      "displayName": "Build Release OSX"
+    },
+    {
+      "name": "Debug_Linux",
+      "configurePreset": "Debug_Linux",
+      "displayName": "Build Debug Linux"
+    },
+    {
+      "name": "Debug_Shared_Linux",
+      "configurePreset": "Debug_Shared_Linux",
+      "displayName": "Build Debug Shared Linux"
+    },
+    {
+      "name": "Release_Linux",
+      "configurePreset": "Release_Linux",
+      "displayName": "Build Release Linux"
+    },
+    {
+      "name": "Release_Shared_Linux",
+      "configurePreset": "Release_Shared_Linux",
+      "displayName": "Build Release Shared Linux"
+    },
+    {
+      "name": "Debug_Linux_ARM64",
+      "configurePreset": "Debug_Linux_ARM64",
+      "displayName": "Build Debug Linux ARM64"
+    },
+    {
+      "name": "Release_Linux_ARM64",
+      "configurePreset": "Release_Linux_ARM64",
+      "displayName": "Build Release Linux ARM64"
+    },
+    {
+      "name": "Install_Windows",
+      "configurePreset": "Install_Windows",
+      "displayName": "Install Windows",
+      "targets": [
+        "install"
+      ],
+      "configuration": "Release"
+    },
+    {
+      "name": "Install_Windows_Debug",
+      "configurePreset": "Install_Windows_Debug",
+      "displayName": "Install Windows Debug",
+      "targets": [
+        "install"
+      ],
+      "configuration": "Debug"
+    },
+    {
+      "name": "Install_OSX",
+      "configurePreset": "Install_OSX",
+      "displayName": "Install OSX",
+      "targets": [
+        "install"
+      ],
+      "configuration": "Release"
+    },
+    {
+      "name": "Install_Linux",
+      "configurePreset": "Install_Linux",
+      "displayName": "Install Linux",
+      "targets": [
+        "install"
+      ],
+      "configuration": "Release"
+    },
+    {
+      "name": "Install_Windows_ARM64",
+      "configurePreset": "Install_Windows_ARM64",
+      "displayName": "Install Windows ARM64",
+      "targets": [
+        "install"
+      ],
+      "configuration": "Release"
+    },
+    {
+      "name": "Install_Linux_ARM64",
+      "configurePreset": "Install_Linux_ARM64",
+      "displayName": "Install Linux ARM64",
+      "targets": [
+        "install"
+      ],
+      "configuration": "Release"
+    },
+    {
+      "name": "Install_Emscripten",
+      "configurePreset": "Install_Emscripten",
+      "displayName": "Install Emscripten",
+      "targets": [
+        "install"
+      ],
+      "configuration": "Release"
+    },
+    {
+      "name": "Debug_Emscripten",
+      "configurePreset": "Debug_Emscripten",
+      "displayName": "Build Debug Emscripten"
+    },
+    {
+      "name": "Release_Emscripten",
+      "configurePreset": "Release_Emscripten",
+      "displayName": "Build Release Emscripten"
+    }
+  ]
+}

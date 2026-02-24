@@ -1,0 +1,710 @@
+/*
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanPipeline.h"
+
+#include <array>
+#include <ranges>
+#include "DenOfIzGraphics/Backends/Common/ShaderProgram.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanInputLayout.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanPipelineCache.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanRootSignature.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+
+using namespace DenOfIz;
+
+#define ROOT_SIGNATURE_PTR( handle ) DENOFIZ_FROM_HANDLE( DenOfIz::IRootSignature, handle )
+#define INPUT_LAYOUT_PTR( handle ) DENOFIZ_FROM_HANDLE( DenOfIz::IInputLayout, handle )
+#define PIPELINE_CACHE_PTR( handle ) DENOFIZ_FROM_HANDLE( DenOfIz::IPipelineCache, handle )
+#define LOCAL_ROOT_SIGNATURE_PTR( handle ) DENOFIZ_FROM_HANDLE( DenOfIz::ILocalRootSignature, handle )
+
+VulkanPipeline::VulkanPipeline( VulkanContext *context, const DenOfIz_PipelineDesc &desc ) :
+    m_context( context ), m_desc( desc ), m_bindPoint( DenOfIz_VulkanEnumConverter_ConvertPipelineBindPoint( desc.BindPoint ) )
+{
+    m_rootSignature = dynamic_cast<VulkanRootSignature *>( ROOT_SIGNATURE_PTR( desc.RootSignature ) );
+    m_layout        = m_rootSignature->PipelineLayout( );
+
+    switch ( desc.BindPoint )
+    {
+    case DENOFIZ_BIND_POINT_GRAPHICS:
+        CreateGraphicsPipeline( );
+        break;
+    case DENOFIZ_BIND_POINT_COMPUTE:
+        CreateComputePipeline( );
+        break;
+    case DENOFIZ_BIND_POINT_RAYTRACING:
+        CreateRayTracingPipeline( );
+        break;
+    case DENOFIZ_BIND_POINT_MESH:
+        CreateMeshPipeline( );
+        break;
+    }
+}
+
+void VulkanPipeline::CreateGraphicsPipeline( )
+{
+    VkGraphicsPipelineCreateInfo pipelineCreateInfo{ };
+    pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+
+    std::vector<VkPipelineShaderStageCreateInfo>     pipelineStageCreateInfos     = ConfigurePipelineStages( );
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments        = { };
+    VkPipelineColorBlendStateCreateInfo              colorBlending                = ConfigureColorBlend( colorBlendAttachments );
+    std::vector<VkFormat>                            colorFormats                 = { };
+    VkPipelineRenderingCreateInfo                    renderingCreateInfo          = ConfigureRenderingInfo( colorFormats );
+    VkPipelineTessellationStateCreateInfo            tessellationStateCreateInfo  = ConfigureTessellation( );
+    VkPipelineRasterizationStateCreateInfo           rasterizationStateCreateInfo = ConfigureRasterization( );
+    VkPipelineViewportStateCreateInfo                viewportStateCreateInfo      = ConfigureViewport( );
+    VkPipelineMultisampleStateCreateInfo             multisampleStateCreateInfo   = ConfigureMultisampling( );
+    VkPipelineInputAssemblyStateCreateInfo           inputAssemblyCreateInfo      = ConfigureInputAssembly( );
+    VkPipelineDepthStencilStateCreateInfo            depthStencilStateCreateInfo  = CreateDepthAttachmentImages( );
+    VkPipelineVertexInputStateCreateInfo             inputStateCreateInfo         = ConfigureVertexInputState( );
+
+    // Configure Dynamic States:
+    VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{ };
+    dynamicStateCreateInfo.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicStateCreateInfo.dynamicStateCount = g_dynamicStates.size( );
+    dynamicStateCreateInfo.pDynamicStates    = g_dynamicStates.data( );
+    pipelineCreateInfo.pDynamicState         = &dynamicStateCreateInfo;
+    // --
+    // Render pass configuration, disabled for now
+    pipelineCreateInfo.renderPass         = nullptr;
+    pipelineCreateInfo.subpass            = 0;
+    pipelineCreateInfo.basePipelineHandle = nullptr;
+    pipelineCreateInfo.basePipelineIndex  = -1;
+    // --
+    pipelineCreateInfo.pVertexInputState   = &inputStateCreateInfo;
+    pipelineCreateInfo.pTessellationState  = &tessellationStateCreateInfo;
+    pipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;
+    pipelineCreateInfo.pViewportState      = &viewportStateCreateInfo;
+    pipelineCreateInfo.pDepthStencilState  = &depthStencilStateCreateInfo;
+    pipelineCreateInfo.pMultisampleState   = &multisampleStateCreateInfo;
+    pipelineCreateInfo.pInputAssemblyState = &inputAssemblyCreateInfo;
+    pipelineCreateInfo.pColorBlendState    = &colorBlending;
+    pipelineCreateInfo.stageCount          = static_cast<uint32_t>( pipelineStageCreateInfos.size( ) );
+    pipelineCreateInfo.pStages             = pipelineStageCreateInfos.data( );
+    pipelineCreateInfo.layout              = m_layout;
+
+    pipelineCreateInfo.pNext = &renderingCreateInfo;
+
+    VkPipelineCache cache = VK_NULL_HANDLE;
+    if ( DENOFIZ_HANDLE_IS_VALID( m_desc.PipelineCache ) )
+    {
+        auto vulkanCache = static_cast<VulkanPipelineCache *>( PIPELINE_CACHE_PTR( m_desc.PipelineCache ) );
+        cache            = vulkanCache->GetCache( );
+    }
+
+    VK_CHECK_RESULT( vkCreateGraphicsPipelines( m_context->LogicalDevice, cache, 1, &pipelineCreateInfo, nullptr, &m_instance ) );
+}
+
+void VulkanPipeline::CreateComputePipeline( )
+{
+    VkComputePipelineCreateInfo pipelineCreateInfo{ };
+    pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+
+    const std::vector<VkPipelineShaderStageCreateInfo> pipelineStageCreateInfos = ConfigurePipelineStages( );
+    // Render pass configuration, disabled for now
+    pipelineCreateInfo.basePipelineHandle = nullptr;
+    pipelineCreateInfo.basePipelineIndex  = -1;
+    // --
+    pipelineCreateInfo.stage  = pipelineStageCreateInfos[ 0 ];
+    pipelineCreateInfo.layout = m_layout;
+
+    VkPipelineCache cache = VK_NULL_HANDLE;
+    if ( DENOFIZ_HANDLE_IS_VALID( m_desc.PipelineCache ) )
+    {
+        const auto vulkanCache = static_cast<VulkanPipelineCache *>( PIPELINE_CACHE_PTR( m_desc.PipelineCache ) );
+        cache                  = vulkanCache->GetCache( );
+    }
+
+    VK_CHECK_RESULT( vkCreateComputePipelines( m_context->LogicalDevice, cache, 1, &pipelineCreateInfo, nullptr, &m_instance ) );
+}
+
+void VulkanPipeline::CreateRayTracingPipeline( )
+{
+    DenOfIz_CompiledShaderStageArray compiledShaders;
+    DenOfIz_ShaderProgram_CompiledShaders( m_desc.ShaderProgram, &compiledShaders );
+
+    m_shaderModules.reserve( compiledShaders.NumElements );
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+    shaderStages.reserve( compiledShaders.NumElements );
+    std::vector<VkRayTracingShaderGroupCreateInfoKHR> shaderGroups;
+    shaderGroups.reserve( compiledShaders.NumElements + m_desc.RayTracing.HitGroups.NumElements );
+
+    std::vector<VkDescriptorSetLayout> allLayouts;
+    const auto                         rootSig        = dynamic_cast<VulkanRootSignature *>( ROOT_SIGNATURE_PTR( m_desc.RootSignature ) );
+    auto                               rootSigLayouts = rootSig->DescriptorSetLayouts( );
+    allLayouts.insert( allLayouts.end( ), rootSigLayouts.begin( ), rootSigLayouts.end( ) );
+
+    // Create a local root signature
+    rayTracingLocalRootSignature = std::make_unique<VulkanLocalRootSignature>( m_context, DenOfIz_LocalRootSignatureDesc{ }, false );
+    auto mergeLocalRootSignature = [ & ]( DenOfIz_LocalRootSignature localRootSignatureHandle )
+    {
+        if ( DENOFIZ_HANDLE_IS_VALID( localRootSignatureHandle ) )
+        {
+            if ( const auto *layout = dynamic_cast<VulkanLocalRootSignature *>( LOCAL_ROOT_SIGNATURE_PTR( localRootSignatureHandle ) ) )
+            {
+                rayTracingLocalRootSignature->Merge( *layout );
+            }
+        }
+    };
+
+    for ( uint32_t i = 0; i < compiledShaders.NumElements; ++i )
+    {
+        const auto              &compiledShader = compiledShaders.Elements[ i ];
+        const VkShaderStageFlags stage          = DenOfIz_VulkanEnumConverter_ConvertShaderStage( compiledShader->Stage );
+
+        const DenOfIz_ShaderStageFlags rtStages = DENOFIZ_SHADER_STAGE_RAY_GEN_BIT | DENOFIZ_SHADER_STAGE_CLOSEST_HIT_BIT | DENOFIZ_SHADER_STAGE_ANY_HIT_BIT |
+                                                  DENOFIZ_SHADER_STAGE_INTERSECTION_BIT | DENOFIZ_SHADER_STAGE_MISS_BIT;
+        if ( !( compiledShader->Stage & rtStages ) )
+        {
+            spdlog::error( "Invalid shader stage for ray tracing pipeline" );
+            continue;
+        }
+
+        if ( m_desc.RayTracing.LocalRootSignatures.NumElements > i )
+        {
+            mergeLocalRootSignature( m_desc.RayTracing.LocalRootSignatures.Elements[ i ] );
+        }
+
+        m_entryPointNames.emplace_back( compiledShader->EntryPoint.Chars, compiledShader->EntryPoint.NumChars );
+        const VkShaderModule            &shaderModule = m_shaderModules.emplace_back( this->CreateShaderModule( compiledShader->SPIRV ) );
+        VkPipelineShaderStageCreateInfo &shaderStage  = shaderStages.emplace_back( );
+        shaderStage.sType                             = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        shaderStage.stage                             = static_cast<VkShaderStageFlagBits>( stage );
+        shaderStage.module                            = shaderModule;
+        shaderStage.pName                             = m_entryPointNames.back( ).c_str( );
+
+        if ( compiledShader->Stage == DENOFIZ_SHADER_STAGE_RAY_GEN_BIT || compiledShader->Stage == DENOFIZ_SHADER_STAGE_MISS_BIT )
+        {
+            VkRayTracingShaderGroupCreateInfoKHR &group = shaderGroups.emplace_back( );
+            group.sType                                 = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+            group.type                                  = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+            group.generalShader                         = i;
+            group.closestHitShader                      = VK_SHADER_UNUSED_KHR;
+            group.anyHitShader                          = VK_SHADER_UNUSED_KHR;
+            group.intersectionShader                    = VK_SHADER_UNUSED_KHR;
+
+            m_shaderIdentifierOffsets[ m_entryPointNames.back( ).c_str( ) ] = shaderGroups.size( ) - 1;
+        }
+    }
+
+    for ( uint32_t i = 0; i < m_desc.RayTracing.HitGroups.NumElements; ++i )
+    {
+        const auto &hitGroup = m_desc.RayTracing.HitGroups.Elements[ i ];
+
+        VkRayTracingShaderGroupCreateInfoKHR &group = shaderGroups.emplace_back( );
+        group.sType                                 = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group.type                                  = hitGroup.Type == DENOFIZ_HIT_GROUP_TYPE_TRIANGLES ? VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR
+                                                                                                        : VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
+
+        group.generalShader      = VK_SHADER_UNUSED_KHR;
+        group.closestHitShader   = hitGroup.ClosestHitShaderIndex >= 0 ? hitGroup.ClosestHitShaderIndex : VK_SHADER_UNUSED_KHR;
+        group.anyHitShader       = hitGroup.AnyHitShaderIndex >= 0 ? hitGroup.AnyHitShaderIndex : VK_SHADER_UNUSED_KHR;
+        group.intersectionShader = hitGroup.IntersectionShaderIndex >= 0 ? hitGroup.IntersectionShaderIndex : VK_SHADER_UNUSED_KHR;
+
+        m_shaderIdentifierOffsets[ std::string( hitGroup.Name.Chars, hitGroup.Name.NumChars ) ] = shaderGroups.size( ) - 1;
+
+        mergeLocalRootSignature( hitGroup.LocalRootSignature );
+    }
+
+    // Add the merged local layouts
+    rayTracingLocalRootSignature->Create( );
+    for ( const auto &layout : rayTracingLocalRootSignature->DescriptorSetLayouts( ) )
+    {
+        for ( uint32_t lastLayout = allLayouts.size( ); lastLayout <= layout.Set; ++lastLayout )
+        {
+            allLayouts.push_back( rootSig->EmptyLayout( ) );
+        }
+        allLayouts[ layout.Set ] = layout.Layout;
+    }
+    const std::vector<VkPushConstantRange> pushConstants      = rootSig->PushConstantRanges( );
+    VkPipelineLayoutCreateInfo             pipelineLayoutInfo = { };
+    pipelineLayoutInfo.sType                                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount                         = allLayouts.size( );
+    pipelineLayoutInfo.pSetLayouts                            = allLayouts.data( );
+    pipelineLayoutInfo.pushConstantRangeCount                 = pushConstants.size( );
+    pipelineLayoutInfo.pPushConstantRanges                    = pushConstants.data( );
+
+    VK_CHECK_RESULT( vkCreatePipelineLayout( m_context->LogicalDevice, &pipelineLayoutInfo, nullptr, &m_rtLayout ) );
+
+    DenOfIz_ShaderProgramDesc shaderProgramDesc;
+    DenOfIz_ShaderProgram_Desc( m_desc.ShaderProgram, &shaderProgramDesc );
+
+    VkRayTracingPipelineInterfaceCreateInfoKHR pipelineInterface{ };
+    pipelineInterface.sType                          = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_INTERFACE_CREATE_INFO_KHR;
+    pipelineInterface.maxPipelineRayPayloadSize      = shaderProgramDesc.RayTracing.MaxNumPayloadBytes;
+    pipelineInterface.maxPipelineRayHitAttributeSize = shaderProgramDesc.RayTracing.MaxNumAttributeBytes;
+
+    VkRayTracingPipelineCreateInfoKHR pipelineInfo{ };
+    pipelineInfo.sType                        = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+    pipelineInfo.stageCount                   = static_cast<uint32_t>( shaderStages.size( ) );
+    pipelineInfo.pStages                      = shaderStages.data( );
+    pipelineInfo.groupCount                   = static_cast<uint32_t>( shaderGroups.size( ) );
+    pipelineInfo.pGroups                      = shaderGroups.data( );
+    pipelineInfo.maxPipelineRayRecursionDepth = shaderProgramDesc.RayTracing.MaxRecursionDepth;
+    pipelineInfo.layout                       = m_rtLayout;
+    pipelineInfo.pLibraryInterface            = &pipelineInterface;
+
+    VK_CHECK_RESULT( vkCreateRayTracingPipelinesKHR( m_context->LogicalDevice, nullptr, nullptr, 1, &pipelineInfo, nullptr, &m_instance ) );
+
+    m_shaderIdentifiers.resize( shaderGroups.size( ) * m_context->RayTracingProperties.shaderGroupHandleSize );
+    VK_CHECK_RESULT(
+        vkGetRayTracingShaderGroupHandlesKHR( m_context->LogicalDevice, m_instance, 0, pipelineInfo.groupCount, m_shaderIdentifiers.size( ), m_shaderIdentifiers.data( ) ) );
+}
+
+void *VulkanPipeline::GetShaderIdentifier( const std::string &exportName )
+{
+    const auto it = m_shaderIdentifierOffsets.find( exportName );
+    if ( it == m_shaderIdentifierOffsets.end( ) )
+    {
+        spdlog::error( "Could not find shader identifier for export {}", exportName );
+        return nullptr;
+    }
+
+    const uint32_t groupIndex = it->second;
+    return m_shaderIdentifiers.data( ) + groupIndex * m_context->RayTracingProperties.shaderGroupHandleSize;
+}
+
+void *VulkanPipeline::GetShaderIdentifier( const uint32_t offset )
+{
+    return m_shaderIdentifiers.data( ) + offset * m_context->RayTracingProperties.shaderGroupHandleSize;
+}
+
+const std::vector<std::pair<DenOfIz_ShaderStageFlags, uint32_t>> &VulkanPipeline::HitGroupIdentifiers( ) const
+{
+    return m_hitGroupIdentifiers;
+}
+
+// clang-format off
+const std::array<VkDynamicState, 4> VulkanPipeline::g_dynamicStates =
+{
+    VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
+    VK_DYNAMIC_STATE_DEPTH_BIAS,
+    VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,
+    VK_DYNAMIC_STATE_LINE_WIDTH
+};
+// clang-format on
+
+std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineStages( )
+{
+    std::vector<VkPipelineShaderStageCreateInfo> pipelineStageCreateInfos;
+
+    DenOfIz_CompiledShaderStageArray compiledShaders;
+    DenOfIz_ShaderProgram_CompiledShaders( m_desc.ShaderProgram, &compiledShaders );
+    for ( uint32_t i = 0; i < compiledShaders.NumElements; ++i )
+    {
+        const auto &compiledShader = compiledShaders.Elements[ i ];
+        m_entryPointNames.emplace_back( compiledShader->EntryPoint.Chars, compiledShader->EntryPoint.NumChars );
+
+        VkPipelineShaderStageCreateInfo &shaderStageCreateInfo = pipelineStageCreateInfos.emplace_back( );
+        shaderStageCreateInfo.sType                            = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+
+        const VkShaderStageFlags stage        = DenOfIz_VulkanEnumConverter_ConvertShaderStage( compiledShader->Stage );
+        const VkShaderModule    &shaderModule = m_shaderModules.emplace_back( this->CreateShaderModule( compiledShader->SPIRV ) );
+
+        shaderStageCreateInfo.stage  = static_cast<VkShaderStageFlagBits>( stage );
+        shaderStageCreateInfo.module = shaderModule;
+        shaderStageCreateInfo.pName  = m_entryPointNames.back( ).c_str( );
+        shaderStageCreateInfo.pNext  = nullptr;
+    }
+
+    return pipelineStageCreateInfos;
+}
+
+void VulkanPipeline::CreateMeshPipeline( )
+{
+    VkGraphicsPipelineCreateInfo pipelineCreateInfo{ };
+    pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+
+    std::vector<VkPipelineShaderStageCreateInfo> pipelineStageCreateInfos = ConfigureMeshPipelineStages( );
+
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments{ };
+    VkPipelineColorBlendStateCreateInfo              colorBlending = ConfigureColorBlend( colorBlendAttachments );
+
+    std::vector<VkFormat>         colorFormats{ };
+    VkPipelineRenderingCreateInfo renderingCreateInfo = ConfigureRenderingInfo( colorFormats );
+
+    VkPipelineRasterizationStateCreateInfo rasterizationStateCreateInfo = ConfigureRasterization( );
+    VkPipelineViewportStateCreateInfo      viewportStateCreateInfo      = ConfigureViewport( );
+    VkPipelineMultisampleStateCreateInfo   multisampleStateCreateInfo   = ConfigureMultisampling( );
+    VkPipelineDepthStencilStateCreateInfo  depthStencilStateCreateInfo  = CreateDepthAttachmentImages( );
+
+    VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{ };
+    dynamicStateCreateInfo.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>( g_dynamicStates.size( ) );
+    dynamicStateCreateInfo.pDynamicStates    = g_dynamicStates.data( );
+    pipelineCreateInfo.pDynamicState         = &dynamicStateCreateInfo;
+
+    pipelineCreateInfo.pVertexInputState   = nullptr; // MUST be null for mesh pipelines
+    pipelineCreateInfo.pInputAssemblyState = nullptr; // MUST be null for mesh pipelines
+    pipelineCreateInfo.pTessellationState  = nullptr; // MUST be null for mesh pipelines
+
+    pipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;
+    pipelineCreateInfo.pViewportState      = &viewportStateCreateInfo;
+    pipelineCreateInfo.pDepthStencilState  = &depthStencilStateCreateInfo;
+    pipelineCreateInfo.pMultisampleState   = &multisampleStateCreateInfo;
+    pipelineCreateInfo.pColorBlendState    = &colorBlending;
+
+    pipelineCreateInfo.stageCount = static_cast<uint32_t>( pipelineStageCreateInfos.size( ) );
+    pipelineCreateInfo.pStages    = pipelineStageCreateInfos.data( );
+    pipelineCreateInfo.layout     = m_layout;
+
+    pipelineCreateInfo.renderPass         = VK_NULL_HANDLE;
+    pipelineCreateInfo.subpass            = 0;
+    pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
+    pipelineCreateInfo.basePipelineIndex  = -1;
+
+    pipelineCreateInfo.pNext = &renderingCreateInfo;
+
+    VkPipelineCache cache = VK_NULL_HANDLE;
+    if ( DENOFIZ_HANDLE_IS_VALID( m_desc.PipelineCache ) )
+    {
+        auto vulkanCache = static_cast<VulkanPipelineCache *>( PIPELINE_CACHE_PTR( m_desc.PipelineCache ) );
+        cache            = vulkanCache->GetCache( );
+    }
+
+    VK_CHECK_RESULT( vkCreateGraphicsPipelines( m_context->LogicalDevice, cache, 1, &pipelineCreateInfo, nullptr, &m_instance ) );
+}
+
+std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigureMeshPipelineStages( )
+{
+    std::vector<VkPipelineShaderStageCreateInfo> pipelineStageCreateInfos;
+
+    DenOfIz_CompiledShaderStageArray compiledShaders;
+    DenOfIz_ShaderProgram_CompiledShaders( m_desc.ShaderProgram, &compiledShaders );
+    for ( uint32_t i = 0; i < compiledShaders.NumElements; ++i )
+    {
+        const auto &compiledShader = compiledShaders.Elements[ i ];
+
+        // Only include task, mesh, and pixel/fragment shaders for mesh pipeline
+        if ( compiledShader->Stage != DENOFIZ_SHADER_STAGE_TASK_BIT && compiledShader->Stage != DENOFIZ_SHADER_STAGE_MESH_BIT &&
+             compiledShader->Stage != DENOFIZ_SHADER_STAGE_PIXEL_BIT )
+        {
+            spdlog::warn( "Skipping non-mesh shader stage in mesh pipeline: {}", static_cast<int>( compiledShader->Stage ) );
+            continue;
+        }
+
+        m_entryPointNames.emplace_back( compiledShader->EntryPoint.Chars, compiledShader->EntryPoint.NumChars );
+
+        VkPipelineShaderStageCreateInfo &shaderStageCreateInfo = pipelineStageCreateInfos.emplace_back( );
+        shaderStageCreateInfo.sType                            = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+
+        const VkShaderStageFlags stage        = DenOfIz_VulkanEnumConverter_ConvertShaderStage( compiledShader->Stage );
+        const VkShaderModule    &shaderModule = m_shaderModules.emplace_back( this->CreateShaderModule( compiledShader->SPIRV ) );
+
+        shaderStageCreateInfo.stage  = static_cast<VkShaderStageFlagBits>( stage );
+        shaderStageCreateInfo.module = shaderModule;
+        shaderStageCreateInfo.pName  = m_entryPointNames.back( ).c_str( );
+        shaderStageCreateInfo.pNext  = nullptr;
+    }
+
+    return pipelineStageCreateInfos;
+}
+
+[[nodiscard]] VkPipelineRenderingCreateInfo VulkanPipeline::ConfigureRenderingInfo( std::vector<VkFormat> &colorAttachmentsStore ) const
+{
+    for ( uint32_t i = 0; i < m_desc.Graphics.RenderTargets.NumElements; ++i )
+    {
+        colorAttachmentsStore.push_back( DenOfIz_VulkanEnumConverter_ConvertImageFormat( m_desc.Graphics.RenderTargets.Elements[ i ].Format ) );
+    }
+
+    VkPipelineRenderingCreateInfo renderingCreateInfo{ };
+    renderingCreateInfo.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+    renderingCreateInfo.viewMask                = m_desc.Graphics.ViewMask;
+    renderingCreateInfo.colorAttachmentCount    = colorAttachmentsStore.size( );
+    renderingCreateInfo.pColorAttachmentFormats = colorAttachmentsStore.data( );
+    renderingCreateInfo.depthAttachmentFormat   = DenOfIz_VulkanEnumConverter_ConvertImageFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
+    if ( m_desc.Graphics.DepthStencilAttachmentFormat == DENOFIZ_FORMAT_D24_UNORM_S8_UINT ) // Todo other formats?
+    {
+        renderingCreateInfo.stencilAttachmentFormat = DenOfIz_VulkanEnumConverter_ConvertImageFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
+    }
+    else
+    {
+        renderingCreateInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
+    }
+    return renderingCreateInfo;
+}
+
+[[nodiscard]] VkPipelineTessellationStateCreateInfo VulkanPipeline::ConfigureTessellation( ) const
+{
+    VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo{ };
+    tessellationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+    // Todo read this value from somewhere
+    tessellationStateCreateInfo.patchControlPoints = 3;
+    return tessellationStateCreateInfo;
+}
+
+[[nodiscard]] VkPipelineInputAssemblyStateCreateInfo VulkanPipeline::ConfigureInputAssembly( ) const
+{
+    VkPipelineInputAssemblyStateCreateInfo inputAssemblyCreateInfo{ };
+    inputAssemblyCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssemblyCreateInfo.topology               = DenOfIz_VulkanEnumConverter_ConvertPrimitiveTopology( m_desc.Graphics.PrimitiveTopology );
+    inputAssemblyCreateInfo.primitiveRestartEnable = VK_FALSE;
+    return inputAssemblyCreateInfo;
+}
+
+[[nodiscard]] VkPipelineVertexInputStateCreateInfo VulkanPipeline::ConfigureVertexInputState( ) const
+{
+    if ( !DENOFIZ_HANDLE_IS_VALID( m_desc.InputLayout ) )
+    {
+        return VkPipelineVertexInputStateCreateInfo{ .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
+    }
+    const auto *inputLayout = dynamic_cast<VulkanInputLayout *>( INPUT_LAYOUT_PTR( m_desc.InputLayout ) );
+    if ( inputLayout == nullptr )
+    {
+        return VkPipelineVertexInputStateCreateInfo{ .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
+    }
+    const VkPipelineVertexInputStateCreateInfo inputStateCreateInfo = inputLayout->GetVertexInputState( );
+    return inputStateCreateInfo;
+}
+
+VkPipelineMultisampleStateCreateInfo VulkanPipeline::ConfigureMultisampling( ) const
+{
+    VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo{ };
+    multisampleStateCreateInfo.sType               = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampleStateCreateInfo.sampleShadingEnable = VK_TRUE;
+
+    switch ( m_desc.Graphics.MSAASampleCount )
+    {
+    case DENOFIZ_MSAA_SAMPLE_COUNT_0:
+        multisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
+    case DENOFIZ_MSAA_SAMPLE_COUNT_1:
+        multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        break;
+    case DENOFIZ_MSAA_SAMPLE_COUNT_2:
+        multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
+        break;
+    case DENOFIZ_MSAA_SAMPLE_COUNT_4:
+        multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
+        break;
+    case DENOFIZ_MSAA_SAMPLE_COUNT_8:
+        multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_8_BIT;
+        break;
+    case DENOFIZ_MSAA_SAMPLE_COUNT_16:
+        multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_16_BIT;
+        break;
+    case DENOFIZ_MSAA_SAMPLE_COUNT_32:
+        multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_32_BIT;
+        break;
+    case DENOFIZ_MSAA_SAMPLE_COUNT_64:
+        multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_64_BIT;
+        break;
+    }
+
+    multisampleStateCreateInfo.minSampleShading      = 1.0f;
+    multisampleStateCreateInfo.pSampleMask           = nullptr;
+    multisampleStateCreateInfo.alphaToCoverageEnable = m_desc.Graphics.AlphaToCoverageEnable ? VK_TRUE : VK_FALSE;
+    multisampleStateCreateInfo.alphaToOneEnable      = VK_FALSE;
+    multisampleStateCreateInfo.sampleShadingEnable   = VK_TRUE;
+    multisampleStateCreateInfo.minSampleShading      = .2f;
+    return multisampleStateCreateInfo;
+}
+
+VkPipelineViewportStateCreateInfo VulkanPipeline::ConfigureViewport( ) const
+{
+    // Todo test, these are dynamic states
+    VkPipelineViewportStateCreateInfo viewportStateCreateInfo{ };
+    viewportStateCreateInfo.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportStateCreateInfo.viewportCount = 0;
+    viewportStateCreateInfo.pViewports    = nullptr;
+    viewportStateCreateInfo.scissorCount  = 0;
+    viewportStateCreateInfo.pScissors     = nullptr;
+    return viewportStateCreateInfo;
+}
+
+VkPipelineRasterizationStateCreateInfo VulkanPipeline::ConfigureRasterization( ) const
+{
+    VkPipelineRasterizationStateCreateInfo rasterizationStateCreateInfo{ };
+    rasterizationStateCreateInfo.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizationStateCreateInfo.polygonMode             = VK_POLYGON_MODE_FILL;
+    rasterizationStateCreateInfo.depthClampEnable        = VK_FALSE;
+    rasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
+    rasterizationStateCreateInfo.lineWidth               = 1.0f;
+
+    switch ( m_desc.Graphics.CullMode )
+    {
+    case DENOFIZ_CULL_MODE_BACK_FACE:
+        rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+        break;
+    case DENOFIZ_CULL_MODE_FRONT_FACE:
+        rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_FRONT_BIT;
+        break;
+    case DENOFIZ_CULL_MODE_NONE:
+        rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_NONE;
+        break;
+    }
+    switch ( m_desc.Graphics.FillMode )
+    {
+    case DENOFIZ_FILL_MODE_SOLID:
+        rasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
+        break;
+    case DENOFIZ_FILL_MODE_WIREFRAME:
+        rasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_LINE;
+        break;
+    }
+
+    rasterizationStateCreateInfo.frontFace = m_desc.Graphics.Rasterization.FrontCounterClockwise ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
+
+    const bool hasDepthBias                              = m_desc.Graphics.Rasterization.DepthBias != 0 || m_desc.Graphics.Rasterization.SlopeScaledDepthBias != 0.0f;
+    rasterizationStateCreateInfo.depthBiasEnable         = hasDepthBias ? VK_TRUE : VK_FALSE;
+    rasterizationStateCreateInfo.depthBiasConstantFactor = static_cast<float>( m_desc.Graphics.Rasterization.DepthBias );
+    rasterizationStateCreateInfo.depthBiasClamp          = m_desc.Graphics.Rasterization.DepthBiasClamp;
+    rasterizationStateCreateInfo.depthBiasSlopeFactor    = m_desc.Graphics.Rasterization.SlopeScaledDepthBias;
+    return rasterizationStateCreateInfo;
+}
+
+VkPipelineColorBlendStateCreateInfo VulkanPipeline::ConfigureColorBlend( std::vector<VkPipelineColorBlendAttachmentState> &colorBlendAttachments ) const
+{
+    const uint32_t attachmentCount = m_desc.Graphics.RenderTargets.NumElements;
+    colorBlendAttachments.resize( attachmentCount );
+
+    for ( uint32_t i = 0; i < attachmentCount; ++i )
+    {
+        auto &attachment                               = m_desc.Graphics.RenderTargets.Elements[ i ];
+        colorBlendAttachments[ i ].blendEnable         = attachment.Blend.Enable;
+        colorBlendAttachments[ i ].srcColorBlendFactor = DenOfIz_VulkanEnumConverter_ConvertBlend( attachment.Blend.SrcBlend );
+        colorBlendAttachments[ i ].dstColorBlendFactor = DenOfIz_VulkanEnumConverter_ConvertBlend( attachment.Blend.DstBlend );
+        colorBlendAttachments[ i ].srcAlphaBlendFactor = DenOfIz_VulkanEnumConverter_ConvertBlend( attachment.Blend.SrcBlendAlpha );
+        colorBlendAttachments[ i ].dstAlphaBlendFactor = DenOfIz_VulkanEnumConverter_ConvertBlend( attachment.Blend.DstBlendAlpha );
+        colorBlendAttachments[ i ].colorBlendOp        = DenOfIz_VulkanEnumConverter_ConvertBlendOp( attachment.Blend.BlendOp );
+        colorBlendAttachments[ i ].alphaBlendOp        = DenOfIz_VulkanEnumConverter_ConvertBlendOp( attachment.Blend.BlendOpAlpha );
+
+        colorBlendAttachments[ i ].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        if ( attachment.Blend.RenderTargetWriteMask != 0x0F )
+        {
+            colorBlendAttachments[ i ].colorWriteMask = 0;
+            if ( attachment.Blend.RenderTargetWriteMask & 0x01 )
+            {
+                colorBlendAttachments[ i ].colorWriteMask |= VK_COLOR_COMPONENT_R_BIT;
+            }
+            if ( attachment.Blend.RenderTargetWriteMask & 0x02 )
+            {
+                colorBlendAttachments[ i ].colorWriteMask |= VK_COLOR_COMPONENT_G_BIT;
+            }
+            if ( attachment.Blend.RenderTargetWriteMask & 0x04 )
+            {
+                colorBlendAttachments[ i ].colorWriteMask |= VK_COLOR_COMPONENT_B_BIT;
+            }
+            if ( attachment.Blend.RenderTargetWriteMask & 0x08 )
+            {
+                colorBlendAttachments[ i ].colorWriteMask |= VK_COLOR_COMPONENT_A_BIT;
+            }
+        }
+    }
+
+    // This overwrites the above
+    VkPipelineColorBlendStateCreateInfo colorBlending{ };
+    colorBlending.sType               = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.logicOpEnable       = m_desc.Graphics.BlendLogicOpEnable;
+    colorBlending.logicOp             = DenOfIz_VulkanEnumConverter_ConvertLogicOp( m_desc.Graphics.BlendLogicOp );
+    colorBlending.attachmentCount     = attachmentCount;
+    colorBlending.pAttachments        = colorBlendAttachments.data( );
+    colorBlending.blendConstants[ 0 ] = 0.0f;
+    colorBlending.blendConstants[ 1 ] = 0.0f;
+    colorBlending.blendConstants[ 2 ] = 0.0f;
+    colorBlending.blendConstants[ 3 ] = 0.0f;
+    return colorBlending;
+}
+
+VkPipelineDepthStencilStateCreateInfo VulkanPipeline::CreateDepthAttachmentImages( ) const
+{
+    VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo{ };
+    depthStencilStateCreateInfo.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencilStateCreateInfo.depthTestEnable       = m_desc.Graphics.DepthTest.Enable;
+    depthStencilStateCreateInfo.depthWriteEnable      = m_desc.Graphics.DepthTest.Write;
+    depthStencilStateCreateInfo.depthCompareOp        = DenOfIz_VulkanEnumConverter_ConvertCompareOp( m_desc.Graphics.DepthTest.CompareOp );
+    depthStencilStateCreateInfo.depthBoundsTestEnable = VK_FALSE;
+    depthStencilStateCreateInfo.minDepthBounds        = 0.0f;
+    depthStencilStateCreateInfo.maxDepthBounds        = 1.0f;
+
+    const DenOfIz_Format dsvFormat         = m_desc.Graphics.DepthStencilAttachmentFormat;
+    bool                 stencilTestEnable = m_desc.Graphics.StencilTest.Enable;
+
+    if ( dsvFormat != DENOFIZ_FORMAT_UNDEFINED && stencilTestEnable )
+    {
+        stencilTestEnable = !DenOfIz_Format_IsDepthOnly( dsvFormat );
+    }
+
+    depthStencilStateCreateInfo.stencilTestEnable = stencilTestEnable;
+
+    depthStencilStateCreateInfo.front = VkStencilOpState{ };
+    depthStencilStateCreateInfo.back  = VkStencilOpState{ };
+
+    auto initStencilState = [ =, this ]( VkStencilOpState &vkState, const DenOfIz_StencilFace &state )
+    {
+        vkState.compareOp   = DenOfIz_VulkanEnumConverter_ConvertCompareOp( state.CompareOp );
+        vkState.compareMask = m_desc.Graphics.StencilTest.ReadMask;
+        vkState.writeMask   = m_desc.Graphics.StencilTest.WriteMask;
+        vkState.reference   = 0;
+        vkState.failOp      = DenOfIz_VulkanEnumConverter_ConvertStencilOp( state.FailOp );
+        vkState.passOp      = DenOfIz_VulkanEnumConverter_ConvertStencilOp( state.PassOp );
+        vkState.depthFailOp = DenOfIz_VulkanEnumConverter_ConvertStencilOp( state.DepthFailOp );
+    };
+
+    if ( stencilTestEnable )
+    {
+        initStencilState( depthStencilStateCreateInfo.front, m_desc.Graphics.StencilTest.FrontFace );
+        initStencilState( depthStencilStateCreateInfo.back, m_desc.Graphics.StencilTest.BackFace );
+    }
+
+    return depthStencilStateCreateInfo;
+}
+
+VkShaderModule VulkanPipeline::CreateShaderModule( const DenOfIz_ByteArray &blob ) const
+{
+    VkShaderModuleCreateInfo shaderModuleCreateInfo{ };
+    shaderModuleCreateInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    shaderModuleCreateInfo.codeSize = blob.NumElements;
+    shaderModuleCreateInfo.pCode    = reinterpret_cast<const uint32_t *>( blob.Elements );
+
+    VkShaderModule shaderModule{ };
+    VK_CHECK_RESULT( vkCreateShaderModule( m_context->LogicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule ) );
+    return shaderModule;
+}
+
+VulkanPipeline::~VulkanPipeline( )
+{
+    for ( const auto &module : m_shaderModules )
+    {
+        vkDestroyShaderModule( m_context->LogicalDevice, module, nullptr );
+    }
+
+    for ( const auto &layout : m_layouts )
+    {
+        vkDestroyDescriptorSetLayout( m_context->LogicalDevice, layout, nullptr );
+    }
+
+    vkDestroyPipeline( m_context->LogicalDevice, m_instance, nullptr );
+    if ( m_rtLayout )
+    {
+        vkDestroyPipelineLayout( m_context->LogicalDevice, m_rtLayout, nullptr );
+    }
+}
+
+VkPipeline VulkanPipeline::Instance( ) const
+{
+    return m_instance;
+}
+VkPipelineBindPoint VulkanPipeline::DenOfIz_BindPoint( ) const
+{
+    return m_bindPoint;
+}
+
+VulkanRootSignature *VulkanPipeline::RootSignature( ) const
+{
+    return m_rootSignature;
+}

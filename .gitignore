@@ -1,0 +1,30 @@
+# Ide
+.idea/
+!.idea/codeStyles
+.vs/
+.vscode/
+
+# Build
+CMakeFiles/
+cmake-build-debug/
+cmake-build-release/
+CMakeCache.txt
+build
+install/DenOfIz
+install/demo/build
+install/demo/cmake-build-debug
+
+vcpkg_installed
+
+out/
+.cache
+.DS_Store
+**/.claude/settings.local.json
+
+Bindings/CppSharp/Out/Project/
+Bindings/CppSharp/Out/Code/*-symbols.cpp
+Bindings/CppSharp/**/*.user
+Bindings/CppSharp/**/*.nupkg
+Bindings/CppSharp/**/*.snupkg
+
+runtimes-staging/

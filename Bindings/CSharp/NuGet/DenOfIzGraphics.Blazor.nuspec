@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>DenOfIzGraphics.Blazor</id>
+    <version>0.4.7-alpha</version>
+    <title>Den Of Iz Graphics - Blazor WebAssembly</title>
+    <authors>Den Of Iz</authors>
+    <owners>Den Of Iz</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <projectUrl>https://github.com/MartinJespersen/DenOfIz</projectUrl>
+    <description>Blazor WebAssembly bindings for DenOfIz Graphics. Cross-platform graphics abstraction library with WebGPU backend for browser applications.</description>
+    <releaseNotes>See https://github.com/MartinJespersen/DenOfIz/releases for release notes.</releaseNotes>
+    <copyright>Copyright Den Of Iz</copyright>
+    <tags>graphics WebGPU rendering 3D game-development blazor wasm webassembly</tags>
+    <repository type="git" url="https://github.com/MartinJespersen/DenOfIz.git" />
+    <readme>README.md</readme>
+    <dependencies>
+      <group targetFramework="net8.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="README.md" target="" />
+    <file src="lib\net8.0-browser1.0\DenOfIzGraphicsCSharp.dll" target="lib\net8.0\" />
+    <file src="runtimes\browser-wasm\native\**\*" target="runtimes\browser-wasm\native\" />
+    <file src="build\DenOfIzGraphics.Blazor.targets" target="build\DenOfIzGraphics.Blazor.targets" />
+    <file src="build\DenOfIzGraphics.Blazor.targets" target="buildTransitive\DenOfIzGraphics.Blazor.targets" />
+  </files>
+</package>

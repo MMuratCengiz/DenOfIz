@@ -1,0 +1,61 @@
+/*
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+
+#include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
+#include <metal_irconverter/metal_irconverter.h>
+#include <string>
+
+#ifdef _WIN32
+#include <wrl/client.h>
+#include "DenOfIzGraphics/Utilities/Common_Windows.h"
+#else
+#define __EMULATE_UUID
+#include "WinAdapter.h"
+#endif
+
+#include "dxcapi.h"
+
+#ifndef _WIN32
+#define interface struct
+#endif
+#include <directx/d3d12shader.h>
+#ifndef _WIN32
+#undef interface
+#endif
+
+namespace DenOfIz
+{
+
+    class DxcEnumConverter final
+    {
+    public:
+        static DenOfIz_ResourceBindingType ReflectTypeToBufferBindingType( D3D_SHADER_INPUT_TYPE type );
+        static uint32_t                    ReflectTypeToRootSignatureType( D3D_SHADER_INPUT_TYPE type, D3D_SRV_DIMENSION dimension );
+        static std::string                 GetBindingTypeString( DenOfIz_ResourceBindingType type );
+        static std::string                 GetStagesString( DenOfIz_ShaderStageFlags stages );
+        // MSL specific
+#if defined( _WIN32 ) || defined( __APPLE__ ) // TODO metal shader converter on linux: not yet supported
+        static IRShaderVisibility    ShaderStageToShaderVisibility( DenOfIz_ShaderStageFlags stage );
+        static IRRootParameterType   BindingTypeToIRRootParameterType( const DenOfIz_ResourceBindingType &type );
+        static IRRootParameterType   IRDescriptorRangeTypeToIRRootParameterType( const IRDescriptorRangeType &type );
+        static IRDescriptorRangeType ShaderTypeToIRDescriptorType( const D3D_SHADER_INPUT_TYPE &type );
+#endif
+    };
+} // namespace DenOfIz

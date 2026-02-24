@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net8.0-browser1.0</TargetFrameworks>
+    <AssemblyName>DenOfIzGraphicsCSharp</AssemblyName>
+    <RootNamespace>DenOfIz.Bindings</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
+    <LangVersion>12.0</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- NuGet Package Metadata -->
+    <PackageId>DenOfIzGraphics</PackageId>
+    <Version>0.6.1-alpha</Version>
+    <Authors>Den Of Iz</Authors>
+    <Company>Den Of Iz</Company>
+    <Product>DenOfIz Graphics</Product>
+    <Description>Cross-platform graphics abstraction library with C# bindings. Supports DirectX12, Vulkan, Metal, and WebGPU backends.</Description>
+    <PackageTags>graphics;DirectX12;Vulkan;Metal;WebGPU;rendering;3D;game-development;blazor;wasm</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/MartinJespersen/DenOfIz</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/MartinJespersen/DenOfIz.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <!-- Build settings -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-browser1.0'">
+    <DefineConstants>$(DefineConstants);BROWSER_WASM</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\Generated\**\*.cs" Link="Generated\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Wrappers\**\*.cs" Link="Wrappers\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Runtime\**\*.cs" Link="Runtime\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

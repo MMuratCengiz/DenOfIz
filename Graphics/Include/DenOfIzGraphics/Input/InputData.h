@@ -1,0 +1,341 @@
+/*
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+    typedef enum
+    {
+        DENOFIZ_KEY_MOD_NONE     = 1 << 0,
+        DENOFIZ_KEY_MOD_LSHIFT   = 1 << 1,
+        DENOFIZ_KEY_MOD_RSHIFT   = 1 << 2,
+        DENOFIZ_KEY_MOD_LCTRL    = 1 << 3,
+        DENOFIZ_KEY_MOD_RCTRL    = 1 << 4,
+        DENOFIZ_KEY_MOD_LALT     = 1 << 5,
+        DENOFIZ_KEY_MOD_RALT     = 1 << 6,
+        DENOFIZ_KEY_MOD_LGUI     = 1 << 7,
+        DENOFIZ_KEY_MOD_RGUI     = 1 << 8,
+        DENOFIZ_KEY_MOD_NUMLOCK  = 1 << 9,
+        DENOFIZ_KEY_MOD_CAPSLOCK = 1 << 10,
+        DENOFIZ_KEY_MOD_ALTGR    = 1 << 11,
+        DENOFIZ_KEY_MOD_SHIFT    = 1 << 12,
+        DENOFIZ_KEY_MOD_CTRL     = 1 << 13,
+        DENOFIZ_KEY_MOD_ALT      = 1 << 14,
+        DENOFIZ_KEY_MOD_GUI      = 1 << 15
+    } DenOfIz_KeyMod;
+
+    typedef enum
+    {
+        DENOFIZ_KEY_CODE_UNKNOWN = 0,
+
+        DENOFIZ_KEY_CODE_RETURN      = '\r',
+        DENOFIZ_KEY_CODE_ESCAPE      = '\033',
+        DENOFIZ_KEY_CODE_BACKSPACE   = '\b',
+        DENOFIZ_KEY_CODE_TAB         = '\t',
+        DENOFIZ_KEY_CODE_SPACE       = ' ',
+        DENOFIZ_KEY_CODE_EXCLAIM     = '!',
+        DENOFIZ_KEY_CODE_DOUBLEQUOTE = '"',
+        DENOFIZ_KEY_CODE_HASH        = '#',
+        DENOFIZ_KEY_CODE_PERCENT     = '%',
+        DENOFIZ_KEY_CODE_DOLLAR      = '$',
+        DENOFIZ_KEY_CODE_AMPERSAND   = '&',
+        DENOFIZ_KEY_CODE_QUOTE       = '\'',
+        DENOFIZ_KEY_CODE_LEFTPAREN   = '(',
+        DENOFIZ_KEY_CODE_RIGHTPAREN  = ')',
+        DENOFIZ_KEY_CODE_ASTERISK    = '*',
+        DENOFIZ_KEY_CODE_PLUS        = '+',
+        DENOFIZ_KEY_CODE_COMMA       = ',',
+        DENOFIZ_KEY_CODE_MINUS       = '-',
+        DENOFIZ_KEY_CODE_PERIOD      = '.',
+        DENOFIZ_KEY_CODE_SLASH       = '/',
+
+        DENOFIZ_KEY_CODE_NUM0 = '0',
+        DENOFIZ_KEY_CODE_NUM1 = '1',
+        DENOFIZ_KEY_CODE_NUM2 = '2',
+        DENOFIZ_KEY_CODE_NUM3 = '3',
+        DENOFIZ_KEY_CODE_NUM4 = '4',
+        DENOFIZ_KEY_CODE_NUM5 = '5',
+        DENOFIZ_KEY_CODE_NUM6 = '6',
+        DENOFIZ_KEY_CODE_NUM7 = '7',
+        DENOFIZ_KEY_CODE_NUM8 = '8',
+        DENOFIZ_KEY_CODE_NUM9 = '9',
+
+        DENOFIZ_KEY_CODE_COLON     = ':',
+        DENOFIZ_KEY_CODE_SEMICOLON = ';',
+        DENOFIZ_KEY_CODE_LESS      = '<',
+        DENOFIZ_KEY_CODE_EQUALS    = '=',
+        DENOFIZ_KEY_CODE_GREATER   = '>',
+        DENOFIZ_KEY_CODE_QUESTION  = '?',
+        DENOFIZ_KEY_CODE_AT        = '@',
+
+        DENOFIZ_KEY_CODE_A = 'a',
+        DENOFIZ_KEY_CODE_B = 'b',
+        DENOFIZ_KEY_CODE_C = 'c',
+        DENOFIZ_KEY_CODE_D = 'd',
+        DENOFIZ_KEY_CODE_E = 'e',
+        DENOFIZ_KEY_CODE_F = 'f',
+        DENOFIZ_KEY_CODE_G = 'g',
+        DENOFIZ_KEY_CODE_H = 'h',
+        DENOFIZ_KEY_CODE_I = 'i',
+        DENOFIZ_KEY_CODE_J = 'j',
+        DENOFIZ_KEY_CODE_K = 'k',
+        DENOFIZ_KEY_CODE_L = 'l',
+        DENOFIZ_KEY_CODE_M = 'm',
+        DENOFIZ_KEY_CODE_N = 'n',
+        DENOFIZ_KEY_CODE_O = 'o',
+        DENOFIZ_KEY_CODE_P = 'p',
+        DENOFIZ_KEY_CODE_Q = 'q',
+        DENOFIZ_KEY_CODE_R = 'r',
+        DENOFIZ_KEY_CODE_S = 's',
+        DENOFIZ_KEY_CODE_T = 't',
+        DENOFIZ_KEY_CODE_U = 'u',
+        DENOFIZ_KEY_CODE_V = 'v',
+        DENOFIZ_KEY_CODE_W = 'w',
+        DENOFIZ_KEY_CODE_X = 'x',
+        DENOFIZ_KEY_CODE_Y = 'y',
+        DENOFIZ_KEY_CODE_Z = 'z',
+
+        DENOFIZ_KEY_CODE_LEFTBRACKET  = '[',
+        DENOFIZ_KEY_CODE_BACKSLASH    = '\\',
+        DENOFIZ_KEY_CODE_RIGHTBRACKET = ']',
+        DENOFIZ_KEY_CODE_CARET        = '^',
+        DENOFIZ_KEY_CODE_UNDERSCORE   = '_',
+        DENOFIZ_KEY_CODE_BACKQUOTE    = '`',
+
+        DENOFIZ_KEY_CODE_CAPSLOCK = 0x40000039,
+
+        DENOFIZ_KEY_CODE_F1  = 0x4000003A,
+        DENOFIZ_KEY_CODE_F2  = 0x4000003B,
+        DENOFIZ_KEY_CODE_F3  = 0x4000003C,
+        DENOFIZ_KEY_CODE_F4  = 0x4000003D,
+        DENOFIZ_KEY_CODE_F5  = 0x4000003E,
+        DENOFIZ_KEY_CODE_F6  = 0x4000003F,
+        DENOFIZ_KEY_CODE_F7  = 0x40000040,
+        DENOFIZ_KEY_CODE_F8  = 0x40000041,
+        DENOFIZ_KEY_CODE_F9  = 0x40000042,
+        DENOFIZ_KEY_CODE_F10 = 0x40000043,
+        DENOFIZ_KEY_CODE_F11 = 0x40000044,
+        DENOFIZ_KEY_CODE_F12 = 0x40000045,
+
+        DENOFIZ_KEY_CODE_PRINTSCREEN = 0x40000046,
+        DENOFIZ_KEY_CODE_SCROLLLOCK  = 0x40000047,
+        DENOFIZ_KEY_CODE_PAUSE       = 0x40000048,
+        DENOFIZ_KEY_CODE_INSERT      = 0x40000049,
+        DENOFIZ_KEY_CODE_HOME        = 0x4000004A,
+        DENOFIZ_KEY_CODE_PAGEUP      = 0x4000004B,
+        DENOFIZ_KEY_CODE_DELETE      = 0x7F,
+        DENOFIZ_KEY_CODE_END         = 0x4000004D,
+        DENOFIZ_KEY_CODE_PAGEDOWN    = 0x4000004E,
+        DENOFIZ_KEY_CODE_RIGHT       = 0x4000004F,
+        DENOFIZ_KEY_CODE_LEFT        = 0x40000050,
+        DENOFIZ_KEY_CODE_DOWN        = 0x40000051,
+        DENOFIZ_KEY_CODE_UP          = 0x40000052,
+
+        DENOFIZ_KEY_CODE_NUMLOCKCLEAR    = 0x40000053,
+        DENOFIZ_KEY_CODE_KEYPAD_DIVIDE   = 0x40000054,
+        DENOFIZ_KEY_CODE_KEYPAD_MULTIPLY = 0x40000055,
+        DENOFIZ_KEY_CODE_KEYPAD_MINUS    = 0x40000056,
+        DENOFIZ_KEY_CODE_KEYPAD_PLUS     = 0x40000057,
+        DENOFIZ_KEY_CODE_KEYPAD_ENTER    = 0x40000058,
+        DENOFIZ_KEY_CODE_KEYPAD_1        = 0x40000059,
+        DENOFIZ_KEY_CODE_KEYPAD_2        = 0x4000005A,
+        DENOFIZ_KEY_CODE_KEYPAD_3        = 0x4000005B,
+        DENOFIZ_KEY_CODE_KEYPAD_4        = 0x4000005C,
+        DENOFIZ_KEY_CODE_KEYPAD_5        = 0x4000005D,
+        DENOFIZ_KEY_CODE_KEYPAD_6        = 0x4000005E,
+        DENOFIZ_KEY_CODE_KEYPAD_7        = 0x4000005F,
+        DENOFIZ_KEY_CODE_KEYPAD_8        = 0x40000060,
+        DENOFIZ_KEY_CODE_KEYPAD_9        = 0x40000061,
+        DENOFIZ_KEY_CODE_KEYPAD_0        = 0x40000062,
+        DENOFIZ_KEY_CODE_KEYPAD_PERIOD   = 0x40000063,
+
+        DENOFIZ_KEY_CODE_LCTRL  = 0x400000E0,
+        DENOFIZ_KEY_CODE_LSHIFT = 0x400000E1,
+        DENOFIZ_KEY_CODE_LALT   = 0x400000E2,
+        DENOFIZ_KEY_CODE_LGUI   = 0x400000E3,
+        DENOFIZ_KEY_CODE_RCTRL  = 0x400000E4,
+        DENOFIZ_KEY_CODE_RSHIFT = 0x400000E5,
+        DENOFIZ_KEY_CODE_RALT   = 0x400000E6,
+        DENOFIZ_KEY_CODE_RGUI   = 0x400000E7
+    } DenOfIz_KeyCode;
+
+    typedef enum
+    {
+        DENOFIZ_MOUSE_BUTTON_LEFT   = 1,
+        DENOFIZ_MOUSE_BUTTON_MIDDLE = 2,
+        DENOFIZ_MOUSE_BUTTON_RIGHT  = 3,
+        DENOFIZ_MOUSE_BUTTON_X1     = 4,
+        DENOFIZ_MOUSE_BUTTON_X2     = 5
+    } DenOfIz_MouseButton;
+
+    typedef enum
+    {
+        DENOFIZ_MOUSE_WHEEL_DIRECTION_NORMAL  = 0,
+        DENOFIZ_MOUSE_WHEEL_DIRECTION_FLIPPED = 1
+    } DenOfIz_MouseWheelDirection;
+
+    typedef enum
+    {
+        DENOFIZ_CONTROLLER_BUTTON_INVALID        = 999,
+        DENOFIZ_CONTROLLER_BUTTON_A              = 0,
+        DENOFIZ_CONTROLLER_BUTTON_B              = 1,
+        DENOFIZ_CONTROLLER_BUTTON_X              = 2,
+        DENOFIZ_CONTROLLER_BUTTON_Y              = 3,
+        DENOFIZ_CONTROLLER_BUTTON_BACK           = 4,
+        DENOFIZ_CONTROLLER_BUTTON_GUIDE          = 5,
+        DENOFIZ_CONTROLLER_BUTTON_START          = 6,
+        DENOFIZ_CONTROLLER_BUTTON_LEFT_STICK     = 7,
+        DENOFIZ_CONTROLLER_BUTTON_RIGHT_STICK    = 8,
+        DENOFIZ_CONTROLLER_BUTTON_LEFT_SHOULDER  = 9,
+        DENOFIZ_CONTROLLER_BUTTON_RIGHT_SHOULDER = 10,
+        DENOFIZ_CONTROLLER_BUTTON_DPAD_UP        = 11,
+        DENOFIZ_CONTROLLER_BUTTON_DPAD_DOWN      = 12,
+        DENOFIZ_CONTROLLER_BUTTON_DPAD_LEFT      = 13,
+        DENOFIZ_CONTROLLER_BUTTON_DPAD_RIGHT     = 14,
+        DENOFIZ_CONTROLLER_BUTTON_MISC1          = 15,
+        DENOFIZ_CONTROLLER_BUTTON_PADDLE1        = 16,
+        DENOFIZ_CONTROLLER_BUTTON_PADDLE2        = 17,
+        DENOFIZ_CONTROLLER_BUTTON_PADDLE3        = 18,
+        DENOFIZ_CONTROLLER_BUTTON_PADDLE4        = 19,
+        DENOFIZ_CONTROLLER_BUTTON_TOUCHPAD       = 20,
+        DENOFIZ_CONTROLLER_BUTTON_MAX            = 21
+    } DenOfIz_ControllerButton;
+
+    typedef enum
+    {
+        DENOFIZ_CONTROLLER_AXIS_INVALID       = 999,
+        DENOFIZ_CONTROLLER_AXIS_LEFT_X        = 0,
+        DENOFIZ_CONTROLLER_AXIS_LEFT_Y        = 1,
+        DENOFIZ_CONTROLLER_AXIS_RIGHT_X       = 2,
+        DENOFIZ_CONTROLLER_AXIS_RIGHT_Y       = 3,
+        DENOFIZ_CONTROLLER_AXIS_TRIGGER_LEFT  = 4,
+        DENOFIZ_CONTROLLER_AXIS_TRIGGER_RIGHT = 5,
+        DENOFIZ_CONTROLLER_AXIS_MAX           = 6
+    } DenOfIz_ControllerAxis;
+
+    typedef enum
+    {
+        DENOFIZ_WINDOW_EVENT_TYPE_NONE         = 0,
+        DENOFIZ_WINDOW_EVENT_TYPE_SHOWN        = 1,
+        DENOFIZ_WINDOW_EVENT_TYPE_HIDDEN       = 2,
+        DENOFIZ_WINDOW_EVENT_TYPE_EXPOSED      = 3,
+        DENOFIZ_WINDOW_EVENT_TYPE_MOVED        = 4,
+        DENOFIZ_WINDOW_EVENT_TYPE_RESIZED      = 5,
+        DENOFIZ_WINDOW_EVENT_TYPE_SIZE_CHANGED = 6,
+        DENOFIZ_WINDOW_EVENT_TYPE_MINIMIZED    = 7,
+        DENOFIZ_WINDOW_EVENT_TYPE_MAXIMIZED    = 8,
+        DENOFIZ_WINDOW_EVENT_TYPE_RESTORED     = 9,
+        DENOFIZ_WINDOW_EVENT_TYPE_ENTER        = 10,
+        DENOFIZ_WINDOW_EVENT_TYPE_LEAVE        = 11,
+        DENOFIZ_WINDOW_EVENT_TYPE_FOCUS_GAINED = 12,
+        DENOFIZ_WINDOW_EVENT_TYPE_FOCUS_LOST   = 13,
+        DENOFIZ_WINDOW_EVENT_TYPE_CLOSE        = 14
+    } DenOfIz_WindowEventType;
+
+    typedef enum
+    {
+        DENOFIZ_EVENT_TYPE_NONE                       = 0,
+        DENOFIZ_EVENT_TYPE_QUIT                       = 0x100,
+        DENOFIZ_EVENT_TYPE_APP_TERMINATING            = 0x101,
+        DENOFIZ_EVENT_TYPE_APP_LOW_MEMORY             = 0x102,
+        DENOFIZ_EVENT_TYPE_APP_WILL_ENTER_BACKGROUND  = 0x103,
+        DENOFIZ_EVENT_TYPE_APP_DID_ENTER_BACKGROUND   = 0x104,
+        DENOFIZ_EVENT_TYPE_APP_WILL_ENTER_FOREGROUND  = 0x105,
+        DENOFIZ_EVENT_TYPE_APP_DID_ENTER_FOREGROUND   = 0x106,
+        DENOFIZ_EVENT_TYPE_DISPLAY_EVENT              = 0x150,
+        DENOFIZ_EVENT_TYPE_WINDOW_EVENT               = 0x200,
+        DENOFIZ_EVENT_TYPE_KEY_DOWN                   = 0x300,
+        DENOFIZ_EVENT_TYPE_KEY_UP                     = 0x301,
+        DENOFIZ_EVENT_TYPE_TEXT_EDITING               = 0x302,
+        DENOFIZ_EVENT_TYPE_TEXT_INPUT                 = 0x303,
+        DENOFIZ_EVENT_TYPE_KEYMAP_CHANGED             = 0x304,
+        DENOFIZ_EVENT_TYPE_MOUSE_MOTION               = 0x400,
+        DENOFIZ_EVENT_TYPE_MOUSE_BUTTON_DOWN          = 0x401,
+        DENOFIZ_EVENT_TYPE_MOUSE_BUTTON_UP            = 0x402,
+        DENOFIZ_EVENT_TYPE_MOUSE_WHEEL                = 0x403,
+        DENOFIZ_EVENT_TYPE_JOY_AXIS_MOTION            = 0x600,
+        DENOFIZ_EVENT_TYPE_JOY_BALL_MOTION            = 0x601,
+        DENOFIZ_EVENT_TYPE_JOY_HAT_MOTION             = 0x602,
+        DENOFIZ_EVENT_TYPE_JOY_BUTTON_DOWN            = 0x603,
+        DENOFIZ_EVENT_TYPE_JOY_BUTTON_UP              = 0x604,
+        DENOFIZ_EVENT_TYPE_JOY_DEVICE_ADDED           = 0x605,
+        DENOFIZ_EVENT_TYPE_JOY_DEVICE_REMOVED         = 0x606,
+        DENOFIZ_EVENT_TYPE_CONTROLLER_AXIS_MOTION     = 0x650,
+        DENOFIZ_EVENT_TYPE_CONTROLLER_BUTTON_DOWN     = 0x651,
+        DENOFIZ_EVENT_TYPE_CONTROLLER_BUTTON_UP       = 0x652,
+        DENOFIZ_EVENT_TYPE_CONTROLLER_DEVICE_ADDED    = 0x653,
+        DENOFIZ_EVENT_TYPE_CONTROLLER_DEVICE_REMOVED  = 0x654,
+        DENOFIZ_EVENT_TYPE_CONTROLLER_DEVICE_REMAPPED = 0x655,
+        DENOFIZ_EVENT_TYPE_FINGER_DOWN                = 0x700,
+        DENOFIZ_EVENT_TYPE_FINGER_UP                  = 0x701,
+        DENOFIZ_EVENT_TYPE_FINGER_MOTION              = 0x702,
+        DENOFIZ_EVENT_TYPE_DOLLAR_GESTURE             = 0x800,
+        DENOFIZ_EVENT_TYPE_DOLLAR_RECORD              = 0x801,
+        DENOFIZ_EVENT_TYPE_MULTI_GESTURE              = 0x802,
+        DENOFIZ_EVENT_TYPE_CLIPBOARD_UPDATE           = 0x900,
+        DENOFIZ_EVENT_TYPE_DROP_FILE                  = 0x1000,
+        DENOFIZ_EVENT_TYPE_DROP_TEXT                  = 0x1001,
+        DENOFIZ_EVENT_TYPE_DROP_BEGIN                 = 0x1002,
+        DENOFIZ_EVENT_TYPE_DROP_COMPLETE              = 0x1003,
+        DENOFIZ_EVENT_TYPE_AUDIO_DEVICE_ADDED         = 0x1100,
+        DENOFIZ_EVENT_TYPE_AUDIO_DEVICE_REMOVED       = 0x1101,
+        DENOFIZ_EVENT_TYPE_SENSOR_UPDATE              = 0x1200,
+        DENOFIZ_EVENT_TYPE_RENDER_TARGETS_RESET       = 0x2000,
+        DENOFIZ_EVENT_TYPE_RENDER_DEVICE_RESET        = 0x2001
+    } DenOfIz_EventType;
+
+    typedef enum
+    {
+        DENOFIZ_KEY_STATE_RELEASED = 0,
+        DENOFIZ_KEY_STATE_PRESSED  = 1
+    } DenOfIz_KeyState;
+
+    typedef enum
+    {
+        DENOFIZ_SYSTEM_CURSOR_DEFAULT,
+        DENOFIZ_SYSTEM_CURSOR_TEXT,
+        DENOFIZ_SYSTEM_CURSOR_WAIT,
+        DENOFIZ_SYSTEM_CURSOR_CROSSHAIR,
+        DENOFIZ_SYSTEM_CURSOR_PROGRESS,
+        DENOFIZ_SYSTEM_CURSOR_NWSE_RESIZE,
+        DENOFIZ_SYSTEM_CURSOR_NESW_RESIZE,
+        DENOFIZ_SYSTEM_CURSOR_EW_RESIZE,
+        DENOFIZ_SYSTEM_CURSOR_NS_RESIZE,
+        DENOFIZ_SYSTEM_CURSOR_MOVE,
+        DENOFIZ_SYSTEM_CURSOR_NOT_ALLOWED,
+        DENOFIZ_SYSTEM_CURSOR_POINTER,
+        DENOFIZ_SYSTEM_CURSOR_NW_RESIZE,
+        DENOFIZ_SYSTEM_CURSOR_N_RESIZE,
+        DENOFIZ_SYSTEM_CURSOR_NE_RESIZE,
+        DENOFIZ_SYSTEM_CURSOR_E_RESIZE,
+        DENOFIZ_SYSTEM_CURSOR_SE_RESIZE,
+        DENOFIZ_SYSTEM_CURSOR_S_RESIZE,
+        DENOFIZ_SYSTEM_CURSOR_SW_RESIZE,
+        DENOFIZ_SYSTEM_CURSOR_W_RESIZE,
+        DENOFIZ_SYSTEM_CURSOR_COUNT
+    } DenOfIz_SystemCursor;
+
+#ifdef __cplusplus
+}
+#endif

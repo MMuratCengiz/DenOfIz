@@ -1,0 +1,698 @@
+name: Build NuGet Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish to NuGet.org'
+        required: false
+        default: false
+        type: boolean
+      skip_builds:
+        description: 'Skip build jobs and reuse artifacts from run ID'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+
+jobs:
+  read-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version from version.txt
+        id: get_version
+        run: |
+          VERSION=$(cat version.txt | tr -d '[:space:]')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+  build-windows:
+    needs: read-version
+    if: ${{ github.event.inputs.skip_builds == '' }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Set version from previous job
+        run: echo "VERSION=${{ needs.read-version.outputs.version }}" >> $env:GITHUB_ENV
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '[17.0,)'
+          msbuild-architecture: x64
+
+      - name: Setup Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          choco install -y make llvm
+
+      - name: Set LLVM environment
+        shell: pwsh
+        run: |
+          $llvmPath = "C:\Program Files\LLVM"
+          echo "LLVM_DIR=$llvmPath" >> $env:GITHUB_ENV
+          echo "LLVM_ROOT_DIR=$llvmPath" >> $env:GITHUB_ENV
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          doNotCache: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Configure CMake
+        uses: lukka/run-cmake@v10
+        env:
+          LLVM_DIR: ${{ env.LLVM_DIR }}
+        with:
+          configurePreset: 'Install_Windows'
+          configurePresetAdditionalArgs: "['-DBUILD_EXAMPLES=OFF', '-DLLVM_DIR=${{ env.LLVM_DIR }}']"
+
+      - name: Build and Install Native Library
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: 'Install_Windows'
+          buildPreset: 'Install_Windows'
+
+      - name: Generate C# Bindings
+        shell: pwsh
+        run: |
+          cmake --build build/DenOfIz/Install_Windows --target DenOfIzCSharpGenerate --config Release
+
+      - name: Package artifacts
+        shell: pwsh
+        run: |
+          # Install directory structure: install/DenOfIz/${presetName}
+          $installDir = "install/DenOfIz/Install_Windows"
+
+          mkdir -p artifacts/runtimes/win-x64/native
+          mkdir -p artifacts/generated
+
+          # Copy main library from install dir
+          if (Test-Path "$installDir/bin/DenOfIzGraphics.dll") {
+              Copy-Item "$installDir/bin/DenOfIzGraphics.dll" artifacts/runtimes/win-x64/native/
+              Write-Host "Copied DenOfIzGraphics.dll"
+          } else {
+              Write-Host "ERROR: DenOfIzGraphics.dll not found in $installDir/bin/"
+              Write-Host "Contents of install directory:"
+              Get-ChildItem -Recurse install -ErrorAction SilentlyContinue | Select-Object FullName
+              exit 1
+          }
+
+          # Copy additional DLLs from install/bin
+          # Note: WinPixEventRuntime.dll is not available with static CRT (x64-windows-static)
+          $additionalDlls = @(
+              "dxcompiler.dll",
+              "dxil.dll",
+              "metalirconverter.dll",
+              "wgpu_native.dll"
+          )
+
+          foreach ($dll in $additionalDlls) {
+              if (Test-Path "$installDir/bin/$dll") {
+                  Copy-Item "$installDir/bin/$dll" artifacts/runtimes/win-x64/native/
+                  Write-Host "Copied $dll"
+              } else {
+                  Write-Host "Warning: $dll not found in install dir (may not be required)"
+              }
+          }
+
+          # Copy generated C# files
+          if (Test-Path "Bindings/CSharp/Generated") {
+              Copy-Item -Recurse Bindings/CSharp/Generated/* artifacts/generated/
+              Write-Host "Copied generated C# files"
+          } else {
+              Write-Host "ERROR: Generated C# files not found!"
+              exit 1
+          }
+
+          # Copy Runtime folder
+          if (Test-Path "Bindings/CSharp/Runtime") {
+              mkdir -p artifacts/runtime
+              Copy-Item -Recurse Bindings/CSharp/Runtime/* artifacts/runtime/
+              Write-Host "Copied Runtime C# files"
+          }
+
+          # List what was packaged
+          Write-Host "Artifacts packaged:"
+          Get-ChildItem -Recurse artifacts | Select-Object FullName
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: artifacts/
+
+  build-linux:
+    needs: read-version
+    if: ${{ github.event.inputs.skip_builds == '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Set version from previous job
+        run: echo "VERSION=${{ needs.read-version.outputs.version }}" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common wget gpg
+          sudo apt-get install -y ninja-build build-essential
+          sudo apt-get install -y libglu1-mesa-dev freeglut3-dev libvulkan-dev libsdl2-dev
+          sudo apt-get install -y libfreetype-dev libharfbuzz-dev
+          sudo apt-get install -y libltdl-dev libtool autoconf automake autoconf-archive
+          sudo apt-get install -y libwayland-dev libxkbcommon-dev libegl1-mesa-dev
+          sudo apt-get install -y libibus-1.0-dev
+          sudo apt-get install -y python3 python3-pip python3-jinja2 python3-packaging
+          sudo apt-get install -y libcap-dev libmount-dev libsystemd-dev
+          sudo apt-get install -y gperf m4
+
+      - name: Install Clang 18
+        run: |
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+          sudo add-apt-repository "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-18 main"
+          sudo apt-get update
+          sudo apt-get install -y clang-18 clang++-18 lld-18
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100
+          sudo update-alternatives --install /usr/bin/lld lld /usr/bin/lld-18 100
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          doNotCache: false
+
+      - name: Configure CMake
+        uses: lukka/run-cmake@v10
+        env:
+          CC: clang-18
+          CXX: clang++-18
+        with:
+          configurePreset: 'Install_Linux'
+          configurePresetAdditionalArgs: "['-DBUILD_EXAMPLES=OFF']"
+
+      - name: Build and Install Native Library
+        uses: lukka/run-cmake@v10
+        env:
+          CC: clang-18
+          CXX: clang++-18
+        with:
+          configurePreset: 'Install_Linux'
+          buildPreset: 'Install_Linux'
+
+      - name: Package artifacts
+        run: |
+          # Install directory: install/DenOfIz/${presetName}
+          INSTALL_DIR="install/DenOfIz/Install_Linux"
+
+          mkdir -p artifacts/runtimes/linux-x64/native
+
+          # Copy main library from install dir
+          if [ -f "$INSTALL_DIR/lib/libDenOfIzGraphics.so" ]; then
+              cp "$INSTALL_DIR/lib/libDenOfIzGraphics.so" artifacts/runtimes/linux-x64/native/
+              echo "Copied libDenOfIzGraphics.so"
+          else
+              echo "ERROR: libDenOfIzGraphics.so not found!"
+              echo "Contents of install directory:"
+              find install -type f 2>/dev/null || echo "Install dir not found"
+              exit 1
+          fi
+
+          # Copy additional libraries from install dir
+          for lib in libdxcompiler.so libdxil.so libwgpu_native.so; do
+              if [ -f "$INSTALL_DIR/lib/$lib" ]; then
+                  cp "$INSTALL_DIR/lib/$lib" artifacts/runtimes/linux-x64/native/
+                  echo "Copied $lib"
+              else
+                  echo "Warning: $lib not found (may not be required)"
+              fi
+          done
+
+          echo "Artifacts packaged:"
+          find artifacts -type f
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: artifacts/
+
+  build-macos:
+    needs: read-version
+    if: ${{ github.event.inputs.skip_builds == '' }}
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Set version from previous job
+        run: echo "VERSION=${{ needs.read-version.outputs.version }}" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: |
+          brew install ninja
+          brew install freetype harfbuzz
+          brew install sdl2
+          brew install autoconf automake autoconf-archive
+          brew install llvm
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          doNotCache: false
+
+      - name: Configure CMake
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: 'Install_OSX'
+          configurePresetAdditionalArgs: "['-DBUILD_EXAMPLES=OFF']"
+
+      - name: Build and Install Native Library
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: 'Install_OSX'
+          buildPreset: 'Install_OSX'
+
+      - name: Import Code Signing Certificate
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: keychainpassword
+        run: |
+          if [ -n "$CERTIFICATE_BASE64" ]; then
+            security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+            security default-keychain -s build.keychain
+            security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+
+            security set-keychain-settings build.keychain
+
+            echo "$CERTIFICATE_BASE64" | base64 --decode > certificate.p12
+            security import certificate.p12 -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+            security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+
+            rm certificate.p12
+          else
+            echo "No signing certificate provided, skipping code signing setup"
+          fi
+
+      - name: Package artifacts
+        run: |
+          # Install directory from CMakePresets.json Base preset: install/DenOfIz/${presetName}
+          INSTALL_DIR="install/DenOfIz/Install_OSX"
+
+          mkdir -p artifacts/runtimes/osx-arm64/native
+
+          # Copy main library from install dir
+          if [ -f "$INSTALL_DIR/lib/libDenOfIzGraphics.dylib" ]; then
+              cp "$INSTALL_DIR/lib/libDenOfIzGraphics.dylib" artifacts/runtimes/osx-arm64/native/
+              echo "Copied libDenOfIzGraphics.dylib"
+          else
+              echo "ERROR: libDenOfIzGraphics.dylib not found!"
+              echo "Contents of install directory:"
+              find install -type f 2>/dev/null || echo "Install dir not found"
+              exit 1
+          fi
+
+          # Copy additional libraries from install dir
+          for lib in libdxcompiler.dylib libmetalirconverter.dylib libwgpu_native.dylib; do
+              if [ -f "$INSTALL_DIR/lib/$lib" ]; then
+                  cp "$INSTALL_DIR/lib/$lib" artifacts/runtimes/osx-arm64/native/
+                  echo "Copied $lib"
+              else
+                  echo "Warning: $lib not found (may not be required)"
+              fi
+          done
+
+          echo "Artifacts packaged:"
+          find artifacts -type f
+
+      - name: Sign macOS Libraries
+        env:
+          SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+        run: |
+          if [ -n "$SIGNING_IDENTITY" ]; then
+            for lib in artifacts/runtimes/osx-arm64/native/*.dylib; do
+              if [ -f "$lib" ]; then
+                codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" "$lib" || echo "Warning: Failed to sign $lib"
+              fi
+            done
+          else
+            echo "No signing identity provided, skipping code signing"
+          fi
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: artifacts/
+
+  build-emscripten:
+    needs: read-version
+    if: ${{ github.event.inputs.skip_builds == '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Set version from previous job
+        run: echo "VERSION=${{ needs.read-version.outputs.version }}" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build build-essential
+          sudo apt-get install -y python3 python3-pip
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '3.1.56'
+          actions-cache-folder: 'emsdk-cache'
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          doNotCache: false
+
+      - name: Configure CMake for Emscripten
+        run: |
+          emcmake cmake -S . -B build/DenOfIz/Install_Emscripten \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DVCPKG_TARGET_TRIPLET=wasm32-emscripten \
+            -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake \
+            -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_TOOLS=OFF \
+            -DBUILD_EXAMPLES=OFF \
+            -DDZ_INSTALL=ON
+
+      - name: Build Emscripten Library
+        run: |
+          cmake --build build/DenOfIz/Install_Emscripten --config Release
+
+      - name: Install Emscripten Library
+        run: |
+          cmake --install build/DenOfIz/Install_Emscripten --prefix install/DenOfIz/Install_Emscripten
+
+      - name: Package artifacts
+        run: |
+          INSTALL_DIR="install/DenOfIz/Install_Emscripten"
+          BUILD_DIR="build/DenOfIz/Install_Emscripten"
+
+          mkdir -p artifacts/runtimes/browser-wasm/native
+
+          # Copy static library from install or build dir
+          if [ -f "$INSTALL_DIR/lib/libDenOfIzGraphics.a" ]; then
+              cp "$INSTALL_DIR/lib/libDenOfIzGraphics.a" artifacts/runtimes/browser-wasm/native/
+              echo "Copied libDenOfIzGraphics.a from install dir"
+          elif [ -f "$BUILD_DIR/Graphics/libDenOfIzGraphics.a" ]; then
+              cp "$BUILD_DIR/Graphics/libDenOfIzGraphics.a" artifacts/runtimes/browser-wasm/native/
+              echo "Copied libDenOfIzGraphics.a from build dir"
+          else
+              echo "ERROR: libDenOfIzGraphics.a not found!"
+              echo "Contents of install directory:"
+              find install -name "*.a" 2>/dev/null || echo "No .a files in install"
+              echo "Contents of build directory:"
+              find build -name "*.a" 2>/dev/null || echo "No .a files in build"
+              exit 1
+          fi
+
+          # Copy any JS glue files if they exist
+          for js in "$BUILD_DIR/Graphics"/*.js "$INSTALL_DIR/lib"/*.js; do
+              if [ -f "$js" ]; then
+                  cp "$js" artifacts/runtimes/browser-wasm/native/
+                  echo "Copied $(basename $js)"
+              fi
+          done
+
+          echo "Artifacts packaged:"
+          find artifacts -type f
+
+      - name: Upload Emscripten Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: emscripten-artifacts
+          path: artifacts/
+
+  build-nuget:
+    needs: [read-version, build-windows, build-linux, build-macos, build-emscripten]
+    if: ${{ always() && needs.read-version.result == 'success' && (github.event.inputs.skip_builds != '' || (needs.build-windows.result == 'success' && needs.build-linux.result == 'success' && needs.build-macos.result == 'success' && needs.build-emscripten.result == 'success')) }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Set version from previous job
+        run: echo "VERSION=${{ needs.read-version.outputs.version }}" >> $env:GITHUB_ENV
+
+      - name: Debug workflow inputs
+        run: |
+          echo "=== Workflow Inputs ==="
+          echo "publish: '${{ github.event.inputs.publish }}'"
+          echo "skip_builds: '${{ github.event.inputs.skip_builds }}'"
+          echo "=== Job Results ==="
+          echo "read-version: ${{ needs.read-version.result }}"
+          echo "build-windows: ${{ needs.build-windows.result }}"
+          echo "build-linux: ${{ needs.build-linux.result }}"
+          echo "build-macos: ${{ needs.build-macos.result }}"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install NuGet CLI
+        shell: pwsh
+        run: |
+          choco install -y nuget.commandline
+
+      - name: Download Artifacts
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $runId = "${{ github.event.inputs.skip_builds }}"
+          if ([string]::IsNullOrEmpty($runId)) {
+            $runId = "${{ github.run_id }}"
+          }
+
+          Write-Host "Downloading artifacts from run: $runId"
+
+          gh run download $runId -n windows-artifacts -D windows-artifacts
+          gh run download $runId -n linux-artifacts -D linux-artifacts
+          gh run download $runId -n macos-artifacts -D macos-artifacts
+          gh run download $runId -n emscripten-artifacts -D emscripten-artifacts
+
+          Write-Host "Downloaded artifacts:"
+          Get-ChildItem -Recurse windows-artifacts, linux-artifacts, macos-artifacts, emscripten-artifacts | Select-Object FullName
+
+      - name: Prepare NuGet package structure
+        shell: pwsh
+        run: |
+          $nugetDir = "Bindings/CSharp/NuGet"
+
+          # Create necessary directories
+          New-Item -Path "$nugetDir/lib/net8.0" -ItemType Directory -Force
+          New-Item -Path "$nugetDir/lib/net8.0-browser1.0" -ItemType Directory -Force
+          New-Item -Path "$nugetDir/runtimes/win-x64/native" -ItemType Directory -Force
+          New-Item -Path "$nugetDir/runtimes/linux-x64/native" -ItemType Directory -Force
+          New-Item -Path "$nugetDir/runtimes/osx-arm64/native" -ItemType Directory -Force
+          New-Item -Path "$nugetDir/runtimes/browser-wasm/native" -ItemType Directory -Force
+
+          # Copy generated C# files from Windows artifacts
+          Write-Host "Copying generated C# source files..."
+          if (Test-Path "windows-artifacts/generated") {
+              New-Item -Path "Bindings/CSharp/Generated" -ItemType Directory -Force
+              Copy-Item -Recurse -Force windows-artifacts/generated/* Bindings/CSharp/Generated/
+          }
+
+          # Copy Runtime files if present
+          if (Test-Path "windows-artifacts/runtime") {
+              New-Item -Path "Bindings/CSharp/Runtime" -ItemType Directory -Force
+              Copy-Item -Recurse -Force windows-artifacts/runtime/* Bindings/CSharp/Runtime/
+          }
+
+          # Copy runtimes from each platform
+          Write-Host "Copying Windows runtime files..."
+          Copy-Item windows-artifacts/runtimes/win-x64/native/* $nugetDir/runtimes/win-x64/native/
+
+          Write-Host "Copying Linux runtime files..."
+          Copy-Item linux-artifacts/runtimes/linux-x64/native/* $nugetDir/runtimes/linux-x64/native/
+
+          Write-Host "Copying macOS runtime files..."
+          Copy-Item macos-artifacts/runtimes/osx-arm64/native/* $nugetDir/runtimes/osx-arm64/native/
+
+          Write-Host "Copying Emscripten/WASM runtime files..."
+          Copy-Item emscripten-artifacts/runtimes/browser-wasm/native/* $nugetDir/runtimes/browser-wasm/native/
+
+          Write-Host "Copying README..."
+          Copy-Item README.md $nugetDir/README.md
+
+          Write-Host "Package structure prepared:"
+          Get-ChildItem -Recurse $nugetDir | Select-Object FullName
+
+      - name: Build managed DLL
+        shell: pwsh
+        run: |
+          $csprojFile = "Bindings/CSharp/NuGet/DenOfIzGraphics.csproj"
+
+          # Update version in csproj
+          [xml]$csproj = Get-Content $csprojFile
+          $versionNode = $csproj.SelectSingleNode("//PropertyGroup/Version")
+          if ($versionNode) {
+              $versionNode.InnerText = "${{ env.VERSION }}"
+              $csproj.Save($csprojFile)
+              Write-Host "Updated csproj version to ${{ env.VERSION }}"
+          }
+
+          # Build the managed DLLs for both frameworks
+          Push-Location Bindings/CSharp/NuGet
+
+          # Build for net8.0 (native desktop platforms)
+          Write-Host "Building net8.0..."
+          dotnet build ./DenOfIzGraphics.csproj -c Release -f net8.0 -o lib/net8.0
+          if (!$?) {
+              Write-Error "Failed to build net8.0 DLL"
+              exit 1
+          }
+
+          # Build for net8.0-browser1.0 (Blazor WebAssembly)
+          Write-Host "Building net8.0-browser1.0..."
+          dotnet build ./DenOfIzGraphics.csproj -c Release -f net8.0-browser1.0 -o lib/net8.0-browser1.0
+          if (!$?) {
+              Write-Error "Failed to build net8.0-browser1.0 DLL"
+              exit 1
+          }
+
+          Pop-Location
+
+          Write-Host "Built managed DLLs:"
+          Get-ChildItem -Recurse Bindings/CSharp/NuGet/lib | Select-Object FullName
+
+      - name: Create NuGet packages
+        shell: pwsh
+        run: |
+          $nugetDir = "Bindings/CSharp/NuGet"
+          $outputDir = "Bindings/CSharp/NuGet_Out"
+
+          New-Item -Path $outputDir -ItemType Directory -Force | Out-Null
+
+          # Update version in main nuspec
+          $nuspecFile = "$nugetDir/DenOfIzGraphics.nuspec"
+          [xml]$nuspec = Get-Content $nuspecFile
+          $nuspec.package.metadata.version = "${{ env.VERSION }}"
+          $nuspec.Save($nuspecFile)
+
+          # Update version in Blazor nuspec
+          $blazorNuspecFile = "$nugetDir/DenOfIzGraphics.Blazor.nuspec"
+          [xml]$blazorNuspec = Get-Content $blazorNuspecFile
+          $blazorNuspec.package.metadata.version = "${{ env.VERSION }}"
+          $blazorNuspec.Save($blazorNuspecFile)
+
+          Push-Location $nugetDir
+          nuget pack DenOfIzGraphics.nuspec -Version ${{ env.VERSION }} -OutputDirectory ../NuGet_Out
+          nuget pack DenOfIzGraphics.Blazor.nuspec -Version ${{ env.VERSION }} -OutputDirectory ../NuGet_Out
+          Pop-Location
+
+          Write-Host "Created NuGet packages:"
+          Get-ChildItem $outputDir
+
+      - name: Upload NuGet packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: NuGetPackages-${{ env.VERSION }}
+          path: Bindings/CSharp/NuGet_Out/*.nupkg
+
+  publish-nuget:
+    runs-on: windows-latest
+    needs: [read-version, build-nuget]
+    if: ${{ always() && needs.build-nuget.result == 'success' && github.event.inputs.publish == 'true' }}
+    steps:
+      - name: Debug inputs
+        run: |
+          echo "publish input: ${{ github.event.inputs.publish }}"
+          echo "skip_builds input: ${{ github.event.inputs.skip_builds }}"
+          echo "build-nuget result: ${{ needs.build-nuget.result }}"
+          echo "read-version result: ${{ needs.read-version.result }}"
+
+      - name: Set version environment variable
+        run: echo "VERSION=${{ needs.read-version.outputs.version }}" >> $env:GITHUB_ENV
+
+      - name: Download NuGet Packages
+        uses: actions/download-artifact@v4
+        with:
+          name: NuGetPackages-${{ env.VERSION }}
+          path: ./
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish to NuGet
+        run: |
+          dotnet nuget push DenOfIzGraphics.${{ env.VERSION }}.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+          dotnet nuget push DenOfIzGraphics.Blazor.${{ env.VERSION }}.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json

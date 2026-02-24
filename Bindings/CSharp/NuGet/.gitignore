@@ -1,0 +1,8 @@
+# Build output
+lib/
+runtimes/
+obj/
+bin/
+
+# NuGet output
+*.nupkg

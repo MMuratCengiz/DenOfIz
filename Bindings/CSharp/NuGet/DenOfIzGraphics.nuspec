@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>DenOfIzGraphics</id>
+    <version>0.6.1-alpha</version>
+    <title>Den Of Iz Graphics</title>
+    <authors>Den Of Iz</authors>
+    <owners>Den Of Iz</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <projectUrl>https://github.com/MartinJespersen/DenOfIz</projectUrl>
+    <description>Cross-platform graphics abstraction library with C# bindings for native platforms. Supports DirectX12, Vulkan, Metal, and WebGPU backends on Windows, Linux, and macOS. For Blazor WebAssembly, use DenOfIzGraphics.Blazor instead.</description>
+    <releaseNotes>See https://github.com/MartinJespersen/DenOfIz/releases for release notes.</releaseNotes>
+    <copyright>Copyright Den Of Iz</copyright>
+    <tags>graphics DirectX12 Vulkan Metal WebGPU rendering 3D game-development</tags>
+    <repository type="git" url="https://github.com/MartinJespersen/DenOfIz.git" />
+    <readme>README.md</readme>
+    <dependencies>
+      <group targetFramework="net8.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="README.md" target="" />
+    <file src="lib\net8.0\DenOfIzGraphicsCSharp.dll" target="lib\net8.0\" />
+    <file src="build\DenOfIzGraphics.targets" target="build\" />
+    <file src="build\DenOfIzGraphics.targets" target="buildTransitive\" />
+    <file src="runtimes\win-x64\native\**\*" target="runtimes\win-x64\native\" />
+    <file src="runtimes\linux-x64\native\**\*" target="runtimes\linux-x64\native\" />
+    <file src="runtimes\osx-arm64\native\**\*" target="runtimes\osx-arm64\native\" />
+  </files>
+</package>

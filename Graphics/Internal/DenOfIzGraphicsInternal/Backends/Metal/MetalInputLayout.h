@@ -1,0 +1,43 @@
+/*
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+
+#include <DenOfIzGraphicsInternal/Backends/Interface/IInputLayout.h>
+#include <deque>
+#include <vector>
+#include "MetalContext.h"
+
+namespace DenOfIz
+{
+
+    class MetalInputLayout final : public IInputLayout
+    {
+        MetalContext                                            *m_context;
+        std::deque<std::string>                                  m_semanticStrings;
+        std::vector<DenOfIz_InputGroupDesc>                      m_inputGroups;
+        std::vector<std::vector<DenOfIz_InputLayoutElementDesc>> m_inputElements;
+        MTLVertexDescriptor                                     *m_vertexDescriptor;
+
+    public:
+        MetalInputLayout( MetalContext *context, const DenOfIz_InputLayoutDesc &desc );
+        [[nodiscard]] MTLVertexDescriptor *GetVertexDescriptor( ) const;
+        ~MetalInputLayout( ) override;
+    };
+
+} // namespace DenOfIz

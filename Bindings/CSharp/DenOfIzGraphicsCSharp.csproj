@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;net8.0-browser</TargetFrameworks>
+        <AssemblyName>DenOfIzGraphicsCSharp</AssemblyName>
+        <RootNamespace>DenOfIz.Bindings</RootNamespace>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RestoreSources>https://api.nuget.org/v3/index.json</RestoreSources>
+        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-browser'">
+        <DefineConstants>$(DefineConstants);BROWSER_WASM</DefineConstants>
+    </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="Generated\**\*.cs" />
+        <Compile Include="Wrappers\**\*.cs" />
+        <Compile Include="Runtime\**\*.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <NativeBinary Include="Native\**\*.*">
+            <TargetPath>$([System.String]::Copy('%(NativeBinary.RecursiveDir)%(Filename)%(Extension)').Replace('Native\\','').Replace('Native/','').Replace('\\','/'))</TargetPath>
+        </NativeBinary>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="@(NativeBinary)">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+            <TargetPath>%(NativeBinary.TargetPath)</TargetPath>
+            <Pack>true</Pack>
+            <PackagePath>%(NativeBinary.TargetPath)</PackagePath>
+        </Content>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);_DenOfIzBindingsPublishNativeBinaries</TargetsForTfmSpecificBuildOutput>
+    </PropertyGroup>
+
+    <Target Name="_DenOfIzBindingsPublishNativeBinaries">
+        <ItemGroup>
+            <TfmSpecificBuildOutput Include="@(NativeBinary)">
+                <RelativePath>%(NativeBinary.TargetPath)</RelativePath>
+                <TargetPath>%(NativeBinary.TargetPath)</TargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+            </TfmSpecificBuildOutput>
+        </ItemGroup>
+    </Target>
+</Project>
