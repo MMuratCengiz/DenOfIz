@@ -75,6 +75,7 @@ void MetalCommandList::BeginRendering( const DenOfIz_RenderingDesc &renderingDes
 
     m_activeEncoderType = MetalEncoderType::Render;
     auto passDesc = MTLRenderPassDescriptor.renderPassDescriptor;
+    passDesc.renderTargetArrayLength = renderingDesc.NumLayers > 0 ? renderingDesc.NumLayers : 1;
     @autoreleasepool
     {
         for ( uint32_t i = 0; i < renderingDesc.RTAttachments.NumElements; i++ )
@@ -140,6 +141,8 @@ void MetalCommandList::BeginRendering( const DenOfIz_RenderingDesc &renderingDes
             passDesc.stencilAttachment.clearStencil   = attachment.ClearDepthStencil.Y;
         }
 
+        m_renderTlasBound = false;
+        m_meshTlasBound   = false;
         m_renderEncoder = [m_commandBuffer renderCommandEncoderWithDescriptor:passDesc];
         if ( m_waitForQueueFence )
         {

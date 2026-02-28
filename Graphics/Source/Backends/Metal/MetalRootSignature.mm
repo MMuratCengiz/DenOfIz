@@ -53,7 +53,7 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const DenOfIz_Roo
         m_bindGroupLayouts[ layout->RegisterSpace( ) ] = layout;
     }
 
-    int currentTLABOffset = m_numRootConstantBytes / sizeof( uint64_t );
+    int currentTLABOffset = 0;
 
     bool hasBindlessResources = false;
     for ( uint32_t i = 0; i < desc.BindGroupLayouts.NumElements; ++i )

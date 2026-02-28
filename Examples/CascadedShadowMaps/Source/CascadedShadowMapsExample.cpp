@@ -41,18 +41,17 @@ struct VSOutput {
 
 cbuffer ShadowCB : register(b0) {
     float4x4 LightViewProj[4];
-    float4x4 Models[6];
 };
 
 struct RootConstants {
-    uint ObjectIndex;
+    float4x4 Model;
 };
 
 [[vk::push_constant]] ConstantBuffer<RootConstants> RootConstants : register(b0, space31);
 
 VSOutput main(VSInput input, uint instID : SV_InstanceID) {
     VSOutput output;
-    float4 worldPos = mul(float4(input.Position, 1.0), Models[RootConstants.ObjectIndex]);
+    float4 worldPos = mul(float4(input.Position, 1.0), RootConstants.Model);
     output.Position = mul(worldPos, LightViewProj[instID]);
     output.RenderTargetArrayIndex = instID;
     return output;
@@ -76,26 +75,24 @@ struct VSOutput {
 
 cbuffer SceneCB : register(b0) {
     float4x4 ViewProj;
-    float4x4 Models[6];
     float4x4 LightViewProj[4];
     float4   CascadeSplits;
     float4   LightDir;
     float4   CameraPos;
 };
 
-
 struct RootConstants {
-    uint ObjectIndex;
+    float4x4 Model;
 };
 
 [[vk::push_constant]] ConstantBuffer<RootConstants> RootConstants : register(b0, space31);
 
 VSOutput main(VSInput input) {
     VSOutput output;
-    float4 worldPos = mul(float4(input.Position, 1.0), Models[RootConstants.ObjectIndex]);
+    float4 worldPos = mul(float4(input.Position, 1.0), RootConstants.Model);
     output.Position = mul(worldPos, ViewProj);
     output.WorldPos = worldPos.xyz;
-    output.Normal   = mul(float4(input.Normal, 0.0), Models[RootConstants.ObjectIndex]).xyz;
+    output.Normal   = mul(float4(input.Normal, 0.0), RootConstants.Model).xyz;
     output.TexCoord = input.TexCoord;
     output.ViewDepth = output.Position.w;
     return output;
@@ -113,7 +110,6 @@ struct PSInput {
 
 cbuffer SceneCB : register(b0) {
     float4x4 ViewProj;
-    float4x4 Models[6];
     float4x4 LightViewProj[4];
     float4   CascadeSplits;
     float4   LightDir;
@@ -595,22 +591,20 @@ void CascadedShadowMapsExample::UpdateUniforms( )
         lightViewProj[ c ] = lightView * lightProj;
     }
 
+    // Store model matrices for use as push constants
+    for ( uint32_t i = 0; i < NUM_OBJECTS; ++i )
+    {
+        XMStoreFloat4x4( &m_models[ i ], models[ i ] );
+    }
+
     // Fill shadow CB
     for ( uint32_t c = 0; c < NUM_CASCADES; ++c )
     {
         XMStoreFloat4x4( &m_shadowCBData->LightViewProj[ c ], lightViewProj[ c ] );
     }
-    for ( uint32_t i = 0; i < NUM_OBJECTS; ++i )
-    {
-        XMStoreFloat4x4( &m_shadowCBData->Models[ i ], models[ i ] );
-    }
 
     // Fill scene CB
     XMStoreFloat4x4( &m_sceneCBData->ViewProj, viewProj );
-    for ( uint32_t i = 0; i < NUM_OBJECTS; ++i )
-    {
-        XMStoreFloat4x4( &m_sceneCBData->Models[ i ], models[ i ] );
-    }
     for ( uint32_t c = 0; c < NUM_CASCADES; ++c )
     {
         XMStoreFloat4x4( &m_sceneCBData->LightViewProj[ c ], lightViewProj[ c ] );
@@ -672,10 +666,9 @@ void CascadedShadowMapsExample::Render( const uint32_t frameIndex, DenOfIz_Comma
 
     for ( uint32_t obj = 0; obj < NUM_OBJECTS; ++obj )
     {
-        uint32_t          objIndex = obj;
         DenOfIz_ByteArray pushData{};
-        pushData.Elements    = reinterpret_cast<Byte *>( &objIndex );
-        pushData.NumElements = sizeof( uint32_t );
+        pushData.Elements    = reinterpret_cast<Byte *>( &m_models[ obj ] );
+        pushData.NumElements = sizeof( DirectX::XMFLOAT4X4 );
         DenOfIz_CommandList_SetRootConstants( commandList, 0, &pushData );
         DenOfIz_CommandList_DrawIndexed( commandList, m_objects[ obj ].IndexCount, NUM_CASCADES, m_objects[ obj ].IndexOffset, m_objects[ obj ].VertexOffset, 0 );
     }
@@ -736,10 +729,9 @@ void CascadedShadowMapsExample::Render( const uint32_t frameIndex, DenOfIz_Comma
 
     for ( uint32_t obj = 0; obj < NUM_OBJECTS; ++obj )
     {
-        uint32_t          objIndex = obj;
         DenOfIz_ByteArray pushData{};
-        pushData.Elements    = reinterpret_cast<Byte *>( &objIndex );
-        pushData.NumElements = sizeof( uint32_t );
+        pushData.Elements    = reinterpret_cast<Byte *>( &m_models[ obj ] );
+        pushData.NumElements = sizeof( DirectX::XMFLOAT4X4 );
         DenOfIz_CommandList_SetRootConstants( commandList, 0, &pushData );
         DenOfIz_CommandList_DrawIndexed( commandList, m_objects[ obj ].IndexCount, 1, m_objects[ obj ].IndexOffset, m_objects[ obj ].VertexOffset, 0 );
     }
