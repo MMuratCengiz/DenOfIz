@@ -364,13 +364,18 @@ void VulkanLogicalDevice::CreateDeviceInfo( const VkPhysicalDevice &physicalDevi
         }
     }
 
+    VkPhysicalDeviceVulkan12Features vulkan12Features{ };
+    vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+
     VkPhysicalDeviceFeatures2 deviceFeatures2{ };
     deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    deviceFeatures2.pNext = &vulkan12Features;
     vkGetPhysicalDeviceFeatures2( physicalDevice, &deviceFeatures2 );
 
     deviceInfo.Capabilities.ComputeShaders    = true;
     deviceInfo.Capabilities.GeometryShaders   = deviceFeatures2.features.geometryShader;
     deviceInfo.Capabilities.Tessellation      = deviceFeatures2.features.tessellationShader;
+    deviceInfo.Capabilities.ShaderOutputLayer = vulkan12Features.shaderOutputLayer;
     deviceInfo.Capabilities.HDR               = m_enabledInstanceExtensions.contains( VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME );
     deviceInfo.Capabilities.Tearing           = true;
     deviceInfo.Capabilities.MultiDrawIndirect = deviceFeatures.multiDrawIndirect;
@@ -532,11 +537,25 @@ void VulkanLogicalDevice::CreateLogicalDevice( )
         pNext                                                                              = &accelerationStructureFeature;
     }
 
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeature{ };
-    bufferDeviceAddressFeature.sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
-    bufferDeviceAddressFeature.bufferDeviceAddress = VK_TRUE;
-    bufferDeviceAddressFeature.pNext               = pNext;
-    pNext                                          = &bufferDeviceAddressFeature;
+    VkPhysicalDeviceVulkan12Features vulkan12Features{ };
+    vulkan12Features.sType                                         = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    vulkan12Features.bufferDeviceAddress                           = VK_TRUE;
+    vulkan12Features.timelineSemaphore                             = VK_TRUE;
+    vulkan12Features.runtimeDescriptorArray                        = VK_TRUE;
+    vulkan12Features.descriptorBindingPartiallyBound               = VK_TRUE;
+    vulkan12Features.descriptorBindingVariableDescriptorCount      = VK_TRUE;
+    vulkan12Features.shaderSampledImageArrayNonUniformIndexing     = VK_TRUE;
+    vulkan12Features.descriptorBindingUpdateUnusedWhilePending     = VK_TRUE;
+    vulkan12Features.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
+    vulkan12Features.descriptorBindingSampledImageUpdateAfterBind  = VK_TRUE;
+    vulkan12Features.descriptorBindingStorageImageUpdateAfterBind  = VK_TRUE;
+    vulkan12Features.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
+    if ( m_context->SelectedDeviceInfo.Capabilities.ShaderOutputLayer )
+    {
+        vulkan12Features.shaderOutputLayer = VK_TRUE;
+    }
+    vulkan12Features.pNext = pNext;
+    pNext                  = &vulkan12Features;
 
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeature{ };
     extendedDynamicStateFeature.sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
@@ -549,26 +568,6 @@ void VulkanLogicalDevice::CreateLogicalDevice( )
     dynamicRenderingFeature.dynamicRendering = VK_TRUE;
     dynamicRenderingFeature.pNext            = pNext;
     pNext                                    = &dynamicRenderingFeature;
-
-    VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures{ };
-    descriptorIndexingFeatures.sType                                         = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-    descriptorIndexingFeatures.runtimeDescriptorArray                        = VK_TRUE;
-    descriptorIndexingFeatures.descriptorBindingPartiallyBound               = VK_TRUE;
-    descriptorIndexingFeatures.descriptorBindingVariableDescriptorCount      = VK_TRUE;
-    descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing     = VK_TRUE;
-    descriptorIndexingFeatures.descriptorBindingUpdateUnusedWhilePending     = VK_TRUE;
-    descriptorIndexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
-    descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind  = VK_TRUE;
-    descriptorIndexingFeatures.descriptorBindingStorageImageUpdateAfterBind  = VK_TRUE;
-    descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
-    descriptorIndexingFeatures.pNext                                         = pNext;
-    pNext                                                                    = &descriptorIndexingFeatures;
-
-    VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{ };
-    timelineSemaphoreFeatures.sType             = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
-    timelineSemaphoreFeatures.timelineSemaphore = VK_TRUE;
-    timelineSemaphoreFeatures.pNext             = pNext;
-    pNext                                       = &timelineSemaphoreFeatures;
 
     VkPhysicalDeviceShaderDrawParametersFeatures shaderDrawParametersFeatures{ };
     shaderDrawParametersFeatures.sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;

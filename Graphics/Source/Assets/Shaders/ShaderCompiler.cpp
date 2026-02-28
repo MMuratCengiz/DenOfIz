@@ -342,11 +342,13 @@ DenOfIz_CompileResult ShaderCompiler::CompileHLSL( const DenOfIz_CompileDesc &co
             arguments.push_back( L"-fspv-extension=SPV_KHR_ray_tracing" );
             arguments.push_back( L"-fspv-extension=SPV_KHR_ray_query" );
             arguments.push_back( L"-fspv-extension=SPV_EXT_descriptor_indexing" );
+            arguments.push_back( L"-fspv-extension=SPV_EXT_shader_viewport_index_layer" );
         }
         else
         {
             arguments.push_back( L"-fspv-target-env=vulkan1.1" );
             arguments.push_back( L"-fspv-extension=SPV_EXT_descriptor_indexing" );
+            arguments.push_back( L"-fspv-extension=SPV_EXT_shader_viewport_index_layer" );
         }
 
         arguments.push_back( L"-Wno-parameter-usage" );

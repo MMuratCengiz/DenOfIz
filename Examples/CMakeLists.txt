@@ -1,5 +1,6 @@
 add_subdirectory(Base)
 add_subdirectory(Bindless)
+add_subdirectory(CascadedShadowMaps)
 add_subdirectory(ImGui)
 add_subdirectory(IndirectRendering)
 add_subdirectory(RootConstants)

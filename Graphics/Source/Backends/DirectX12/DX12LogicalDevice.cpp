@@ -144,6 +144,7 @@ void DX12LogicalDevice::CreateDeviceInfo( IDXGIAdapter1 &adapter, DenOfIz_Physic
     if ( SUCCEEDED( device->CheckFeatureSupport( D3D12_FEATURE_D3D12_OPTIONS3, &options3, sizeof( options3 ) ) ) )
     {
         m_context->DX12Capabilities.CastingFullyTypedFormatSupported = options3.CastingFullyTypedFormatSupported;
+        physicalDevice.Capabilities.ShaderOutputLayer                = true;
     }
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = { };

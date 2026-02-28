@@ -80,6 +80,7 @@ DenOfIz_PhysicalDeviceArray MetalLogicalDevice::ListPhysicalDevices( )
         physicalDevice.Capabilities.QueryStatistics           = true;
         physicalDevice.Capabilities.SrvArray                  = true;
         physicalDevice.Capabilities.Bindless                  = true;
+        physicalDevice.Capabilities.ShaderOutputLayer         = true;
         physicalDevice.Properties.IsDedicated                 = ![device isLowPower];
         physicalDevice.Properties.MemoryAvailableInMb         = 0;
         m_physicalDevices.push_back( physicalDevice );

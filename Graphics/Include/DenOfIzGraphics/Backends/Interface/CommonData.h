@@ -437,6 +437,7 @@ typedef struct DenOfIz_PhysicalDeviceCapabilities
     bool QueryStatistics;
     bool SrvArray;
     bool Bindless;
+    bool ShaderOutputLayer;
 } DenOfIz_PhysicalDeviceCapabilities;
 
 typedef struct DenOfIz_PhysicalDeviceProperties
