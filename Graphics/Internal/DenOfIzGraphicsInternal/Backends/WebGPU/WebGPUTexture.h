@@ -34,6 +34,7 @@ namespace DenOfIz
         WGPUTextureView     m_textureView  = nullptr;
         uint32_t            m_currentState = DENOFIZ_RESOURCE_USAGE_COMMON_BIT;
         bool                m_ownsTexture  = true;
+        std::vector<WGPUTextureView> m_mipViews;
 
     public:
         WebGPUTexture( WebGPUContext *context, const DenOfIz_TextureDesc &desc );
@@ -44,9 +45,11 @@ namespace DenOfIz
         ~WebGPUTexture( ) override;
 
         [[nodiscard]] DenOfIz_Format GetFormat( ) const override;
+        [[nodiscard]] uint32_t       GetMipLevels( ) const override;
 
         [[nodiscard]] WGPUTexture                GetTexture( ) const;
         [[nodiscard]] WGPUTextureView            GetTextureView( ) const;
+        [[nodiscard]] WGPUTextureView            GetMipTextureView( uint32_t mipLevel );
         [[nodiscard]] const DenOfIz_TextureDesc &GetDesc( ) const
         {
             return m_desc;

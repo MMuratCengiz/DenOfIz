@@ -48,7 +48,7 @@ namespace DenOfIz
         DX12Texture( DX12Context *context, const DenOfIz_TextureDesc &desc );
         DX12Texture( ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle );
         ~DX12Texture( ) override;
-        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle ) const;
+        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, uint32_t mipLevel = UINT32_MAX ) const;
 
         [[nodiscard]] const DenOfIz_TextureDesc &GetDesc( ) const;
         [[nodiscard]] const D3D12_RESOURCE_DESC &GetResourceDesc( ) const;
@@ -58,13 +58,14 @@ namespace DenOfIz
         [[nodiscard]] uint32_t       GetHeight( ) const;
         [[nodiscard]] uint32_t       GetDepth( ) const;
         [[nodiscard]] DenOfIz_Format GetFormat( ) const override;
+        [[nodiscard]] uint32_t       GetMipLevels( ) const override;
 
         [[nodiscard]] const D3D12_CPU_DESCRIPTOR_HANDLE &GetOrCreateRtvHandle( );
         [[nodiscard]] const D3D12_CPU_DESCRIPTOR_HANDLE &GetOrCreateDsvHandle( );
 
     private:
-        void CreateTextureSrv( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle ) const;
-        void CreateTextureUav( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle ) const;
+        void CreateTextureSrv( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, uint32_t mipLevel = UINT32_MAX ) const;
+        void CreateTextureUav( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, uint32_t mipLevel = UINT32_MAX ) const;
     };
 
     class DX12Sampler final : public ISampler

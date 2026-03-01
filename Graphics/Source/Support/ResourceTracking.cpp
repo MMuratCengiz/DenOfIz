@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Support/ResourceTracking.h"
+#include "DenOfIzGraphicsInternal/Backends/Interface/ITexture.h"
 
 #include <mutex>
 #include <unordered_map>
@@ -31,10 +32,32 @@ namespace DenOfIz
             std::mutex                 Mutex;
             DenOfIz_ResourceUsageFlags CurrentUsage = DENOFIZ_RESOURCE_USAGE_UNDEFINED_BIT;
             DenOfIz_QueueType          CurrentQueue = DENOFIZ_QUEUE_TYPE_GRAPHICS;
+            uint32_t                   MipLevels    = 1;
         };
 
         std::unordered_map<DenOfIz_Buffer, ResourceState>  m_bufferStates;
         std::unordered_map<DenOfIz_Texture, ResourceState> m_textureStates;
+
+        struct TextureSubresourceKey
+        {
+            DenOfIz_Texture Texture;
+            uint32_t        MipLevel;
+
+            bool operator==( const TextureSubresourceKey &other ) const
+            {
+                return Texture == other.Texture && MipLevel == other.MipLevel;
+            }
+        };
+
+        struct TextureSubresourceKeyHash
+        {
+            size_t operator( )( const TextureSubresourceKey &key ) const
+            {
+                return std::hash<uint64_t>{ }( key.Texture ) ^ ( std::hash<uint32_t>{ }( key.MipLevel ) << 16 );
+            }
+        };
+
+        std::unordered_map<TextureSubresourceKey, ResourceState, TextureSubresourceKeyHash> m_textureMipStates;
 
     public:
         ResourceTracking( )  = default;
@@ -46,8 +69,10 @@ namespace DenOfIz
         void UntrackTexture( DenOfIz_Texture texture );
         void TransitionBuffer( DenOfIz_CommandList commandList, DenOfIz_Buffer buffer, uint32_t newUsage, DenOfIz_QueueType queueType );
         void TransitionTexture( DenOfIz_CommandList commandList, DenOfIz_Texture texture, uint32_t newUsage, DenOfIz_QueueType queueType );
+        void TransitionTextureMip( DenOfIz_CommandList commandList, DenOfIz_Texture texture, uint32_t mipLevel, uint32_t newUsage, DenOfIz_QueueType queueType );
         void BatchTransition( DenOfIz_CommandList commandList, const DenOfIz_BatchTransitionDesc *desc );
         void NotifyTextureTransition( DenOfIz_Texture texture, uint32_t newUsage );
+        void NotifyTextureTransitionMip( DenOfIz_Texture texture, uint32_t mipLevel, uint32_t newUsage );
         void NotifyBufferTransition( DenOfIz_Buffer buffer, uint32_t newUsage );
 
     private:
@@ -66,8 +91,18 @@ void ResourceTracking::TrackBuffer( DenOfIz_Buffer buffer, DenOfIz_QueueType que
 
 void ResourceTracking::TrackTexture( DenOfIz_Texture texture, DenOfIz_QueueType queueType )
 {
+    const uint32_t numMipLevels = DENOFIZ_FROM_HANDLE( ITexture, texture )->GetMipLevels( );
+
     m_textureStates[ texture ].CurrentQueue = queueType;
     m_textureStates[ texture ].CurrentUsage = DENOFIZ_RESOURCE_USAGE_UNDEFINED_BIT;
+    m_textureStates[ texture ].MipLevels   = numMipLevels;
+
+    for ( uint32_t mip = 0; mip < numMipLevels; ++mip )
+    {
+        TextureSubresourceKey key{ texture, mip };
+        m_textureMipStates[ key ].CurrentQueue = queueType;
+        m_textureMipStates[ key ].CurrentUsage = DENOFIZ_RESOURCE_USAGE_UNDEFINED_BIT;
+    }
 }
 
 void ResourceTracking::UntrackBuffer( DenOfIz_Buffer buffer )
@@ -77,7 +112,15 @@ void ResourceTracking::UntrackBuffer( DenOfIz_Buffer buffer )
 
 void ResourceTracking::UntrackTexture( DenOfIz_Texture texture )
 {
-    m_textureStates.erase( texture );
+    auto it = m_textureStates.find( texture );
+    if ( it != m_textureStates.end( ) )
+    {
+        for ( uint32_t mip = 0; mip < it->second.MipLevels; ++mip )
+        {
+            m_textureMipStates.erase( TextureSubresourceKey{ texture, mip } );
+        }
+        m_textureStates.erase( it );
+    }
 }
 
 void ResourceTracking::NotifyTextureTransition( DenOfIz_Texture texture, uint32_t newUsage )
@@ -90,6 +133,15 @@ void ResourceTracking::NotifyTextureTransition( DenOfIz_Texture texture, uint32_
 
     std::unique_lock lock( it->second.Mutex );
     it->second.CurrentUsage = newUsage;
+
+    for ( uint32_t mip = 0; mip < it->second.MipLevels; ++mip )
+    {
+        auto mipIt = m_textureMipStates.find( TextureSubresourceKey{ texture, mip } );
+        if ( mipIt != m_textureMipStates.end( ) )
+        {
+            mipIt->second.CurrentUsage = newUsage;
+        }
+    }
 }
 
 void ResourceTracking::NotifyBufferTransition( DenOfIz_Buffer buffer, uint32_t newUsage )
@@ -130,6 +182,47 @@ void ResourceTracking::TransitionTexture( DenOfIz_CommandList commandList, DenOf
     batchTransition.Textures.NumElements = 1;
 
     BatchTransition( commandList, &batchTransition );
+}
+
+void ResourceTracking::TransitionTextureMip( DenOfIz_CommandList commandList, DenOfIz_Texture texture, uint32_t mipLevel, uint32_t newUsage, DenOfIz_QueueType queueType )
+{
+    TextureSubresourceKey key{ texture, mipLevel };
+    auto                  mipIt = m_textureMipStates.find( key );
+    if ( mipIt == m_textureMipStates.end( ) )
+    {
+        return;
+    }
+
+    if ( mipIt->second.CurrentUsage == newUsage && mipIt->second.CurrentQueue == queueType )
+    {
+        return;
+    }
+
+    DenOfIz_TextureBarrierDesc textureBarrier{ };
+    textureBarrier.Resource                 = texture;
+    textureBarrier.OldState                 = mipIt->second.CurrentUsage;
+    textureBarrier.NewState                 = newUsage;
+    textureBarrier.EnableQueueBarrier       = mipIt->second.CurrentQueue != queueType;
+    textureBarrier.SourceQueue              = mipIt->second.CurrentQueue;
+    textureBarrier.DestinationQueue         = queueType;
+    textureBarrier.EnableSubresourceBarrier = true;
+    textureBarrier.MipLevel                 = mipLevel;
+    textureBarrier.ArrayLayer               = 0;
+
+    DenOfIz_PipelineBarrierDesc barrier{ };
+    barrier.TextureBarriers.Elements    = &textureBarrier;
+    barrier.TextureBarriers.NumElements = 1;
+
+    DenOfIz_CommandList_PipelineBarrier( commandList, &barrier );
+
+    mipIt->second.CurrentUsage = newUsage;
+    mipIt->second.CurrentQueue = queueType;
+}
+
+void ResourceTracking::NotifyTextureTransitionMip( DenOfIz_Texture texture, uint32_t mipLevel, uint32_t newUsage )
+{
+    TextureSubresourceKey key{ texture, mipLevel };
+    m_textureMipStates[ key ].CurrentUsage = newUsage;
 }
 
 void ResourceTracking::ProcessBufferTransitions( const DenOfIz_TransitionBufferDesc *buffers, const size_t numBuffers, std::vector<DenOfIz_BufferBarrierDesc> &bufferBarriers )
@@ -188,6 +281,16 @@ void ResourceTracking::ProcessTextureTransitions( const DenOfIz_TransitionTextur
 
         it->second.CurrentUsage = desc.NewUsage;
         it->second.CurrentQueue = desc.QueueType;
+
+        for ( uint32_t mip = 0; mip < it->second.MipLevels; ++mip )
+        {
+            auto mipIt = m_textureMipStates.find( TextureSubresourceKey{ desc.Texture, mip } );
+            if ( mipIt != m_textureMipStates.end( ) )
+            {
+                mipIt->second.CurrentUsage = desc.NewUsage;
+                mipIt->second.CurrentQueue = desc.QueueType;
+            }
+        }
     }
 }
 
@@ -295,6 +398,17 @@ extern "C"
         RESOURCE_TRACKING_IMPL( tracking )->TransitionTexture( commandList, texture, newUsage, queueType );
     }
 
+    void DenOfIz_ResourceTracking_TransitionTextureMip( DenOfIz_ResourceTracking tracking, DenOfIz_CommandList commandList, DenOfIz_Texture texture, uint32_t mipLevel,
+                                                         uint32_t newUsage, DenOfIz_QueueType queueType )
+    {
+        if ( !DENOFIZ_HANDLE_IS_VALID( tracking ) || !DENOFIZ_HANDLE_IS_VALID( commandList ) || !DENOFIZ_HANDLE_IS_VALID( texture ) )
+        {
+            return;
+        }
+
+        RESOURCE_TRACKING_IMPL( tracking )->TransitionTextureMip( commandList, texture, mipLevel, newUsage, queueType );
+    }
+
     void DenOfIz_ResourceTracking_BatchTransition( DenOfIz_ResourceTracking tracking, DenOfIz_CommandList commandList, const DenOfIz_BatchTransitionDesc *desc )
     {
         if ( !DENOFIZ_HANDLE_IS_VALID( tracking ) || !DENOFIZ_HANDLE_IS_VALID( commandList ) || desc == NULL )
@@ -313,6 +427,16 @@ extern "C"
         }
 
         RESOURCE_TRACKING_IMPL( tracking )->NotifyTextureTransition( texture, newUsage );
+    }
+
+    void DenOfIz_ResourceTracking_NotifyTextureTransitionMip( DenOfIz_ResourceTracking tracking, DenOfIz_Texture texture, uint32_t mipLevel, uint32_t newUsage )
+    {
+        if ( !DENOFIZ_HANDLE_IS_VALID( tracking ) || !DENOFIZ_HANDLE_IS_VALID( texture ) )
+        {
+            return;
+        }
+
+        RESOURCE_TRACKING_IMPL( tracking )->NotifyTextureTransitionMip( texture, mipLevel, newUsage );
     }
 
     void DenOfIz_ResourceTracking_NotifyBufferTransition( DenOfIz_ResourceTracking tracking, DenOfIz_Buffer buffer, uint32_t newUsage )

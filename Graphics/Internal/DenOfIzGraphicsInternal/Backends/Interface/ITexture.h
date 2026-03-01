@@ -26,8 +26,9 @@ namespace DenOfIz
     class ITexture
     {
     public:
-        virtual ~ITexture( )                      = default;
-        virtual DenOfIz_Format GetFormat( ) const = 0;
+        virtual ~ITexture( )                        = default;
+        virtual DenOfIz_Format GetFormat( ) const   = 0;
+        virtual uint32_t       GetMipLevels( ) const = 0;
     };
 
     class ISampler

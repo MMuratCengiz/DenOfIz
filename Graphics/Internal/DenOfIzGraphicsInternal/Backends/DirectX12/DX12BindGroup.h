@@ -69,18 +69,18 @@ namespace DenOfIz
         IBindGroup *Cbv( const uint32_t binding, IBuffer *resource, size_t offset ) override;
         IBindGroup *Srv( const uint32_t binding, IBuffer *resource ) override;
         IBindGroup *Srv( const uint32_t binding, IBuffer *resource, size_t offset ) override;
-        IBindGroup *Srv( const uint32_t binding, ITexture *resource ) override;
+        IBindGroup *Srv( const uint32_t binding, ITexture *resource, uint32_t mipLevel = DZ_ALL_MIP_LEVELS ) override;
         IBindGroup *SrvArray( const uint32_t binding, const DenOfIz_TextureArray &resources ) override;
         IBindGroup *SrvArrayIndex( const uint32_t binding, uint32_t arrayIndex, ITexture *resource ) override;
         IBindGroup *Srv( const uint32_t binding, ITopLevelAS *accelerationStructure ) override;
         IBindGroup *Uav( const uint32_t binding, IBuffer *resource ) override;
         IBindGroup *Uav( const uint32_t binding, IBuffer *resource, size_t offset ) override;
-        IBindGroup *Uav( const uint32_t binding, ITexture *resource ) override;
+        IBindGroup *Uav( const uint32_t binding, ITexture *resource, uint32_t mipLevel = DZ_ALL_MIP_LEVELS ) override;
         IBindGroup *Sampler( const uint32_t binding, ISampler *sampler ) override;
         void        EndUpdate( ) override;
 
     private:
-        void BindTexture( const DenOfIz_ResourceBindingSlot &slot, ITexture *resource );
+        void BindTexture( const DenOfIz_ResourceBindingSlot &slot, ITexture *resource, uint32_t mipLevel = DZ_ALL_MIP_LEVELS );
         void BindBuffer( const DenOfIz_ResourceBindingSlot &slot, IBuffer *resource );
         void BindSampler( const DenOfIz_ResourceBindingSlot &slot, ISampler *sampler );
 

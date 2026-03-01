@@ -59,6 +59,12 @@ namespace DenOfIz
             Methods.DenOfIz_BindGroup_SrvTexture(Handle, binding, resource);
         }
 
+        public void SrvTextureMip(uint binding, Texture? resource, uint mipLevel)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_BindGroup_SrvTextureMip(Handle, binding, resource, mipLevel);
+        }
+
         public void SrvArray(uint binding, in TextureArray resources)
         {
             ThrowIfDisposed();
@@ -89,6 +95,12 @@ namespace DenOfIz
         {
             ThrowIfDisposed();
             Methods.DenOfIz_BindGroup_UavTexture(Handle, binding, resource);
+        }
+
+        public void UavTextureMip(uint binding, Texture? resource, uint mipLevel)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_BindGroup_UavTextureMip(Handle, binding, resource, mipLevel);
         }
 
         public void Sampler(uint binding, Sampler? sampler)

@@ -134,9 +134,9 @@ IBindGroup *DX12BindGroup::Srv( const uint32_t binding, IBuffer *resource, size_
     return this;
 }
 
-IBindGroup *DX12BindGroup::Srv( const uint32_t binding, ITexture *resource )
+IBindGroup *DX12BindGroup::Srv( const uint32_t binding, ITexture *resource, const uint32_t mipLevel )
 {
-    BindTexture( GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_SHADER_RESOURCE ), resource );
+    BindTexture( GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_SHADER_RESOURCE ), resource, mipLevel );
     return this;
 }
 
@@ -194,9 +194,9 @@ IBindGroup *DX12BindGroup::Uav( const uint32_t binding, IBuffer *resource, size_
     return this;
 }
 
-IBindGroup *DX12BindGroup::Uav( const uint32_t binding, ITexture *resource )
+IBindGroup *DX12BindGroup::Uav( const uint32_t binding, ITexture *resource, const uint32_t mipLevel )
 {
-    BindTexture( GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_UNORDERED_ACCESS ), resource );
+    BindTexture( GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_UNORDERED_ACCESS ), resource, mipLevel );
     return this;
 }
 
@@ -210,11 +210,11 @@ void DX12BindGroup::EndUpdate( )
 {
 }
 
-void DX12BindGroup::BindTexture( const DenOfIz_ResourceBindingSlot &slot, ITexture *resource )
+void DX12BindGroup::BindTexture( const DenOfIz_ResourceBindingSlot &slot, ITexture *resource, const uint32_t mipLevel )
 {
     DZ_NOT_NULL( resource );
     const uint32_t offset = m_bindGroupLayout->GetResourceOffset( slot );
-    reinterpret_cast<DX12Texture *>( resource )->CreateView( CpuHandleCbvSrvUav( offset ) );
+    reinterpret_cast<DX12Texture *>( resource )->CreateView( CpuHandleCbvSrvUav( offset ), mipLevel );
     m_cbvSrvUavCount++;
 }
 

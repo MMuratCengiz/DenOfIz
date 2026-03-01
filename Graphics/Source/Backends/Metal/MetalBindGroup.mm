@@ -76,9 +76,9 @@ IBindGroup *MetalBindGroup::Srv( const uint32_t binding, IBuffer *resource, size
     return this;
 }
 
-IBindGroup *MetalBindGroup::Srv( const uint32_t binding, ITexture *resource )
+IBindGroup *MetalBindGroup::Srv( const uint32_t binding, ITexture *resource, const uint32_t mipLevel )
 {
-    m_boundTextures.emplace_back( GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_SHADER_RESOURCE ), resource );
+    m_boundTextures.push_back( { GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_SHADER_RESOURCE ), mipLevel, resource } );
     return this;
 }
 
@@ -125,9 +125,9 @@ IBindGroup *MetalBindGroup::Uav( const uint32_t binding, IBuffer *resource, size
     return this;
 }
 
-IBindGroup *MetalBindGroup::Uav( const uint32_t binding, ITexture *resource )
+IBindGroup *MetalBindGroup::Uav( const uint32_t binding, ITexture *resource, const uint32_t mipLevel )
 {
-    m_boundTextures.emplace_back( GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_UNORDERED_ACCESS ), resource );
+    m_boundTextures.push_back( { GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_UNORDERED_ACCESS ), mipLevel, resource } );
     return this;
 }
 
@@ -193,9 +193,9 @@ void MetalBindGroup::EndUpdate( )
     {
         BindAccelerationStructure( item.first, item.second );
     }
-    for ( auto item : m_boundTextures )
+    for ( const auto &[slot, mipLevel, resource] : m_boundTextures )
     {
-        BindTexture( item.first, item.second );
+        BindTexture( slot, resource, mipLevel );
     }
     for ( auto item : m_boundTextureArrayIndices )
     {
@@ -253,11 +253,12 @@ void MetalBindGroup::BindBufferWithOffset( const DenOfIz_ResourceBindingSlot &sl
     m_buffers.emplace_back( metalBuffer, m_bindGroupLayout->CbvSrvUavResourceShaderStages( slot ), metalBuffer->Usage( ) );
 }
 
-void MetalBindGroup::BindTexture( const DenOfIz_ResourceBindingSlot &slot, ITexture *resource )
+void MetalBindGroup::BindTexture( const DenOfIz_ResourceBindingSlot &slot, ITexture *resource, const uint32_t mipLevel )
 {
-    MetalTexture *metalTexture = static_cast<MetalTexture *>( resource );
+    MetalTexture  *metalTexture = static_cast<MetalTexture *>( resource );
+    id<MTLTexture> textureView  = mipLevel == DZ_ALL_MIP_LEVELS ? metalTexture->Instance( ) : metalTexture->MipView( mipLevel );
 
-    m_cbvSrvUavTable->Table.EncodeTexture( metalTexture->Instance( ), metalTexture->MinLODClamp( ), m_bindGroupLayout->CbvSrvUavResourceIndex( slot ) );
+    m_cbvSrvUavTable->Table.EncodeTexture( textureView, metalTexture->MinLODClamp( ), m_bindGroupLayout->CbvSrvUavResourceIndex( slot ) );
     m_cbvSrvUavTable->NumEntries++;
 
     MTLResourceUsage resourceUsage = MTLResourceUsageRead;

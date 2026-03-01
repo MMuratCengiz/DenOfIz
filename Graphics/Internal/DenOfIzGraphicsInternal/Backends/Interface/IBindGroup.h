@@ -27,6 +27,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    /// Sentinel value meaning "all mip levels" (i.e. default full-texture view).
+    static constexpr uint32_t DZ_ALL_MIP_LEVELS = UINT32_MAX;
 
     class IBindGroup
     {
@@ -38,12 +40,12 @@ namespace DenOfIz
         virtual IBindGroup *Srv( const uint32_t binding, IBuffer *resource )                                 = 0;
         virtual IBindGroup *Srv( const uint32_t binding, IBuffer *resource, size_t offset )                  = 0;
         virtual IBindGroup *Srv( const uint32_t binding, ITopLevelAS *accelerationStructure )                = 0;
-        virtual IBindGroup *Srv( const uint32_t binding, ITexture *resource )                                = 0;
+        virtual IBindGroup *Srv( const uint32_t binding, ITexture *resource, uint32_t mipLevel = DZ_ALL_MIP_LEVELS ) = 0;
         virtual IBindGroup *SrvArray( const uint32_t binding, const DenOfIz_TextureArray &resources )        = 0;
         virtual IBindGroup *SrvArrayIndex( const uint32_t binding, uint32_t arrayIndex, ITexture *resource ) = 0;
         virtual IBindGroup *Uav( const uint32_t binding, IBuffer *resource )                                 = 0;
         virtual IBindGroup *Uav( const uint32_t binding, IBuffer *resource, size_t offset )                  = 0;
-        virtual IBindGroup *Uav( const uint32_t binding, ITexture *resource )                                = 0;
+        virtual IBindGroup *Uav( const uint32_t binding, ITexture *resource, uint32_t mipLevel = DZ_ALL_MIP_LEVELS ) = 0;
         virtual IBindGroup *Sampler( const uint32_t binding, ISampler *sampler )                             = 0;
         virtual void        EndUpdate( )                                                                     = 0;
     };

@@ -56,12 +56,15 @@ namespace DenOfIz
         [[nodiscard]] uint32_t       GetHeight( ) const;
         [[nodiscard]] uint32_t       GetDepth( ) const;
         [[nodiscard]] DenOfIz_Format GetFormat( ) const override;
+        [[nodiscard]] uint32_t       GetMipLevels( ) const override;
 
         ~MetalTexture( ) override;
 
         float MinLODClamp( );
+        id<MTLTexture> MipView( uint32_t mipLevel );
 
     private:
+        std::vector<id<MTLTexture>> m_mipViews;
         void SetTextureType( );
     };
 

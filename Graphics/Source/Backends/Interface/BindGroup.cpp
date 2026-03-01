@@ -90,6 +90,15 @@ extern "C"
         BIND_GROUP_IMPL( bindGroup )->Srv( binding, TEXTURE_IMPL( resource ) );
     }
 
+    void DenOfIz_BindGroup_SrvTextureMip( DenOfIz_BindGroup bindGroup, uint32_t binding, DenOfIz_Texture resource, uint32_t mipLevel )
+    {
+        if ( !DENOFIZ_HANDLE_IS_VALID( bindGroup ) )
+        {
+            return;
+        }
+        BIND_GROUP_IMPL( bindGroup )->Srv( binding, TEXTURE_IMPL( resource ), mipLevel );
+    }
+
     void DenOfIz_BindGroup_SrvArray( DenOfIz_BindGroup bindGroup, uint32_t binding, const DenOfIz_TextureArray *resources )
     {
         if ( !DENOFIZ_HANDLE_IS_VALID( bindGroup ) || resources == NULL )
@@ -133,6 +142,15 @@ extern "C"
             return;
         }
         BIND_GROUP_IMPL( bindGroup )->Uav( binding, TEXTURE_IMPL( resource ) );
+    }
+
+    void DenOfIz_BindGroup_UavTextureMip( DenOfIz_BindGroup bindGroup, uint32_t binding, DenOfIz_Texture resource, uint32_t mipLevel )
+    {
+        if ( !DENOFIZ_HANDLE_IS_VALID( bindGroup ) )
+        {
+            return;
+        }
+        BIND_GROUP_IMPL( bindGroup )->Uav( binding, TEXTURE_IMPL( resource ), mipLevel );
     }
 
     void DenOfIz_BindGroup_Sampler( DenOfIz_BindGroup bindGroup, uint32_t binding, DenOfIz_Sampler sampler )

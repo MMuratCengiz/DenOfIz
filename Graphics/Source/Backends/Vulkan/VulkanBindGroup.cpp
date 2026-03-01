@@ -89,9 +89,9 @@ IBindGroup *VulkanBindGroup::Srv( const uint32_t binding, IBuffer *resource, siz
     return this;
 }
 
-IBindGroup *VulkanBindGroup::Srv( const uint32_t binding, ITexture *resource )
+IBindGroup *VulkanBindGroup::Srv( const uint32_t binding, ITexture *resource, uint32_t mipLevel )
 {
-    BindTexture( GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_SHADER_RESOURCE ), resource );
+    BindTexture( GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_SHADER_RESOURCE ), resource, mipLevel );
     return this;
 }
 
@@ -171,9 +171,9 @@ IBindGroup *VulkanBindGroup::Uav( const uint32_t binding, IBuffer *resource, siz
     return this;
 }
 
-IBindGroup *VulkanBindGroup::Uav( const uint32_t binding, ITexture *resource )
+IBindGroup *VulkanBindGroup::Uav( const uint32_t binding, ITexture *resource, uint32_t mipLevel )
 {
-    BindTexture( GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_UNORDERED_ACCESS ), resource );
+    BindTexture( GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_UNORDERED_ACCESS ), resource, mipLevel );
     return this;
 }
 
@@ -188,14 +188,14 @@ void VulkanBindGroup::EndUpdate( )
     vkUpdateDescriptorSets( m_context->LogicalDevice, m_writeDescriptorSets.size( ), m_writeDescriptorSets.data( ), 0, nullptr );
 }
 
-void VulkanBindGroup::BindTexture( const DenOfIz_ResourceBindingSlot &slot, ITexture *resource )
+void VulkanBindGroup::BindTexture( const DenOfIz_ResourceBindingSlot &slot, ITexture *resource, uint32_t mipLevel )
 {
     const auto *vulkanResource = dynamic_cast<VulkanTexture *>( resource );
 
     VkWriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor( slot );
     auto                 &imageInfo          = m_storage.Store<VkDescriptorImageInfo>( );
     imageInfo.imageLayout                    = vulkanResource->Layout( );
-    imageInfo.imageView                      = vulkanResource->ImageView( );
+    imageInfo.imageView                      = mipLevel == DZ_ALL_MIP_LEVELS ? vulkanResource->ImageView( ) : vulkanResource->ImageView( mipLevel );
     writeDescriptorSet.pImageInfo            = &imageInfo;
 }
 

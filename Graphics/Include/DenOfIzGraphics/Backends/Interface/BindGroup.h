@@ -207,6 +207,21 @@ extern "C"
     DZ_API void DenOfIz_BindGroup_SrvTexture( DenOfIz_BindGroup bindGroup, uint32_t binding, DenOfIz_Texture resource );
 
     /**
+     * @brief Binds a specific mip level of a texture as shader resource view.
+     *
+     * @param bindGroup Valid bind group handle.
+     * @param binding SRV binding slot (corresponds to HLSL t# register).
+     * @param resource Texture to bind.
+     * @param mipLevel The mip level to bind.
+     *
+     * @par Valid Usage
+     * - Must be called between BeginUpdate and EndUpdate
+     * - @p resource must have DENOFIZ_RESOURCE_DESCRIPTOR_TEXTURE_BIT
+     * - @p mipLevel must be less than the texture's mip level count
+     */
+    DZ_API void DenOfIz_BindGroup_SrvTextureMip( DenOfIz_BindGroup bindGroup, uint32_t binding, DenOfIz_Texture resource, uint32_t mipLevel );
+
+    /**
      * @brief Binds an array of textures as shader resource views.
      *
      * @param bindGroup Valid bind group handle.
@@ -272,6 +287,21 @@ extern "C"
      * - @p resource must have DENOFIZ_RESOURCE_DESCRIPTOR_RW_TEXTURE_BIT
      */
     DZ_API void DenOfIz_BindGroup_UavTexture( DenOfIz_BindGroup bindGroup, uint32_t binding, DenOfIz_Texture resource );
+
+    /**
+     * @brief Binds a specific mip level of a texture as unordered access view.
+     *
+     * @param bindGroup Valid bind group handle.
+     * @param binding UAV binding slot (corresponds to HLSL u# register).
+     * @param resource Texture to bind for read-write access.
+     * @param mipLevel The mip level to bind.
+     *
+     * @par Valid Usage
+     * - Must be called between BeginUpdate and EndUpdate
+     * - @p resource must have DENOFIZ_RESOURCE_DESCRIPTOR_RW_TEXTURE_BIT
+     * - @p mipLevel must be less than the texture's mip level count
+     */
+    DZ_API void DenOfIz_BindGroup_UavTextureMip( DenOfIz_BindGroup bindGroup, uint32_t binding, DenOfIz_Texture resource, uint32_t mipLevel );
 
     /**
      * @brief Binds a texture sampler.

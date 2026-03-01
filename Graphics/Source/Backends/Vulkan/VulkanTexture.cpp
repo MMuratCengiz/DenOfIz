@@ -281,6 +281,11 @@ DenOfIz_Format VulkanTexture::GetFormat( ) const
     return m_format;
 }
 
+uint32_t VulkanTexture::GetMipLevels( ) const
+{
+    return m_desc.MipLevels;
+}
+
 uint32_t VulkanTexture::GetDepth( ) const
 {
     return m_depth;

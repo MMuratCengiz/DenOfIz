@@ -53,6 +53,12 @@ namespace DenOfIz
             Methods.DenOfIz_ResourceTracking_TransitionTexture(Handle, commandList, texture, newUsage, queueType);
         }
 
+        public void TransitionTextureMip(CommandList? commandList, Texture? texture, uint mipLevel, uint newUsage, QueueType queueType)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_ResourceTracking_TransitionTextureMip(Handle, commandList, texture, mipLevel, newUsage, queueType);
+        }
+
         public void BatchTransition(CommandList? commandList, in BatchTransitionDesc desc)
         {
             ThrowIfDisposed();
@@ -63,6 +69,12 @@ namespace DenOfIz
         {
             ThrowIfDisposed();
             Methods.DenOfIz_ResourceTracking_NotifyTextureTransition(Handle, texture, newUsage);
+        }
+
+        public void NotifyTextureTransitionMip(Texture? texture, uint mipLevel, uint newUsage)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_ResourceTracking_NotifyTextureTransitionMip(Handle, texture, mipLevel, newUsage);
         }
 
         public void NotifyBufferTransition(Buffer? buffer, uint newUsage)

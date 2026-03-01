@@ -149,7 +149,7 @@ IBindGroup *WebGPUBindGroup::Srv( const uint32_t binding, ITopLevelAS *accelerat
     return this;
 }
 
-IBindGroup *WebGPUBindGroup::Srv( const uint32_t binding, ITexture *resource )
+IBindGroup *WebGPUBindGroup::Srv( const uint32_t binding, ITexture *resource, const uint32_t mipLevel )
 {
     if ( !m_isUpdating )
     {
@@ -165,7 +165,8 @@ IBindGroup *WebGPUBindGroup::Srv( const uint32_t binding, ITexture *resource )
     }
 
     const uint32_t           shiftedBinding = DENOFIZ_VK_SHIFT_SRV + binding;
-    const WGPUBindGroupEntry entry          = CreateBindingEntry( shiftedBinding, webgpuTexture->GetTextureView( ) );
+    WGPUTextureView          view           = mipLevel == DZ_ALL_MIP_LEVELS ? webgpuTexture->GetTextureView( ) : webgpuTexture->GetMipTextureView( mipLevel );
+    const WGPUBindGroupEntry entry          = CreateBindingEntry( shiftedBinding, view );
     m_bindingMap[ shiftedBinding ]          = entry;
     return this;
 }
@@ -226,7 +227,7 @@ IBindGroup *WebGPUBindGroup::Uav( const uint32_t binding, IBuffer *resource, siz
     return this;
 }
 
-IBindGroup *WebGPUBindGroup::Uav( const uint32_t binding, ITexture *resource )
+IBindGroup *WebGPUBindGroup::Uav( const uint32_t binding, ITexture *resource, const uint32_t mipLevel )
 {
     if ( !m_isUpdating )
     {
@@ -242,7 +243,8 @@ IBindGroup *WebGPUBindGroup::Uav( const uint32_t binding, ITexture *resource )
     }
 
     const uint32_t           shiftedBinding = DENOFIZ_VK_SHIFT_UAV + binding;
-    const WGPUBindGroupEntry entry          = CreateBindingEntry( shiftedBinding, webgpuTexture->GetTextureView( ) );
+    WGPUTextureView          view           = mipLevel == DZ_ALL_MIP_LEVELS ? webgpuTexture->GetTextureView( ) : webgpuTexture->GetMipTextureView( mipLevel );
+    const WGPUBindGroupEntry entry          = CreateBindingEntry( shiftedBinding, view );
     m_bindingMap[ shiftedBinding ]          = entry;
     return this;
 }

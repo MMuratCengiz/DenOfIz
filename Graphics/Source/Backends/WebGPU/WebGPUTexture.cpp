@@ -136,6 +136,15 @@ WebGPUTexture::WebGPUTexture( WebGPUContext *context, const DenOfIz_TextureDesc 
 
 WebGPUTexture::~WebGPUTexture( )
 {
+    for ( WGPUTextureView mipView : m_mipViews )
+    {
+        if ( mipView != nullptr )
+        {
+            wgpuTextureViewRelease( mipView );
+        }
+    }
+    m_mipViews.clear( );
+
 #if DZ_WEBGPU_USE_DAWN_API
     if ( m_textureView )
     {
@@ -156,6 +165,11 @@ WebGPUTexture::~WebGPUTexture( )
 DenOfIz_Format WebGPUTexture::GetFormat( ) const
 {
     return m_desc.Format;
+}
+
+uint32_t WebGPUTexture::GetMipLevels( ) const
+{
+    return m_desc.MipLevels;
 }
 
 WGPUTexture WebGPUTexture::GetTexture( ) const
@@ -238,6 +252,34 @@ void WebGPUTexture::UpdateExternalTextureView( const WGPUTextureView textureView
     m_textureView = textureView;
 }
 #endif
+
+WGPUTextureView WebGPUTexture::GetMipTextureView( uint32_t mipLevel )
+{
+    if ( m_mipViews.empty( ) )
+    {
+        m_mipViews.resize( m_desc.MipLevels, nullptr );
+    }
+
+    if ( mipLevel >= m_desc.MipLevels )
+    {
+        return m_textureView;
+    }
+
+    if ( m_mipViews[ mipLevel ] == nullptr )
+    {
+        WGPUTextureViewDescriptor viewDesc = { };
+        viewDesc.format          = DenOfIz_WebGPUEnumConverter_ConvertFormat( m_desc.Format );
+        viewDesc.dimension       = DenOfIz_WebGPUEnumConverter_ConvertTextureViewDimension( m_desc.ArraySize, m_desc.Depth );
+        viewDesc.baseMipLevel    = mipLevel;
+        viewDesc.mipLevelCount   = 1;
+        viewDesc.baseArrayLayer  = 0;
+        viewDesc.arrayLayerCount = m_desc.ArraySize;
+        viewDesc.aspect          = DenOfIz_WebGPUEnumConverter_GetTextureAspectFromFormat( m_desc.Format );
+        m_mipViews[ mipLevel ]   = wgpuTextureCreateView( m_texture, &viewDesc );
+    }
+
+    return m_mipViews[ mipLevel ];
+}
 
 WebGPUSampler::WebGPUSampler( WebGPUContext *context, const DenOfIz_SamplerDesc &desc ) :
     m_context( context ), m_desc( desc ), m_debugName( StringViewToStdString( desc.DebugName ) )

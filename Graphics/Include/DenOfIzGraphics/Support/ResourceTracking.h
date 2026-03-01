@@ -71,8 +71,11 @@ extern "C"
                                                            DenOfIz_QueueType queueType );
     DZ_API void DenOfIz_ResourceTracking_TransitionTexture( DenOfIz_ResourceTracking tracking, DenOfIz_CommandList commandList, DenOfIz_Texture texture, uint32_t newUsage,
                                                             DenOfIz_QueueType queueType );
+    DZ_API void DenOfIz_ResourceTracking_TransitionTextureMip( DenOfIz_ResourceTracking tracking, DenOfIz_CommandList commandList, DenOfIz_Texture texture, uint32_t mipLevel,
+                                                                uint32_t newUsage, DenOfIz_QueueType queueType );
     DZ_API void DenOfIz_ResourceTracking_BatchTransition( DenOfIz_ResourceTracking tracking, DenOfIz_CommandList commandList, const DenOfIz_BatchTransitionDesc *desc );
     DZ_API void DenOfIz_ResourceTracking_NotifyTextureTransition( DenOfIz_ResourceTracking tracking, DenOfIz_Texture texture, uint32_t newUsage );
+    DZ_API void DenOfIz_ResourceTracking_NotifyTextureTransitionMip( DenOfIz_ResourceTracking tracking, DenOfIz_Texture texture, uint32_t mipLevel, uint32_t newUsage );
     DZ_API void DenOfIz_ResourceTracking_NotifyBufferTransition( DenOfIz_ResourceTracking tracking, DenOfIz_Buffer buffer, uint32_t newUsage );
     DZ_API void DenOfIz_ResourceTracking_Destroy( DenOfIz_ResourceTracking tracking );
 

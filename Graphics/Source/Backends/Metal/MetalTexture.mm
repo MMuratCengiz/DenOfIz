@@ -198,8 +198,36 @@ float MetalTexture::MinLODClamp( )
     return 0;
 }
 
+id<MTLTexture> MetalTexture::MipView( uint32_t mipLevel )
+{
+    if ( m_mipViews.empty( ) )
+    {
+        m_mipViews.resize( m_desc.MipLevels, nil );
+    }
+
+    if ( mipLevel >= m_desc.MipLevels )
+    {
+        return m_texture;
+    }
+
+    if ( m_mipViews[ mipLevel ] == nil )
+    {
+        m_mipViews[ mipLevel ] = [m_texture newTextureViewWithPixelFormat:m_texture.pixelFormat
+                                                             textureType:m_texture.textureType
+                                                                  levels:NSMakeRange( mipLevel, 1 )
+                                                                  slices:NSMakeRange( 0, m_texture.arrayLength )];
+    }
+
+    return m_mipViews[ mipLevel ];
+}
+
 MetalTexture::~MetalTexture( )
 {
+    for ( id<MTLTexture> mipView : m_mipViews )
+    {
+        mipView = nil;
+    }
+    m_mipViews.clear( );
 }
 const id<MTLTexture> &MetalTexture::Instance( ) const
 {
@@ -232,6 +260,11 @@ uint32_t MetalTexture::GetDepth( ) const
 DenOfIz_Format MetalTexture::GetFormat( ) const
 {
     return m_format;
+}
+
+uint32_t MetalTexture::GetMipLevels( ) const
+{
+    return m_desc.MipLevels;
 }
 
 MetalSampler::MetalSampler( MetalContext *context, const DenOfIz_SamplerDesc &desc ) :
