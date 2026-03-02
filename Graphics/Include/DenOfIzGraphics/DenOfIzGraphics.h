@@ -24,10 +24,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Utilities/OS.h"
 
 // Audio System
+#ifndef __EMSCRIPTEN__
 #include "DenOfIzGraphics/Input/AudioData.h"
 #include "DenOfIzGraphics/Input/AudioMixer.h"
 #include "DenOfIzGraphics/Input/AudioSource.h"
 #include "DenOfIzGraphics/Input/AudioTrack.h"
+#endif
 
 // Input System
 #include "DenOfIzGraphics/Input/Clipboard.h"

@@ -112,15 +112,20 @@ set(DENOFIZ_ANIMATION_SOURCES
 )
 
 set(DENOFIZ_INPUT_SOURCES
-        Source/Input/AudioMixer.cpp
-        Source/Input/AudioSource.cpp
-        Source/Input/AudioTrack.cpp
         Source/Input/Clipboard.cpp
         Source/Input/Controller.cpp
         Source/Input/InputSystem.cpp
         Source/Input/Window.cpp
         Source/Input/Display.cpp
 )
+
+if (NOT TARGET_PLATFORM_WEB)
+    list(APPEND DENOFIZ_INPUT_SOURCES
+            Source/Input/AudioMixer.cpp
+            Source/Input/AudioSource.cpp
+            Source/Input/AudioTrack.cpp
+    )
+endif ()
 
 set(DENOFIZ_UI_SOURCES
         Source/UI/ClayContext.cpp
