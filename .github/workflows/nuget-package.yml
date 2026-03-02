@@ -200,7 +200,7 @@ jobs:
           sudo apt-get install -y libfreetype-dev libharfbuzz-dev
           sudo apt-get install -y libltdl-dev libtool autoconf automake autoconf-archive
           sudo apt-get install -y libwayland-dev libxkbcommon-dev libegl1-mesa-dev
-          sudo apt-get install -y libibus-1.0-dev
+          sudo apt-get install -y libibus-1.0-dev libxtst-dev
           sudo apt-get install -y python3 python3-pip python3-jinja2 python3-packaging
           sudo apt-get install -y libcap-dev libmount-dev libsystemd-dev
           sudo apt-get install -y gperf m4
