@@ -17,6 +17,12 @@ namespace DenOfIz
             _ownsHandle = true;
         }
 
+        public static Window CreatePopup(in PopupWindowDesc desc)
+        {
+            ulong handle = Methods.DenOfIz_Window_CreatePopup(in desc);
+            return new Window(handle, ownsHandle: true);
+        }
+
         internal Window(ulong handle, bool ownsHandle = false)
         {
             Handle = handle;

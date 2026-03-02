@@ -78,7 +78,18 @@ extern "C"
 
     DENOFIZ_DEFINE_HANDLE( DenOfIz_Window )
 
+    typedef struct DenOfIz_PopupWindowDesc
+    {
+        DenOfIz_Window          Parent;
+        int32_t                 OffsetX;
+        int32_t                 OffsetY;
+        int32_t                 Width;
+        int32_t                 Height;
+        DenOfIz_WindowFlags     Flags;
+    } DenOfIz_PopupWindowDesc;
+
     DZ_API DenOfIz_Window DenOfIz_Window_Create( const DenOfIz_WindowDesc *desc );
+    DZ_API DenOfIz_Window DenOfIz_Window_CreatePopup( const DenOfIz_PopupWindowDesc *desc );
     DZ_API void           DenOfIz_Window_Destroy( DenOfIz_Window window );
     DZ_API void           DenOfIz_Window_Show( DenOfIz_Window window );
     DZ_API void           DenOfIz_Window_Hide( DenOfIz_Window window );

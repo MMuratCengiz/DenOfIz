@@ -130,6 +130,7 @@ namespace DenOfIz
         SDL_Window                  *m_sdlWindow    = nullptr;
 
         explicit Window( const DenOfIz_WindowDesc &desc );
+        Window( const DenOfIz_PopupWindowDesc &desc, SDL_Window *parentSdlWindow );
         ~Window( );
 
         void                         Destroy( );
@@ -185,6 +186,21 @@ Window::Window( const DenOfIz_WindowDesc &desc ) : m_properties( desc )
     if ( !m_sdlWindow )
     {
         spdlog::critical( "Unable to create SDL window: {}", SDL_GetError( ) );
+    }
+
+    m_windowID     = SDL_GetWindowID( m_sdlWindow );
+    m_windowHandle = DenOfIz_GraphicsWindowHandle_Create( );
+    DenOfIz_GraphicsWindowHandle_CreateFromSDLWindowId( m_windowHandle, m_windowID );
+}
+
+Window::Window( const DenOfIz_PopupWindowDesc &desc, SDL_Window *parentSdlWindow )
+{
+    const uint32_t flags = ToSDLWindowFlags( desc.Flags );
+
+    m_sdlWindow = SDL_CreatePopupWindow( parentSdlWindow, desc.OffsetX, desc.OffsetY, desc.Width, desc.Height, flags );
+    if ( !m_sdlWindow )
+    {
+        spdlog::critical( "Unable to create SDL popup window: {}", SDL_GetError( ) );
     }
 
     m_windowID     = SDL_GetWindowID( m_sdlWindow );
@@ -406,6 +422,17 @@ extern "C"
             return DENOFIZ_NULL_HANDLE;
         }
         auto *window = new Window( *desc );
+        return DENOFIZ_TO_HANDLE( window );
+    }
+
+    DenOfIz_Window DenOfIz_Window_CreatePopup( const DenOfIz_PopupWindowDesc *desc )
+    {
+        if ( desc == NULL || !DENOFIZ_HANDLE_IS_VALID( desc->Parent ) )
+        {
+            return DENOFIZ_NULL_HANDLE;
+        }
+        auto *parentWindow   = WINDOW_IMPL( desc->Parent );
+        auto *window         = new Window( *desc, parentWindow->m_sdlWindow );
         return DENOFIZ_TO_HANDLE( window );
     }
 
