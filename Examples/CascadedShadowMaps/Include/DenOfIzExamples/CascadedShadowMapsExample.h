@@ -50,13 +50,11 @@ namespace DenOfIz
         struct alignas( 16 ) ShadowCB
         {
             DirectX::XMFLOAT4X4 LightViewProj[ NUM_CASCADES ];
-            DirectX::XMFLOAT4X4 Models[ NUM_OBJECTS ];
         };
 
         struct alignas( 16 ) SceneCB
         {
             DirectX::XMFLOAT4X4 ViewProj;
-            DirectX::XMFLOAT4X4 Models[ NUM_OBJECTS ];
             DirectX::XMFLOAT4X4 LightViewProj[ NUM_CASCADES ];
             DirectX::XMFLOAT4   CascadeSplits;
             DirectX::XMFLOAT4   LightDir;
@@ -92,6 +90,9 @@ namespace DenOfIz
         DenOfIz_BindGroup      m_mainBindGroup       = DENOFIZ_NULL_HANDLE;
         std::vector<DenOfIz_BindGroupLayout> m_mainBindGroupLayouts;
         SceneCB               *m_sceneCBData = nullptr;
+
+        // Model matrices (stored here for use as push constants in Render)
+        std::array<DirectX::XMFLOAT4X4, NUM_OBJECTS> m_models{ };
 
         // Cascade data
         std::array<float, NUM_CASCADES + 1> m_cascadeSplits{ };
