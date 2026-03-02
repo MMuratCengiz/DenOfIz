@@ -22,18 +22,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <webgpu/webgpu.h>
 #include "DenOfIzGraphicsInternal/Backends/Interface/ITexture.h"
 #include "WebGPUContext.h"
+#include <vector>
 
 namespace DenOfIz
 {
     class WebGPUTexture final : public ITexture
     {
-        WebGPUContext      *m_context;
-        DenOfIz_TextureDesc m_desc;
-        std::string         m_debugName;
-        WGPUTexture         m_texture      = nullptr;
-        WGPUTextureView     m_textureView  = nullptr;
-        uint32_t            m_currentState = DENOFIZ_RESOURCE_USAGE_COMMON_BIT;
-        bool                m_ownsTexture  = true;
+        WebGPUContext               *m_context;
+        DenOfIz_TextureDesc          m_desc;
+        std::string                  m_debugName;
+        WGPUTexture                  m_texture      = nullptr;
+        WGPUTextureView              m_textureView  = nullptr;
+        uint32_t                     m_currentState = DENOFIZ_RESOURCE_USAGE_COMMON_BIT;
+        bool                         m_ownsTexture  = true;
         std::vector<WGPUTextureView> m_mipViews;
 
     public:
