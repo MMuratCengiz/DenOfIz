@@ -131,6 +131,19 @@ namespace DenOfIz
             Methods.DenOfIz_Window_SetFullscreen(Handle, fullscreen);
         }
 
+        public void SetFullscreenMode(in DisplayMode mode)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Window_SetFullscreenMode(Handle, in mode);
+        }
+
+        public DisplayMode GetFullscreenMode()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Window_GetFullscreenMode(Handle);
+        }
+
+
         public void SetPosition(int x, int y)
         {
             ThrowIfDisposed();
@@ -167,10 +180,34 @@ namespace DenOfIz
             Methods.DenOfIz_Window_SetMinimumSize(Handle, minWidth, minHeight);
         }
 
+        public DisplaySize GetMinimumSize()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Window_GetMinimumSize(Handle);
+        }
+
         public void SetMaximumSize(int maxWidth, int maxHeight)
         {
             ThrowIfDisposed();
             Methods.DenOfIz_Window_SetMaximumSize(Handle, maxWidth, maxHeight);
+        }
+
+        public DisplaySize GetMaximumSize()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Window_GetMaximumSize(Handle);
+        }
+
+        public void SetAspectRatio(float minAspect, float maxAspect)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Window_SetAspectRatio(Handle, minAspect, maxAspect);
+        }
+
+        public AspectRatio GetAspectRatio()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Window_GetAspectRatio(Handle);
         }
 
         public bool IsShown()
@@ -202,6 +239,168 @@ namespace DenOfIz
             ThrowIfDisposed();
             Methods.DenOfIz_Window_Sync(Handle);
         }
+
+        public void SetIcon(in WindowIconDesc icon)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Window_SetIcon(Handle, in icon);
+        }
+
+        public void Flash(FlashOperation operation)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Window_Flash(Handle, operation);
+        }
+
+        public void SetOpacity(float opacity)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Window_SetOpacity(Handle, opacity);
+        }
+
+        public float GetOpacity()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Window_GetOpacity(Handle);
+        }
+
+
+        public void SetAlwaysOnTop(bool onTop)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Window_SetAlwaysOnTop(Handle, onTop);
+        }
+
+        public void SetFocusable(bool focusable)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Window_SetFocusable(Handle, focusable);
+        }
+
+        public void SetModal(bool modal)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Window_SetModal(Handle, modal);
+        }
+
+
+        public Window GetParent()
+        {
+            ThrowIfDisposed();
+            ulong parentHandle = Methods.DenOfIz_Window_GetParent(Handle);
+            if (parentHandle == 0)
+            {
+                return null;
+            }
+            return new Window(parentHandle, ownsHandle: false);
+        }
+
+        public void SetParent(Window parent)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Window_SetParent(Handle, parent?.Handle ?? 0);
+        }
+
+
+        public void SetMouseGrab(bool grabbed)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Window_SetMouseGrab(Handle, grabbed);
+        }
+
+        public bool GetMouseGrab()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Window_GetMouseGrab(Handle);
+        }
+
+        public void SetKeyboardGrab(bool grabbed)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Window_SetKeyboardGrab(Handle, grabbed);
+        }
+
+        public bool GetKeyboardGrab()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Window_GetKeyboardGrab(Handle);
+        }
+
+        public void SetMouseRect(in Rect rect)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Window_SetMouseRect(Handle, in rect);
+        }
+
+        public Rect GetMouseRect()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Window_GetMouseRect(Handle);
+        }
+
+        public void WarpMouse(float x, float y)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Window_WarpMouse(Handle, x, y);
+        }
+
+
+        public WindowBordersSize GetBordersSize()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Window_GetBordersSize(Handle);
+        }
+
+        public Rect GetSafeArea()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Window_GetSafeArea(Handle);
+        }
+
+
+        public void SetProgressState(ProgressState state)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Window_SetProgressState(Handle, state);
+        }
+
+        public ProgressState GetProgressState()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Window_GetProgressState(Handle);
+        }
+
+        public void SetProgressValue(float value)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Window_SetProgressValue(Handle, value);
+        }
+
+        public float GetProgressValue()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Window_GetProgressValue(Handle);
+        }
+
+
+        public void ShowSystemMenu(int x, int y)
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Window_ShowSystemMenu(Handle, x, y);
+        }
+
+        public uint GetDisplayID()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Window_GetDisplayID(Handle);
+        }
+
+        public uint GetPixelFormat()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Window_GetPixelFormat(Handle);
+        }
+
 
         public void Dispose()
         {

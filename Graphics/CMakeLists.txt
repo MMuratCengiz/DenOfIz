@@ -365,6 +365,21 @@ if (BUILD_WEBGPU_NATIVE)
             BUILD_WEBGPU_NATIVE
     )
 endif ()
+
+if (NOT TARGET_PLATFORM_WEB)
+    include(FetchContent)
+    set(BUILD_SHARED_LIBS_TEMP_MIXER ${BUILD_SHARED_LIBS})
+    set(BUILD_SHARED_LIBS OFF)
+    FetchContent_Declare(
+            SDL3_mixer
+            GIT_REPOSITORY https://github.com/libsdl-org/SDL_mixer.git
+            GIT_TAG prerelease-3.1.2
+    )
+    FetchContent_MakeAvailable(SDL3_mixer)
+    set(BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS_TEMP_MIXER})
+    target_link_libraries(DenOfIzGraphics PRIVATE $<BUILD_INTERFACE:SDL3_mixer::SDL3_mixer>)
+endif ()
+
 if (TARGET_PLATFORM_WEB)
     if (EMSCRIPTEN_VERSION VERSION_GREATER_EQUAL "4.0.10")
         target_compile_options(DenOfIzGraphics PUBLIC

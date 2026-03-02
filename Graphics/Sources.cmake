@@ -112,6 +112,9 @@ set(DENOFIZ_ANIMATION_SOURCES
 )
 
 set(DENOFIZ_INPUT_SOURCES
+        Source/Input/AudioMixer.cpp
+        Source/Input/AudioSource.cpp
+        Source/Input/AudioTrack.cpp
         Source/Input/Clipboard.cpp
         Source/Input/Controller.cpp
         Source/Input/InputSystem.cpp

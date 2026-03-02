@@ -23,6 +23,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Data/Geometry.h"
 #include "DenOfIzGraphics/Utilities/OS.h"
 
+// Audio System
+#include "DenOfIzGraphics/Input/AudioData.h"
+#include "DenOfIzGraphics/Input/AudioMixer.h"
+#include "DenOfIzGraphics/Input/AudioSource.h"
+#include "DenOfIzGraphics/Input/AudioTrack.h"
+
 // Input System
 #include "DenOfIzGraphics/Input/Clipboard.h"
 #include "DenOfIzGraphics/Input/Controller.h"
