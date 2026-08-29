@@ -206,17 +206,17 @@ namespace DenOfIz
 
         public static BinaryReader CreateFromContainer(BinaryContainer? container, in BinaryReaderDesc desc)
         {
-            return new BinaryReader(Methods.DenOfIz_BinaryReader_CreateFromContainer(container, in desc), ownsHandle: false);
+            return new BinaryReader(Methods.DenOfIz_BinaryReader_CreateFromContainer(container, in desc), ownsHandle: true);
         }
 
         public static BinaryReader CreateFromFile(StringView filePath, in BinaryReaderDesc desc)
         {
-            return new BinaryReader(Methods.DenOfIz_BinaryReader_CreateFromFile(filePath, in desc), ownsHandle: false);
+            return new BinaryReader(Methods.DenOfIz_BinaryReader_CreateFromFile(filePath, in desc), ownsHandle: true);
         }
 
         public static BinaryReader CreateFromData(ByteArrayView data, in BinaryReaderDesc desc)
         {
-            return new BinaryReader(Methods.DenOfIz_BinaryReader_CreateFromData(data, in desc), ownsHandle: false);
+            return new BinaryReader(Methods.DenOfIz_BinaryReader_CreateFromData(data, in desc), ownsHandle: true);
         }
 
         public void Dispose()

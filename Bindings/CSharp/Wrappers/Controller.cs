@@ -133,7 +133,7 @@ namespace DenOfIz
 
         public static Controller CreateWithIndex(int controllerIndex)
         {
-            return new Controller(Methods.DenOfIz_Controller_CreateWithIndex(controllerIndex), ownsHandle: false);
+            return new Controller(Methods.DenOfIz_Controller_CreateWithIndex(controllerIndex), ownsHandle: true);
         }
 
         public static void InitializeSDL()

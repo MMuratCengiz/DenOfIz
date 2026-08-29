@@ -26,7 +26,7 @@ namespace DenOfIz
         public LogicalDevice CreateLogicalDevice(in LogicalDeviceDesc desc)
         {
             ThrowIfDisposed();
-            return new LogicalDevice(Methods.DenOfIz_GraphicsApi_CreateLogicalDevice(Handle, in desc), ownsHandle: false);
+            return new LogicalDevice(Methods.DenOfIz_GraphicsApi_CreateLogicalDevice(Handle, in desc), ownsHandle: true);
         }
 
         public void LogDeviceCapabilities(in PhysicalDevice gpuDesc)
@@ -38,7 +38,7 @@ namespace DenOfIz
         public LogicalDevice CreateAndLoadOptimalLogicalDevice(in LogicalDeviceDesc desc)
         {
             ThrowIfDisposed();
-            return new LogicalDevice(Methods.DenOfIz_GraphicsApi_CreateAndLoadOptimalLogicalDevice(Handle, in desc), ownsHandle: false);
+            return new LogicalDevice(Methods.DenOfIz_GraphicsApi_CreateAndLoadOptimalLogicalDevice(Handle, in desc), ownsHandle: true);
         }
 
         public StringView ActiveAPI()

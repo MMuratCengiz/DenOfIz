@@ -206,12 +206,12 @@ namespace DenOfIz
 
         public static BinaryWriter CreateFromContainer(BinaryContainer? container)
         {
-            return new BinaryWriter(Methods.DenOfIz_BinaryWriter_CreateFromContainer(container), ownsHandle: false);
+            return new BinaryWriter(Methods.DenOfIz_BinaryWriter_CreateFromContainer(container), ownsHandle: true);
         }
 
         public static BinaryWriter CreateFromFile(StringView filePath)
         {
-            return new BinaryWriter(Methods.DenOfIz_BinaryWriter_CreateFromFile(filePath), ownsHandle: false);
+            return new BinaryWriter(Methods.DenOfIz_BinaryWriter_CreateFromFile(filePath), ownsHandle: true);
         }
 
         public void Dispose()

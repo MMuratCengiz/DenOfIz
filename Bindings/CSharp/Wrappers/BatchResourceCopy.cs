@@ -50,7 +50,7 @@ namespace DenOfIz
         public Texture CreateAndLoadTexture(StringView file)
         {
             ThrowIfDisposed();
-            return new Texture(Methods.DenOfIz_BatchResourceCopy_CreateAndLoadTexture(Handle, file), ownsHandle: false);
+            return new Texture(Methods.DenOfIz_BatchResourceCopy_CreateAndLoadTexture(Handle, file), ownsHandle: true);
         }
 
         public void LoadTexture(in LoadTextureDesc loadDesc)
@@ -68,21 +68,21 @@ namespace DenOfIz
         public Buffer CreateUniformBuffer(in ByteArrayView data, uint numBytes)
         {
             ThrowIfDisposed();
-            return new Buffer(Methods.DenOfIz_BatchResourceCopy_CreateUniformBuffer(Handle, in data, numBytes), ownsHandle: false);
+            return new Buffer(Methods.DenOfIz_BatchResourceCopy_CreateUniformBuffer(Handle, in data, numBytes), ownsHandle: true);
         }
 
         public Buffer CreateGeometryVertexBuffer(GeometryData geometryData)
         {
             ThrowIfDisposed();
             ulong geometryHandle = geometryData.Handle;
-            return new Buffer(Methods.DenOfIz_BatchResourceCopy_CreateGeometryVertexBuffer(Handle, in geometryHandle), ownsHandle: false);
+            return new Buffer(Methods.DenOfIz_BatchResourceCopy_CreateGeometryVertexBuffer(Handle, in geometryHandle), ownsHandle: true);
         }
 
         public Buffer CreateGeometryIndexBuffer(GeometryData geometryData)
         {
             ThrowIfDisposed();
             ulong geometryHandle = geometryData.Handle;
-            return new Buffer(Methods.DenOfIz_BatchResourceCopy_CreateGeometryIndexBuffer(Handle, in geometryHandle), ownsHandle: false);
+            return new Buffer(Methods.DenOfIz_BatchResourceCopy_CreateGeometryIndexBuffer(Handle, in geometryHandle), ownsHandle: true);
         }
 
         public void Submit(Semaphore? notify)
