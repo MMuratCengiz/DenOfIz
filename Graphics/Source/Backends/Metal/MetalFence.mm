@@ -19,11 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #import "DenOfIzGraphicsInternal/Backends/Metal/MetalFence.h"
 
 using namespace DenOfIz;
-MetalFence::MetalFence( MetalContext *context ) : m_context( context )
+
+MetalFence::MetalFence( MetalContext *context ) : m_context( context ), m_state( std::make_shared<State>( ) )
 {
-    m_context   = context;
-    m_fence     = dispatch_semaphore_create( 0 );
-    m_submitted = false;
 }
 
 MetalFence::~MetalFence( )
@@ -32,33 +30,44 @@ MetalFence::~MetalFence( )
 
 void MetalFence::Wait( )
 {
-    if ( m_submitted )
-    {
-        dispatch_semaphore_wait( m_fence, DISPATCH_TIME_FOREVER );
-        m_submitted = false;
-    }
+    std::unique_lock lock( m_state->Mutex );
+    m_state->Condition.wait( lock, [ this ] { return m_state->CompletedValue >= m_state->SubmittedValue; } );
 }
 
 void MetalFence::Reset( )
 {
-    m_submitted = true;
+    // Nothing to do: like DX12Fence, the next submission simply signals a newer value and Wait() waits for it.
 }
 
 void MetalFence::Notify( )
 {
-    if ( m_fence )
     {
-        dispatch_semaphore_signal( m_fence );
+        std::lock_guard lock( m_state->Mutex );
+        m_state->CompletedValue = m_state->SubmittedValue;
     }
+    m_state->Condition.notify_all( );
 }
 
 void MetalFence::NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer> &commandBuffer )
 {
-    dispatch_semaphore_t fence = m_fence;
-    [commandBuffer addCompletedHandler:^( id<MTLCommandBuffer> _unused ) {
-      if ( fence )
-      {
-          dispatch_semaphore_signal( fence );
-      }
-    }];
+    std::shared_ptr<State> state = m_state;
+    uint64_t               value;
+    {
+        std::lock_guard lock( state->Mutex );
+        value = ++state->SubmittedValue;
+    }
+
+    @autoreleasepool
+    {
+        [commandBuffer addCompletedHandler:^( id<MTLCommandBuffer> _unused ) {
+          {
+              std::lock_guard lock( state->Mutex );
+              if ( value > state->CompletedValue )
+              {
+                  state->CompletedValue = value;
+              }
+          }
+          state->Condition.notify_all( );
+        }];
+    }
 }

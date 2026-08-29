@@ -29,9 +29,12 @@ using namespace DenOfIz;
 
 MetalCommandList::MetalCommandList( MetalContext *context, id<MTLCommandQueue> queue, DenOfIz_CommandListDesc desc ) : m_context( context ), m_queue( queue ), m_desc( desc )
 {
-    m_commandBuffer  = [m_context->CommandQueue commandBuffer];
-    m_argumentBuffer = std::make_unique<MetalArgumentBuffer>( m_context, 256 * 1024 );
-    m_queueFence     = [m_context->Device newFence];
+    @autoreleasepool
+    {
+        m_commandBuffer  = [m_context->CommandQueue commandBuffer];
+        m_argumentBuffer = std::make_unique<MetalArgumentBuffer>( m_context, 256 * 1024 );
+        m_queueFence     = [m_context->Device newFence];
+    }
 }
 
 MetalCommandList::~MetalCommandList( ) = default;
@@ -58,26 +61,26 @@ void MetalCommandList::Begin( )
             // Initialized in BeginRendering
             break;
         }
-    }
 
-    m_currentBufferOffset = 0;
-    m_argumentBuffer->Reset( );
-    m_queuedBindGroups.clear( );
-    m_rootSignature = nullptr;
-    m_computeTlasBound = false;
-    m_renderTlasBound = false;
-    m_meshTlasBound = false;
+        m_currentBufferOffset = 0;
+        m_argumentBuffer->Reset( );
+        m_queuedBindGroups.clear( );
+        m_rootSignature = nullptr;
+        m_computeTlasBound = false;
+        m_renderTlasBound = false;
+        m_meshTlasBound = false;
+    }
 }
 
 void MetalCommandList::BeginRendering( const DenOfIz_RenderingDesc &renderingDesc )
 {
-    SwitchEncoder( MetalEncoderType::None, true );
-
-    m_activeEncoderType = MetalEncoderType::Render;
-    auto passDesc = MTLRenderPassDescriptor.renderPassDescriptor;
-    passDesc.renderTargetArrayLength = renderingDesc.NumLayers > 0 ? renderingDesc.NumLayers : 1;
     @autoreleasepool
     {
+        SwitchEncoder( MetalEncoderType::None, true );
+
+        m_activeEncoderType = MetalEncoderType::Render;
+        auto passDesc = MTLRenderPassDescriptor.renderPassDescriptor;
+        passDesc.renderTargetArrayLength = renderingDesc.NumLayers > 0 ? renderingDesc.NumLayers : 1;
         for ( uint32_t i = 0; i < renderingDesc.RTAttachments.NumElements; i++ )
         {
             const DenOfIz_RenderingAttachmentDesc &attachment = renderingDesc.RTAttachments.Elements[ i ];
@@ -107,12 +110,12 @@ void MetalCommandList::BeginRendering( const DenOfIz_RenderingDesc &renderingDes
                 spdlog::warn( "MetalCommandList::BeginRendering: Separate stencil attachment provided with depth-only format ({}). "
                              "This configuration may not work as expected on Metal.", static_cast<int>( depthFormat ) );
             }
-            
+
             passDesc.depthAttachment.texture          = depthResource->Instance( );
             passDesc.depthAttachment.loadAction       = DenOfIz_MetalEnumConverter_ConvertLoadAction( attachment.LoadOp );
             passDesc.depthAttachment.storeAction      = DenOfIz_MetalEnumConverter_ConvertStoreAction( attachment.StoreOp );
             passDesc.depthAttachment.clearDepth       = attachment.ClearDepthStencil.X;
-            
+
             if ( DenOfIz_Format_HasStencilComponent( depthFormat ) && !DENOFIZ_HANDLE_IS_VALID( renderingDesc.StencilAttachment.Resource ) )
             {
                 passDesc.stencilAttachment.texture      = depthResource->Instance( );
@@ -128,13 +131,13 @@ void MetalCommandList::BeginRendering( const DenOfIz_RenderingDesc &renderingDes
             MetalTexture *stencilResource = static_cast<MetalTexture *>( DENOFIZ_FROM_HANDLE( DenOfIz::ITexture, renderingDesc.StencilAttachment.Resource ) );
             DZ_NOT_NULL( stencilResource );
             const DenOfIz_Format stencilFormat = stencilResource->GetFormat( );
-            
+
             if ( !DenOfIz_Format_HasStencilComponent( stencilFormat ) )
             {
                 spdlog::error( "MetalCommandList::BeginRendering: Stencil attachment provided with format ({}) that has no stencil component.",
                               static_cast<int>( stencilFormat ) );
             }
-            
+
             passDesc.stencilAttachment.texture        = stencilResource->Instance( );
             passDesc.stencilAttachment.loadAction     = DenOfIz_MetalEnumConverter_ConvertLoadAction( attachment.LoadOp );
             passDesc.stencilAttachment.storeAction    = DenOfIz_MetalEnumConverter_ConvertStoreAction( attachment.StoreOp );
@@ -158,97 +161,115 @@ void MetalCommandList::EndRendering( )
 
 void MetalCommandList::End( )
 {
-    SwitchEncoder( MetalEncoderType::None, true );
+    @autoreleasepool
+    {
+        SwitchEncoder( MetalEncoderType::None, true );
+    }
 }
 
 void MetalCommandList::BindPipeline( IPipeline *pipeline )
 {
-    DZ_NOT_NULL( pipeline );
-    auto *newPipeline = static_cast<MetalPipeline *>( pipeline );
-    if ( m_pipeline == newPipeline )
-    {
-        return;
-    }
-    
-    m_pipeline = newPipeline;
     @autoreleasepool
     {
-        switch ( m_pipeline->DenOfIz_BindPoint( ) )
+        DZ_NOT_NULL( pipeline );
+        auto *newPipeline = static_cast<MetalPipeline *>( pipeline );
+        if ( m_pipeline == newPipeline )
         {
-        case DENOFIZ_BIND_POINT_RAYTRACING:
-        case DENOFIZ_BIND_POINT_COMPUTE:
-            SwitchEncoder( MetalEncoderType::Compute );
-            [m_computeEncoder setComputePipelineState:m_pipeline->ComputePipelineState( )];
-            break;
-        case DENOFIZ_BIND_POINT_GRAPHICS:
-        case DENOFIZ_BIND_POINT_MESH:
-            SwitchEncoder( MetalEncoderType::Render );
-            [m_renderEncoder setRenderPipelineState:m_pipeline->GraphicsPipelineState( )];
-            [m_renderEncoder setDepthStencilState:m_pipeline->DepthStencilState( )];
-            [m_renderEncoder setCullMode:m_pipeline->CullMode( )];
-            [m_renderEncoder setTriangleFillMode:m_pipeline->FillMode( )];
-            [m_renderEncoder setFrontFacingWinding:m_pipeline->FrontFaceWinding( )];
-            [m_renderEncoder setDepthBias:m_pipeline->DepthBias( ) slopeScale:m_pipeline->DepthBiasSlopeScale( ) clamp:m_pipeline->DepthBiasClamp( )];
-            break;
+            return;
+        }
+    
+        m_pipeline = newPipeline;
+        @autoreleasepool
+        {
+            switch ( m_pipeline->DenOfIz_BindPoint( ) )
+            {
+            case DENOFIZ_BIND_POINT_RAYTRACING:
+            case DENOFIZ_BIND_POINT_COMPUTE:
+                SwitchEncoder( MetalEncoderType::Compute );
+                [m_computeEncoder setComputePipelineState:m_pipeline->ComputePipelineState( )];
+                break;
+            case DENOFIZ_BIND_POINT_GRAPHICS:
+            case DENOFIZ_BIND_POINT_MESH:
+                SwitchEncoder( MetalEncoderType::Render );
+                [m_renderEncoder setRenderPipelineState:m_pipeline->GraphicsPipelineState( )];
+                [m_renderEncoder setDepthStencilState:m_pipeline->DepthStencilState( )];
+                [m_renderEncoder setCullMode:m_pipeline->CullMode( )];
+                [m_renderEncoder setTriangleFillMode:m_pipeline->FillMode( )];
+                [m_renderEncoder setFrontFacingWinding:m_pipeline->FrontFaceWinding( )];
+                [m_renderEncoder setDepthBias:m_pipeline->DepthBias( ) slopeScale:m_pipeline->DepthBiasSlopeScale( ) clamp:m_pipeline->DepthBiasClamp( )];
+                break;
+            }
         }
     }
 }
 
 void MetalCommandList::BindVertexBuffer( IBuffer *buffer, uint64_t offset, uint32_t stride, uint32_t slot )
 {
-    DZ_NOT_NULL( buffer );
-    id<MTLBuffer> vertexBuffer = static_cast<MetalBuffer *>( buffer )->Instance( );
-
-    switch ( m_desc.QueueType )
+    @autoreleasepool
     {
-    case DENOFIZ_QUEUE_TYPE_COPY:
-    case DENOFIZ_QUEUE_TYPE_COMPUTE:
-        break;
-    case DENOFIZ_QUEUE_TYPE_GRAPHICS:
-        [m_renderEncoder setVertexBuffer:vertexBuffer offset:offset atIndex:slot];
-        break;
+        DZ_NOT_NULL( buffer );
+        id<MTLBuffer> vertexBuffer = static_cast<MetalBuffer *>( buffer )->Instance( );
+
+        switch ( m_desc.QueueType )
+        {
+        case DENOFIZ_QUEUE_TYPE_COPY:
+        case DENOFIZ_QUEUE_TYPE_COMPUTE:
+            break;
+        case DENOFIZ_QUEUE_TYPE_GRAPHICS:
+            [m_renderEncoder setVertexBuffer:vertexBuffer offset:offset atIndex:slot];
+            break;
+        }
     }
 }
 
 void MetalCommandList::BindIndexBuffer( IBuffer *buffer, const DenOfIz_IndexType &indexType, uint64_t offset )
 {
-    DZ_NOT_NULL( buffer );
-    switch ( indexType )
+    @autoreleasepool
     {
-    case DENOFIZ_INDEX_TYPE_UINT16:
-        m_indexType = MTLIndexTypeUInt16;
-        break;
-    case DENOFIZ_INDEX_TYPE_UINT32:
-        m_indexType = MTLIndexTypeUInt32;
-        break;
-    }
+        DZ_NOT_NULL( buffer );
+        switch ( indexType )
+        {
+        case DENOFIZ_INDEX_TYPE_UINT16:
+            m_indexType = MTLIndexTypeUInt16;
+            break;
+        case DENOFIZ_INDEX_TYPE_UINT32:
+            m_indexType = MTLIndexTypeUInt32;
+            break;
+        }
 
-    m_indexBuffer       = static_cast<MetalBuffer *>( buffer )->Instance( );
-    m_indexBufferOffset = offset;
+        m_indexBuffer       = static_cast<MetalBuffer *>( buffer )->Instance( );
+        m_indexBufferOffset = offset;
+    }
 }
 
 void MetalCommandList::BindViewport( float x, float y, float width, float height )
 {
-    if ( width <= 0.0f || height <= 0.0f )
+    @autoreleasepool
     {
-        spdlog::error("Invalid viewport dimensions: width= {} , height={}", width, height);
-        return;
+        if ( width <= 0.0f || height <= 0.0f )
+        {
+            spdlog::error("Invalid viewport dimensions: width= {} , height={}", width, height);
+            return;
+        }
+        SwitchEncoder( MetalEncoderType::Render );
+        MTLViewport viewport = { x, y, width, height, 0.0, 1.0 };
+        [m_renderEncoder setViewport:viewport];
     }
-    SwitchEncoder( MetalEncoderType::Render );
-    MTLViewport viewport = { x, y, width, height, 0.0, 1.0 };
-    [m_renderEncoder setViewport:viewport];
 }
 
 void MetalCommandList::BindScissorRect( float x, float y, float width, float height )
 {
-    if ( width <= 0.0f || height <= 0.0f )
+    @autoreleasepool
     {
-        spdlog::error("Invalid scissor rect dimensions: width= {} , height={}", width, height);
-        return;
+        if ( width <= 0.0f || height <= 0.0f )
+        {
+            spdlog::error("Invalid scissor rect dimensions: width= {} , height={}", width, height);
+            return;
+        }
+        SwitchEncoder( MetalEncoderType::Render );
+        MTLScissorRect scissorRect = { static_cast<NSUInteger>( x ), static_cast<NSUInteger>( y ), static_cast<NSUInteger>( width ), static_cast<NSUInteger>( height ) };
+        [m_renderEncoder setScissorRect:scissorRect];
     }
-    SwitchEncoder( MetalEncoderType::Render );
-    MTLScissorRect scissorRect = { static_cast<NSUInteger>( x ), static_cast<NSUInteger>( y ), static_cast<NSUInteger>( width ), static_cast<NSUInteger>( height ) };
-    [m_renderEncoder setScissorRect:scissorRect];
 }
 
 void MetalCommandList::BindResourceGroup( IBindGroup *bindGroup )
@@ -357,361 +378,419 @@ void MetalCommandList::PipelineBarrier( const DenOfIz_PipelineBarrierDesc *barri
 
 void MetalCommandList::DrawIndexed( uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance )
 {
-    if ( indexCount == 0 || instanceCount == 0 )
+    @autoreleasepool
     {
-        spdlog::warn("Possible unintentional behavior, DrawIndexed called with zero count: indexCount= {} , instanceCount={}", indexCount, instanceCount);
+        if ( indexCount == 0 || instanceCount == 0 )
+        {
+            spdlog::warn("Possible unintentional behavior, DrawIndexed called with zero count: indexCount= {} , instanceCount={}", indexCount, instanceCount);
+        }
+        SwitchEncoder( MetalEncoderType::Render );
+        BindCommandResources( );
+
+        uint64_t indexSize = (m_indexType == MTLIndexTypeUInt16) ? 2 : 4;
+        uint64_t totalByteOffset = m_indexBufferOffset + (firstIndex * indexSize);
+
+        IRRuntimeDrawIndexedPrimitives( m_renderEncoder, m_pipeline->PrimitiveType( ), indexCount, m_indexType, m_indexBuffer, totalByteOffset, instanceCount, vertexOffset, firstInstance );
+        TopLevelArgumentBufferNextOffset( );
     }
-    SwitchEncoder( MetalEncoderType::Render );
-    BindCommandResources( );
-
-    uint64_t indexSize = (m_indexType == MTLIndexTypeUInt16) ? 2 : 4;
-    uint64_t totalByteOffset = m_indexBufferOffset + (firstIndex * indexSize);
-
-    IRRuntimeDrawIndexedPrimitives( m_renderEncoder, m_pipeline->PrimitiveType( ), indexCount, m_indexType, m_indexBuffer, totalByteOffset, instanceCount, vertexOffset, firstInstance );
-    TopLevelArgumentBufferNextOffset( );
 }
 
 void MetalCommandList::Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance )
 {
-    if ( vertexCount == 0 || instanceCount == 0 )
+    @autoreleasepool
     {
-        spdlog::warn("Possible unintentional behavior, Draw called with zero count: vertexCount= {} , instanceCount={}", vertexCount, instanceCount);
+        if ( vertexCount == 0 || instanceCount == 0 )
+        {
+            spdlog::warn("Possible unintentional behavior, Draw called with zero count: vertexCount= {} , instanceCount={}", vertexCount, instanceCount);
+        }
+        SwitchEncoder( MetalEncoderType::Render );
+        BindCommandResources( );
+        IRRuntimeDrawPrimitives( m_renderEncoder, m_pipeline->PrimitiveType( ), firstVertex, vertexCount, instanceCount );
+        TopLevelArgumentBufferNextOffset( );
     }
-    SwitchEncoder( MetalEncoderType::Render );
-    BindCommandResources( );
-    IRRuntimeDrawPrimitives( m_renderEncoder, m_pipeline->PrimitiveType( ), firstVertex, vertexCount, instanceCount );
-    TopLevelArgumentBufferNextOffset( );
 }
 
 void MetalCommandList::Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ )
 {
-    if ( groupCountX == 0 || groupCountY == 0 || groupCountZ == 0 )
+    @autoreleasepool
     {
-        spdlog::warn("Possible unintentional behavior, Dispatch called with zero group count: x= {} , y= {} , z={}", groupCountX, groupCountY, groupCountZ);
+        if ( groupCountX == 0 || groupCountY == 0 || groupCountZ == 0 )
+        {
+            spdlog::warn("Possible unintentional behavior, Dispatch called with zero group count: x= {} , y= {} , z={}", groupCountX, groupCountY, groupCountZ);
+        }
+        SwitchEncoder( MetalEncoderType::Compute );
+        BindCommandResources( );
+        MTLSize threadGroupsPerGrid = MTLSizeMake( groupCountX, groupCountY, groupCountZ );
+        MTLSize threadsPerThreadgroup = m_pipeline->ComputeThreadsPerThreadgroup();
+        [m_computeEncoder dispatchThreadgroups:threadGroupsPerGrid threadsPerThreadgroup:threadsPerThreadgroup];
+        TopLevelArgumentBufferNextOffset( );
     }
-    SwitchEncoder( MetalEncoderType::Compute );
-    BindCommandResources( );
-    MTLSize threadGroupsPerGrid = MTLSizeMake( groupCountX, groupCountY, groupCountZ );
-    MTLSize threadsPerThreadgroup = m_pipeline->ComputeThreadsPerThreadgroup();
-    [m_computeEncoder dispatchThreadgroups:threadGroupsPerGrid threadsPerThreadgroup:threadsPerThreadgroup];
-    TopLevelArgumentBufferNextOffset( );
 }
 
 void MetalCommandList::DispatchMesh( const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ )
 {
-    if ( groupCountX == 0 || groupCountY == 0 || groupCountZ == 0 )
+    @autoreleasepool
     {
-        spdlog::warn("Possible unintentional behavior, DispatchMesh called with zero group count: x= {} , y= {} , z={}", groupCountX, groupCountY, groupCountZ);
+        if ( groupCountX == 0 || groupCountY == 0 || groupCountZ == 0 )
+        {
+            spdlog::warn("Possible unintentional behavior, DispatchMesh called with zero group count: x= {} , y= {} , z={}", groupCountX, groupCountY, groupCountZ);
+        }
+        SwitchEncoder( MetalEncoderType::Render );
+        BindCommandResources( );
+        MTLSize meshGroupsPerGrid = MTLSizeMake( groupCountX, groupCountY, groupCountZ );
+        MTLSize objectThreads = m_pipeline->ObjectThreadsPerThreadgroup();
+        MTLSize meshThreads = m_pipeline->MeshThreadsPerThreadgroup();
+        [m_renderEncoder drawMeshThreadgroups:meshGroupsPerGrid threadsPerObjectThreadgroup:objectThreads threadsPerMeshThreadgroup:meshThreads];
+        TopLevelArgumentBufferNextOffset( );
     }
-    SwitchEncoder( MetalEncoderType::Render );
-    BindCommandResources( );
-    MTLSize meshGroupsPerGrid = MTLSizeMake( groupCountX, groupCountY, groupCountZ );
-    MTLSize objectThreads = m_pipeline->ObjectThreadsPerThreadgroup();
-    MTLSize meshThreads = m_pipeline->MeshThreadsPerThreadgroup();
-    [m_renderEncoder drawMeshThreadgroups:meshGroupsPerGrid threadsPerObjectThreadgroup:objectThreads threadsPerMeshThreadgroup:meshThreads];
-    TopLevelArgumentBufferNextOffset( );
 }
 
 void MetalCommandList::DrawIndirect( IBuffer *buffer, uint64_t offset, uint32_t drawCount, uint32_t stride )
 {
-    if ( !buffer )
+    @autoreleasepool
     {
-        spdlog::error( "MetalCommandList::DrawIndirect: buffer is null" );
-        return;
-    }
+        if ( !buffer )
+        {
+            spdlog::error( "MetalCommandList::DrawIndirect: buffer is null" );
+            return;
+        }
 
-    auto *metalBuffer = static_cast<MetalBuffer *>( buffer );
+        auto *metalBuffer = static_cast<MetalBuffer *>( buffer );
 
-    SwitchEncoder( MetalEncoderType::Render );
-    BindCommandResources( );
-    BatchResource( metalBuffer->Instance( ) );
-    FlushBatchedResources( );
+        SwitchEncoder( MetalEncoderType::Render );
+        BindCommandResources( );
+        BatchResource( metalBuffer->Instance( ) );
+        FlushBatchedResources( );
 
-    for ( uint32_t i = 0; i < drawCount; ++i )
-    {
-        IRRuntimeDrawPrimitives( m_renderEncoder, m_pipeline->PrimitiveType( ), metalBuffer->Instance( ), offset + i * stride );
+        for ( uint32_t i = 0; i < drawCount; ++i )
+        {
+            IRRuntimeDrawPrimitives( m_renderEncoder, m_pipeline->PrimitiveType( ), metalBuffer->Instance( ), offset + i * stride );
+        }
     }
 }
 
 void MetalCommandList::DrawIndexedIndirect( IBuffer *buffer, uint64_t offset, uint32_t drawCount, uint32_t stride )
 {
-    if ( !buffer )
+    @autoreleasepool
     {
-        spdlog::error( "MetalCommandList::DrawIndexedIndirect: buffer is null" );
-        return;
-    }
+        if ( !buffer )
+        {
+            spdlog::error( "MetalCommandList::DrawIndexedIndirect: buffer is null" );
+            return;
+        }
 
-    if ( !m_indexBuffer )
-    {
-        spdlog::error( "MetalCommandList::DrawIndexedIndirect: No index buffer bound" );
-        return;
-    }
+        if ( !m_indexBuffer )
+        {
+            spdlog::error( "MetalCommandList::DrawIndexedIndirect: No index buffer bound" );
+            return;
+        }
 
-    auto *metalBuffer = static_cast<MetalBuffer *>( buffer );
+        auto *metalBuffer = static_cast<MetalBuffer *>( buffer );
 
-    SwitchEncoder( MetalEncoderType::Render );
-    BindCommandResources( );
-    BatchResource( metalBuffer->Instance( ) );
-    FlushBatchedResources( );
+        SwitchEncoder( MetalEncoderType::Render );
+        BindCommandResources( );
+        BatchResource( metalBuffer->Instance( ) );
+        FlushBatchedResources( );
 
-    for ( uint32_t i = 0; i < drawCount; ++i )
-    {
-        IRRuntimeDrawIndexedPrimitives(
-            m_renderEncoder,
-            m_pipeline->PrimitiveType( ),
-            m_indexType,
-            m_indexBuffer,
-            m_indexBufferOffset,
-            metalBuffer->Instance( ),
-            offset + i * stride
-        );
+        for ( uint32_t i = 0; i < drawCount; ++i )
+        {
+            IRRuntimeDrawIndexedPrimitives(
+                m_renderEncoder,
+                m_pipeline->PrimitiveType( ),
+                m_indexType,
+                m_indexBuffer,
+                m_indexBufferOffset,
+                metalBuffer->Instance( ),
+                offset + i * stride
+            );
+        }
     }
 }
 
 void MetalCommandList::DispatchIndirect( IBuffer *buffer, uint64_t offset )
 {
-    if ( !buffer )
+    @autoreleasepool
     {
-        spdlog::error( "MetalCommandList::DispatchIndirect: buffer is null" );
-        return;
-    }
+        if ( !buffer )
+        {
+            spdlog::error( "MetalCommandList::DispatchIndirect: buffer is null" );
+            return;
+        }
 
-    auto *metalBuffer = static_cast<MetalBuffer *>( buffer );
+        auto *metalBuffer = static_cast<MetalBuffer *>( buffer );
     
-    SwitchEncoder( MetalEncoderType::Compute );
-    BindCommandResources( );
+        SwitchEncoder( MetalEncoderType::Compute );
+        BindCommandResources( );
     
-    [m_computeEncoder dispatchThreadgroupsWithIndirectBuffer:metalBuffer->Instance( )
-                                         indirectBufferOffset:offset
-                                        threadsPerThreadgroup:m_pipeline->ComputeThreadsPerThreadgroup( )];
+        [m_computeEncoder dispatchThreadgroupsWithIndirectBuffer:metalBuffer->Instance( )
+                                             indirectBufferOffset:offset
+                                            threadsPerThreadgroup:m_pipeline->ComputeThreadsPerThreadgroup( )];
+    }
 }
 
 void MetalCommandList::CopyBufferRegion( const DenOfIz_CopyBufferRegionDesc &copyBufferRegionDesc )
 {
-    SwitchEncoder( MetalEncoderType::Blit );
-
-    if ( copyBufferRegionDesc.NumBytes == 0 )
+    @autoreleasepool
     {
-        spdlog::warn("Possible unintentional behavior, CopyBufferRegion called with zero NumBytes");
+        SwitchEncoder( MetalEncoderType::Blit );
+
+        if ( copyBufferRegionDesc.NumBytes == 0 )
+        {
+            spdlog::warn("Possible unintentional behavior, CopyBufferRegion called with zero NumBytes");
+        }
+
+        MetalBuffer *srcBuffer = dynamic_cast<MetalBuffer *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBuffer, copyBufferRegionDesc.SrcBuffer ) );
+        MetalBuffer *dstBuffer = dynamic_cast<MetalBuffer *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBuffer, copyBufferRegionDesc.DstBuffer ) );
+        DZ_NOT_NULL( srcBuffer );
+        DZ_NOT_NULL( dstBuffer );
+
+        [m_blitEncoder copyFromBuffer:srcBuffer->Instance( )
+                         sourceOffset:copyBufferRegionDesc.SrcOffset
+                             toBuffer:dstBuffer->Instance( )
+                    destinationOffset:copyBufferRegionDesc.DstOffset
+                                 size:copyBufferRegionDesc.NumBytes];
     }
-
-    MetalBuffer *srcBuffer = dynamic_cast<MetalBuffer *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBuffer, copyBufferRegionDesc.SrcBuffer ) );
-    MetalBuffer *dstBuffer = dynamic_cast<MetalBuffer *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBuffer, copyBufferRegionDesc.DstBuffer ) );
-    DZ_NOT_NULL( srcBuffer );
-    DZ_NOT_NULL( dstBuffer );
-
-    [m_blitEncoder copyFromBuffer:srcBuffer->Instance( )
-                     sourceOffset:copyBufferRegionDesc.SrcOffset
-                         toBuffer:dstBuffer->Instance( )
-                destinationOffset:copyBufferRegionDesc.DstOffset
-                             size:copyBufferRegionDesc.NumBytes];
 }
 
 void MetalCommandList::CopyTextureRegion( const DenOfIz_CopyTextureRegionDesc &copyTextureRegionDesc )
 {
-    SwitchEncoder( MetalEncoderType::Blit );
-
-    if ( copyTextureRegionDesc.Width == 0 || copyTextureRegionDesc.Height == 0 )
+    @autoreleasepool
     {
-        spdlog::warn("Possible unintentional behavior, CopyTextureRegion called with zero dimensions: Width= {} , Height={}", copyTextureRegionDesc.Width, copyTextureRegionDesc.Height);
+        SwitchEncoder( MetalEncoderType::Blit );
+
+        if ( copyTextureRegionDesc.Width == 0 || copyTextureRegionDesc.Height == 0 )
+        {
+            spdlog::warn("Possible unintentional behavior, CopyTextureRegion called with zero dimensions: Width= {} , Height={}", copyTextureRegionDesc.Width, copyTextureRegionDesc.Height);
+        }
+
+        MetalTexture *srcTexture = dynamic_cast<MetalTexture *>( DENOFIZ_FROM_HANDLE( DenOfIz::ITexture, copyTextureRegionDesc.SrcTexture ) );
+        MetalTexture *dstTexture = dynamic_cast<MetalTexture *>( DENOFIZ_FROM_HANDLE( DenOfIz::ITexture, copyTextureRegionDesc.DstTexture ) );
+        DZ_NOT_NULL( srcTexture );
+        DZ_NOT_NULL( dstTexture );
+
+        [m_blitEncoder copyFromTexture:srcTexture->Instance( )
+                           sourceSlice:copyTextureRegionDesc.SrcArrayLayer
+                           sourceLevel:copyTextureRegionDesc.SrcMipLevel
+                          sourceOrigin:MTLOriginMake( copyTextureRegionDesc.SrcX, copyTextureRegionDesc.SrcY, copyTextureRegionDesc.SrcZ )
+                            sourceSize:MTLSizeMake( copyTextureRegionDesc.Width, copyTextureRegionDesc.Height, copyTextureRegionDesc.Depth )
+                             toTexture:dstTexture->Instance( )
+                      destinationSlice:copyTextureRegionDesc.DstArrayLayer
+                      destinationLevel:copyTextureRegionDesc.DstMipLevel
+                     destinationOrigin:MTLOriginMake( copyTextureRegionDesc.DstX, copyTextureRegionDesc.DstY, copyTextureRegionDesc.DstZ )];
     }
-
-    MetalTexture *srcTexture = dynamic_cast<MetalTexture *>( DENOFIZ_FROM_HANDLE( DenOfIz::ITexture, copyTextureRegionDesc.SrcTexture ) );
-    MetalTexture *dstTexture = dynamic_cast<MetalTexture *>( DENOFIZ_FROM_HANDLE( DenOfIz::ITexture, copyTextureRegionDesc.DstTexture ) );
-    DZ_NOT_NULL( srcTexture );
-    DZ_NOT_NULL( dstTexture );
-
-    [m_blitEncoder copyFromTexture:srcTexture->Instance( )
-                       sourceSlice:copyTextureRegionDesc.SrcArrayLayer
-                       sourceLevel:copyTextureRegionDesc.SrcMipLevel
-                      sourceOrigin:MTLOriginMake( copyTextureRegionDesc.SrcX, copyTextureRegionDesc.SrcY, copyTextureRegionDesc.SrcZ )
-                        sourceSize:MTLSizeMake( copyTextureRegionDesc.Width, copyTextureRegionDesc.Height, copyTextureRegionDesc.Depth )
-                         toTexture:dstTexture->Instance( )
-                  destinationSlice:copyTextureRegionDesc.DstArrayLayer
-                  destinationLevel:copyTextureRegionDesc.DstMipLevel
-                 destinationOrigin:MTLOriginMake( copyTextureRegionDesc.DstX, copyTextureRegionDesc.DstY, copyTextureRegionDesc.DstZ )];
 }
 
 void MetalCommandList::CopyBufferToTexture( const DenOfIz_CopyBufferToTextureDesc &copyBufferToTexture )
 {
-    SwitchEncoder( MetalEncoderType::Blit );
+    @autoreleasepool
+    {
+        SwitchEncoder( MetalEncoderType::Blit );
 
-    MetalBuffer  *srcBuffer  = dynamic_cast<MetalBuffer *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBuffer, copyBufferToTexture.SrcBuffer ) );
-    MetalTexture *dstTexture = dynamic_cast<MetalTexture *>( DENOFIZ_FROM_HANDLE( DenOfIz::ITexture, copyBufferToTexture.DstTexture ) );
-    DZ_NOT_NULL( srcBuffer );
-    DZ_NOT_NULL( dstTexture );
+        MetalBuffer  *srcBuffer  = dynamic_cast<MetalBuffer *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBuffer, copyBufferToTexture.SrcBuffer ) );
+        MetalTexture *dstTexture = dynamic_cast<MetalTexture *>( DENOFIZ_FROM_HANDLE( DenOfIz::ITexture, copyBufferToTexture.DstTexture ) );
+        DZ_NOT_NULL( srcBuffer );
+        DZ_NOT_NULL( dstTexture );
 
-    const uint32_t width  = std::max( 1u, dstTexture->GetWidth( ) >> copyBufferToTexture.MipLevel );
-    const uint32_t height = std::max( 1u, dstTexture->GetHeight( ) >> copyBufferToTexture.MipLevel );
-    const uint32_t depth  = std::max( 1u, dstTexture->GetDepth( ) >> copyBufferToTexture.MipLevel );
+        const uint32_t width  = std::max( 1u, dstTexture->GetWidth( ) >> copyBufferToTexture.MipLevel );
+        const uint32_t height = std::max( 1u, dstTexture->GetHeight( ) >> copyBufferToTexture.MipLevel );
+        const uint32_t depth  = std::max( 1u, dstTexture->GetDepth( ) >> copyBufferToTexture.MipLevel );
 
-    const uint32_t formatSize      = DenOfIz_Format_NumBytes( copyBufferToTexture.Format );
-    const uint32_t blockSize       = DenOfIz_Format_BlockSize( copyBufferToTexture.Format );
-    const uint32_t rowPitch        = std::max( 1U, ( width + ( blockSize - 1 ) ) / blockSize ) * formatSize;
-    const uint32_t numRows         = std::max( 1U, ( height + ( blockSize - 1 ) ) / blockSize );
-    const uint32_t alignedRowPitch = Utilities::Align( rowPitch, m_context->SelectedDeviceInfo.Constants.BufferTextureRowAlignment );
+        const uint32_t formatSize      = DenOfIz_Format_NumBytes( copyBufferToTexture.Format );
+        const uint32_t blockSize       = DenOfIz_Format_BlockSize( copyBufferToTexture.Format );
+        const uint32_t rowPitch        = std::max( 1U, ( width + ( blockSize - 1 ) ) / blockSize ) * formatSize;
+        const uint32_t numRows         = std::max( 1U, ( height + ( blockSize - 1 ) ) / blockSize );
+        const uint32_t alignedRowPitch = Utilities::Align( rowPitch, m_context->SelectedDeviceInfo.Constants.BufferTextureRowAlignment );
 
-    // TODO Calculate RowPitch and NumRows automatically if possible
-    [m_blitEncoder copyFromBuffer:srcBuffer->Instance( )
-                     sourceOffset:copyBufferToTexture.SrcOffset
-                sourceBytesPerRow:alignedRowPitch
-              sourceBytesPerImage:alignedRowPitch * numRows
-                       sourceSize:MTLSizeMake( width, height, depth )
-                        toTexture:dstTexture->Instance( )
-                 destinationSlice:copyBufferToTexture.ArrayLayer
-                 destinationLevel:copyBufferToTexture.MipLevel
-                destinationOrigin:MTLOriginMake( copyBufferToTexture.DstX, copyBufferToTexture.DstY, copyBufferToTexture.DstZ )];
+        // TODO Calculate RowPitch and NumRows automatically if possible
+        [m_blitEncoder copyFromBuffer:srcBuffer->Instance( )
+                         sourceOffset:copyBufferToTexture.SrcOffset
+                    sourceBytesPerRow:alignedRowPitch
+                  sourceBytesPerImage:alignedRowPitch * numRows
+                           sourceSize:MTLSizeMake( width, height, depth )
+                            toTexture:dstTexture->Instance( )
+                     destinationSlice:copyBufferToTexture.ArrayLayer
+                     destinationLevel:copyBufferToTexture.MipLevel
+                    destinationOrigin:MTLOriginMake( copyBufferToTexture.DstX, copyBufferToTexture.DstY, copyBufferToTexture.DstZ )];
+    }
 }
 
 void MetalCommandList::CopyTextureToBuffer( const DenOfIz_CopyTextureToBufferDesc &copyTextureToBuffer )
 {
-    MetalTexture *srcTexture = dynamic_cast<MetalTexture *>( DENOFIZ_FROM_HANDLE( DenOfIz::ITexture, copyTextureToBuffer.SrcTexture ) );
-    MetalBuffer  *dstBuffer  = dynamic_cast<MetalBuffer *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBuffer, copyTextureToBuffer.DstBuffer ) );
-    DZ_NOT_NULL( srcTexture );
-    DZ_NOT_NULL( dstBuffer );
-    // TODO Calculate RowPitch and NumRows automatically if possible
-    SwitchEncoder( MetalEncoderType::Blit );
+    @autoreleasepool
+    {
+        MetalTexture *srcTexture = dynamic_cast<MetalTexture *>( DENOFIZ_FROM_HANDLE( DenOfIz::ITexture, copyTextureToBuffer.SrcTexture ) );
+        MetalBuffer  *dstBuffer  = dynamic_cast<MetalBuffer *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBuffer, copyTextureToBuffer.DstBuffer ) );
+        DZ_NOT_NULL( srcTexture );
+        DZ_NOT_NULL( dstBuffer );
+        // TODO Calculate RowPitch and NumRows automatically if possible
+        SwitchEncoder( MetalEncoderType::Blit );
 
-    [m_blitEncoder copyFromTexture:srcTexture->Instance( )
-                       sourceSlice:copyTextureToBuffer.ArrayLayer
-                       sourceLevel:copyTextureToBuffer.MipLevel
-                      sourceOrigin:MTLOriginMake( copyTextureToBuffer.SrcX, copyTextureToBuffer.SrcY, copyTextureToBuffer.SrcZ )
-                        sourceSize:MTLSizeMake( srcTexture->GetWidth( ), srcTexture->GetHeight( ), srcTexture->GetDepth( ) )
-                          toBuffer:dstBuffer->Instance( )
-                 destinationOffset:copyTextureToBuffer.DstOffset
-            destinationBytesPerRow:copyTextureToBuffer.RowPitch
-          destinationBytesPerImage:copyTextureToBuffer.RowPitch * copyTextureToBuffer.NumRows];
+        [m_blitEncoder copyFromTexture:srcTexture->Instance( )
+                           sourceSlice:copyTextureToBuffer.ArrayLayer
+                           sourceLevel:copyTextureToBuffer.MipLevel
+                          sourceOrigin:MTLOriginMake( copyTextureToBuffer.SrcX, copyTextureToBuffer.SrcY, copyTextureToBuffer.SrcZ )
+                            sourceSize:MTLSizeMake( srcTexture->GetWidth( ), srcTexture->GetHeight( ), srcTexture->GetDepth( ) )
+                              toBuffer:dstBuffer->Instance( )
+                     destinationOffset:copyTextureToBuffer.DstOffset
+                destinationBytesPerRow:copyTextureToBuffer.RowPitch
+              destinationBytesPerImage:copyTextureToBuffer.RowPitch * copyTextureToBuffer.NumRows];
+    }
 }
 
 void MetalCommandList::UpdateTopLevelAS( const DenOfIz_UpdateTopLevelASDesc &updateDesc )
 {
-    SwitchEncoder( MetalEncoderType::AccelerationStructure );
-
-    MetalTopLevelAS *metalTopLevelAS = static_cast<MetalTopLevelAS *>( DENOFIZ_FROM_HANDLE( DenOfIz::ITopLevelAS, updateDesc.TopLevelAS ) );
-    MetalBuffer *scratchBuffer = dynamic_cast<MetalBuffer *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBuffer, updateDesc.ScratchBuffer ) );
-    if ( !metalTopLevelAS )
+    @autoreleasepool
     {
-        spdlog::error("Invalid top level acceleration structure.");
-        return;
-    }
-    if ( !scratchBuffer )
-    {
-        spdlog::error("Invalid scratch buffer.");
-        return;
-    }
+        SwitchEncoder( MetalEncoderType::AccelerationStructure );
 
-    BatchResource( metalTopLevelAS->AccelerationStructure( ), MTLResourceUsageRead );
-    BatchResource( scratchBuffer->Instance( ), MTLResourceUsageWrite );
-    BatchResource( metalTopLevelAS->HeaderBuffer( ), MTLResourceUsageWrite );
-    BatchResource( metalTopLevelAS->InstanceBuffer( ), MTLResourceUsageRead );
-    FlushBatchedResources( );
+        MetalTopLevelAS *metalTopLevelAS = static_cast<MetalTopLevelAS *>( DENOFIZ_FROM_HANDLE( DenOfIz::ITopLevelAS, updateDesc.TopLevelAS ) );
+        MetalBuffer *scratchBuffer = dynamic_cast<MetalBuffer *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBuffer, updateDesc.ScratchBuffer ) );
+        if ( !metalTopLevelAS )
+        {
+            spdlog::error("Invalid top level acceleration structure.");
+            return;
+        }
+        if ( !scratchBuffer )
+        {
+            spdlog::error("Invalid scratch buffer.");
+            return;
+        }
 
-    [m_accelerationStructureEncoder buildAccelerationStructure:metalTopLevelAS->AccelerationStructure( )
-                                                    descriptor:metalTopLevelAS->Descriptor( )
-                                                 scratchBuffer:scratchBuffer->Instance( )
-                                           scratchBufferOffset:updateDesc.ScratchBufferOffset];
+        BatchResource( metalTopLevelAS->AccelerationStructure( ), MTLResourceUsageRead );
+        BatchResource( scratchBuffer->Instance( ), MTLResourceUsageWrite );
+        BatchResource( metalTopLevelAS->HeaderBuffer( ), MTLResourceUsageWrite );
+        BatchResource( metalTopLevelAS->InstanceBuffer( ), MTLResourceUsageRead );
+        FlushBatchedResources( );
+
+        [m_accelerationStructureEncoder buildAccelerationStructure:metalTopLevelAS->AccelerationStructure( )
+                                                        descriptor:metalTopLevelAS->Descriptor( )
+                                                     scratchBuffer:scratchBuffer->Instance( )
+                                               scratchBufferOffset:updateDesc.ScratchBufferOffset];
+    }
 }
 
 void MetalCommandList::BuildTopLevelAS( const DenOfIz_BuildTopLevelASDesc &buildTopLevelASDesc )
 {
-    SwitchEncoder( MetalEncoderType::AccelerationStructure );
-
-    MetalTopLevelAS *metalTopLevelAS = static_cast<MetalTopLevelAS *>( DENOFIZ_FROM_HANDLE( DenOfIz::ITopLevelAS, buildTopLevelASDesc.TopLevelAS ) );
-    MetalBuffer *scratchBuffer = dynamic_cast<MetalBuffer *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBuffer, buildTopLevelASDesc.ScratchBuffer ) );
-    if ( !metalTopLevelAS )
+    @autoreleasepool
     {
-        spdlog::error("Invalid top level acceleration structure.");
-        return;
-    }
-    if ( !scratchBuffer )
-    {
-        spdlog::error("Invalid scratch buffer.");
-        return;
-    }
+        SwitchEncoder( MetalEncoderType::AccelerationStructure );
 
-    BatchResource( metalTopLevelAS->AccelerationStructure( ), MTLResourceUsageRead );
-    BatchResource( scratchBuffer->Instance( ), MTLResourceUsageWrite );
-    BatchResource( metalTopLevelAS->HeaderBuffer( ), MTLResourceUsageWrite );
-    BatchResource( metalTopLevelAS->InstanceBuffer( ), MTLResourceUsageRead );
-    FlushBatchedResources( );
+        MetalTopLevelAS *metalTopLevelAS = static_cast<MetalTopLevelAS *>( DENOFIZ_FROM_HANDLE( DenOfIz::ITopLevelAS, buildTopLevelASDesc.TopLevelAS ) );
+        MetalBuffer *scratchBuffer = dynamic_cast<MetalBuffer *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBuffer, buildTopLevelASDesc.ScratchBuffer ) );
+        if ( !metalTopLevelAS )
+        {
+            spdlog::error("Invalid top level acceleration structure.");
+            return;
+        }
+        if ( !scratchBuffer )
+        {
+            spdlog::error("Invalid scratch buffer.");
+            return;
+        }
 
-    [m_accelerationStructureEncoder buildAccelerationStructure:metalTopLevelAS->AccelerationStructure( )
-                                                    descriptor:metalTopLevelAS->Descriptor( )
-                                                 scratchBuffer:scratchBuffer->Instance( )
-                                           scratchBufferOffset:buildTopLevelASDesc.ScratchBufferOffset];
+        BatchResource( metalTopLevelAS->AccelerationStructure( ), MTLResourceUsageRead );
+        BatchResource( scratchBuffer->Instance( ), MTLResourceUsageWrite );
+        BatchResource( metalTopLevelAS->HeaderBuffer( ), MTLResourceUsageWrite );
+        BatchResource( metalTopLevelAS->InstanceBuffer( ), MTLResourceUsageRead );
+        FlushBatchedResources( );
+
+        [m_accelerationStructureEncoder buildAccelerationStructure:metalTopLevelAS->AccelerationStructure( )
+                                                        descriptor:metalTopLevelAS->Descriptor( )
+                                                     scratchBuffer:scratchBuffer->Instance( )
+                                               scratchBufferOffset:buildTopLevelASDesc.ScratchBufferOffset];
+    }
 }
 
 void MetalCommandList::BuildBottomLevelAS( const DenOfIz_BuildBottomLevelASDesc &buildBottomLevelASDesc )
 {
-    SwitchEncoder( MetalEncoderType::AccelerationStructure );
-
-    MetalBottomLevelAS *metalBottomLevelAS = static_cast<MetalBottomLevelAS *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBottomLevelAS, buildBottomLevelASDesc.BottomLevelAS ) );
-    MetalBuffer *scratchBuffer = dynamic_cast<MetalBuffer *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBuffer, buildBottomLevelASDesc.ScratchBuffer ) );
-    if ( !metalBottomLevelAS )
+    @autoreleasepool
     {
-        spdlog::error("Invalid bottom level acceleration structure.");
-        return;
-    }
-    if ( !scratchBuffer )
-    {
-        spdlog::error("Invalid scratch buffer.");
-        return;
-    }
+        SwitchEncoder( MetalEncoderType::AccelerationStructure );
 
-    BatchResource( metalBottomLevelAS->AccelerationStructure( ), MTLResourceUsageRead );
-    BatchResource( scratchBuffer->Instance( ), MTLResourceUsageWrite );
-    FlushBatchedResources( );
+        MetalBottomLevelAS *metalBottomLevelAS = static_cast<MetalBottomLevelAS *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBottomLevelAS, buildBottomLevelASDesc.BottomLevelAS ) );
+        MetalBuffer *scratchBuffer = dynamic_cast<MetalBuffer *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBuffer, buildBottomLevelASDesc.ScratchBuffer ) );
+        if ( !metalBottomLevelAS )
+        {
+            spdlog::error("Invalid bottom level acceleration structure.");
+            return;
+        }
+        if ( !scratchBuffer )
+        {
+            spdlog::error("Invalid scratch buffer.");
+            return;
+        }
 
-    [m_accelerationStructureEncoder buildAccelerationStructure:metalBottomLevelAS->AccelerationStructure( )
-                                                    descriptor:metalBottomLevelAS->Descriptor( )
-                                                 scratchBuffer:scratchBuffer->Instance( )
-                                           scratchBufferOffset:buildBottomLevelASDesc.ScratchBufferOffset];
+        BatchResource( metalBottomLevelAS->AccelerationStructure( ), MTLResourceUsageRead );
+        BatchResource( scratchBuffer->Instance( ), MTLResourceUsageWrite );
+        FlushBatchedResources( );
+
+        [m_accelerationStructureEncoder buildAccelerationStructure:metalBottomLevelAS->AccelerationStructure( )
+                                                        descriptor:metalBottomLevelAS->Descriptor( )
+                                                     scratchBuffer:scratchBuffer->Instance( )
+                                               scratchBufferOffset:buildBottomLevelASDesc.ScratchBufferOffset];
+    }
 }
 
 void MetalCommandList::DispatchRays( const DenOfIz_DispatchRaysDesc &dispatchRaysDesc )
 {
-    DZ_NOT_NULL( dispatchRaysDesc.ShaderBindingTable );
-    if ( dispatchRaysDesc.Width == 0 || dispatchRaysDesc.Height == 0 || dispatchRaysDesc.Depth == 0 )
+    @autoreleasepool
     {
-        spdlog::warn("DispatchRays called with zero dimensions: width= {} , height= {} , depth={}", dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth);
+        DZ_NOT_NULL( dispatchRaysDesc.ShaderBindingTable );
+        if ( dispatchRaysDesc.Width == 0 || dispatchRaysDesc.Height == 0 || dispatchRaysDesc.Depth == 0 )
+        {
+            spdlog::warn("DispatchRays called with zero dimensions: width= {} , height= {} , depth={}", dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth);
+        }
+        SwitchEncoder( MetalEncoderType::Compute );
+        BindCommandResources( );
+
+        MetalShaderBindingTable *shaderBindingTable = static_cast<MetalShaderBindingTable *>( DENOFIZ_FROM_HANDLE( DenOfIz::IShaderBindingTable, dispatchRaysDesc.ShaderBindingTable ) );
+
+        for ( const auto &missShader : shaderBindingTable->UsedResources( ) )
+        {
+            BatchResource( missShader );
+        }
+        BatchResource( m_pipeline->VisibleFunctionTable( ) );
+        BatchResource( m_pipeline->IntersectionFunctionTable( ) );
+        BatchResource( m_argumentBuffer->Buffer( ) );
+        FlushBatchedResources( );
+
+        IRDispatchRaysDescriptor irDispatchRaysDesc;
+        irDispatchRaysDesc.RayGenerationShaderRecord = shaderBindingTable->RayGenerationShaderRange( );
+        irDispatchRaysDesc.HitGroupTable             = shaderBindingTable->HitGroupShaderRange( );
+        irDispatchRaysDesc.MissShaderTable           = shaderBindingTable->MissShaderRange( );
+        irDispatchRaysDesc.CallableShaderTable       = { .StartAddress = 0, .SizeInBytes = 0, .StrideInBytes = 0 };
+        irDispatchRaysDesc.Width                     = dispatchRaysDesc.Width;
+        irDispatchRaysDesc.Height                    = dispatchRaysDesc.Height;
+        irDispatchRaysDesc.Depth                     = dispatchRaysDesc.Depth;
+
+        IRDispatchRaysArgument dispatchRaysArgs = {};
+        dispatchRaysArgs.DispatchRaysDesc          = irDispatchRaysDesc;
+        dispatchRaysArgs.GRS                       = m_argumentBuffer->Buffer( ).gpuAddress + m_currentBufferOffset;
+
+        if ( getenv( "DZ_DEBUG_DISPATCH" ) )
+        {
+            static int dumpCount = 0;
+            if ( dumpCount++ < 3 )
+            {
+                const uint64_t *grsCpu = reinterpret_cast<const uint64_t *>( static_cast<const uint8_t *>( m_argumentBuffer->Buffer( ).contents ) + m_currentBufferOffset );
+                spdlog::warn( "DispatchRays: GRS gpuAddr={:#x} offset={} qword0(tablePtr)={:#x}", m_argumentBuffer->Buffer( ).gpuAddress, m_currentBufferOffset, grsCpu[ 0 ] );
+                spdlog::warn( "DispatchRays: raygen SBT addr={:#x} size={} hitGroup addr={:#x} stride={} miss addr={:#x}", irDispatchRaysDesc.RayGenerationShaderRecord.StartAddress,
+                              irDispatchRaysDesc.RayGenerationShaderRecord.SizeInBytes, irDispatchRaysDesc.HitGroupTable.StartAddress, irDispatchRaysDesc.HitGroupTable.StrideInBytes,
+                              irDispatchRaysDesc.MissShaderTable.StartAddress );
+            }
+        }
+        dispatchRaysArgs.ResDescHeap               = 0;
+        dispatchRaysArgs.SmpDescHeap               = 0;
+        dispatchRaysArgs.VisibleFunctionTable      = m_pipeline->VisibleFunctionTable( ).gpuResourceID;
+        dispatchRaysArgs.IntersectionFunctionTable = m_pipeline->IntersectionFunctionTable( ).gpuResourceID;
+
+        [m_computeEncoder setBytes:&dispatchRaysArgs length:sizeof( IRDispatchRaysArgument ) atIndex:kIRRayDispatchArgumentsBindPoint];
+
+        MTLSize threadGroupSize = MTLSizeMake( 8, 8, 1 );
+        MTLSize gridSize = MTLSizeMake( dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth );
+        [m_computeEncoder dispatchThreads:gridSize threadsPerThreadgroup:threadGroupSize];
+        TopLevelArgumentBufferNextOffset( );
     }
-    SwitchEncoder( MetalEncoderType::Compute );
-    BindCommandResources( );
-
-    MetalShaderBindingTable *shaderBindingTable = static_cast<MetalShaderBindingTable *>( DENOFIZ_FROM_HANDLE( DenOfIz::IShaderBindingTable, dispatchRaysDesc.ShaderBindingTable ) );
-
-    for ( const auto &missShader : shaderBindingTable->UsedResources( ) )
-    {
-        BatchResource( missShader );
-    }
-    BatchResource( m_pipeline->VisibleFunctionTable( ) );
-    BatchResource( m_pipeline->IntersectionFunctionTable( ) );
-    BatchResource( m_argumentBuffer->Buffer( ) );
-    FlushBatchedResources( );
-
-    IRDispatchRaysDescriptor irDispatchRaysDesc;
-    irDispatchRaysDesc.RayGenerationShaderRecord = shaderBindingTable->RayGenerationShaderRange( );
-    irDispatchRaysDesc.HitGroupTable             = shaderBindingTable->HitGroupShaderRange( );
-    irDispatchRaysDesc.MissShaderTable           = shaderBindingTable->MissShaderRange( );
-    irDispatchRaysDesc.CallableShaderTable       = { .StartAddress = 0, .SizeInBytes = 0, .StrideInBytes = 0 };
-    irDispatchRaysDesc.Width                     = dispatchRaysDesc.Width;
-    irDispatchRaysDesc.Height                    = dispatchRaysDesc.Height;
-    irDispatchRaysDesc.Depth                     = dispatchRaysDesc.Depth;
-
-    IRDispatchRaysArgument dispatchRaysArgs;
-    dispatchRaysArgs.DispatchRaysDesc          = irDispatchRaysDesc;
-    dispatchRaysArgs.GRS                       = m_argumentBuffer->Buffer( ).gpuAddress + m_currentBufferOffset;
-    dispatchRaysArgs.ResDescHeap               = 0;
-    dispatchRaysArgs.SmpDescHeap               = 0;
-    dispatchRaysArgs.VisibleFunctionTable      = m_pipeline->VisibleFunctionTable( ).gpuResourceID;
-    dispatchRaysArgs.IntersectionFunctionTable = m_pipeline->IntersectionFunctionTable( ).gpuResourceID;
-
-    [m_computeEncoder setBytes:&dispatchRaysArgs length:sizeof( IRDispatchRaysArgument ) atIndex:kIRRayDispatchArgumentsBindPoint];
-
-    MTLSize threadGroupSize = MTLSizeMake( 8, 8, 1 );
-    MTLSize gridSize = MTLSizeMake( dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth );
-    [m_computeEncoder dispatchThreads:gridSize threadsPerThreadgroup:threadGroupSize];
-    TopLevelArgumentBufferNextOffset( );
 }
 
 void MetalCommandList::BindTopLevelArgumentBuffer( )
@@ -987,102 +1066,114 @@ const id<MTLCommandBuffer> MetalCommandList::GetCommandBuffer( ) const
 
 void MetalCommandList::BeginDebugMarker( float r, float g, float b, DenOfIz_StringView name )
 {
-    std::string markerName( name.Chars, name.NumChars );
-    NSString *nsName = [NSString stringWithUTF8String:markerName.c_str( ) ];
+    @autoreleasepool
+    {
+        std::string markerName( name.Chars, name.NumChars );
+        NSString *nsName = [NSString stringWithUTF8String:markerName.c_str( ) ];
 
-    if ( m_activeEncoderType == MetalEncoderType::Render && m_renderEncoder )
-    {
-        [m_renderEncoder pushDebugGroup:nsName];
-    }
-    else if ( m_activeEncoderType == MetalEncoderType::Compute && m_computeEncoder )
-    {
-        [m_computeEncoder pushDebugGroup:nsName];
-    }
-    else if ( m_activeEncoderType == MetalEncoderType::Blit && m_blitEncoder )
-    {
-        [m_blitEncoder pushDebugGroup:nsName];
-    }
-    else if ( m_commandBuffer )
-    {
-        [m_commandBuffer pushDebugGroup:nsName];
+        if ( m_activeEncoderType == MetalEncoderType::Render && m_renderEncoder )
+        {
+            [m_renderEncoder pushDebugGroup:nsName];
+        }
+        else if ( m_activeEncoderType == MetalEncoderType::Compute && m_computeEncoder )
+        {
+            [m_computeEncoder pushDebugGroup:nsName];
+        }
+        else if ( m_activeEncoderType == MetalEncoderType::Blit && m_blitEncoder )
+        {
+            [m_blitEncoder pushDebugGroup:nsName];
+        }
+        else if ( m_commandBuffer )
+        {
+            [m_commandBuffer pushDebugGroup:nsName];
+        }
     }
 }
 
 void MetalCommandList::EndDebugMarker( )
 {
-    if ( m_activeEncoderType == MetalEncoderType::Render && m_renderEncoder )
+    @autoreleasepool
     {
-        [m_renderEncoder popDebugGroup];
-    }
-    else if ( m_activeEncoderType == MetalEncoderType::Compute && m_computeEncoder )
-    {
-        [m_computeEncoder popDebugGroup];
-    }
-    else if ( m_activeEncoderType == MetalEncoderType::Blit && m_blitEncoder )
-    {
-        [m_blitEncoder popDebugGroup];
-    }
-    else if ( m_commandBuffer )
-    {
-        [m_commandBuffer popDebugGroup];
+        if ( m_activeEncoderType == MetalEncoderType::Render && m_renderEncoder )
+        {
+            [m_renderEncoder popDebugGroup];
+        }
+        else if ( m_activeEncoderType == MetalEncoderType::Compute && m_computeEncoder )
+        {
+            [m_computeEncoder popDebugGroup];
+        }
+        else if ( m_activeEncoderType == MetalEncoderType::Blit && m_blitEncoder )
+        {
+            [m_blitEncoder popDebugGroup];
+        }
+        else if ( m_commandBuffer )
+        {
+            [m_commandBuffer popDebugGroup];
+        }
     }
 }
 
 void MetalCommandList::InsertDebugMarker( float r, float g, float b, DenOfIz_StringView name )
 {
-    NSString *nsName = [NSString stringWithUTF8String:name.Chars];
-    if ( m_activeEncoderType == MetalEncoderType::Render && m_renderEncoder )
+    @autoreleasepool
     {
-        [m_renderEncoder insertDebugSignpost:nsName];
-    }
-    else if ( m_activeEncoderType == MetalEncoderType::Compute && m_computeEncoder )
-    {
-        [m_computeEncoder insertDebugSignpost:nsName];
-    }
-    else if ( m_activeEncoderType == MetalEncoderType::Blit && m_blitEncoder )
-    {
-        [m_blitEncoder insertDebugSignpost:nsName];
+        NSString *nsName = [NSString stringWithUTF8String:name.Chars];
+        if ( m_activeEncoderType == MetalEncoderType::Render && m_renderEncoder )
+        {
+            [m_renderEncoder insertDebugSignpost:nsName];
+        }
+        else if ( m_activeEncoderType == MetalEncoderType::Compute && m_computeEncoder )
+        {
+            [m_computeEncoder insertDebugSignpost:nsName];
+        }
+        else if ( m_activeEncoderType == MetalEncoderType::Blit && m_blitEncoder )
+        {
+            [m_blitEncoder insertDebugSignpost:nsName];
+        }
     }
 }
 
 void MetalCommandList::BeginQuery( IQueryPool *queryPool, const DenOfIz_QueryDesc &queryDesc )
 {
-    auto *metalQueryPool = dynamic_cast<MetalQueryPool *>( queryPool );
-    if ( !metalQueryPool )
+    @autoreleasepool
     {
-        spdlog::error( "MetalCommandList::BeginQuery: Invalid query pool" );
-        return;
-    }
-
-    if ( metalQueryPool->GetType( ) == DENOFIZ_QUERY_TYPE_OCCLUSION )
-    {
-        if ( m_activeEncoderType == MetalEncoderType::Render && m_renderEncoder )
+        auto *metalQueryPool = dynamic_cast<MetalQueryPool *>( queryPool );
+        if ( !metalQueryPool )
         {
-            [m_renderEncoder setVisibilityResultMode:MTLVisibilityResultModeBoolean offset:queryDesc.Index * sizeof( uint64_t )];
+            spdlog::error( "MetalCommandList::BeginQuery: Invalid query pool" );
+            return;
         }
-    }
-    else if ( metalQueryPool->GetType( ) == DENOFIZ_QUERY_TYPE_TIMESTAMP )
-    {
-        if ( metalQueryPool->GetCounterSampleBuffer( ) )
+
+        if ( metalQueryPool->GetType( ) == DENOFIZ_QUERY_TYPE_OCCLUSION )
         {
-            uint32_t actualIndex = queryDesc.Index * 2;
-            if ( m_renderEncoder )
+            if ( m_activeEncoderType == MetalEncoderType::Render && m_renderEncoder )
             {
-                [m_renderEncoder sampleCountersInBuffer:metalQueryPool->GetCounterSampleBuffer( ) 
-                                        atSampleIndex:actualIndex 
-                                          withBarrier:NO];
+                [m_renderEncoder setVisibilityResultMode:MTLVisibilityResultModeBoolean offset:queryDesc.Index * sizeof( uint64_t )];
             }
-            else if ( m_computeEncoder )
+        }
+        else if ( metalQueryPool->GetType( ) == DENOFIZ_QUERY_TYPE_TIMESTAMP )
+        {
+            if ( metalQueryPool->GetCounterSampleBuffer( ) )
             {
-                [m_computeEncoder sampleCountersInBuffer:metalQueryPool->GetCounterSampleBuffer( ) 
-                                         atSampleIndex:actualIndex 
-                                           withBarrier:NO];
-            }
-            else if ( m_blitEncoder )
-            {
-                [m_blitEncoder sampleCountersInBuffer:metalQueryPool->GetCounterSampleBuffer( ) 
-                                      atSampleIndex:actualIndex 
-                                        withBarrier:NO];
+                uint32_t actualIndex = queryDesc.Index * 2;
+                if ( m_renderEncoder )
+                {
+                    [m_renderEncoder sampleCountersInBuffer:metalQueryPool->GetCounterSampleBuffer( ) 
+                                            atSampleIndex:actualIndex 
+                                              withBarrier:NO];
+                }
+                else if ( m_computeEncoder )
+                {
+                    [m_computeEncoder sampleCountersInBuffer:metalQueryPool->GetCounterSampleBuffer( ) 
+                                             atSampleIndex:actualIndex 
+                                               withBarrier:NO];
+                }
+                else if ( m_blitEncoder )
+                {
+                    [m_blitEncoder sampleCountersInBuffer:metalQueryPool->GetCounterSampleBuffer( ) 
+                                          atSampleIndex:actualIndex 
+                                            withBarrier:NO];
+                }
             }
         }
     }
@@ -1090,42 +1181,45 @@ void MetalCommandList::BeginQuery( IQueryPool *queryPool, const DenOfIz_QueryDes
 
 void MetalCommandList::EndQuery( IQueryPool *queryPool, const DenOfIz_QueryDesc &queryDesc )
 {
-    auto *metalQueryPool = dynamic_cast<MetalQueryPool *>( queryPool );
-    if ( !metalQueryPool )
+    @autoreleasepool
     {
-        spdlog::error( "MetalCommandList::EndQuery: Invalid query pool" );
-        return;
-    }
-
-    if ( metalQueryPool->GetType( ) == DENOFIZ_QUERY_TYPE_OCCLUSION )
-    {
-        if ( m_activeEncoderType == MetalEncoderType::Render && m_renderEncoder )
+        auto *metalQueryPool = dynamic_cast<MetalQueryPool *>( queryPool );
+        if ( !metalQueryPool )
         {
-            [m_renderEncoder setVisibilityResultMode:MTLVisibilityResultModeDisabled offset:0];
+            spdlog::error( "MetalCommandList::EndQuery: Invalid query pool" );
+            return;
         }
-    }
-    else if ( metalQueryPool->GetType( ) == DENOFIZ_QUERY_TYPE_TIMESTAMP )
-    {
-        if ( metalQueryPool->GetCounterSampleBuffer( ) )
+
+        if ( metalQueryPool->GetType( ) == DENOFIZ_QUERY_TYPE_OCCLUSION )
         {
-            uint32_t actualIndex = queryDesc.Index * 2 + 1;
-            if ( m_renderEncoder )
+            if ( m_activeEncoderType == MetalEncoderType::Render && m_renderEncoder )
             {
-                [m_renderEncoder sampleCountersInBuffer:metalQueryPool->GetCounterSampleBuffer( ) 
-                                        atSampleIndex:actualIndex 
-                                          withBarrier:NO];
+                [m_renderEncoder setVisibilityResultMode:MTLVisibilityResultModeDisabled offset:0];
             }
-            else if ( m_computeEncoder )
+        }
+        else if ( metalQueryPool->GetType( ) == DENOFIZ_QUERY_TYPE_TIMESTAMP )
+        {
+            if ( metalQueryPool->GetCounterSampleBuffer( ) )
             {
-                [m_computeEncoder sampleCountersInBuffer:metalQueryPool->GetCounterSampleBuffer( ) 
-                                         atSampleIndex:actualIndex 
-                                           withBarrier:NO];
-            }
-            else if ( m_blitEncoder )
-            {
-                [m_blitEncoder sampleCountersInBuffer:metalQueryPool->GetCounterSampleBuffer( ) 
-                                      atSampleIndex:actualIndex 
-                                        withBarrier:NO];
+                uint32_t actualIndex = queryDesc.Index * 2 + 1;
+                if ( m_renderEncoder )
+                {
+                    [m_renderEncoder sampleCountersInBuffer:metalQueryPool->GetCounterSampleBuffer( ) 
+                                            atSampleIndex:actualIndex 
+                                              withBarrier:NO];
+                }
+                else if ( m_computeEncoder )
+                {
+                    [m_computeEncoder sampleCountersInBuffer:metalQueryPool->GetCounterSampleBuffer( ) 
+                                             atSampleIndex:actualIndex 
+                                               withBarrier:NO];
+                }
+                else if ( m_blitEncoder )
+                {
+                    [m_blitEncoder sampleCountersInBuffer:metalQueryPool->GetCounterSampleBuffer( ) 
+                                          atSampleIndex:actualIndex 
+                                            withBarrier:NO];
+                }
             }
         }
     }

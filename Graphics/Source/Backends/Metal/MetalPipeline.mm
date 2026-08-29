@@ -369,11 +369,13 @@ void MetalPipeline::CreateRayTracingPipeline( )
         }
     }
 
-    id<MTLLibrary>  triangleIntersectionLibrary = NewSynthesizedIntersectionLibrary( IRHitGroupTypeTriangles );
+    const DenOfIz_ShaderRayTracingDesc &rtDesc = shaderProgramDesc.RayTracing;
+
+    id<MTLLibrary>  triangleIntersectionLibrary = NewSynthesizedIntersectionLibrary( IRHitGroupTypeTriangles, rtDesc );
     id<MTLFunction> triangleFn                  = [triangleIntersectionLibrary newFunctionWithName:[NSString stringWithUTF8String:kIRIndirectTriangleIntersectionFunctionName]];
     [functionHandles addObject:triangleFn];
 
-    id<MTLLibrary>  proceduralIntersectionLibrary = NewSynthesizedIntersectionLibrary( IRHitGroupTypeProceduralPrimitive );
+    id<MTLLibrary>  proceduralIntersectionLibrary = NewSynthesizedIntersectionLibrary( IRHitGroupTypeProceduralPrimitive, rtDesc );
     id<MTLFunction> proceduralFn = [proceduralIntersectionLibrary newFunctionWithName:[NSString stringWithUTF8String:kIRIndirectProceduralIntersectionFunctionName]];
     [functionHandles addObject:proceduralFn];
 
@@ -381,12 +383,14 @@ void MetalPipeline::CreateRayTracingPipeline( )
     [linkedFunctions setFunctions:functionHandles];
     [pipelineStateDescriptor setLinkedFunctions:linkedFunctions];
 
-    id<MTLLibrary>  dispatchLibrary  = NewIndirectDispatchLibrary( );
+    id<MTLLibrary>  dispatchLibrary  = NewIndirectDispatchLibrary( rtDesc );
     id<MTLFunction> dispatchFunction = [dispatchLibrary newFunctionWithName:[NSString stringWithUTF8String:kIRRayDispatchIndirectionKernelName]];
 
     [pipelineStateDescriptor setLabel:@"RayTracing Pipeline"];
     [pipelineStateDescriptor setComputeFunction:dispatchFunction];
-    [pipelineStateDescriptor setMaxCallStackDepth:shaderProgramDesc.RayTracing.MaxRecursionDepth + 1];
+    // Each TraceRay level costs two visible-function calls (intersection/any-hit + closest-hit/miss)
+    // on top of the ray generation function itself, so size the call stack accordingly.
+    [pipelineStateDescriptor setMaxCallStackDepth:( rtDesc.MaxRecursionDepth * 2 ) + 2];
 
     if ( DENOFIZ_HANDLE_IS_VALID( m_desc.PipelineCache ) )
     {
@@ -455,10 +459,22 @@ id<MTLFunction> MetalPipeline::CreateShaderFunction( id<MTLLibrary> library, con
     return function;
 }
 
-id<MTLLibrary> MetalPipeline::NewIndirectDispatchLibrary( )
+id<MTLLibrary> MetalPipeline::NewIndirectDispatchLibrary( const DenOfIz_ShaderRayTracingDesc &rtDesc )
 {
     IRCompiler *pCompiler = IRCompilerCreate( );
     IRCompilerSetMinimumDeploymentTarget( pCompiler, IROperatingSystem_macOS, "15.1" );
+
+    IRRayTracingPipelineConfiguration *rtConfig = IRRayTracingPipelineConfigurationCreate( );
+    IRRayTracingPipelineConfigurationSetMaxAttributeSizeInBytes( rtConfig, rtDesc.MaxNumAttributeBytes );
+    IRRayTracingPipelineConfigurationSetMaxRecursiveDepth( rtConfig, rtDesc.MaxRecursionDepth );
+    IRRayTracingPipelineConfigurationSetPipelineFlags( rtConfig, IRRaytracingPipelineFlagNone );
+    IRRayTracingPipelineConfigurationSetIntrinsicMasks( rtConfig, IRIntrinsicMaskClosestHitAll, IRIntrinsicMaskMissShaderAll, IRIntrinsicMaskAnyHitShaderAll,
+                                                        IRIntrinsicMaskCallableShaderAll );
+    IRRayTracingPipelineConfigurationSetRayGenerationCompilationMode( rtConfig, IRRayGenerationCompilationVisibleFunction );
+    IRRayTracingPipelineConfigurationSetIntersectionFunctionCompilationMode( rtConfig, IRIntersectionFunctionCompilationVisibleFunction );
+    IRCompilerSetRayTracingPipelineConfiguration( pCompiler, rtConfig );
+    IRRayTracingPipelineConfigurationDestroy( rtConfig );
+
     IRMetalLibBinary *metalLib = IRMetalLibBinaryCreate( );
     IRMetalLibSynthesizeIndirectRayDispatchFunction( pCompiler, metalLib );
 
@@ -472,11 +488,22 @@ id<MTLLibrary> MetalPipeline::NewIndirectDispatchLibrary( )
     return lib;
 }
 
-id<MTLLibrary> MetalPipeline::NewSynthesizedIntersectionLibrary( const IRHitGroupType &hitGroupType )
+id<MTLLibrary> MetalPipeline::NewSynthesizedIntersectionLibrary( const IRHitGroupType &hitGroupType, const DenOfIz_ShaderRayTracingDesc &rtDesc )
 {
     IRCompiler *pCompiler = IRCompilerCreate( );
     IRCompilerSetMinimumDeploymentTarget( pCompiler, IROperatingSystem_macOS, "15.1" );
     IRCompilerSetHitgroupType( pCompiler, hitGroupType );
+
+    IRRayTracingPipelineConfiguration *rtConfig = IRRayTracingPipelineConfigurationCreate( );
+    IRRayTracingPipelineConfigurationSetMaxAttributeSizeInBytes( rtConfig, rtDesc.MaxNumAttributeBytes );
+    IRRayTracingPipelineConfigurationSetMaxRecursiveDepth( rtConfig, rtDesc.MaxRecursionDepth );
+    IRRayTracingPipelineConfigurationSetPipelineFlags( rtConfig, IRRaytracingPipelineFlagNone );
+    IRRayTracingPipelineConfigurationSetIntrinsicMasks( rtConfig, IRIntrinsicMaskClosestHitAll, IRIntrinsicMaskMissShaderAll, IRIntrinsicMaskAnyHitShaderAll,
+                                                        IRIntrinsicMaskCallableShaderAll );
+    IRRayTracingPipelineConfigurationSetRayGenerationCompilationMode( rtConfig, IRRayGenerationCompilationVisibleFunction );
+    IRRayTracingPipelineConfigurationSetIntersectionFunctionCompilationMode( rtConfig, IRIntersectionFunctionCompilationVisibleFunction );
+    IRCompilerSetRayTracingPipelineConfiguration( pCompiler, rtConfig );
+    IRRayTracingPipelineConfigurationDestroy( rtConfig );
 
     IRMetalLibBinary *metalLib = IRMetalLibBinaryCreate( );
     IRMetalLibSynthesizeIndirectIntersectionFunction( pCompiler, metalLib );
@@ -485,7 +512,6 @@ id<MTLLibrary> MetalPipeline::NewSynthesizedIntersectionLibrary( const IRHitGrou
     id<MTLLibrary> lib    = [m_context->Device newLibraryWithData:IRMetalLibGetBytecodeData( metalLib ) error:&pError];
     assert( lib );
 
-    // Clean up compiler resources
     IRMetalLibBinaryDestroy( metalLib );
     IRCompilerDestroy( pCompiler );
 
@@ -603,7 +629,7 @@ const HitGroupExport &MetalPipeline::FindHitGroupExport( const std::string &name
     return m_hitGroupExports.at( name );
 }
 
-id<MTLVisibleFunctionTable> MetalPipeline::VisibleFunctionTable( ) const
+const id<MTLVisibleFunctionTable> &MetalPipeline::VisibleFunctionTable( ) const
 {
     return m_visibleFunctionTable;
 }
@@ -809,7 +835,7 @@ void MetalPipeline::CreateMeshPipeline( )
     m_depthBiasClamp     = m_desc.Graphics.Rasterization.DepthBiasClamp;
 }
 
-id<MTLIntersectionFunctionTable> MetalPipeline::IntersectionFunctionTable( ) const
+const id<MTLIntersectionFunctionTable> &MetalPipeline::IntersectionFunctionTable( ) const
 {
     return m_intersectionFunctionTable;
 }

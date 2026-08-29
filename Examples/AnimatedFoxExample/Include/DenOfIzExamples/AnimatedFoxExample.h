@@ -20,9 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Include first because DirectXMath breaks NULL on third party libraries
 #include "DenOfIzExamples/GltfLoader.h"
-#include "DenOfIzExamples/GltfExporter.h"
 #include "DenOfIzExamples/IExample.h"
-#include "DenOfIzGraphics/Animation/OzzAnimation.h"
 #include "DenOfIzGraphics/Assets/Import/OzzExporter.h"
 
 #include <DirectXMath.h>
@@ -83,19 +81,19 @@ namespace DenOfIz
 
         std::unique_ptr<GltfLoader> m_gltfLoader;
 
-        DenOfIz_OzzAnimation m_ozzAnimation  = DENOFIZ_NULL_HANDLE;
-        DenOfIz_OzzContext   m_walkContext   = DENOFIZ_NULL_HANDLE;
-        DenOfIz_OzzContext   m_runContext    = DENOFIZ_NULL_HANDLE;
-        DenOfIz_OzzContext   m_activeContext = DENOFIZ_NULL_HANDLE;
+        DenOfIz_OzzSkeleton m_ozzAnimation  = DENOFIZ_NULL_HANDLE;
+        DenOfIz_OzzContext  m_walkContext   = DENOFIZ_NULL_HANDLE;
+        DenOfIz_OzzContext  m_runContext    = DENOFIZ_NULL_HANDLE;
+        DenOfIz_OzzContext  m_activeContext = DENOFIZ_NULL_HANDLE;
 
         std::vector<DenOfIz_Float4x4> m_inverseBindMatrices;
         std::vector<SkinnedVertex>    m_vertices;
-        std::vector<uint32_t>         m_indices{ };
+        std::vector<uint32_t>         m_indices{};
         SkinnedModelConstantBuffer   *m_boneTransformsData = nullptr;
         PerFrameConstantBuffer       *m_perFrameData       = nullptr;
         MaterialConstantBuffer       *m_materialData       = nullptr;
 
-        DenOfIz_Float4x4Array m_modelTransforms{ };
+        DenOfIz_Float4x4Array m_modelTransforms{};
 
         bool        m_animPlaying    = true;
         std::string m_currentAnim    = "Walk";

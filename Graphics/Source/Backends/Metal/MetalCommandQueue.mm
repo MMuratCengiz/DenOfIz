@@ -77,11 +77,13 @@ void MetalCommandQueue::ExecuteCommandLists(const DenOfIz_ExecuteCommandListsDes
             waitCommandBuffer = nil;
         }
 
-        for (size_t i = 0; i < executeCommandListsDesc.CommandLists.NumElements; i++)
+        const size_t numCommandLists = executeCommandListsDesc.CommandLists.NumElements;
+        for (size_t i = 0; i < numCommandLists; i++)
         {
             MetalCommandList* cmdList = static_cast<MetalCommandList*>(DENOFIZ_FROM_HANDLE(ICommandList, executeCommandListsDesc.CommandLists.Elements[i]));
 
-            if (DENOFIZ_HANDLE_IS_VALID(executeCommandListsDesc.Signal))
+            // Command buffers on one queue complete in commit order, so the fence only needs to observe the last one.
+            if (i == numCommandLists - 1 && DENOFIZ_HANDLE_IS_VALID(executeCommandListsDesc.Signal))
             {
                 MetalFence* metalFence = static_cast<MetalFence*>(DENOFIZ_FROM_HANDLE(IFence, executeCommandListsDesc.Signal));
                 metalFence->NotifyOnCommandBufferCompletion(cmdList->GetCommandBuffer());

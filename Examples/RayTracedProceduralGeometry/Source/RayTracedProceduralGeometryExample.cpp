@@ -352,8 +352,8 @@ void RayTracedProceduralGeometryExample::Render( const uint32_t frameIndex, DenO
     DenOfIz_CopyTextureRegionDesc copyTextureRegionDesc{ };
     copyTextureRegionDesc.SrcTexture = m_raytracingOutput[ frameIndex ];
     copyTextureRegionDesc.DstTexture = renderTarget;
-    copyTextureRegionDesc.Width      = m_windowDesc.Width;
-    copyTextureRegionDesc.Height     = m_windowDesc.Height;
+    copyTextureRegionDesc.Width      = m_pixelWidth;
+    copyTextureRegionDesc.Height     = m_pixelHeight;
     copyTextureRegionDesc.Depth      = 1;
     DenOfIz_CommandList_CopyTextureRegion( commandList, &copyTextureRegionDesc );
 
@@ -365,8 +365,8 @@ void RayTracedProceduralGeometryExample::Render( const uint32_t frameIndex, DenO
 void RayTracedProceduralGeometryExample::CreateRenderTargets( )
 {
     DenOfIz_TextureDesc textureDesc{ };
-    textureDesc.Width     = m_windowDesc.Width;
-    textureDesc.Height    = m_windowDesc.Height;
+    textureDesc.Width     = m_pixelWidth;
+    textureDesc.Height    = m_pixelHeight;
     textureDesc.Depth     = 1;
     textureDesc.ArraySize = 1;
     textureDesc.MipLevels = 1;
@@ -432,8 +432,10 @@ void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
         aabbInstanceDesc.ContributionToHitGroupIndex = 2;
         aabbInstanceDesc.ID                          = 1;
 
-        DenOfIz_Float4x4 aabbTransform = DENOFIZ_FLOAT4X4_IDENTITY;
-
+        // Move all AABBs above the ground plane (the AABB grid is centred on y = 0).
+        const XMMATRIX   mAabbTranslation = XMMatrixTranslation( 0.0f, c_aabbWidth / 2.0f, 0.0f );
+        DenOfIz_Float4x4 aabbTransform{ };
+        XMStoreFloat3x4( reinterpret_cast<XMFLOAT3X4 *>( &aabbTransform._11 ), mAabbTranslation );
         aabbInstanceDesc.Transform = aabbTransform;
 
         DenOfIz_ASInstanceDesc triangleInstanceDesc{ };

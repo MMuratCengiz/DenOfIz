@@ -139,71 +139,95 @@ IBindGroup *MetalBindGroup::Sampler( const uint32_t binding, ISampler *sampler )
 
 void MetalBindGroup::EndUpdate( )
 {
-    uint32_t registerSpace     = m_bindGroupLayout->RegisterSpace( );
-    uint32_t cbvSrvUavTableSize = m_bindGroupLayout->CbvSrvUavTableSize( );
-    if ( cbvSrvUavTableSize == 0 )
+    @autoreleasepool
     {
-        cbvSrvUavTableSize = m_boundAccelerationStructures.size( ) + m_boundBuffers.size( ) + m_boundBuffersWithOffsets.size( ) + m_boundTextures.size( ) + m_boundTextureArrayIndices.size( );
-        if ( registerSpace == DENOFIZ_ROOT_LEVEL_BUFFER_REGISTER_SPACE )
+        uint32_t registerSpace     = m_bindGroupLayout->RegisterSpace( );
+        uint32_t cbvSrvUavTableSize = m_bindGroupLayout->CbvSrvUavTableSize( );
+        if ( cbvSrvUavTableSize == 0 )
         {
-            cbvSrvUavTableSize = m_boundTextures.size( ) + m_boundTextureArrayIndices.size( );
+            cbvSrvUavTableSize = m_boundAccelerationStructures.size( ) + m_boundBuffers.size( ) + m_boundBuffersWithOffsets.size( ) + m_boundTextures.size( ) + m_boundTextureArrayIndices.size( );
+            if ( registerSpace == DENOFIZ_ROOT_LEVEL_BUFFER_REGISTER_SPACE )
+            {
+                cbvSrvUavTableSize = m_boundTextures.size( ) + m_boundTextureArrayIndices.size( );
+            }
         }
-    }
 
-    if ( cbvSrvUavTableSize > 0 )
-    {
-        if ( !m_cbvSrvUavTable )
+        if ( cbvSrvUavTableSize > 0 )
         {
-            m_cbvSrvUavTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, cbvSrvUavTableSize ) );
-            m_cbvSrvUavTable->Table.SetDebugName( "CbvSrvUav Table[Space: " + std::to_string( registerSpace ) + "]" );
-            m_cbvSrvUavTable->TLABOffset = m_bindGroupLayout->CbvSrvUavTableOffset( );
+            if ( !m_cbvSrvUavTable )
+            {
+                m_cbvSrvUavTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, cbvSrvUavTableSize ) );
+                m_cbvSrvUavTable->Table.SetDebugName( "CbvSrvUav Table[Space: " + std::to_string( registerSpace ) + "]" );
+                m_cbvSrvUavTable->TLABOffset = m_bindGroupLayout->CbvSrvUavTableOffset( );
+            }
+            else
+            {
+                m_cbvSrvUavTable->Table.Reset( cbvSrvUavTableSize );
+            }
+            m_cbvSrvUavTable->NumEntries = 0;
         }
-        else
+        if ( !m_boundSamplers.empty( ) )
         {
-            m_cbvSrvUavTable->Table.Reset( cbvSrvUavTableSize );
+            if ( !m_samplerTable )
+            {
+                m_samplerTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, m_boundSamplers.size( ) ) );
+                m_samplerTable->Table.SetDebugName( "Sampler Table[Space: " + std::to_string( registerSpace ) + "]" );
+                m_samplerTable->TLABOffset = m_bindGroupLayout->SamplerTableOffset( );
+            }
+            else
+            {
+                m_samplerTable->Table.Reset( m_boundSamplers.size( ) );
+            }
+            m_samplerTable->NumEntries = 0;
         }
-        m_cbvSrvUavTable->NumEntries = 0;
-    }
-    if ( !m_boundSamplers.empty( ) )
-    {
-        if ( !m_samplerTable )
-        {
-            m_samplerTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, m_boundSamplers.size( ) ) );
-            m_samplerTable->Table.SetDebugName( "Sampler Table[Space: " + std::to_string( registerSpace ) + "]" );
-            m_samplerTable->TLABOffset = m_bindGroupLayout->SamplerTableOffset( );
-        }
-        else
-        {
-            m_samplerTable->Table.Reset( m_boundSamplers.size( ) );
-        }
-        m_samplerTable->NumEntries = 0;
-    }
 
-    for ( auto item : m_boundBuffers )
-    {
-        BindBuffer( item.first, item.second );
-    }
+        for ( auto item : m_boundBuffers )
+        {
+            BindBuffer( item.first, item.second );
+        }
     
-    for ( auto item : m_boundBuffersWithOffsets )
-    {
-        BindBufferWithOffset( item.Slot, item.Resource, item.Offset );
-    }
+        for ( auto item : m_boundBuffersWithOffsets )
+        {
+            BindBufferWithOffset( item.Slot, item.Resource, item.Offset );
+        }
     
-    for ( auto item : m_boundAccelerationStructures )
-    {
-        BindAccelerationStructure( item.first, item.second );
-    }
-    for ( const auto &[slot, mipLevel, resource] : m_boundTextures )
-    {
-        BindTexture( slot, resource, mipLevel );
-    }
-    for ( auto item : m_boundTextureArrayIndices )
-    {
-        BindTextureArrayIndex( item.Slot, item.ArrayIndex, item.Resource );
-    }
-    for ( auto item : m_boundSamplers )
-    {
-        BindSampler( item.first, item.second );
+        for ( auto item : m_boundAccelerationStructures )
+        {
+            BindAccelerationStructure( item.first, item.second );
+        }
+        for ( const auto &[slot, mipLevel, resource] : m_boundTextures )
+        {
+            BindTexture( slot, resource, mipLevel );
+        }
+        for ( auto item : m_boundTextureArrayIndices )
+        {
+            BindTextureArrayIndex( item.Slot, item.ArrayIndex, item.Resource );
+        }
+        for ( auto item : m_boundSamplers )
+        {
+            BindSampler( item.first, item.second );
+        }
+
+        if ( getenv( "DZ_DEBUG_DISPATCH" ) && m_cbvSrvUavTable )
+        {
+            static int dumpCount = 0;
+            if ( dumpCount++ < 6 )
+            {
+                id<MTLBuffer>   tableBuffer = m_cbvSrvUavTable->Table.Buffer( );
+                const auto     *entries     = static_cast<const IRDescriptorTableEntry *>( tableBuffer.contents );
+                const uint32_t  numEntries  = static_cast<uint32_t>( tableBuffer.length / sizeof( IRDescriptorTableEntry ) );
+                spdlog::warn( "BindGroup[space {}] table gpuAddr={:#x} entries={}", m_bindGroupLayout->RegisterSpace( ), tableBuffer.gpuAddress, numEntries );
+                for ( uint32_t i = 0; i < numEntries; ++i )
+                {
+                    spdlog::warn( "  entry[{}] gpuVA={:#x} texViewID={:#x} metadata={:#x}", i, entries[ i ].gpuVA, entries[ i ].textureViewID, entries[ i ].metadata );
+                }
+                for ( const auto &tex : m_textures )
+                {
+                    spdlog::warn( "  bound texture resID={:#x} type={} label={}", tex.Resource->Instance( ).gpuResourceID._impl, (int)tex.Resource->Instance( ).textureType,
+                                  [tex.Resource->Instance( ).label UTF8String] ? [tex.Resource->Instance( ).label UTF8String] : "?" );
+                }
+            }
+        }
     }
 }
 

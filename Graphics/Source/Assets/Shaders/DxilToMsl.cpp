@@ -212,6 +212,52 @@ IRDescriptorRange1 CreateDescriptorRange( const D3D12_SHADER_INPUT_BIND_DESC &sh
 
 IRRootSignature *DxilToMsl::Impl::CreateRootSignature( std::vector<RegisterSpaceRange> &registerSpaceRanges, const bool isLocal ) const
 {
+    // MetalBindGroupLayout encodes descriptor tables in CBV -> SRV -> UAV order, sorted by register. Descriptor range order in the root
+    // signature dictates the table layout the converted shader reads (Metal Shader Converter 3.x lays out append ranges strictly in
+    // declaration order), so the ranges must be declared in that same order with explicit offsets.
+    constexpr auto rangeTypeOrder = []( const IRDescriptorRangeType type )
+    {
+        switch ( type )
+        {
+        case IRDescriptorRangeTypeCBV:
+            return 0;
+        case IRDescriptorRangeTypeSRV:
+            return 1;
+        case IRDescriptorRangeTypeUAV:
+            return 2;
+        case IRDescriptorRangeTypeSampler:
+            return 3;
+        }
+        return 4;
+    };
+    for ( auto &registerSpaceRange : registerSpaceRanges )
+    {
+        std::ranges::sort( registerSpaceRange.CbvSrvUavRanges,
+                           [ & ]( const IRDescriptorRange1 &a, const IRDescriptorRange1 &b )
+                           {
+                               if ( a.RangeType != b.RangeType )
+                               {
+                                   return rangeTypeOrder( a.RangeType ) < rangeTypeOrder( b.RangeType );
+                               }
+                               return a.BaseShaderRegister < b.BaseShaderRegister;
+                           } );
+        std::ranges::sort( registerSpaceRange.SamplerRanges,
+                           []( const IRDescriptorRange1 &a, const IRDescriptorRange1 &b ) { return a.BaseShaderRegister < b.BaseShaderRegister; } );
+
+        uint32_t tableOffset = 0;
+        for ( auto &range : registerSpaceRange.CbvSrvUavRanges )
+        {
+            range.OffsetInDescriptorsFromTableStart = tableOffset;
+            tableOffset += range.NumDescriptors;
+        }
+        tableOffset = 0;
+        for ( auto &range : registerSpaceRange.SamplerRanges )
+        {
+            range.OffsetInDescriptorsFromTableStart = tableOffset;
+            tableOffset += range.NumDescriptors;
+        }
+    }
+
     std::vector<IRRootParameter1> rootParameters;
     int                           registerSpace = 0;
     for ( auto &registerSpaceRange : registerSpaceRanges )
@@ -272,6 +318,20 @@ IRRootSignature *DxilToMsl::Impl::CreateRootSignature( std::vector<RegisterSpace
     // TODO:
     desc.desc_1_1.NumStaticSamplers = 0;
     desc.desc_1_1.pStaticSamplers   = nullptr;
+
+    if ( const char *dumpDir = getenv( "DZ_DUMP_SHADERS" ) )
+    {
+        if ( const char *json = IRVersionedRootSignatureDescriptorCopyJSONString( &desc ) )
+        {
+            const std::string path = std::string( dumpDir ) + ( isLocal ? "/local_rs.json" : "/global_rs.json" );
+            if ( FILE *f = fopen( path.c_str( ), "wb" ) )
+            {
+                fwrite( json, 1, strlen( json ), f );
+                fclose( f );
+            }
+            IRVersionedRootSignatureDescriptorFreeString( json );
+        }
+    }
 
     IRError         *error         = nullptr;
     IRRootSignature *rootSignature = IRRootSignatureCreateFromDescriptor( &desc, &error );
@@ -508,10 +568,16 @@ DenOfIz_ByteArray DxilToMsl::Impl::Compile( const DenOfIz_CompileDesc &compileDe
         break;
     }
 
-    IRCompilerSetRayTracingPipelineArguments( irCompiler, compileMslDesc.RayTracing.MaxNumAttributeBytes, IRRaytracingPipelineFlagNone, IRIntrinsicMaskClosestHitAll,
-                                              IRIntrinsicMaskMissShaderAll, IRIntrinsicMaskAnyHitShaderAll, IRIntrinsicMaskCallableShaderAll,
-                                              compileMslDesc.RayTracing.MaxRecursionDepth, IRRayGenerationCompilationVisibleFunction,
-                                              IRIntersectionFunctionCompilationVisibleFunction );
+    IRRayTracingPipelineConfiguration *rtPipelineConfig = IRRayTracingPipelineConfigurationCreate( );
+    IRRayTracingPipelineConfigurationSetMaxAttributeSizeInBytes( rtPipelineConfig, compileMslDesc.RayTracing.MaxNumAttributeBytes );
+    IRRayTracingPipelineConfigurationSetPipelineFlags( rtPipelineConfig, IRRaytracingPipelineFlagNone );
+    IRRayTracingPipelineConfigurationSetIntrinsicMasks( rtPipelineConfig, IRIntrinsicMaskClosestHitAll, IRIntrinsicMaskMissShaderAll, IRIntrinsicMaskAnyHitShaderAll,
+                                                        IRIntrinsicMaskCallableShaderAll );
+    IRRayTracingPipelineConfigurationSetMaxRecursiveDepth( rtPipelineConfig, compileMslDesc.RayTracing.MaxRecursionDepth );
+    IRRayTracingPipelineConfigurationSetRayGenerationCompilationMode( rtPipelineConfig, IRRayGenerationCompilationVisibleFunction );
+    IRRayTracingPipelineConfigurationSetIntersectionFunctionCompilationMode( rtPipelineConfig, IRIntersectionFunctionCompilationVisibleFunction );
+    IRCompilerSetRayTracingPipelineConfiguration( irCompiler, rtPipelineConfig );
+    IRRayTracingPipelineConfigurationDestroy( rtPipelineConfig );
 
     IRObject       *irDxil  = IRObjectCreateFromDXIL( dxil.Elements, dxil.NumElements, IRBytecodeOwnershipNone );
     IRError        *irError = nullptr;
@@ -529,6 +595,21 @@ DenOfIz_ByteArray DxilToMsl::Impl::Compile( const DenOfIz_CompileDesc &compileDe
     const size_t metalLibSize     = IRMetalLibGetBytecodeSize( metalLib );
     const auto   metalLibByteCode = new uint8_t[ metalLibSize ];
     IRMetalLibGetBytecode( metalLib, metalLibByteCode );
+
+    if ( const char *dumpDir = getenv( "DZ_DUMP_SHADERS" ) )
+    {
+        const std::string base = std::string( dumpDir ) + "/" + entryPoint;
+        if ( FILE *f = fopen( ( base + ".dxil" ).c_str( ), "wb" ) )
+        {
+            fwrite( dxil.Elements, 1, dxil.NumElements, f );
+            fclose( f );
+        }
+        if ( FILE *f = fopen( ( base + ".metallib" ).c_str( ), "wb" ) )
+        {
+            fwrite( metalLibByteCode, 1, metalLibSize, f );
+            fclose( f );
+        }
+    }
 
     // Note: metalLibByteCode ownership is transferred to DenOfIz_ByteArray
 

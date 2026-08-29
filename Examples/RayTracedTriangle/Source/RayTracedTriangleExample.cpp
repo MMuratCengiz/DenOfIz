@@ -169,8 +169,8 @@ void RayTracedTriangleExample::Render( const uint32_t frameIndex, DenOfIz_Comman
     DenOfIz_CopyTextureRegionDesc copyTextureRegionDesc = { };
     copyTextureRegionDesc.SrcTexture                    = m_raytracingOutput[ frameIndex ];
     copyTextureRegionDesc.DstTexture                    = renderTarget;
-    copyTextureRegionDesc.Width                         = m_windowDesc.Width;
-    copyTextureRegionDesc.Height                        = m_windowDesc.Height;
+    copyTextureRegionDesc.Width                         = m_pixelWidth;
+    copyTextureRegionDesc.Height                        = m_pixelHeight;
     copyTextureRegionDesc.Depth                         = 1;
     DenOfIz_CommandList_CopyTextureRegion( commandList, &copyTextureRegionDesc );
 
@@ -188,8 +188,8 @@ void RayTracedTriangleExample::HandleEvent( DenOfIz_Event &event )
 void RayTracedTriangleExample::CreateRenderTargets( )
 {
     DenOfIz_TextureDesc textureDesc = { };
-    textureDesc.Width               = m_windowDesc.Width;
-    textureDesc.Height              = m_windowDesc.Height;
+    textureDesc.Width               = m_pixelWidth;
+    textureDesc.Height              = m_pixelHeight;
     textureDesc.Depth               = 1;
     textureDesc.ArraySize           = 1;
     textureDesc.MipLevels           = 1;

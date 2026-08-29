@@ -20,7 +20,9 @@ namespace DenOfIz
         void                        EncodeTexture( id<MTLTexture> texture, float minLodClamp, uint32_t index );
         void                        EncodeSampler( id<MTLSamplerState> sampler, float lodBias, uint32_t index );
         void                        EncodeAccelerationStructure( id<MTLBuffer> asHeader, uint32_t index );
-        [[nodiscard]] id<MTLBuffer> Buffer( ) const
+        // Returned by reference on purpose: returning `id` by value makes ARC retain+autorelease the
+        // buffer, which leaks when the calling thread has no autorelease pool (e.g. a .NET host).
+        [[nodiscard]] const id<MTLBuffer> &Buffer( ) const
         {
             return m_buffer;
         }
@@ -43,7 +45,7 @@ namespace DenOfIz
         std::pair<Byte *, uint64_t> Reserve( size_t numAddresses, uint32_t numRootConstantBytes = 0 );
         std::pair<Byte *, uint64_t> Duplicate( size_t numAddresses, uint32_t numRootConstantBytes = 0 );
         void                        Reset( );
-        [[nodiscard]] uint64_t      Offset( ) const;
-        [[nodiscard]] id<MTLBuffer> Buffer( ) const;
+        [[nodiscard]] uint64_t             Offset( ) const;
+        [[nodiscard]] const id<MTLBuffer> &Buffer( ) const;
     };
 } // namespace DenOfIz

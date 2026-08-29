@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <unordered_map>
 #include "DenOfIzExamples/FileIO.h"
+#include "DenOfIzExamples/GltfExporter.h"
 #include "DenOfIzExamples/InteropMathConverter.h"
 
 using namespace DirectX;
@@ -65,13 +66,13 @@ AnimatedFoxExample::~AnimatedFoxExample( )
     {
         if ( DENOFIZ_HANDLE_IS_VALID( m_walkContext ) )
         {
-            DenOfIz_OzzAnimation_DestroyContext( m_ozzAnimation, m_walkContext );
+            DenOfIz_Ozz_DestroyContext( m_ozzAnimation, m_walkContext );
         }
         if ( DENOFIZ_HANDLE_IS_VALID( m_runContext ) )
         {
-            DenOfIz_OzzAnimation_DestroyContext( m_ozzAnimation, m_runContext );
+            DenOfIz_Ozz_DestroyContext( m_ozzAnimation, m_runContext );
         }
-        DenOfIz_OzzAnimation_Destroy( m_ozzAnimation );
+        DenOfIz_Ozz_DestroySkeleton( m_ozzAnimation );
     }
 
     if ( m_modelTransforms.Elements )
@@ -288,32 +289,32 @@ void AnimatedFoxExample::LoadMeshFromGltf( const char *gltfPath )
 void AnimatedFoxExample::SetupAnimation( )
 {
     DenOfIz_StringView skeletonPath = DENOFIZ_STRING( "Assets/Models/Fox_Exported_skeleton.ozzskel" );
-    m_ozzAnimation                  = DenOfIz_OzzAnimation_Create( skeletonPath );
+    m_ozzAnimation                  = DenOfIz_Ozz_CreateSkeleton( skeletonPath );
 
-    if ( !DenOfIz_OzzAnimation_IsValid( m_ozzAnimation ) )
+    if ( !DenOfIz_Ozz_IsSkeletonValid( m_ozzAnimation ) )
     {
         spdlog::error( "Failed to load skeleton" );
         return;
     }
 
-    m_walkContext   = DenOfIz_OzzAnimation_NewContext( m_ozzAnimation );
-    m_runContext    = DenOfIz_OzzAnimation_NewContext( m_ozzAnimation );
+    m_walkContext   = DenOfIz_Ozz_NewContext( m_ozzAnimation );
+    m_runContext    = DenOfIz_Ozz_NewContext( m_ozzAnimation );
     m_activeContext = m_walkContext;
 
     DenOfIz_StringView walkAnimPath = DENOFIZ_STRING( "Assets/Models/Fox_Exported_Survey.ozzanim" );
     DenOfIz_StringView runAnimPath  = DENOFIZ_STRING( "Assets/Models/Fox_Exported_Run.ozzanim" );
 
-    if ( !DenOfIz_OzzAnimation_LoadAnimation( m_ozzAnimation, walkAnimPath, m_walkContext ) )
+    if ( !DenOfIz_Ozz_LoadAnimation( m_ozzAnimation, walkAnimPath, m_walkContext ) )
     {
         spdlog::error( "Failed to load walk animation" );
     }
 
-    if ( !DenOfIz_OzzAnimation_LoadAnimation( m_ozzAnimation, runAnimPath, m_runContext ) )
+    if ( !DenOfIz_Ozz_LoadAnimation( m_ozzAnimation, runAnimPath, m_runContext ) )
     {
         spdlog::error( "Failed to load run animation" );
     }
 
-    int numJoints = DenOfIz_OzzAnimation_GetNumJoints( m_ozzAnimation );
+    int numJoints = DenOfIz_Ozz_GetNumJoints( m_ozzAnimation );
 
     m_modelTransforms.NumElements = numJoints;
     m_modelTransforms.Elements    = static_cast<DenOfIz_Float4x4 *>( malloc( m_modelTransforms.NumElements * sizeof( DenOfIz_Float4x4 ) ) );
@@ -486,7 +487,7 @@ void AnimatedFoxExample::Update( )
 
     if ( m_animPlaying && DENOFIZ_HANDLE_IS_VALID( m_activeContext ) )
     {
-        float duration = DenOfIz_OzzAnimation_GetAnimationDuration( m_activeContext );
+        float duration = DenOfIz_Ozz_GetAnimationDuration( m_activeContext );
         m_animationRatio += ( deltaTime * m_animSpeed ) / duration;
         while ( m_animationRatio > 1.0f )
         {
@@ -497,7 +498,7 @@ void AnimatedFoxExample::Update( )
         samplingDesc.Context       = m_activeContext;
         samplingDesc.Ratio         = m_animationRatio;
         samplingDesc.OutTransforms = m_modelTransforms;
-        if ( DenOfIz_OzzAnimation_RunSamplingJob( m_ozzAnimation, &samplingDesc ) )
+        if ( DenOfIz_Ozz_RunSamplingJob( m_ozzAnimation, &samplingDesc ) )
         {
             UpdateBoneTransforms( );
         }

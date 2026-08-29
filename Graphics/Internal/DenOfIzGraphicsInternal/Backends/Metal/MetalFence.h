@@ -19,17 +19,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphicsInternal/Backends/Interface/IFence.h>
+#include <condition_variable>
+#include <memory>
+#include <mutex>
 #include "MetalContext.h"
 
 namespace DenOfIz
 {
 
+    //! Timeline-style fence: every submission that signals this fence gets a monotonically increasing value,
+    //! Wait() blocks until the GPU has completed the most recently submitted value (matches DX12Fence semantics).
     class MetalFence final : public IFence
     {
-    private:
-        MetalContext        *m_context;
-        dispatch_semaphore_t m_fence;
-        std::atomic<bool>    m_submitted = false;
+        struct State
+        {
+            std::mutex              Mutex;
+            std::condition_variable Condition;
+            uint64_t                SubmittedValue = 0;
+            uint64_t                CompletedValue = 0;
+        };
+
+        MetalContext          *m_context;
+        std::shared_ptr<State> m_state; // shared with completion handlers so they outlive the fence safely
 
     public:
         MetalFence( MetalContext *context );

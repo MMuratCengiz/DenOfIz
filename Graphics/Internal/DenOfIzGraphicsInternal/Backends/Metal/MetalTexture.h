@@ -38,7 +38,7 @@ namespace DenOfIz
         std::string         m_debugName;
         MetalContext       *m_context{ };
         id<MTLTexture>      m_texture{ };
-        MTLTextureType      m_textureType;
+        MTLTextureType      m_textureType = MTLTextureType2D;
         MTLTextureUsage     m_textureUsage;
 
     private:

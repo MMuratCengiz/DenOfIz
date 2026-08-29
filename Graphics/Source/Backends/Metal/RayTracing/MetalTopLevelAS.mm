@@ -98,10 +98,10 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const DenOfIz_TopLevelA
     [m_headerBuffer setLabel:@"Top Level Acceleration Structure Header Buffer"];
 
     IRRaytracingSetAccelerationStructure( (uint8_t *)m_headerBuffer.contents, m_accelerationStructure.gpuResourceID,
-                                          (uint8_t *)m_headerBuffer.contents + sizeof( IRRaytracingAccelerationStructureGPUHeader ), m_contributionsToHitGroupIndices.data( ),
+                                          (uint8_t *)m_headerBuffer.contents + sizeof( IRRaytracingAccelerationStructureGPUHeader ),
+                                          m_headerBuffer.gpuAddress + sizeof( IRRaytracingAccelerationStructureGPUHeader ),
+                                          m_contributionsToHitGroupIndices.data( ),
                                           m_contributionsToHitGroupIndices.size( ) );
-    auto pHdr                            = (IRRaytracingAccelerationStructureGPUHeader *)( m_headerBuffer.contents );
-    pHdr->addressOfInstanceContributions = m_headerBuffer.gpuAddress + sizeof( IRRaytracingAccelerationStructureGPUHeader );
     m_indirectResources.push_back( m_headerBuffer );
 }
 

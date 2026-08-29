@@ -77,7 +77,7 @@ void TextRenderingExample::Init( )
 void TextRenderingExample::ModifyApiPreferences( DenOfIz_APIPreference &defaultApiPreference )
 {
     // defaultApiPreference.Windows = DENOFIZ_API_PREFERENCE_WINDOWS_VULKAN;
-    defaultApiPreference.OSX = DENOFIZ_API_PREFERENCE_OSX_WEBGPU_NATIVE;
+    // defaultApiPreference.OSX = DENOFIZ_API_PREFERENCE_OSX_WEBGPU_NATIVE;
 }
 
 void TextRenderingExample::Update( )

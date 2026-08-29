@@ -62,8 +62,10 @@ MetalBuffer::MetalBuffer( MetalContext *context, const DenOfIz_BufferDesc &desc 
         spdlog::error("Failed to create Metal buffer");
     }
 
-    NSString *nsName = [NSString stringWithUTF8String:m_debugName.empty( ) ? "" : m_debugName.c_str( )];
-    m_buffer.label   = nsName;
+    @autoreleasepool
+    {
+        m_buffer.label = [NSString stringWithUTF8String:m_debugName.empty( ) ? "" : m_debugName.c_str( )];
+    }
 
     if ( m_desc.Usage & ( DENOFIZ_BUFFER_USAGE_STORAGE_BIT | DENOFIZ_BUFFER_USAGE_ACCELERATION_STRUCTURE_BIT | DENOFIZ_BUFFER_USAGE_INDIRECT_BIT ) )
     {

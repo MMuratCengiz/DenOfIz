@@ -96,8 +96,8 @@ namespace DenOfIz
         // Ray tracing specific:
         const uint64_t                                &FindVisibleShaderIndexByName( const std::string &name ) const;
         const HitGroupExport                          &FindHitGroupExport( const std::string &name ) const;
-        [[nodiscard]] id<MTLVisibleFunctionTable>      VisibleFunctionTable( ) const;
-        [[nodiscard]] id<MTLIntersectionFunctionTable> IntersectionFunctionTable( ) const;
+        [[nodiscard]] const id<MTLVisibleFunctionTable>      &VisibleFunctionTable( ) const;
+        [[nodiscard]] const id<MTLIntersectionFunctionTable> &IntersectionFunctionTable( ) const;
 
     private:
         void CreateGraphicsPipeline( );
@@ -108,8 +108,8 @@ namespace DenOfIz
 
         id<MTLLibrary>  LoadLibrary( DenOfIz_ByteArray &blob );
         id<MTLFunction> CreateShaderFunction( id<MTLLibrary> library, const std::string &entryPoint );
-        id<MTLLibrary>  NewIndirectDispatchLibrary( );
-        id<MTLLibrary>  NewSynthesizedIntersectionLibrary( const IRHitGroupType &hitGroupType );
+        id<MTLLibrary>  NewIndirectDispatchLibrary( const DenOfIz_ShaderRayTracingDesc &rtDesc );
+        id<MTLLibrary>  NewSynthesizedIntersectionLibrary( const IRHitGroupType &hitGroupType, const DenOfIz_ShaderRayTracingDesc &rtDesc );
     };
 
 } // namespace DenOfIz

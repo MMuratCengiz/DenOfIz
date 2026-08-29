@@ -36,7 +36,10 @@ DescriptorTable::DescriptorTable( MetalContext *context, size_t numEntries ) : m
 
 void DescriptorTable::SetDebugName( const std::string &name )
 {
-    [m_buffer setLabel:[NSString stringWithUTF8String:name.c_str( )]];
+    @autoreleasepool
+    {
+        [m_buffer setLabel:[NSString stringWithUTF8String:name.c_str( )]];
+    }
 }
 
 void DescriptorTable::Reset( size_t newNumEntries )
@@ -153,7 +156,7 @@ uint64_t MetalArgumentBuffer::Offset( ) const
     return m_nextOffset;
 }
 
-id<MTLBuffer> MetalArgumentBuffer::Buffer( ) const
+const id<MTLBuffer> &MetalArgumentBuffer::Buffer( ) const
 {
     return m_buffer;
 }

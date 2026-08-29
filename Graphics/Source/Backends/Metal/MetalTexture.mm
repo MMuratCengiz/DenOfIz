@@ -89,7 +89,10 @@ MetalTexture::MetalTexture( MetalContext *context, const DenOfIz_TextureDesc &de
     // Create the texture resource
     m_texture       = [m_context->Device newTextureWithDescriptor:textureDesc];
     m_textureUsage  = textureDesc.usage;
-    m_texture.label = [NSString stringWithUTF8String:m_debugName.empty( ) ? "" : m_debugName.c_str( )];
+    @autoreleasepool
+    {
+        m_texture.label = [NSString stringWithUTF8String:m_debugName.empty( ) ? "" : m_debugName.c_str( )];
+    }
 
     if ( !m_texture )
     {
@@ -144,7 +147,7 @@ void MetalTexture::UpdateTexture( const DenOfIz_TextureDesc &desc, id<MTLTexture
 
 void MetalTexture::SetTextureType( )
 {
-    bool isArray       = true;
+    bool isArray       = m_desc.ArraySize > 1;
     bool isTexture     = m_desc.Usage & ( DENOFIZ_TEXTURE_USAGE_TEXTURE_BINDING_BIT | DENOFIZ_TEXTURE_USAGE_STORAGE_BINDING_BIT | DENOFIZ_TEXTURE_USAGE_RENDER_ATTACHMENT_BIT );
     bool isTextureCube = m_desc.Usage & DENOFIZ_TEXTURE_USAGE_CUBE_BIT;
     bool hasDepth      = m_desc.Depth > 1;
@@ -286,8 +289,11 @@ MetalSampler::MetalSampler( MetalContext *context, const DenOfIz_SamplerDesc &de
     samplerDesc.lodMaxClamp            = desc.MaxLod;
     samplerDesc.compareFunction        = DenOfIz_MetalEnumConverter_ConvertCompareFunction( desc.CompareOp );
     samplerDesc.maxAnisotropy          = std::max( 1.0f, desc.MaxAnisotropy );
-    samplerDesc.label                  = [NSString stringWithUTF8String:m_debugName.empty( ) ? "" : m_debugName.c_str( )];
-    m_sampler                          = [m_context->Device newSamplerStateWithDescriptor:samplerDesc];
+    @autoreleasepool
+    {
+        samplerDesc.label = [NSString stringWithUTF8String:m_debugName.empty( ) ? "" : m_debugName.c_str( )];
+        m_sampler         = [m_context->Device newSamplerStateWithDescriptor:samplerDesc];
+    }
     if ( !m_sampler )
     {
         spdlog::error( "Failed to create Metal sampler state: {}", m_debugName );
