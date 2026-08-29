@@ -670,6 +670,11 @@ jobs:
     runs-on: windows-latest
     needs: [read-version, build-nuget]
     if: ${{ always() && needs.build-nuget.result == 'success' && github.event.inputs.publish == 'true' }}
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
     steps:
       - name: Debug inputs
         run: |
@@ -692,7 +697,13 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: NuGet Login (Trusted Publishing)
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: MMuratCengiz
+
       - name: Publish to NuGet
         run: |
-          dotnet nuget push DenOfIzGraphics.${{ env.VERSION }}.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
-          dotnet nuget push DenOfIzGraphics.Blazor.${{ env.VERSION }}.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+          dotnet nuget push DenOfIzGraphics.${{ env.VERSION }}.nupkg --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
+          dotnet nuget push DenOfIzGraphics.Blazor.${{ env.VERSION }}.nupkg --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
