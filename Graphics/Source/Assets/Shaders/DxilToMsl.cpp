@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Assets/Shaders/DxilToMsl.h"
 #include <functional>
 #include <ranges>
+#include <algorithm>
 #include <unordered_map>
 #include "DenOfIzGraphics/Assets/Shaders/ShaderCompiler.h"
 #include "DenOfIzGraphicsInternal/Assets/Shaders/DxcEnumConverter.h"
