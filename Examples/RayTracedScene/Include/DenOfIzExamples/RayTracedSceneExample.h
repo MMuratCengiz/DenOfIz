@@ -60,7 +60,7 @@ namespace DenOfIz
         std::unique_ptr<Bistro>            m_bistro;
         std::vector<DenOfIz_BottomLevelAS> m_bottomLevelASInstances;
 
-        uint32_t         m_frameCount               = 0;
+        std::array<uint32_t, 3> m_accumulatedFrames{ 0, 0, 0 };
         DenOfIz_Float4x4 m_lastViewProjectionMatrix = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
         bool             m_cameraMovedThisFrame     = false;
 
@@ -85,6 +85,6 @@ namespace DenOfIz
         void CreateRayTracingPipeline( );
         void CreateAccelerationStructures( );
         void CreateShaderBindingTable( );
-        void UpdateCamera( uint32_t frameIndex ) const;
+        void UpdateCamera( uint32_t frameIndex );
     };
 } // namespace DenOfIz

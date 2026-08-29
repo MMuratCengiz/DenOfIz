@@ -190,10 +190,8 @@ ClayRenderer::~ClayRenderer( )
     {
         DenOfIz_InputLayout_Destroy( m_inputLayout );
     }
-    if ( DENOFIZ_HANDLE_IS_VALID( m_shaderProgram ) )
-    {
-        DenOfIz_ShaderProgram_Destroy( m_shaderProgram );
-    }
+    // m_shaderProgram comes from EmbeddedShaders static cache
+    m_shaderProgram = DENOFIZ_NULL_HANDLE;
     if ( DENOFIZ_HANDLE_IS_VALID( m_commandListPool ) )
     {
         DenOfIz_CommandListPool_Destroy( m_commandListPool );

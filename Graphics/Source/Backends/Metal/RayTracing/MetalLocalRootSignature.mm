@@ -17,117 +17,39 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalLocalRootSignature.h"
-#include <algorithm>
-#include "DenOfIzGraphicsInternal/Utilities/ContainerUtilities.h"
+#include "DenOfIzGraphicsInternal/Backends/Metal/MetalShaderLayout.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
 MetalLocalRootSignature::MetalLocalRootSignature( MetalContext *context, const DenOfIz_LocalRootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    uint32_t cbvOffsetBytes = 0;
-    uint32_t srvUavOffset   = 0;
-    uint32_t samplerOffset  = 0;
-    for ( size_t i = 0; i < desc.ResourceBindings.NumElements; ++i )
+    if ( desc.ResourceBindings.NumElements > 0 && desc.ResourceBindings.Elements != nullptr )
     {
-        const auto                        &binding     = desc.ResourceBindings.Elements[ i ];
-        const DenOfIz_ResourceBindingType  bindingType = DenOfIz_ResourceBindingType_FromDescriptor( binding.Descriptor );
+        m_bindingsCopy.assign( desc.ResourceBindings.Elements, desc.ResourceBindings.Elements + desc.ResourceBindings.NumElements );
+        m_desc.ResourceBindings.Elements = m_bindingsCopy.data( );
+    }
 
-        if ( bindingType == DENOFIZ_RESOURCE_BINDING_TYPE_CONSTANT_BUFFER )
+    for ( const DenOfIz_LocalResourceBindingDesc &binding : m_bindingsCopy )
+    {
+        const DenOfIz_ResourceBindingType bindingType = DenOfIz_ResourceBindingType_FromDescriptor( binding.Descriptor );
+        const uint64_t                    key         = MetalShaderLayout::BindingKey( bindingType, binding.Binding );
+        if ( m_bindings.contains( key ) )
         {
-            m_totalInlineDataBytes += binding.NumBytes;
-            ContainerUtilities::EnsureSize( m_inlineDataOffsets, binding.Binding );
-            ContainerUtilities::EnsureSize( m_inlineDataNumBytes, binding.Binding );
-            m_inlineDataOffsets[ binding.Binding ]  = cbvOffsetBytes;
-            m_inlineDataNumBytes[ binding.Binding ] = binding.NumBytes;
-            cbvOffsetBytes += binding.NumBytes;
+            spdlog::error( "Duplicate local binding of type [ {} ] at register [ {} ].", static_cast<int>( bindingType ), binding.Binding );
+            continue;
         }
-        else if ( bindingType == DENOFIZ_RESOURCE_BINDING_TYPE_SAMPLER )
-        {
-            ContainerUtilities::EnsureSize( m_samplerBindings, binding.Binding );
-            m_samplerBindings[ binding.Binding ] = { .DescriptorTableIndex = samplerOffset++, .NumBytes = binding.NumBytes, .Type = bindingType };
-        }
-        else if ( bindingType == DENOFIZ_RESOURCE_BINDING_TYPE_SHADER_RESOURCE )
-        {
-            ContainerUtilities::EnsureSize( m_srvBindings, binding.Binding );
-            m_srvBindings[ binding.Binding ] = { .DescriptorTableIndex = srvUavOffset++, .NumBytes = binding.NumBytes, .Type = bindingType };
-        }
-        else if ( bindingType == DENOFIZ_RESOURCE_BINDING_TYPE_UNORDERED_ACCESS )
-        {
-            ContainerUtilities::EnsureSize( m_uavBindings, binding.Binding );
-            m_uavBindings[ binding.Binding ] = { .DescriptorTableIndex = srvUavOffset++, .NumBytes = binding.NumBytes, .Type = bindingType };
-        }
+        m_bindings[ key ] = &binding;
     }
 }
 
-uint32_t MetalLocalRootSignature::NumInlineBytes( ) const
+const DenOfIz_LocalRootSignatureDesc &MetalLocalRootSignature::Desc( ) const
 {
-    return m_totalInlineDataBytes;
+    return m_desc;
 }
 
-uint32_t MetalLocalRootSignature::NumSrvUavs( ) const
+const DenOfIz_LocalResourceBindingDesc *MetalLocalRootSignature::FindBinding( const DenOfIz_ResourceBindingType type, const uint32_t binding ) const
 {
-    return m_srvBindings.size( ) + m_uavBindings.size( );
-}
-
-uint32_t MetalLocalRootSignature::NumSamplers( ) const
-{
-    return m_samplerBindings.size( );
-}
-
-const uint32_t MetalLocalRootSignature::InlineDataOffset( uint32_t binding ) const
-{
-    if ( binding >= m_inlineDataOffsets.size( ) )
-    {
-        spdlog::error( "Invalid binding index( {} )", binding );
-        return 0;
-    }
-    return m_inlineDataOffsets[ binding ];
-}
-
-const uint32_t MetalLocalRootSignature::InlineNumBytes( uint32_t binding ) const
-{
-    if ( binding >= m_inlineDataNumBytes.size( ) )
-    {
-        spdlog::error( "Invalid binding index( {} )", binding );
-        return 0;
-    }
-    return m_inlineDataNumBytes[ binding ];
-}
-
-const MetalLocalBindingDesc &MetalLocalRootSignature::UavBinding( uint32_t binding ) const
-{
-    if ( !EnsureSize( binding, m_uavBindings ) )
-    {
-        return empty;
-    }
-    return m_uavBindings[ binding ];
-}
-
-const MetalLocalBindingDesc &MetalLocalRootSignature::SrvBinding( uint32_t binding ) const
-{
-    if ( !EnsureSize( binding, m_srvBindings ) )
-    {
-        return empty;
-    }
-    return m_srvBindings[ binding ];
-}
-
-const MetalLocalBindingDesc &MetalLocalRootSignature::SamplerBinding( uint32_t binding ) const
-{
-    if ( !EnsureSize( binding, m_samplerBindings ) )
-    {
-        return empty;
-    }
-    return m_samplerBindings[ binding ];
-}
-
-bool MetalLocalRootSignature::EnsureSize( uint32_t binding, const std::vector<MetalLocalBindingDesc> &bindings ) const
-{
-    if ( binding >= bindings.size( ) )
-    {
-        spdlog::error( "Invalid binding index( {} )", binding );
-        return false;
-    }
-
-    return true;
+    const auto it = m_bindings.find( MetalShaderLayout::BindingKey( type, binding ) );
+    return it == m_bindings.end( ) ? nullptr : it->second;
 }

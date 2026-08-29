@@ -97,6 +97,7 @@ endif ()
 
 if (APPLE OR (WIN32 AND NOT CPU_ARCHITECTURE STREQUAL "arm64"))
     list(APPEND DENOFIZ_ASSETS_SHADERS_SOURCES Source/Assets/Shaders/DxilToMsl.cpp)
+    list(APPEND DENOFIZ_ASSETS_SHADERS_SOURCES Source/Assets/Shaders/MetalRootSignatureBuilder.cpp)
 endif ()
 
 set(DENOFIZ_ASSETS_SOURCES
@@ -221,6 +222,7 @@ set(DENOFIZ_GRAPHICS_METAL_SOURCES
         Source/Backends/Metal/MetalBindGroup.mm
         Source/Backends/Metal/MetalBindGroupLayout.mm
         Source/Backends/Metal/MetalRootSignature.mm
+        Source/Backends/Metal/MetalShaderLayout.mm
         Source/Backends/Metal/MetalSemaphore.mm
         Source/Backends/Metal/MetalSwapChain.mm
         Source/Backends/Metal/MetalTexture.mm

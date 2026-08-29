@@ -68,7 +68,7 @@ namespace DenOfIz
         uint64_t                             m_currentBufferOffset = 0;
         uint64_t                             m_indexBufferOffset   = 0;
         std::unique_ptr<MetalArgumentBuffer> m_argumentBuffer;
-        MetalRootSignature                  *m_rootSignature;
+        const MetalShaderLayout             *m_shaderLayout = nullptr;
         MetalPipeline                       *m_pipeline;
         bool                                 m_computeTlasBound = false;
         bool                                 m_meshTlasBound    = false;

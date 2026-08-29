@@ -20,13 +20,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphicsInternal/Backends/Interface/IPipeline.h>
 #include <deque>
+#include <memory>
 #include "MetalContext.h"
 #include "MetalInputLayout.h"
 #include "MetalRootSignature.h"
+#include "MetalShaderLayout.h"
 
 namespace DenOfIz
 {
-
     struct HitGroupExport
     {
         uint64_t ClosestHit   = 0;
@@ -47,23 +48,30 @@ namespace DenOfIz
         MetalRootSignature  *m_rootSignature;
         DenOfIz_PipelineDesc m_desc;
 
+        std::unique_ptr<MetalShaderLayout> m_shaderLayout;
+        std::unique_ptr<MetalShaderLayout> m_localShaderLayout;
+
         id<MTLRenderPipelineState>  m_graphicsPipelineState;
         id<MTLComputePipelineState> m_computePipelineState;
+
         // Graphics specific
         MTLCullMode              m_cullMode;
         MTLPrimitiveType         m_primitiveType;
         MTLTriangleFillMode      m_fillMode;
         MTLWinding               m_frontFaceWinding;
         id<MTLDepthStencilState> m_depthStencilState;
+
         // Depth bias settings (set per render encoder)
         float m_depthBias;
         float m_depthBiasSlopeScale;
         float m_depthBiasClamp;
+
         // Thread group sizes (pre-calculated from shader reflection)
         MTLSize              m_computeThreadsPerThreadgroup; // For compute shaders
         MTLSize              m_meshThreadsPerThreadgroup;    // For mesh shaders
         MTLSize              m_objectThreadsPerThreadgroup;  // For task/amplification shaders
         MeshShaderUsedStages m_usedMeshShaderStages;
+
         // Ray tracing specific
         std::unordered_map<std::string, uint64_t>       m_visibleFunctions;
         std::unordered_map<std::string, HitGroupExport> m_hitGroupExports;
@@ -76,6 +84,8 @@ namespace DenOfIz
         ~MetalPipeline( ) override;
 
         MetalRootSignature                *RootSignature( ) const;
+        const MetalShaderLayout           &ShaderLayout( ) const;
+        const MetalShaderLayout           &LocalShaderLayout( ) const;
         const MTLCullMode                 &CullMode( ) const;
         const MTLTriangleFillMode         &FillMode( ) const;
         const MTLWinding                  &FrontFaceWinding( ) const;
@@ -111,5 +121,4 @@ namespace DenOfIz
         id<MTLLibrary>  NewIndirectDispatchLibrary( const DenOfIz_ShaderRayTracingDesc &rtDesc );
         id<MTLLibrary>  NewSynthesizedIntersectionLibrary( const IRHitGroupType &hitGroupType, const DenOfIz_ShaderRayTracingDesc &rtDesc );
     };
-
 } // namespace DenOfIz

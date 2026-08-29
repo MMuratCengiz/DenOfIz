@@ -41,8 +41,8 @@ void AnimatedFoxExample::Init( )
 
     DenOfIz_TextureDesc depthTextureDesc{ };
     depthTextureDesc.Format                = DENOFIZ_FORMAT_D32_FLOAT;
-    depthTextureDesc.Width                 = m_windowDesc.Width;
-    depthTextureDesc.Height                = m_windowDesc.Height;
+    depthTextureDesc.Width                 = m_pixelWidth;
+    depthTextureDesc.Height                = m_pixelHeight;
     depthTextureDesc.Depth                 = 1;
     depthTextureDesc.ArraySize             = 1;
     depthTextureDesc.MipLevels             = 1;

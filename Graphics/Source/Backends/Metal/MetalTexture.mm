@@ -74,7 +74,7 @@ MetalTexture::MetalTexture( MetalContext *context, const DenOfIz_TextureDesc &de
 
     if ( m_desc.Usage & DENOFIZ_TEXTURE_USAGE_STORAGE_BINDING_BIT )
     {
-        textureDesc.usage |= MTLTextureUsageShaderWrite;
+        textureDesc.usage |= MTLTextureUsageShaderWrite | MTLTextureUsageShaderRead;
     }
 
     if ( m_desc.Usage & DENOFIZ_TEXTURE_USAGE_TEXTURE_BINDING_BIT || m_desc.Usage & DENOFIZ_TEXTURE_USAGE_RENDER_ATTACHMENT_BIT )

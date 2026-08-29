@@ -272,7 +272,13 @@ namespace DenOfIz
             DenOfIz_CommandQueue_Destroy( m_graphicsQueue );
             DenOfIz_ResourceTracking_Destroy( m_resourceTracking );
             DenOfIz_StepTimer_Destroy( m_stepTimer );
-            m_logicalDevice = DENOFIZ_NULL_HANDLE;
+
+            m_frameSync        = DENOFIZ_NULL_HANDLE;
+            m_swapChain        = DENOFIZ_NULL_HANDLE;
+            m_graphicsQueue    = DENOFIZ_NULL_HANDLE;
+            m_resourceTracking = DENOFIZ_NULL_HANDLE;
+            m_stepTimer        = DENOFIZ_NULL_HANDLE;
+            m_logicalDevice    = DENOFIZ_NULL_HANDLE;
         }
         virtual ExampleWindowDesc WindowDesc( )
         {

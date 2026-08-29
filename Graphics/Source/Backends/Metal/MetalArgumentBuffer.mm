@@ -30,7 +30,7 @@ DescriptorTable::DescriptorTable( MetalContext *context, size_t numEntries ) : m
     m_buffer      = [m_context->Device newBufferWithLength:length options:MTLResourceStorageModeShared];
     m_contents    = (IRDescriptorTableEntry *)m_buffer.contents;
     [m_buffer setLabel:@"DescriptorTable"];
-    
+
     memset( m_contents, 0, length );
 }
 
@@ -46,12 +46,12 @@ void DescriptorTable::Reset( size_t newNumEntries )
 {
     if ( newNumEntries != m_numEntries )
     {
-        m_numEntries = newNumEntries;
+        m_numEntries  = newNumEntries;
         size_t length = sizeof( IRDescriptorTableEntry ) * m_numEntries;
-        m_buffer = [m_context->Device newBufferWithLength:length options:MTLResourceStorageModeShared];
-        m_contents = (IRDescriptorTableEntry *)m_buffer.contents;
+        m_buffer      = [m_context->Device newBufferWithLength:length options:MTLResourceStorageModeShared];
+        m_contents    = (IRDescriptorTableEntry *)m_buffer.contents;
     }
-    
+
     memset( m_contents, 0, sizeof( IRDescriptorTableEntry ) * m_numEntries );
 }
 
@@ -63,19 +63,19 @@ void DescriptorTable::EncodeBuffer( id<MTLBuffer> buffer, uint32_t index, uint32
 
 void DescriptorTable::EncodeTexture( id<MTLTexture> texture, float minLodClamp, uint32_t index )
 {
-    DZ_ASSERTM( index < m_numEntries, "DescriptorTable::EncodeBuffer: index out of bounds" );
+    DZ_ASSERTM( index < m_numEntries, "DescriptorTable::EncodeTexture: index out of bounds" );
     IRDescriptorTableSetTexture( &m_contents[ index ], texture, minLodClamp, 0 );
 }
 
 void DescriptorTable::EncodeSampler( id<MTLSamplerState> sampler, float lodBias, uint32_t index )
 {
-    DZ_ASSERTM( index < m_numEntries, "DescriptorTable::EncodeBuffer: index out of bounds" );
+    DZ_ASSERTM( index < m_numEntries, "DescriptorTable::EncodeSampler: index out of bounds" );
     IRDescriptorTableSetSampler( &m_contents[ index ], sampler, lodBias );
 }
 
 void DescriptorTable::EncodeAccelerationStructure( id<MTLBuffer> asHeader, uint32_t index )
 {
-    DZ_ASSERTM( index < m_numEntries, "DescriptorTable::EncodeBuffer: index out of bounds" );
+    DZ_ASSERTM( index < m_numEntries, "DescriptorTable::EncodeAccelerationStructure: index out of bounds" );
     IRDescriptorTableSetAccelerationStructure( &m_contents[ index ], asHeader.gpuAddress );
 }
 
@@ -85,64 +85,65 @@ MetalArgumentBuffer::MetalArgumentBuffer( MetalContext *context, size_t capacity
     m_buffer     = [m_context->Device newBufferWithLength:m_capacity options:MTLResourceStorageModeShared];
     if ( !m_buffer )
     {
-        spdlog::error("Failed to allocate Metal argument buffer");
+        spdlog::error( "Failed to allocate Metal argument buffer" );
     }
     [m_buffer setLabel:@"MetalArgumentBuffer"];
     m_contents = (Byte *)m_buffer.contents;
 }
 
-std::pair<Byte *, uint64_t> MetalArgumentBuffer::Reserve( size_t numAddresses, uint32_t numRootConstantBytes )
+std::pair<Byte *, uint64_t> MetalArgumentBuffer::Reserve( size_t numBytes )
 {
     std::lock_guard<std::mutex> lock( m_reserveMutex );
 
-    auto numBytes = Utilities::Align( sizeof( uint64_t ) * numAddresses + numRootConstantBytes, 8 );
-    if ( m_nextOffset + numBytes > m_capacity )
+    const uint64_t alignedNumBytes = Utilities::Align( static_cast<uint32_t>( numBytes ), 8 );
+    if ( m_nextOffset + alignedNumBytes > m_capacity )
     {
-        spdlog::error("MetalArgumentBuffer::Allocate: out of memory");
+        spdlog::error( "MetalArgumentBuffer::Reserve: out of memory" );
         return std::pair<Byte *, uint64_t>( nullptr, 0 );
     }
 
     m_currentOffset = m_nextOffset;
     Byte *ptr       = m_contents + m_currentOffset;
-    m_nextOffset += numBytes;
+    m_nextOffset += alignedNumBytes;
     return std::pair<Byte *, uint64_t>( ptr, m_currentOffset );
 }
 
-std::pair<Byte *, uint64_t> MetalArgumentBuffer::Duplicate( size_t numAddresses, uint32_t numRootConstantBytes )
+std::pair<Byte *, uint64_t> MetalArgumentBuffer::Duplicate( size_t numBytes )
 {
     Byte *prevPtr = &m_contents[ m_currentOffset ];
-    auto  result  = Reserve( numAddresses, numRootConstantBytes );
-    std::memcpy( result.first, prevPtr, numRootConstantBytes + numAddresses * sizeof( uint64_t ) );
+    auto  result  = Reserve( numBytes );
+    if ( result.first != nullptr && numBytes > 0 )
+    {
+        std::memcpy( result.first, prevPtr, numBytes );
+    }
     return result;
 }
 
 void MetalArgumentBuffer::EncodeRootConstant( uint64_t offset, uint32_t numRootConstantBytes, const Byte *data ) const
 {
-    //    spdlog::info("Encoding root constant at offset: {} numRootConstantBytes: {} data: {}", offset, numRootConstantBytes, data);
     if ( numRootConstantBytes == 0 )
     {
-        spdlog::error("MetalArgumentBuffer::EncodeRootConstant: No bytes reserved for root constants");
+        spdlog::error( "MetalArgumentBuffer::EncodeRootConstant: No bytes reserved for root constants" );
         return;
     }
 
     if ( numRootConstantBytes + offset > m_capacity )
     {
-        spdlog::error("MetalArgumentBuffer::EncodeRootConstant: Index or offset out of bounds");
+        spdlog::error( "MetalArgumentBuffer::EncodeRootConstant: Index or offset out of bounds" );
         return;
     }
 
     std::memcpy( &m_contents[ offset ], data, numRootConstantBytes );
 }
 
-void MetalArgumentBuffer::EncodeAddress( uint64_t offset, uint32_t index, uint64_t address ) const
+void MetalArgumentBuffer::EncodeAddress( uint64_t offset, uint64_t address ) const
 {
-    uint64_t addressLocation = Utilities::Align( offset + ( index * sizeof( uint64_t ) ), 8 );
-    if ( addressLocation > m_capacity )
+    if ( offset + sizeof( uint64_t ) > m_capacity )
     {
-        spdlog::error("MetalArgumentBuffer::EncodeAddress: Index or offset out of bounds");
+        spdlog::error( "MetalArgumentBuffer::EncodeAddress: Index or offset out of bounds" );
         return;
     }
-    std::memcpy( &m_contents[ addressLocation ], &address, sizeof( uint64_t ) );
+    std::memcpy( &m_contents[ offset ], &address, sizeof( uint64_t ) );
 }
 
 void MetalArgumentBuffer::Reset( )

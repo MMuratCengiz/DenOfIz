@@ -66,13 +66,10 @@ IndirectRenderingExample::~IndirectRenderingExample( )
 void IndirectRenderingExample::Init( )
 {
     DenOfIz_BufferDesc simDataDesc{ };
-    simDataDesc.Usage                     = DENOFIZ_BUFFER_USAGE_STORAGE_BIT;
-    simDataDesc.NumBytes                  = sizeof( SimulationData );
-    simDataDesc.DebugName                 = DENOFIZ_STRING( "SimulationDataBuffer" );
-    simDataDesc.HeapType                  = DENOFIZ_HEAP_TYPE_CPU_GPU;
-    simDataDesc.StructureDesc.NumElements = 1;
-    simDataDesc.StructureDesc.Stride      = sizeof( SimulationData );
-    simDataDesc.StructureDesc.Offset      = 0;
+    simDataDesc.Usage     = DENOFIZ_BUFFER_USAGE_UNIFORM_BIT;
+    simDataDesc.NumBytes  = sizeof( SimulationData );
+    simDataDesc.DebugName = DENOFIZ_STRING( "SimulationDataBuffer" );
+    simDataDesc.HeapType  = DENOFIZ_HEAP_TYPE_CPU_GPU;
     DenOfIz_LogicalDevice_CreateBuffer( m_logicalDevice, &simDataDesc, &m_simulationDataBuffer );
 
     DenOfIz_ResourceTracking_TrackBuffer( m_resourceTracking, m_simulationDataBuffer, DENOFIZ_QUEUE_TYPE_GRAPHICS );
@@ -395,7 +392,7 @@ void IndirectRenderingExample::CreateComputePipeline( )
     DenOfIz_BindGroup_UavBuffer( m_computeBindGroup, 0, m_vertexBuffer );
     DenOfIz_BindGroup_UavBuffer( m_computeBindGroup, 1, m_indexBuffer );
     DenOfIz_BindGroup_UavBuffer( m_computeBindGroup, 2, m_perDrawDataBuffer );
-    DenOfIz_BindGroup_SrvBuffer( m_computeBindGroup, 3, m_simulationDataBuffer );
+    DenOfIz_BindGroup_Cbv( m_computeBindGroup, 0, m_simulationDataBuffer );
     DenOfIz_BindGroup_EndUpdate( m_computeBindGroup );
 
     DenOfIz_PipelineDesc pipelineDesc{ };
@@ -521,7 +518,10 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
         RWStructuredBuffer<Vertex> g_VertexBuffer : register(u0, space0);
         RWStructuredBuffer<uint> g_IndexBuffer : register(u1, space0);
         RWStructuredBuffer<PerDrawData> g_PerDrawData : register(u2, space0);
-        StructuredBuffer<SimulationData> g_SimData : register(t3, space0);
+        cbuffer SimulationDataBuffer : register(b0, space0)
+        {
+            SimulationData g_SimData;
+        };
 
         // Boids parameters
         static const float MAX_SPEED = 2.0f, MIN_SPEED = 0.2f, MOUSE_ATTRACTION = 0.4f;
@@ -553,12 +553,12 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
 
             float2 force = float2(0, 0);
 
-            float seed = g_SimData[0].ElapsedTime * 100.0f + float(triangleIndex);
+            float seed = g_SimData.ElapsedTime * 100.0f + float(triangleIndex);
             force += float2(sin(seed), cos(seed * 1.3f)) * 0.02f;
 
             if (drawData.GroupType == 0) // MouseFollower
             {
-                float2 toMouse = g_SimData[0].MousePosition - pos2D;
+                float2 toMouse = g_SimData.MousePosition - pos2D;
                 float distToMouse = length(toMouse);
 
                 if (distToMouse > 0.001f)
@@ -574,7 +574,7 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
 
                         float orbitalStrength = 1.0f - (distToMouse / 0.25f); // Stronger when closer
                         float indexOffset = float(triangleIndex) * 0.1f; // Unique offset per triangle
-                        float orbitalDirection = sin(g_SimData[0].ElapsedTime * 2.0f + indexOffset);
+                        float orbitalDirection = sin(g_SimData.ElapsedTime * 2.0f + indexOffset);
 
                         float2 orbitalVel = Normalize2D(perpendicular) * orbitalDirection * orbitalStrength * MAX_SPEED * 0.8f;
                         float2 approachVel = Normalize2D(toMouse) * (1.0f - orbitalStrength) * MAX_SPEED * 0.6f;
@@ -607,7 +607,7 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
                     if (dist < SEP_RADIUS && dist > 0.0001f)
                     {
                         float sepStrength = ((SEP_RADIUS - dist) / SEP_RADIUS);
-                        float distToMouse = length(g_SimData[0].MousePosition - pos2D);
+                        float distToMouse = length(g_SimData.MousePosition - pos2D);
                         if (distToMouse < 0.2f)
                             sepStrength *= 1.5f; // Extra separation for better distribution
 
@@ -649,17 +649,17 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
                     float2 cohForce = centerMass - pos2D;
                     if (length(cohForce) > 0.001f)
                     {
-                        float distToMouse = length(g_SimData[0].MousePosition - pos2D);
+                        float distToMouse = length(g_SimData.MousePosition - pos2D);
 
                         // When close to mouse, encourage circular distribution instead of center pull
                         if (distToMouse < 0.2f)
                         {
                             // Find ideal orbital position
-                            float2 mouseToCenter = centerMass - g_SimData[0].MousePosition;
+                            float2 mouseToCenter = centerMass - g_SimData.MousePosition;
                             if (length(mouseToCenter) > 0.001f)
                             {
                                 float idealDist = 0.12f; // Preferred distance from mouse
-                                float2 idealPos = g_SimData[0].MousePosition + Normalize2D(mouseToCenter) * idealDist;
+                                float2 idealPos = g_SimData.MousePosition + Normalize2D(mouseToCenter) * idealDist;
                                 cohForce = idealPos - pos2D;
                             }
                         }
@@ -676,7 +676,7 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
             }
 
             // Update physics
-            float deltaTime = clamp(g_SimData[0].DeltaTime, 0.0001f, 0.1f);
+            float deltaTime = clamp(g_SimData.DeltaTime, 0.0001f, 0.1f);
 
             if (length(force) > MAX_FORCE * 1.5f)
                 force = Normalize2D(force) * (MAX_FORCE * 1.5f);
@@ -689,7 +689,7 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
                 drawData.Velocity = Normalize2D(drawData.Velocity) * MAX_SPEED;
             else if (speed < MIN_SPEED && speed > 0.001f)
             {
-                float distToMouse = length(g_SimData[0].MousePosition - pos2D);
+                float distToMouse = length(g_SimData.MousePosition - pos2D);
                 if (distToMouse > 0.2f)
                     drawData.Velocity = Normalize2D(drawData.Velocity) * MIN_SPEED;
             }
@@ -697,7 +697,7 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
             pos2D += drawData.Velocity * deltaTime;
 
             // Escape mechanism and wrapping
-            float2 toMouse = g_SimData[0].MousePosition - pos2D;
+            float2 toMouse = g_SimData.MousePosition - pos2D;
             if (length(toMouse) > 0.8f)
                 pos2D += Normalize2D(toMouse) * 0.5f * deltaTime;
 

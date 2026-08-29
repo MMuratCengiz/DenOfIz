@@ -65,7 +65,7 @@ void MetalCommandList::Begin( )
         m_currentBufferOffset = 0;
         m_argumentBuffer->Reset( );
         m_queuedBindGroups.clear( );
-        m_rootSignature = nullptr;
+        m_shaderLayout = nullptr;
         m_computeTlasBound = false;
         m_renderTlasBound = false;
         m_meshTlasBound = false;
@@ -295,16 +295,11 @@ void MetalCommandList::BindCommandResources( )
         return;
     }
 
-    MetalRootSignature *pipelineRootSignature = m_pipeline->RootSignature( );
-    if ( pipelineRootSignature == nullptr )
+    const MetalShaderLayout &shaderLayout = m_pipeline->ShaderLayout( );
+    if ( m_shaderLayout != &shaderLayout )
     {
-        return;
-    }
-
-    if ( m_rootSignature != pipelineRootSignature )
-    {
-        m_rootSignature       = pipelineRootSignature;
-        m_currentBufferOffset = m_argumentBuffer->Reserve( m_rootSignature->NumTLABAddresses( ), m_rootSignature->NumRootConstantBytes( ) ).second;
+        m_shaderLayout        = &shaderLayout;
+        m_currentBufferOffset = m_argumentBuffer->Reserve( m_shaderLayout->NumBytes( ) ).second;
     }
 
     for ( auto &bindGroup : m_queuedBindGroups )
@@ -312,17 +307,20 @@ void MetalCommandList::BindCommandResources( )
         ProcessBindGroup( bindGroup );
     }
 
-    if ( !m_queuedRootConstants.empty( ) )
+    for ( const auto &queued : m_queuedRootConstants )
     {
-        const auto &rootConstants = m_rootSignature->RootConstants( );
-        for ( const auto &queued : m_queuedRootConstants )
+        const MetalRootConstantLayout *rootConstant = m_shaderLayout->RootConstant( DENOFIZ_ROOT_CONSTANT_REGISTER_SPACE, queued.Binding );
+        if ( rootConstant == nullptr )
         {
-            if ( queued.Binding < rootConstants.size( ) )
-            {
-                const auto &rootConstantInfo = rootConstants[ queued.Binding ];
-                m_argumentBuffer->EncodeRootConstant( m_currentBufferOffset + rootConstantInfo.Offset, queued.Size, static_cast<const Byte *>( queued.Data ) );
-            }
+            continue;
         }
+        if ( queued.Size > rootConstant->NumBytes )
+        {
+            spdlog::error( "Root constant data for binding {} is {} bytes but the shader expects at most {} bytes. Data truncated.", queued.Binding, queued.Size,
+                           rootConstant->NumBytes );
+        }
+        m_argumentBuffer->EncodeRootConstant( m_currentBufferOffset + rootConstant->Offset, std::min( queued.Size, rootConstant->NumBytes ),
+                                              static_cast<const Byte *>( queued.Data ) );
     }
 
     BindTopLevelArgumentBuffer( );
@@ -336,24 +334,28 @@ void MetalCommandList::ProcessBindGroup( const MetalBindGroup *metalBindGroup )
         return;
     }
 
-    uint64_t addressesOffset = m_currentBufferOffset + m_rootSignature->NumRootConstantBytes( );
-    for ( const auto &rootParameter : metalBindGroup->RootParameters( ) )
+    const MetalSpaceLayout *spaceLayout = m_shaderLayout->Space( metalBindGroup->RegisterSpace( ) );
+    if ( spaceLayout == nullptr )
     {
-        m_argumentBuffer->EncodeAddress( addressesOffset, rootParameter.TLABOffset, rootParameter.Buffer.gpuAddress );
+        return;
+    }
+
+    const MetalBindGroupTables *tables = metalBindGroup->TablesFor( *spaceLayout );
+    for ( const auto &rootParameter : tables->RootParameters )
+    {
+        m_argumentBuffer->EncodeAddress( m_currentBufferOffset + rootParameter.OffsetBytes, rootParameter.Buffer.gpuAddress );
         BatchResource( rootParameter.Buffer );
     }
 
-    const MetalDescriptorTableBinding *cbvSrvUavTable = metalBindGroup->CbvSrvUavTable( );
-    if ( cbvSrvUavTable != nullptr )
+    if ( tables->CbvSrvUavTable && spaceLayout->CbvSrvUavTableOffset != UINT32_MAX )
     {
-        m_argumentBuffer->EncodeAddress( addressesOffset, cbvSrvUavTable->TLABOffset, cbvSrvUavTable->Table.Buffer( ).gpuAddress );
-        BatchResource( cbvSrvUavTable->Table.Buffer( ) );
+        m_argumentBuffer->EncodeAddress( m_currentBufferOffset + spaceLayout->CbvSrvUavTableOffset, tables->CbvSrvUavTable->Buffer( ).gpuAddress );
+        BatchResource( tables->CbvSrvUavTable->Buffer( ) );
     }
-    const MetalDescriptorTableBinding *samplerTable = metalBindGroup->SamplerTable( );
-    if ( samplerTable != nullptr )
+    if ( tables->SamplerTable && spaceLayout->SamplerTableOffset != UINT32_MAX )
     {
-        m_argumentBuffer->EncodeAddress( addressesOffset, samplerTable->TLABOffset, samplerTable->Table.Buffer( ).gpuAddress );
-        BatchResource( samplerTable->Table.Buffer( ) );
+        m_argumentBuffer->EncodeAddress( m_currentBufferOffset + spaceLayout->SamplerTableOffset, tables->SamplerTable->Buffer( ).gpuAddress );
+        BatchResource( tables->SamplerTable->Buffer( ) );
     }
 
     for ( const auto &resource : metalBindGroup->IndirectResources( ) )
@@ -866,7 +868,7 @@ void MetalCommandList::BindTopLevelArgumentBuffer( )
 
 void MetalCommandList::TopLevelArgumentBufferNextOffset( )
 {
-    m_currentBufferOffset = m_argumentBuffer->Duplicate( m_rootSignature->NumTLABAddresses( ), m_rootSignature->NumRootConstantBytes( ) ).second;
+    m_currentBufferOffset = m_argumentBuffer->Duplicate( m_shaderLayout ? m_shaderLayout->NumBytes( ) : 0 ).second;
 }
 
 void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType, bool crossQueueBarrier )

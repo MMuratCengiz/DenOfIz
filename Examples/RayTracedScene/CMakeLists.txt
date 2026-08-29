@@ -2,11 +2,13 @@ include(${PROJECT_SOURCE_DIR}/cmake/common.cmake)
 
 set(BISTRO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/_Assets/niagara_bistro")
 
-if(NOT EXISTS "${BISTRO_DIR}/bistro")
+if(NOT EXISTS "${BISTRO_DIR}/textures")
     find_package(Git REQUIRED)
     file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/_Assets")
-    execute_process(COMMAND ${GIT_EXECUTABLE} clone --depth 1 --filter=blob:none --sparse https://github.com/zeux/niagara_bistro "${BISTRO_DIR}")
-    execute_process(COMMAND ${GIT_EXECUTABLE} sparse-checkout set bistro WORKING_DIRECTORY "${BISTRO_DIR}")
+    if(NOT EXISTS "${BISTRO_DIR}/.git")
+        execute_process(COMMAND ${GIT_EXECUTABLE} clone --depth 1 --filter=blob:none --sparse https://github.com/zeux/niagara_bistro "${BISTRO_DIR}")
+    endif()
+    execute_process(COMMAND ${GIT_EXECUTABLE} sparse-checkout set objects textures WORKING_DIRECTORY "${BISTRO_DIR}")
 endif()
 
 SET(DEN_OF_IZ_EXAMPLES_RAY_TRACING_SOURCES

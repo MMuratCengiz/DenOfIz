@@ -61,8 +61,8 @@ void TransparencyExample::Init( )
     }
 
     DenOfIz_TextureDesc depthDesc{ };
-    depthDesc.Width     = m_windowDesc.Width;
-    depthDesc.Height    = m_windowDesc.Height;
+    depthDesc.Width     = m_pixelWidth;
+    depthDesc.Height    = m_pixelHeight;
     depthDesc.Depth     = 1;
     depthDesc.ArraySize = 1;
     depthDesc.MipLevels = 1;
@@ -174,7 +174,7 @@ void TransparencyExample::Render( const uint32_t frameIndex, DenOfIz_CommandList
 void TransparencyExample::ModifyApiPreferences( DenOfIz_APIPreference &defaultApiPreference )
 {
     // defaultApiPreference.Windows = DENOFIZ_API_PREFERENCE_WINDOWS_VULKAN;
-    defaultApiPreference.OSX = DENOFIZ_API_PREFERENCE_OSX_WEBGPU_NATIVE;
+    // defaultApiPreference.OSX = DENOFIZ_API_PREFERENCE_OSX_WEBGPU_NATIVE;
 }
 
 void TransparencyExample::Update( )

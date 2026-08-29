@@ -172,10 +172,8 @@ TextRenderer::~TextRenderer( )
     {
         DenOfIz_InputLayout_Destroy( InputLayout );
     }
-    if ( DENOFIZ_HANDLE_IS_VALID( ShaderProgram ) )
-    {
-        DenOfIz_ShaderProgram_Destroy( ShaderProgram );
-    }
+    // ShaderProgram comes from EmbeddedShaders' static cache
+    ShaderProgram = DENOFIZ_NULL_HANDLE;
 }
 
 void TextRenderer::SetProjectionMatrix( const DenOfIz_Float4x4 &projectionMatrix )

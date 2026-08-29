@@ -68,8 +68,8 @@ void RenderTargetExample::Init( )
     m_renderPipeline = std::make_unique<DefaultRenderPipeline>( m_graphicsApi, m_logicalDevice );
 
     DenOfIz_TextureDesc textureDesc{ };
-    textureDesc.Width     = m_windowDesc.Width;
-    textureDesc.Height    = m_windowDesc.Height;
+    textureDesc.Width     = m_pixelWidth;
+    textureDesc.Height    = m_pixelHeight;
     textureDesc.Depth     = 1;
     textureDesc.ArraySize = 1;
     textureDesc.MipLevels = 1;

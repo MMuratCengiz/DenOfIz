@@ -31,7 +31,8 @@ MetalShaderBindingTable::MetalShaderBindingTable( MetalContext *context, const D
     m_pipeline = MTL_PIPELINE_IMPL( desc.Pipeline );
     // In Metal, the concept of a local root signature does not apply to shader stages independently. In case a source of the shader is shared between multiple stages,
     // we need to account for the maximum size of the data for all stages.
-    size_t maxBytes    = Utilities::Align( std::max( { m_desc.MaxRayGenDataBytes, m_desc.MaxHitGroupDataBytes, m_desc.MaxMissDataBytes } ), 16 );
+    const uint32_t maxBytes = Utilities::Align( std::max( { m_desc.MaxRayGenDataBytes, m_desc.MaxHitGroupDataBytes, m_desc.MaxMissDataBytes, m_pipeline->LocalShaderLayout( ).NumBytes( ) } ), 16 );
+    m_maxDataBytes     = maxBytes;
     m_rayGenNumBytes   = sizeof( IRShaderIdentifier ) + maxBytes;
     m_hitGroupNumBytes = sizeof( IRShaderIdentifier ) + maxBytes;
     m_missNumBytes     = sizeof( IRShaderIdentifier ) + maxBytes;
@@ -76,7 +77,7 @@ void MetalShaderBindingTable::BindRayGenerationShader( const DenOfIz_RayGenerati
     const uint32_t          &functionIndex    = m_pipeline->FindVisibleShaderIndexByName( shaderName );
     IRShaderIdentifier       shaderIdentifier = EncodeShaderIndex( 0, functionIndex );
     uint32_t                 numBytes         = 0;
-    const MetalShaderLocalData *localData    = DENOFIZ_HANDLE_IS_VALID( desc.Data ) ? MTL_SHADER_LOCAL_DATA_IMPL( desc.Data ) : nullptr;
+    MetalShaderLocalData *localData    = DENOFIZ_HANDLE_IS_VALID( desc.Data ) ? MTL_SHADER_LOCAL_DATA_IMPL( desc.Data ) : nullptr;
     if ( localData )
     {
         numBytes = EncodeData( sizeof( IRShaderIdentifier ), localData );
@@ -108,7 +109,7 @@ void MetalShaderBindingTable::BindHitGroup( const DenOfIz_HitGroupBindingDesc &d
     }
 
     uint32_t                   numBytes  = 0;
-    const MetalShaderLocalData *localData = DENOFIZ_HANDLE_IS_VALID( desc.Data ) ? MTL_SHADER_LOCAL_DATA_IMPL( desc.Data ) : nullptr;
+    MetalShaderLocalData *localData = DENOFIZ_HANDLE_IS_VALID( desc.Data ) ? MTL_SHADER_LOCAL_DATA_IMPL( desc.Data ) : nullptr;
     if ( localData )
     {
         numBytes = EncodeData( offset + sizeof( IRShaderIdentifier ), localData );
@@ -126,7 +127,7 @@ void MetalShaderBindingTable::BindMissShader( const DenOfIz_MissBindingDesc &des
     const uint32_t               &functionIndex    = m_pipeline->FindVisibleShaderIndexByName( shaderName );
     IRShaderIdentifier            shaderIdentifier = EncodeShaderIndex( offset, functionIndex );
     uint32_t                      numBytes         = 0;
-    const MetalShaderLocalData   *localData        = DENOFIZ_HANDLE_IS_VALID( desc.Data ) ? MTL_SHADER_LOCAL_DATA_IMPL( desc.Data ) : nullptr;
+    MetalShaderLocalData         *localData        = DENOFIZ_HANDLE_IS_VALID( desc.Data ) ? MTL_SHADER_LOCAL_DATA_IMPL( desc.Data ) : nullptr;
     if ( localData )
     {
         numBytes = EncodeData( offset + sizeof( IRShaderIdentifier ), localData );
@@ -187,33 +188,21 @@ IRShaderIdentifier MetalShaderBindingTable::EncodeShaderIndex( uint32_t offset, 
     return shaderIdentifier;
 }
 
-uint32_t MetalShaderBindingTable::EncodeData( uint32_t offset, const MetalShaderLocalData *localData )
+uint32_t MetalShaderBindingTable::EncodeData( uint32_t offset, MetalShaderLocalData *localData )
 {
     Byte *dest = static_cast<Byte *>( m_mappedMemory ) + offset;
 
-    const Byte    *data     = localData->Data( );
-    const uint32_t numBytes = localData->DataNumBytes( );
-    memcpy( dest, data, numBytes );
-
-    const DescriptorTable *srvUavTable = localData->SrvUavTable( );
-    if ( srvUavTable )
+    const MetalLocalRecord *record   = localData->RecordFor( m_pipeline->LocalShaderLayout( ) );
+    const uint32_t          numBytes = static_cast<uint32_t>( record->Data.size( ) );
+    if ( numBytes > m_maxDataBytes )
     {
-        uint32_t      srvUavOffset        = numBytes;
-        id<MTLBuffer> srvUavBuffer        = srvUavTable->Buffer( );
-        uint64_t      srvUavBufferAddress = srvUavBuffer.gpuAddress;
-        memcpy( dest + numBytes, &srvUavBufferAddress, sizeof( uint64_t ) );
+        spdlog::error( "Shader local data requires {} bytes but the shader binding table record only holds {} bytes. Record skipped.", numBytes, m_maxDataBytes );
+        return 0;
     }
-    const DescriptorTable *samplerTable = localData->SamplerTable( );
-    if ( samplerTable )
-    {
-        uint32_t      samplerOffset  = numBytes + sizeof( uint64_t );
-        id<MTLBuffer> samplerBuffer  = localData->SamplerTable( )->Buffer( );
-        uint64_t      samplerAddress = samplerBuffer.gpuAddress;
-        memcpy( dest + samplerOffset, &samplerAddress, sizeof( uint64_t ) );
-    }
+    memcpy( dest, record->Data.data( ), numBytes );
 
     // Todo optimize this
-    for ( const id<MTLResource> &resource : localData->UsedResources( ) )
+    for ( const id<MTLResource> &resource : record->UsedResources )
     {
         if ( std::find( m_usedResources.begin( ), m_usedResources.end( ), resource ) == m_usedResources.end( ) )
         {

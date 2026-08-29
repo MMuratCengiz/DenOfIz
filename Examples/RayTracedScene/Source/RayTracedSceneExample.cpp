@@ -78,17 +78,12 @@ void RayTracedSceneExample::Update( )
 
     if ( m_cameraMovedThisFrame )
     {
-        m_frameCount = 0;
+        m_accumulatedFrames.fill( 0 );
     }
 
     m_lastViewProjectionMatrix = currentMatrix;
 
     RenderAndPresentFrame( );
-
-    if ( !m_cameraMovedThisFrame )
-    {
-        m_frameCount++;
-    }
 }
 
 void RayTracedSceneExample::Render( const uint32_t frameIndex, DenOfIz_CommandList commandList )
@@ -133,8 +128,8 @@ void RayTracedSceneExample::Render( const uint32_t frameIndex, DenOfIz_CommandLi
     DenOfIz_CopyTextureRegionDesc copyTextureRegionDesc{ };
     copyTextureRegionDesc.SrcTexture = raytracingTarget;
     copyTextureRegionDesc.DstTexture = renderTarget;
-    copyTextureRegionDesc.Width      = m_windowDesc.Width;
-    copyTextureRegionDesc.Height     = m_windowDesc.Height;
+    copyTextureRegionDesc.Width      = m_pixelWidth;
+    copyTextureRegionDesc.Height     = m_pixelHeight;
     copyTextureRegionDesc.Depth      = 1;
     DenOfIz_CommandList_CopyTextureRegion( commandList, &copyTextureRegionDesc );
 
@@ -237,8 +232,8 @@ RayTracedSceneExample::~RayTracedSceneExample( )
 void RayTracedSceneExample::CreateRenderTargets( )
 {
     DenOfIz_TextureDesc textureDesc{ };
-    textureDesc.Width     = m_windowDesc.Width;
-    textureDesc.Height    = m_windowDesc.Height;
+    textureDesc.Width     = m_pixelWidth;
+    textureDesc.Height    = m_pixelHeight;
     textureDesc.Depth     = 1;
     textureDesc.ArraySize = 1;
     textureDesc.MipLevels = 1;
@@ -252,8 +247,8 @@ void RayTracedSceneExample::CreateRenderTargets( )
     }
 
     DenOfIz_TextureDesc accumulationDesc{ };
-    accumulationDesc.Width     = m_windowDesc.Width;
-    accumulationDesc.Height    = m_windowDesc.Height;
+    accumulationDesc.Width     = m_pixelWidth;
+    accumulationDesc.Height    = m_pixelHeight;
     accumulationDesc.Depth     = 1;
     accumulationDesc.ArraySize = 1;
     accumulationDesc.MipLevels = 1;
@@ -599,7 +594,7 @@ void RayTracedSceneExample::CreateShaderBindingTable( )
     DenOfIz_ShaderBindingTable_Build( m_shaderBindingTable );
 }
 
-void RayTracedSceneExample::UpdateCamera( const uint32_t frameIndex ) const
+void RayTracedSceneExample::UpdateCamera( const uint32_t frameIndex )
 {
     auto *sceneConstants = reinterpret_cast<SceneConstantBuffer *>( DenOfIz_RingBuffer_GetMappedMemory( m_sceneCBRingBuffer, frameIndex ) );
 
@@ -632,5 +627,6 @@ void RayTracedSceneExample::UpdateCamera( const uint32_t frameIndex ) const
     sceneConstants->Reflectance   = 0.3f;
     sceneConstants->ElapsedTime   = static_cast<float>( DenOfIz_StepTimer_GetElapsedSeconds( m_stepTimer ) );
     sceneConstants->UseShadowRays = 1;
-    sceneConstants->FrameCount    = m_frameCount;
+    sceneConstants->FrameCount    = m_accumulatedFrames[ frameIndex ];
+    m_accumulatedFrames[ frameIndex ]++;
 }

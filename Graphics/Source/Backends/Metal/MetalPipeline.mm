@@ -39,6 +39,14 @@ MetalPipeline::MetalPipeline( MetalContext *context, const DenOfIz_PipelineDesc 
     m_objectThreadsPerThreadgroup( MTLSizeMake(0, 0, 0) ),
     m_rootSignature( DENOFIZ_HANDLE_IS_VALID( desc.RootSignature ) ? static_cast<MetalRootSignature *>( ROOT_SIGNATURE_PTR( desc.RootSignature ) ) : nullptr )
 {
+    DenOfIz_ShaderReflectDesc reflectDesc{ };
+    if ( DENOFIZ_HANDLE_IS_VALID( desc.ShaderProgram ) )
+    {
+        DenOfIz_ShaderProgram_Reflect( desc.ShaderProgram, &reflectDesc );
+    }
+    m_shaderLayout      = std::make_unique<MetalShaderLayout>( MetalShaderLayout::GlobalBindings( reflectDesc ) );
+    m_localShaderLayout = std::make_unique<MetalShaderLayout>( MetalShaderLayout::LocalBindings( reflectDesc.LocalRootSignatures ) );
+
     switch ( desc.BindPoint )
     {
     case DENOFIZ_BIND_POINT_GRAPHICS:
@@ -531,6 +539,16 @@ void MetalPipeline::InitStencilFace( MTLStencilDescriptor *stencilDesc, const De
 MetalRootSignature *MetalPipeline::RootSignature( ) const
 {
     return m_rootSignature;
+}
+
+const MetalShaderLayout &MetalPipeline::ShaderLayout( ) const
+{
+    return *m_shaderLayout;
+}
+
+const MetalShaderLayout &MetalPipeline::LocalShaderLayout( ) const
+{
+    return *m_localShaderLayout;
 }
 
 const MTLCullMode &MetalPipeline::CullMode( ) const

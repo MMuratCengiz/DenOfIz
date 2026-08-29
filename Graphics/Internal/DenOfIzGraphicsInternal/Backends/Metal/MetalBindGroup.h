@@ -20,10 +20,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphicsInternal/Backends/Interface/IBindGroup.h>
 #include <algorithm>
+#include <memory>
 #include "MetalArgumentBuffer.h"
 #include "MetalBindGroupLayout.h"
 #include "MetalBuffer.h"
 #include "MetalContext.h"
+#include "MetalShaderLayout.h"
 #include "MetalTexture.h"
 
 namespace DenOfIz
@@ -43,11 +45,11 @@ namespace DenOfIz
 
     struct MetalRootParameterBinding
     {
-        uint32_t      TLABOffset = 0;
+        uint32_t      OffsetBytes = 0;
         id<MTLBuffer> Buffer;
 
         MetalRootParameterBinding( ) = default;
-        MetalRootParameterBinding( uint32_t offset, id<MTLBuffer> buffer ) : TLABOffset( offset ), Buffer( buffer )
+        MetalRootParameterBinding( uint32_t offsetBytes, id<MTLBuffer> buffer ) : OffsetBytes( offsetBytes ), Buffer( buffer )
         {
         }
     };
@@ -73,16 +75,12 @@ namespace DenOfIz
         ITexture                   *Resource;
     };
 
-    struct MetalDescriptorTableBinding
+    struct MetalBindGroupTables
     {
-        // Top level argument buffer offset
-        uint32_t        TLABOffset = 0;
-        uint32_t        NumEntries = 0;
-        DescriptorTable Table;
-
-        MetalDescriptorTableBinding( uint32_t tlabOffset, DescriptorTable table ) : TLABOffset( tlabOffset ), Table( table )
-        {
-        }
+        MetalSpaceLayout                       Layout;
+        std::unique_ptr<DescriptorTable>       CbvSrvUavTable;
+        std::unique_ptr<DescriptorTable>       SamplerTable;
+        std::vector<MetalRootParameterBinding> RootParameters;
     };
 
     class MetalBindGroup final : public IBindGroup
@@ -103,12 +101,11 @@ namespace DenOfIz
         std::vector<MetalUpdateDescItem<MetalTexture>> m_textures;
         std::vector<MetalUpdateDescItem<MetalSampler>> m_samplers;
 
-        std::vector<MetalRootParameterBinding>       m_rootParameterBindings;
-        std::unique_ptr<MetalDescriptorTableBinding> m_cbvSrvUavTable;
-        std::unique_ptr<MetalDescriptorTableBinding> m_samplerTable;
+        mutable std::vector<std::unique_ptr<MetalBindGroupTables>> m_tables;
 
     public:
         MetalBindGroup( MetalContext *context, DenOfIz_BindGroupDesc desc );
+
         IBindGroup *BeginUpdate( ) override;
         IBindGroup *Cbv( const uint32_t binding, IBuffer *resource ) override;
         IBindGroup *Cbv( const uint32_t binding, IBuffer *resource, size_t offset ) override;
@@ -124,27 +121,18 @@ namespace DenOfIz
         IBindGroup *Sampler( const uint32_t binding, ISampler *sampler ) override;
         void        EndUpdate( ) override;
 
-        [[nodiscard]] const std::vector<MetalRootParameterBinding> &RootParameters( ) const;
-        // Nullable if nothing is bound to the pertinent table
-        [[nodiscard]] const MetalDescriptorTableBinding *CbvSrvUavTable( ) const;
-        [[nodiscard]] const MetalDescriptorTableBinding *SamplerTable( ) const;
+        [[nodiscard]] const MetalBindGroupTables *TablesFor( const MetalSpaceLayout &spaceLayout ) const;
 
         const std::vector<id<MTLResource>>                   &IndirectResources( ) const;
         const std::vector<MetalUpdateDescItem<MetalBuffer>>  &Buffers( ) const;
         const std::vector<MetalUpdateDescItem<MetalTexture>> &Textures( ) const;
         const std::vector<MetalUpdateDescItem<MetalSampler>> &Samplers( ) const;
-
-        [[nodiscard]] MetalBindGroupLayout *BindGroupLayout( ) const;
-        [[nodiscard]] uint32_t              RegisterSpace( ) const;
+        [[nodiscard]] MetalBindGroupLayout                   *BindGroupLayout( ) const;
+        [[nodiscard]] uint32_t                                RegisterSpace( ) const;
 
     private:
-        void                        BindAccelerationStructure( const DenOfIz_ResourceBindingSlot &slot, ITopLevelAS *accelerationStructure );
-        void                        BindBuffer( const DenOfIz_ResourceBindingSlot &slot, IBuffer *resource );
-        void                        BindBufferWithOffset( const DenOfIz_ResourceBindingSlot &slot, IBuffer *resource, uint32_t offset );
-        void                        BindTexture( const DenOfIz_ResourceBindingSlot &slot, ITexture *resource, uint32_t mipLevel = DZ_ALL_MIP_LEVELS );
-        void                        BindTextureArrayIndex( const DenOfIz_ResourceBindingSlot &slot, uint32_t arrayIndex, ITexture *resource );
-        void                        BindSampler( const DenOfIz_ResourceBindingSlot &slot, ISampler *sampler );
+        void                        EncodeTables( MetalBindGroupTables &tables ) const;
+        bool                        ValidateSlot( const DenOfIz_ResourceBindingSlot &slot ) const;
         DenOfIz_ResourceBindingSlot GetSlot( uint32_t binding, const DenOfIz_ResourceBindingType &type ) const;
     };
-
 } // namespace DenOfIz

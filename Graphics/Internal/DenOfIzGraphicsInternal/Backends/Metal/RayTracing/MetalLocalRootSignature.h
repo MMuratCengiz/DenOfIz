@@ -18,45 +18,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <unordered_map>
+#include <vector>
 #include "DenOfIzGraphicsInternal/Backends/Interface/RayTracing/ILocalRootSignature.h"
 #include "DenOfIzGraphicsInternal/Backends/Metal/MetalContext.h"
 
 namespace DenOfIz
 {
-    struct MetalLocalBindingDesc
-    {
-        uint32_t                    DescriptorTableIndex;
-        size_t                      NumBytes;
-        DenOfIz_ResourceBindingType Type;
-    };
-
     class MetalLocalRootSignature final : public ILocalRootSignature
     {
-        constexpr static MetalLocalBindingDesc empty = { };
-
-        MetalContext                  *m_context;
-        DenOfIz_LocalRootSignatureDesc m_desc;
-
-        std::vector<MetalLocalBindingDesc> m_uavBindings;
-        std::vector<MetalLocalBindingDesc> m_srvBindings;
-        std::vector<MetalLocalBindingDesc> m_samplerBindings;
-        std::vector<uint32_t>              m_inlineDataOffsets;
-        std::vector<uint32_t>              m_inlineDataNumBytes;
-        uint32_t                           m_totalInlineDataBytes = 0;
+        MetalContext                                              *m_context;
+        DenOfIz_LocalRootSignatureDesc                             m_desc;
+        std::vector<DenOfIz_LocalResourceBindingDesc>              m_bindingsCopy;
+        std::unordered_map<uint64_t, const DenOfIz_LocalResourceBindingDesc *> m_bindings;
 
     public:
         MetalLocalRootSignature( MetalContext *context, const DenOfIz_LocalRootSignatureDesc &desc );
-        uint32_t NumInlineBytes( ) const;
-        uint32_t NumSrvUavs( ) const;
-        uint32_t NumSamplers( ) const;
 
-        const uint32_t               InlineDataOffset( uint32_t binding ) const;
-        const uint32_t               InlineNumBytes( uint32_t binding ) const;
-        const MetalLocalBindingDesc &SrvBinding( uint32_t binding ) const;
-        const MetalLocalBindingDesc &UavBinding( uint32_t binding ) const;
-        const MetalLocalBindingDesc &SamplerBinding( uint32_t binding ) const;
-
-    private:
-        bool EnsureSize( uint32_t binding, const std::vector<MetalLocalBindingDesc> &bindings ) const;
+        [[nodiscard]] const DenOfIz_LocalRootSignatureDesc     &Desc( ) const;
+        [[nodiscard]] const DenOfIz_LocalResourceBindingDesc *FindBinding( DenOfIz_ResourceBindingType type, uint32_t binding ) const;
     };
 } // namespace DenOfIz

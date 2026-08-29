@@ -23,33 +23,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-
-    struct MetalRootConstant
-    {
-        uint32_t Offset;
-        uint64_t NumBytes;
-    };
-
     class MetalRootSignature final : public IRootSignature
     {
         MetalContext             *m_context;
         DenOfIz_RootSignatureDesc m_desc;
 
         std::vector<MetalBindGroupLayout *> m_bindGroupLayouts;
-        uint32_t                            m_numTLABAddresses     = 0;
-        uint32_t                            m_numRootConstantBytes = 0;
-        std::vector<MetalRootConstant>      m_rootConstants;
 
     public:
         MetalRootSignature( MetalContext *context, const DenOfIz_RootSignatureDesc &desc );
-
-        [[nodiscard]] uint32_t                                   NumTLABAddresses( ) const;
-        [[nodiscard]] const uint32_t                            &NumRootConstantBytes( ) const;
-        [[nodiscard]] const std::vector<MetalRootConstant>      &RootConstants( ) const;
         [[nodiscard]] const std::vector<MetalBindGroupLayout *> &BindGroupLayouts( ) const;
         [[nodiscard]] MetalBindGroupLayout                      *GetBindGroupLayout( uint32_t registerSpace ) const;
-
         ~MetalRootSignature( ) override;
     };
-
 } // namespace DenOfIz

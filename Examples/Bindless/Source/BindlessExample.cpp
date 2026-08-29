@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cmath>
 #include <cstring>
 #include <string>
-#include "DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h"
+#include <vector>
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 #include "DenOfIzGraphics/Utilities/InteropUtilities.h"
 
@@ -50,7 +50,7 @@ void BindlessExample::Init( )
     bindlessSlots[ 0 ].RegisterSpace = 0;
     bindlessSlots[ 0 ].Binding       = 0;
     bindlessSlots[ 0 ].MaxArraySize  = NUM_TEXTURES;
-    bindlessSlots[ 0 ].Type          = DENOFIZ_RESOURCE_BINDING_TYPE_SHADER_RESOURCE;
+    bindlessSlots[ 0 ].Descriptor    = DENOFIZ_RESOURCE_DESCRIPTOR_TEXTURE_BIT;
 
     pixelShaderDesc.Bindless.BindlessArrays.Elements    = bindlessSlots.data( );
     pixelShaderDesc.Bindless.BindlessArrays.NumElements = bindlessSlots.size( );
@@ -304,107 +304,85 @@ DenOfIz_ByteArray BindlessExample::PixelShader( )
     return DenOfIz_InteropUtilities_StringToBytes( shaderCode );
 }
 
+namespace
+{
+    struct Rgba
+    {
+        uint8_t R, G, B, A;
+    };
+
+    auto PatternPixel( const int pattern, const int x, const int y, const int width, const int height ) -> Rgba
+    {
+        switch ( pattern )
+        {
+        case 0:
+            {
+                const int   cellX = x / 85;
+                const int   cellY = y / 85;
+                const float dx    = static_cast<float>( x ) - ( cellX * 85.0f + 42.5f );
+                const float dy    = static_cast<float>( y ) - ( cellY * 85.0f + 42.5f );
+                if ( dx * dx + dy * dy <= 30.0f * 30.0f )
+                {
+                    return { static_cast<uint8_t>( 255 - cellX * 80 ), static_cast<uint8_t>( cellY * 80 ), static_cast<uint8_t>( 128 + cellX * 40 ), 255 };
+                }
+                return { 255, 255, 255, 255 };
+            }
+        case 1:
+            {
+                constexpr Rgba stops[ 4 ] = { { 255, 0, 128, 255 }, { 255, 255, 0, 255 }, { 0, 255, 255, 255 }, { 128, 0, 255, 255 } };
+                const float    t          = ( static_cast<float>( x ) / width + static_cast<float>( y ) / height ) * 0.5f;
+                const float    scaled     = std::min( t * 3.0f, 2.999f );
+                const int      index      = static_cast<int>( scaled );
+                const float    frac       = scaled - static_cast<float>( index );
+                const Rgba    &a          = stops[ index ];
+                const Rgba    &b          = stops[ index + 1 ];
+                return { static_cast<uint8_t>( a.R + ( b.R - a.R ) * frac ), static_cast<uint8_t>( a.G + ( b.G - a.G ) * frac ), static_cast<uint8_t>( a.B + ( b.B - a.B ) * frac ),
+                         255 };
+            }
+        case 2:
+            {
+                constexpr float cx     = 128.0f;
+                constexpr float cy     = 128.0f;
+                constexpr float radius = 100.0f;
+                constexpr float inner  = radius * 0.4f;
+                const float     dx     = static_cast<float>( x ) - cx;
+                const float     dy     = static_cast<float>( y ) - cy;
+                const float     dist   = std::sqrt( dx * dx + dy * dy );
+                // Five pointed star: the boundary radius oscillates between the outer and inner radius over each 36 degree sector.
+                float angle = std::atan2( dy, dx ) + 3.14159f / 2.0f;
+                angle       = std::fmod( angle + 2.0f * 3.14159f, 2.0f * 3.14159f );
+                const float sector    = std::fmod( angle, 2.0f * 3.14159f / 5.0f ) / ( 2.0f * 3.14159f / 5.0f );
+                const float w         = std::abs( sector - 0.5f ) * 2.0f;
+                const float threshold = inner + ( radius - inner ) * w;
+                if ( dist <= threshold )
+                {
+                    return dist >= threshold - 3.0f ? Rgba{ 255, 140, 0, 255 } : Rgba{ 255, 215, 0, 255 };
+                }
+                return { 255, 255, 255, 255 };
+            }
+        default:
+            {
+                constexpr int cellSize = 32;
+                return ( x / cellSize + y / cellSize ) % 2 == 0 ? Rgba{ 64, 64, 64, 255 } : Rgba{ 192, 192, 192, 255 };
+            }
+        }
+    }
+} // namespace
+
 void BindlessExample::CreateTextures( )
 {
     for ( int i = 0; i < NUM_TEXTURES; ++i )
     {
-        constexpr int    width  = 256;
-        constexpr int    height = 256;
-        ThorVGCanvasDesc canvasDesc{ };
-        canvasDesc.Width  = width;
-        canvasDesc.Height = height;
-        ThorVGCanvas canvas( canvasDesc );
-
-        ThorVGShape shape;
-
-        switch ( i )
+        constexpr int     width  = 256;
+        constexpr int     height = 256;
+        std::vector<Rgba> pixels( width * height );
+        for ( int y = 0; y < height; ++y )
         {
-        case 0:
+            for ( int x = 0; x < width; ++x )
             {
-                for ( int y = 0; y < 3; ++y )
-                {
-                    for ( int x = 0; x < 3; ++x )
-                    {
-                        ThorVGShape circle;
-                        circle.AppendCircle( x * 85.0f + 42.5f, y * 85.0f + 42.5f, 30.0f, 30.0f );
-                        circle.Fill( 255 - x * 80, y * 80, 128 + x * 40, 255 );
-                        canvas.Push( &circle );
-                    }
-                }
+                pixels[ y * width + x ] = PatternPixel( i, x, y, width, height );
             }
-            break;
-
-        case 1:
-            {
-                shape.AppendRect( 0, 0, width, height );
-
-                ThorVGLinearGradient gradient;
-                gradient.Linear( 0, 0, width, height );
-
-                std::vector<ThorVGColorStop> colorStops( 4 );
-                colorStops[ 0 ] = { 0.0f, 255, 0, 128, 255 };
-                colorStops[ 1 ] = { 0.33f, 255, 255, 0, 255 };
-                colorStops[ 2 ] = { 0.66f, 0, 255, 255, 255 };
-                colorStops[ 3 ] = { 1.0f, 128, 0, 255, 255 };
-                gradient.ColorStops( { colorStops.data( ), static_cast<uint32_t>( colorStops.size( ) ) } );
-
-                shape.Fill( &gradient );
-                canvas.Push( &shape );
-            }
-            break;
-
-        case 2:
-            {
-                constexpr float cx     = width / 2.0f;
-                constexpr float cy     = height / 2.0f;
-                constexpr float radius = 100.0f;
-                constexpr float inner  = radius * 0.4f;
-
-                shape.MoveTo( cx, cy - radius );
-                for ( int j = 0; j < 10; ++j )
-                {
-                    const float angle = ( j * 36.0f - 90.0f ) * 3.14159f / 180.0f;
-                    const float r     = j % 2 == 0 ? radius : inner;
-                    const float x     = cx + r * cos( angle );
-                    const float y     = cy + r * sin( angle );
-                    shape.LineTo( x, y );
-                }
-                shape.Close( );
-                shape.Fill( 255, 215, 0, 255 );
-                shape.Stroke( 255, 140, 0, 255 );
-                shape.Stroke( 3.0f );
-                canvas.Push( &shape );
-            }
-            break;
-
-        case 3:
-            {
-                constexpr int cellSize = 32;
-                for ( int y = 0; y < height / cellSize; ++y )
-                {
-                    for ( int x = 0; x < width / cellSize; ++x )
-                    {
-                        ThorVGShape rect;
-                        rect.AppendRect( x * cellSize, y * cellSize, cellSize, cellSize );
-                        if ( ( x + y ) % 2 == 0 )
-                        {
-                            rect.Fill( 64, 64, 64, 255 );
-                        }
-                        else
-                        {
-                            rect.Fill( 192, 192, 192, 255 );
-                        }
-                        canvas.Push( &rect );
-                    }
-                }
-            }
-            break;
-        default:
-            break;
         }
-
-        canvas.Draw( );
-        canvas.Sync( );
 
         DenOfIz_TextureDesc textureDesc{ };
         textureDesc.Width           = width;
@@ -426,10 +404,9 @@ void BindlessExample::CreateTextures( )
         DenOfIz_BatchResourceCopy_Create( &batchDesc, &batchCopy );
         DenOfIz_BatchResourceCopy_Begin( batchCopy );
 
-        auto                          dataAsBytes = canvas.GetDataAsBytes( );
         DenOfIz_CopyDataToTextureDesc copyDesc{ };
-        copyDesc.Data.Elements    = dataAsBytes.Elements;
-        copyDesc.Data.NumElements = dataAsBytes.NumElements;
+        copyDesc.Data.Elements    = reinterpret_cast<const Byte *>( pixels.data( ) );
+        copyDesc.Data.NumElements = pixels.size( ) * sizeof( Rgba );
         copyDesc.DstTexture       = m_textures[ i ];
         copyDesc.MipLevel         = 0;
         DenOfIz_BatchResourceCopy_CopyDataToTexture( batchCopy, &copyDesc );
