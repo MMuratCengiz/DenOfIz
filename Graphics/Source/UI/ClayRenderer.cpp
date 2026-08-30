@@ -1009,6 +1009,7 @@ void ClayRenderer::SetScissor( const Clay_RenderCommand *command )
 
     ScissorState state;
     state.Enabled = true;
+    state.IsEmpty = x1 - x0 <= 0.0f || y1 - y0 <= 0.0f;
     state.X       = x0;
     state.Y       = y0;
     state.Width   = std::max( 0.0f, x1 - x0 );
@@ -1221,6 +1222,13 @@ void ClayRenderer::FlushCurrentBatch( )
         return;
     }
 
+    if ( !m_scissorStack.empty( ) && m_scissorStack.back( ).IsEmpty )
+    {
+        m_batchedVertices.clear( );
+        m_batchedIndices.clear( );
+        return;
+    }
+
     // ReSharper disable once CppDFAUnreachableCode
     constexpr uint32_t vertexAlignment = 256 / sizeof( UIVertex );
     constexpr uint32_t indexAlignment  = 256 / sizeof( uint32_t );
@@ -1285,6 +1293,11 @@ void ClayRenderer::ExecuteDrawBatches( DenOfIz_CommandList commandList ) const
 
     for ( const auto &batch : m_drawBatches )
     {
+        if ( batch.Scissor.IsEmpty )
+        {
+            continue;
+        }
+
         if ( batch.Scissor.Enabled )
         {
             DenOfIz_CommandList_BindScissorRect( commandList, batch.Scissor.X, batch.Scissor.Y, batch.Scissor.Width, batch.Scissor.Height );

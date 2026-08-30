@@ -113,6 +113,7 @@ namespace DenOfIz
         struct ScissorState
         {
             bool  Enabled = false;
+            bool  IsEmpty = false;
             float X       = 0;
             float Y       = 0;
             float Width   = 0;
