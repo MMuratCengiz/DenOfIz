@@ -123,6 +123,7 @@ DenOfIz_FontAsset EmbeddedFonts::CreateFontAsset( const std::string &fontName )
     DenOfIz_FontAssetReader reader = DenOfIz_FontAssetReader_Create( &readerDesc );
     DenOfIz_FontAsset       asset  = DenOfIz_FontAssetReader_Read( reader );
     DenOfIz_FontAssetReader_Destroy( reader );
+    DenOfIz_BinaryReader_Destroy( binaryReader );
     return asset;
 }
 

@@ -282,6 +282,32 @@ void CSharpEmitter::EmitHelpersFile( )
     stream.CloseBlock( );
     stream.WriteLine( "return pinned.Value;" );
     stream.CloseBlock( );
+    stream.WriteLine( );
+
+    stream.WriteLine( "private const int ScratchSlotCount = 32;" );
+    stream.WriteLine( "[ThreadStatic] private static byte[][] _scratchBuffers;" );
+    stream.WriteLine( "[ThreadStatic] private static GCHandle[] _scratchHandles;" );
+    stream.WriteLine( "[ThreadStatic] private static int _scratchIndex;" );
+    stream.WriteLine( );
+    stream.WriteLine( "// Returns a StringView backed by a reusable pinned buffer. Valid until this thread makes ScratchSlotCount further Scratch calls; use only for strings consumed immediately by the native call." );
+    stream.WriteLine( "public static StringView Scratch(string s)" );
+    stream.OpenBlock( );
+    stream.WriteLine( "if (string.IsNullOrEmpty(s)) return default;" );
+    stream.WriteLine( "if (_scratchBuffers == null) { _scratchBuffers = new byte[ScratchSlotCount][]; _scratchHandles = new GCHandle[ScratchSlotCount]; }" );
+    stream.WriteLine( "int slot = _scratchIndex;" );
+    stream.WriteLine( "_scratchIndex = (slot + 1) % ScratchSlotCount;" );
+    stream.WriteLine( "int maxBytes = Encoding.UTF8.GetMaxByteCount(s.Length);" );
+    stream.WriteLine( "var buffer = _scratchBuffers[slot];" );
+    stream.WriteLine( "if (buffer == null || buffer.Length < maxBytes)" );
+    stream.OpenBlock( );
+    stream.WriteLine( "if (_scratchHandles[slot].IsAllocated) _scratchHandles[slot].Free();" );
+    stream.WriteLine( "buffer = new byte[Math.Max(maxBytes, 256)];" );
+    stream.WriteLine( "_scratchBuffers[slot] = buffer;" );
+    stream.WriteLine( "_scratchHandles[slot] = GCHandle.Alloc(buffer, GCHandleType.Pinned);" );
+    stream.CloseBlock( );
+    stream.WriteLine( "int numBytes = Encoding.UTF8.GetBytes(s, 0, s.Length, buffer, 0);" );
+    stream.WriteLine( "return new StringView { Chars = _scratchHandles[slot].AddrOfPinnedObject(), NumChars = (ulong)numBytes };" );
+    stream.CloseBlock( );
     stream.CloseBlock( );
     stream.WriteLine( );
 

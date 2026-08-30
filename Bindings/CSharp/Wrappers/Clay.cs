@@ -142,7 +142,7 @@ namespace DenOfIz
         public void Text(string text, in ClayTextDesc desc)
         {
             ThrowIfDisposed();
-            Methods.DenOfIz_Clay_Text(Handle, StringView.Intern(text), in desc);
+            Methods.DenOfIz_Clay_Text(Handle, StringView.Scratch(text), in desc);
         }
 
         public void Texture(Texture? texture, float width, float height)
@@ -160,7 +160,7 @@ namespace DenOfIz
         public uint HashString(string str, uint index, uint baseId)
         {
             ThrowIfDisposed();
-            return Methods.DenOfIz_Clay_HashString(Handle, StringView.Intern(str), index, baseId);
+            return Methods.DenOfIz_Clay_HashString(Handle, StringView.Scratch(str), index, baseId);
         }
 
         public bool PointerOver(uint id)
@@ -189,7 +189,7 @@ namespace DenOfIz
         {
             ThrowIfDisposed();
             ClayDimensions outDimensions = default;
-            Methods.DenOfIz_Clay_MeasureText(Handle, StringView.Intern(text), fontId, fontSize, out outDimensions);
+            Methods.DenOfIz_Clay_MeasureText(Handle, StringView.Scratch(text), fontId, fontSize, out outDimensions);
             return outDimensions;
         }
 
@@ -240,7 +240,7 @@ namespace DenOfIz
         public float GetCursorOffsetAtIndex(string text, uint charIndex, ushort fontId, ushort fontSize)
         {
             ThrowIfDisposed();
-            return Methods.DenOfIz_Clay_GetCursorOffsetAtIndex(Handle, StringView.Intern(text), charIndex, fontId, fontSize);
+            return Methods.DenOfIz_Clay_GetCursorOffsetAtIndex(Handle, StringView.Scratch(text), charIndex, fontId, fontSize);
         }
 
         public uint GetCharIndexAtOffset(StringView text, float pixelOffset, ushort fontId, ushort fontSize)
@@ -252,7 +252,7 @@ namespace DenOfIz
         public uint GetCharIndexAtOffset(string text, float pixelOffset, ushort fontId, ushort fontSize)
         {
             ThrowIfDisposed();
-            return Methods.DenOfIz_Clay_GetCharIndexAtOffset(Handle, StringView.Intern(text), pixelOffset, fontId, fontSize);
+            return Methods.DenOfIz_Clay_GetCharIndexAtOffset(Handle, StringView.Scratch(text), pixelOffset, fontId, fontSize);
         }
 
         public float GetDpiScale()

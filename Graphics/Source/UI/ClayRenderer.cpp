@@ -17,7 +17,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphicsInternal/UI/ClayRenderer.h"
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <string>
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 #include "DenOfIzGraphicsInternal/Assets/Shaders/EmbeddedShaders.h"
@@ -991,12 +993,26 @@ void ClayRenderer::SetScissor( const Clay_RenderCommand *command )
 
     const auto &bounds = command->boundingBox;
 
+    float x0 = std::floor( bounds.x );
+    float y0 = std::floor( bounds.y );
+    float x1 = std::ceil( bounds.x + bounds.width );
+    float y1 = std::ceil( bounds.y + bounds.height );
+
+    if ( !m_scissorStack.empty( ) )
+    {
+        const ScissorState &parent = m_scissorStack.back( );
+        x0 = std::max( x0, parent.X );
+        y0 = std::max( y0, parent.Y );
+        x1 = std::min( x1, parent.X + parent.Width );
+        y1 = std::min( y1, parent.Y + parent.Height );
+    }
+
     ScissorState state;
     state.Enabled = true;
-    state.X       = bounds.x;
-    state.Y       = bounds.y;
-    state.Width   = bounds.width;
-    state.Height  = bounds.height;
+    state.X       = x0;
+    state.Y       = y0;
+    state.Width   = std::max( 0.0f, x1 - x0 );
+    state.Height  = std::max( 0.0f, y1 - y0 );
 
     m_scissorStack.push_back( state );
 }

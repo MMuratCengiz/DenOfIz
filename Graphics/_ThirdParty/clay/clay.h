@@ -1,4 +1,7 @@
-// DenOfIz: vendored from https://github.com/nicbarker/clay main @ e6cc36941ab2af5d81107617039d6f527a1c660b (2026-05-20), unmodified below this line.
+// DenOfIz: vendored from https://github.com/nicbarker/clay main @ e6cc36941ab2af5d81107617039d6f527a1c660b (2026-05-20).
+// DenOfIz: carries 2 marked patches tagged with "DenOfIz patch":
+// DenOfIz:   1. reset transition state when an element re-declares mid-exit (Clay__ConfigureOpenElementPtr)
+// DenOfIz:   2. a re-appearing element with no enter state starts idle at its target (Clay_EndLayout)
 // VERSION: 0.14
 
 /*
@@ -2188,9 +2191,13 @@ void Clay__ConfigureOpenElementPtr(const Clay_ElementDeclaration *declaration) {
             Clay__TransitionDataInternal *existingData = Clay__TransitionDataInternalArray_Get(&context->transitionDatas, i);
             if (openLayoutElement->id == existingData->elementId) {
                 if (existingData->state == CLAY_TRANSITION_STATE_EXITING) {
+                    // DenOfIz patch: reset transition state when an element re-declares mid-exit
                     existingData->state = CLAY_TRANSITION_STATE_IDLE;
+                    existingData->elapsedTime = 0;
+                    existingData->activeProperties = CLAY_TRANSITION_PROPERTY_NONE;
+                    existingData->reparented = false;
                     Clay_LayoutElementHashMapItem* hashMapItem = Clay__GetHashMapItem(openLayoutElement->id);
-                    hashMapItem->appearedThisFrame = false;
+                    hashMapItem->appearedThisFrame = true;
                 }
                 transitionData = existingData;
                 transitionData->elementThisFrame = openLayoutElement;
@@ -4639,6 +4646,9 @@ Clay_RenderCommandArray Clay_EndLayout(float deltaTime) {
                         transitionData->activeProperties = currentElement->config.transition.properties;
                         Clay_ApplyTransitionedPropertiesToElement(currentElement, currentElement->config.transition.properties, transitionData->initialState, &mapItem->boundingBox, transitionData->reparented);
                     } else {
+                        // DenOfIz patch: a re-appearing element with no enter state starts idle at its target
+                        transitionData->state = CLAY_TRANSITION_STATE_IDLE;
+                        transitionData->elapsedTime = 0;
                         transitionData->initialState = targetState;
                         transitionData->currentState = targetState;
                         transitionData->activeProperties = CLAY_TRANSITION_PROPERTY_NONE;

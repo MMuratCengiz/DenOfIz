@@ -22,7 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/UI/ClayContext.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
+#include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstring>
 #include <utility>
 
@@ -314,6 +316,8 @@ ClayContext::ClayContext( const ClayContextDesc &desc )
     Clay_SetMaxElementCount( desc.MaxNumElements );
     Clay_SetMaxMeasureTextCacheWordCount( desc.MaxNumTextMeasureCacheElements );
 
+    m_textArenaCapacity = desc.MaxNumElements;
+
     const uint32_t minMemorySize = Clay_MinMemorySize( );
     m_memory.resize( minMemorySize );
     m_arena = Clay_CreateArenaWithCapacityAndMemory( minMemorySize, m_memory.data( ) );
@@ -470,6 +474,45 @@ void ClayContext::CloseElement( ) const
     Clay__CloseElement( );
 }
 
+ClayContext::RetainedTextArena &ClayContext::AcquireTextArena( const uint32_t minCapacity ) const
+{
+    const auto now = std::chrono::steady_clock::now( );
+    for ( size_t i = 0; i < m_textArenas.size( ); ++i )
+    {
+        RetainedTextArena &arena       = m_textArenas[ i ];
+        const double       idleSeconds = std::chrono::duration<double>( now - arena.LastUsed ).count( );
+        if ( arena.Capacity >= minCapacity && idleSeconds >= TEXT_RETENTION_SECONDS )
+        {
+            arena.Used         = 0;
+            m_currentTextArena = i;
+            return arena;
+        }
+    }
+
+    RetainedTextArena arena;
+    arena.Capacity = std::max( minCapacity, m_textArenaCapacity );
+    arena.Memory   = std::make_unique<char[]>( arena.Capacity );
+    arena.LastUsed = now;
+    m_textArenas.push_back( std::move( arena ) );
+    m_currentTextArena = m_textArenas.size( ) - 1;
+    return m_textArenas.back( );
+}
+
+const char *ClayContext::AppendRetainedText( const char *chars, const uint32_t length ) const
+{
+    RetainedTextArena *arena = m_currentTextArena < m_textArenas.size( ) ? &m_textArenas[ m_currentTextArena ] : nullptr;
+    if ( arena == nullptr || arena->Used + length > arena->Capacity )
+    {
+        arena = &AcquireTextArena( length );
+    }
+
+    char *destination = arena->Memory.get( ) + arena->Used;
+    memcpy( destination, chars, length );
+    arena->Used += length;
+    arena->LastUsed = std::chrono::steady_clock::now( );
+    return destination;
+}
+
 void ClayContext::Text( const char *text, const DenOfIz_ClayTextDesc *desc ) const
 {
     DZ_NOT_NULL( m_context );
@@ -485,20 +528,10 @@ void ClayContext::Text( const DenOfIz_StringView &text, const DenOfIz_ClayTextDe
     clayText.chars                 = text.Chars;
     clayText.length                = static_cast<int32_t>( text.NumChars );
 
-    Clay__charArray &stringBuffer = Clay_GetCurrentContext( )->dynamicStringData;
-    if ( stringBuffer.length + clayText.length <= stringBuffer.capacity )
+    if ( clayText.length > 0 )
     {
-        clayText = Clay__WriteStringToCharBuffer( &stringBuffer, clayText );
-    }
-    else
-    {
-        static bool reported = false;
-        if ( !reported )
-        {
-            spdlog::warn( "ClayContext::Text: per frame text exceeds {} characters, text memory must stay valid until EndLayout. Increase MaxNumElements to enlarge the buffer.",
-                          stringBuffer.capacity );
-            reported = true;
-        }
+        // Clay may reference this string beyond the current frame for example during exit-transition replay,
+        clayText.chars = AppendRetainedText( text.Chars, static_cast<uint32_t>( text.NumChars ) );
     }
 
     Clay_TextElementConfig config = ConvertTextConfig( desc );

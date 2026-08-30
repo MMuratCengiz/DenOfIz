@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <clay.h>
 
+#include <chrono>
 #include <memory>
 #include <vector>
 #include "ClayTextCache.h"
@@ -39,6 +40,18 @@ namespace DenOfIz
 
     class ClayContext : public IClayContext
     {
+        // Text handed to clay must stay valid for as long as clay may reference it, including
+        // exit-transition replay of elements no longer declared. Retained arenas are only reused
+        // after TEXT_RETENTION_SECONDS of inactivity so text pointers outlive any transition.
+        struct RetainedTextArena
+        {
+            std::unique_ptr<char[]>               Memory;
+            uint32_t                              Capacity = 0;
+            uint32_t                              Used     = 0;
+            std::chrono::steady_clock::time_point LastUsed;
+        };
+        static constexpr double TEXT_RETENTION_SECONDS = 2.0;
+
         std::unique_ptr<ClayTextCache> m_clayText         = nullptr;
         DenOfIz_ClayPointerState       m_pointerState     = DENOFIZ_CLAY_POINTER_STATE_RELEASED;
         DenOfIz_ClayPointerState       m_prevPointerState = DENOFIZ_CLAY_POINTER_STATE_RELEASED;
@@ -50,6 +63,13 @@ namespace DenOfIz
         uint16_t                       m_fontId      = 1;
         bool                           m_isDebugMode = false;
         float                          m_dpiScale    = 1.0f;
+
+        mutable std::vector<RetainedTextArena> m_textArenas;
+        mutable size_t                         m_currentTextArena  = 0;
+        uint32_t                               m_textArenaCapacity = 8192;
+
+        RetainedTextArena &AcquireTextArena( uint32_t minCapacity ) const;
+        const char        *AppendRetainedText( const char *chars, uint32_t length ) const;
 
     public:
         explicit ClayContext( const ClayContextDesc &desc );

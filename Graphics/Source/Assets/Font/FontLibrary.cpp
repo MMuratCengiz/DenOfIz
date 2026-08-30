@@ -36,6 +36,15 @@ FontLibrary::~FontLibrary( )
     m_fonts.clear( );
     m_fontStore.clear( );
 
+    for ( const DenOfIz_FontAsset asset : m_assets )
+    {
+        if ( DENOFIZ_HANDLE_IS_VALID( asset ) )
+        {
+            DenOfIz_FontAsset_Destroy( asset );
+        }
+    }
+    m_assets.clear( );
+
     if ( DENOFIZ_HANDLE_IS_VALID( m_fontImporter ) )
     {
         DenOfIz_FontImporter_Destroy( m_fontImporter );
@@ -86,6 +95,7 @@ Font *FontLibrary::LoadFont( const DenOfIz_StringView &ttf )
     DenOfIz_FontAssetReader fontReader = DenOfIz_FontAssetReader_Create( &fontReaderDesc );
     DenOfIz_FontAsset       asset      = DenOfIz_FontAssetReader_Read( fontReader );
     DenOfIz_FontAssetReader_Destroy( fontReader );
+    DenOfIz_BinaryReader_Destroy( reader );
     m_assets.push_back( asset );
 
     DenOfIz_BinaryContainer_Destroy( targetContainer );

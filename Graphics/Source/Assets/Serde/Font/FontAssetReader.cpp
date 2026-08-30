@@ -48,10 +48,7 @@ FontAssetReader::FontAssetReader( const DenOfIz_FontAssetReaderDesc &desc ) : m_
     DZ_NOT_NULL( m_reader );
 }
 
-FontAssetReader::~FontAssetReader( )
-{
-    DenOfIz_BinaryReader_Destroy( m_reader );
-}
+FontAssetReader::~FontAssetReader( ) = default;
 
 DenOfIz_FontAsset FontAssetReader::Read( )
 {

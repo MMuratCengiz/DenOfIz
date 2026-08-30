@@ -213,7 +213,12 @@ void TextRenderingExample::Quit( )
     {
         DenOfIz_FontAssetReader_Destroy( m_fontAssetReader );
         m_fontAssetReader = DENOFIZ_NULL_HANDLE;
-        m_binaryReader    = DENOFIZ_NULL_HANDLE;
+    }
+
+    if ( DENOFIZ_HANDLE_IS_VALID( m_binaryReader ) )
+    {
+        DenOfIz_BinaryReader_Destroy( m_binaryReader );
+        m_binaryReader = DENOFIZ_NULL_HANDLE;
     }
 
     if ( DENOFIZ_HANDLE_IS_VALID( m_fontLibrary ) )
