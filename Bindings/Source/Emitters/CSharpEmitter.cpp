@@ -1154,6 +1154,12 @@ void CSharpEmitter::EmitNativeFunction( EmitterStream &stream, const DzirFunctio
 {
     stream.WriteLine( "[DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]" );
 
+    const std::string returnMarshalAttr = GetMarshalAttribute( function->ReturnType );
+    if ( !returnMarshalAttr.empty( ) )
+    {
+        stream.WriteLine( "[return: {}", returnMarshalAttr.substr( 1 ) );
+    }
+
     std::string returnType = GetNativeReturnType( function );
     std::string paramList  = GetNativeParameterList( function );
 
