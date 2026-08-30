@@ -22,7 +22,255 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/UI/ClayContext.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
+#include <array>
+#include <cstring>
+#include <utility>
+
 using namespace DenOfIz;
+
+namespace
+{
+    constexpr uint32_t MaxTransitionStateSlots = 256;
+
+    struct TransitionStateSlot
+    {
+        DenOfIz_ClayTransitionStateDesc Desc{ };
+        uint64_t                        LastUsedFrame = 0;
+        bool                            InUse         = false;
+    };
+
+    struct TransitionStateTable
+    {
+        TransitionStateSlot Slots[ MaxTransitionStateSlots ];
+    };
+
+    TransitionStateTable g_enterStates;
+    TransitionStateTable g_exitStates;
+    uint64_t             g_transitionFrame        = 1;
+    bool                 g_slotExhaustionReported = false;
+
+    Clay_Color ToClayColor( const DenOfIz_ClayColor &color )
+    {
+        return Clay_Color{ static_cast<float>( color.R ), static_cast<float>( color.G ), static_cast<float>( color.B ), static_cast<float>( color.A ) };
+    }
+
+    Clay_TransitionData ApplyTransitionState( Clay_TransitionData state, const DenOfIz_ClayTransitionStateDesc &desc )
+    {
+        state.boundingBox.x += desc.PositionOffset.X;
+        state.boundingBox.y += desc.PositionOffset.Y;
+        if ( desc.Scale > 0.0f && desc.Scale != 1.0f )
+        {
+            const float newWidth  = state.boundingBox.width * desc.Scale;
+            const float newHeight = state.boundingBox.height * desc.Scale;
+            state.boundingBox.x += ( state.boundingBox.width - newWidth ) * 0.5f;
+            state.boundingBox.y += ( state.boundingBox.height - newHeight ) * 0.5f;
+            state.boundingBox.width  = newWidth;
+            state.boundingBox.height = newHeight;
+        }
+        if ( desc.OverlayColor.A > 0 )
+        {
+            state.overlayColor = ToClayColor( desc.OverlayColor );
+        }
+        if ( desc.HasBackgroundColor )
+        {
+            state.backgroundColor = ToClayColor( desc.BackgroundColor );
+        }
+        if ( desc.HasBorderColor )
+        {
+            state.borderColor = ToClayColor( desc.BorderColor );
+        }
+        if ( desc.HasBorderWidth )
+        {
+            state.borderWidth.left            = static_cast<uint16_t>( desc.BorderWidth.Left );
+            state.borderWidth.right           = static_cast<uint16_t>( desc.BorderWidth.Right );
+            state.borderWidth.top             = static_cast<uint16_t>( desc.BorderWidth.Top );
+            state.borderWidth.bottom          = static_cast<uint16_t>( desc.BorderWidth.Bottom );
+            state.borderWidth.betweenChildren = static_cast<uint16_t>( desc.BorderWidth.BetweenChildren );
+        }
+        return state;
+    }
+
+    template <uint32_t Slot>
+    Clay_TransitionData EnterStateThunk( const Clay_TransitionData targetState, Clay_TransitionProperty )
+    {
+        return ApplyTransitionState( targetState, g_enterStates.Slots[ Slot ].Desc );
+    }
+
+    template <uint32_t Slot>
+    Clay_TransitionData ExitStateThunk( const Clay_TransitionData initialState, Clay_TransitionProperty )
+    {
+        return ApplyTransitionState( initialState, g_exitStates.Slots[ Slot ].Desc );
+    }
+
+    using TransitionStateFn = Clay_TransitionData ( * )( Clay_TransitionData, Clay_TransitionProperty );
+
+    template <uint32_t... Slots>
+    constexpr std::array<TransitionStateFn, sizeof...( Slots )> MakeEnterThunks( std::integer_sequence<uint32_t, Slots...> )
+    {
+        return { &EnterStateThunk<Slots>... };
+    }
+
+    template <uint32_t... Slots>
+    constexpr std::array<TransitionStateFn, sizeof...( Slots )> MakeExitThunks( std::integer_sequence<uint32_t, Slots...> )
+    {
+        return { &ExitStateThunk<Slots>... };
+    }
+
+    const auto g_enterThunks = MakeEnterThunks( std::make_integer_sequence<uint32_t, MaxTransitionStateSlots>{ } );
+    const auto g_exitThunks  = MakeExitThunks( std::make_integer_sequence<uint32_t, MaxTransitionStateSlots>{ } );
+
+    DenOfIz_ClayTransitionStateDesc NormalizeTransitionState( const DenOfIz_ClayTransitionStateDesc &desc, const float dpiScale )
+    {
+        DenOfIz_ClayTransitionStateDesc result;
+        memset( &result, 0, sizeof( result ) );
+        result.PositionOffset.X = desc.PositionOffset.X * dpiScale;
+        result.PositionOffset.Y = desc.PositionOffset.Y * dpiScale;
+        result.Scale            = desc.Scale;
+        if ( desc.OverlayColor.A > 0 )
+        {
+            result.OverlayColor = desc.OverlayColor;
+        }
+        result.HasBackgroundColor = desc.HasBackgroundColor;
+        if ( desc.HasBackgroundColor )
+        {
+            result.BackgroundColor = desc.BackgroundColor;
+        }
+        result.HasBorderColor = desc.HasBorderColor;
+        if ( desc.HasBorderColor )
+        {
+            result.BorderColor = desc.BorderColor;
+        }
+        result.HasBorderWidth = desc.HasBorderWidth;
+        if ( desc.HasBorderWidth )
+        {
+            result.BorderWidth.Left            = desc.BorderWidth.Left * dpiScale;
+            result.BorderWidth.Right           = desc.BorderWidth.Right * dpiScale;
+            result.BorderWidth.Top             = desc.BorderWidth.Top * dpiScale;
+            result.BorderWidth.Bottom          = desc.BorderWidth.Bottom * dpiScale;
+            result.BorderWidth.BetweenChildren = desc.BorderWidth.BetweenChildren * dpiScale;
+        }
+        return result;
+    }
+
+    int32_t AcquireTransitionStateSlot( TransitionStateTable &table, const DenOfIz_ClayTransitionStateDesc &normalizedDesc )
+    {
+        int32_t freeSlot = -1;
+        for ( uint32_t i = 0; i < MaxTransitionStateSlots; ++i )
+        {
+            TransitionStateSlot &slot = table.Slots[ i ];
+            if ( slot.InUse && memcmp( &slot.Desc, &normalizedDesc, sizeof( normalizedDesc ) ) == 0 )
+            {
+                slot.LastUsedFrame = g_transitionFrame;
+                return static_cast<int32_t>( i );
+            }
+            if ( freeSlot < 0 && ( !slot.InUse || slot.LastUsedFrame + 2 < g_transitionFrame ) )
+            {
+                freeSlot = static_cast<int32_t>( i );
+            }
+        }
+
+        if ( freeSlot < 0 )
+        {
+            if ( !g_slotExhaustionReported )
+            {
+                spdlog::error( "ClayContext: More than {} distinct transition enter/exit states are in use, additional states are ignored", MaxTransitionStateSlots );
+                g_slotExhaustionReported = true;
+            }
+            return -1;
+        }
+
+        TransitionStateSlot &slot = table.Slots[ freeSlot ];
+        slot.Desc                 = normalizedDesc;
+        slot.LastUsedFrame        = g_transitionFrame;
+        slot.InUse                = true;
+        return freeSlot;
+    }
+
+    float TransitionRatio( const Clay_TransitionCallbackArguments &arguments )
+    {
+        if ( arguments.duration <= 0.0f )
+        {
+            return 1.0f;
+        }
+        const float ratio = arguments.elapsedTime / arguments.duration;
+        return ratio > 1.0f ? 1.0f : ratio;
+    }
+
+    float Lerp( const float from, const float to, const float amount )
+    {
+        return from + ( to - from ) * amount;
+    }
+
+    Clay_Color LerpColor( const Clay_Color &from, const Clay_Color &to, const float amount )
+    {
+        return Clay_Color{ Lerp( from.r, to.r, amount ), Lerp( from.g, to.g, amount ), Lerp( from.b, to.b, amount ), Lerp( from.a, to.a, amount ) };
+    }
+
+    bool ApplyEasedTransition( const Clay_TransitionCallbackArguments &arguments, const float ratio, const float lerpAmount )
+    {
+        Clay_TransitionData       &current = *arguments.current;
+        const Clay_TransitionData &initial = arguments.initial;
+        const Clay_TransitionData &target  = arguments.target;
+
+        if ( arguments.properties & CLAY_TRANSITION_PROPERTY_X )
+        {
+            current.boundingBox.x = Lerp( initial.boundingBox.x, target.boundingBox.x, lerpAmount );
+        }
+        if ( arguments.properties & CLAY_TRANSITION_PROPERTY_Y )
+        {
+            current.boundingBox.y = Lerp( initial.boundingBox.y, target.boundingBox.y, lerpAmount );
+        }
+        if ( arguments.properties & CLAY_TRANSITION_PROPERTY_WIDTH )
+        {
+            current.boundingBox.width = Lerp( initial.boundingBox.width, target.boundingBox.width, lerpAmount );
+        }
+        if ( arguments.properties & CLAY_TRANSITION_PROPERTY_HEIGHT )
+        {
+            current.boundingBox.height = Lerp( initial.boundingBox.height, target.boundingBox.height, lerpAmount );
+        }
+        if ( arguments.properties & CLAY_TRANSITION_PROPERTY_BACKGROUND_COLOR )
+        {
+            current.backgroundColor = LerpColor( initial.backgroundColor, target.backgroundColor, lerpAmount );
+        }
+        if ( arguments.properties & CLAY_TRANSITION_PROPERTY_OVERLAY_COLOR )
+        {
+            current.overlayColor = LerpColor( initial.overlayColor, target.overlayColor, lerpAmount );
+        }
+        if ( arguments.properties & CLAY_TRANSITION_PROPERTY_BORDER_COLOR )
+        {
+            current.borderColor = LerpColor( initial.borderColor, target.borderColor, lerpAmount );
+        }
+        if ( arguments.properties & CLAY_TRANSITION_PROPERTY_BORDER_WIDTH )
+        {
+            current.borderWidth.left            = static_cast<uint16_t>( Lerp( initial.borderWidth.left, target.borderWidth.left, lerpAmount ) );
+            current.borderWidth.right           = static_cast<uint16_t>( Lerp( initial.borderWidth.right, target.borderWidth.right, lerpAmount ) );
+            current.borderWidth.top             = static_cast<uint16_t>( Lerp( initial.borderWidth.top, target.borderWidth.top, lerpAmount ) );
+            current.borderWidth.bottom          = static_cast<uint16_t>( Lerp( initial.borderWidth.bottom, target.borderWidth.bottom, lerpAmount ) );
+            current.borderWidth.betweenChildren = static_cast<uint16_t>( Lerp( initial.borderWidth.betweenChildren, target.borderWidth.betweenChildren, lerpAmount ) );
+        }
+        return ratio >= 1.0f;
+    }
+
+    bool LinearTransitionHandler( const Clay_TransitionCallbackArguments arguments )
+    {
+        const float ratio = TransitionRatio( arguments );
+        return ApplyEasedTransition( arguments, ratio, ratio );
+    }
+
+    bool EaseInTransitionHandler( const Clay_TransitionCallbackArguments arguments )
+    {
+        const float ratio = TransitionRatio( arguments );
+        return ApplyEasedTransition( arguments, ratio, ratio * ratio * ratio );
+    }
+
+    bool EaseInOutTransitionHandler( const Clay_TransitionCallbackArguments arguments )
+    {
+        const float ratio   = TransitionRatio( arguments );
+        const float inverse = -2.0f * ratio + 2.0f;
+        const float amount  = ratio < 0.5f ? 4.0f * ratio * ratio * ratio : 1.0f - inverse * inverse * inverse * 0.5f;
+        return ApplyEasedTransition( arguments, ratio, amount );
+    }
+} // namespace
 
 Clay_Dimensions ClayContext::MeasureTextCallback( Clay_StringSlice text, Clay_TextElementConfig *config, void *userData )
 {
@@ -94,7 +342,21 @@ ClayContext::~ClayContext( )
 void ClayContext::BeginLayout( ) const
 {
     DZ_NOT_NULL( m_context );
+    ++g_transitionFrame;
     Clay_BeginLayout( );
+}
+
+uint32_t ClayContext::GetOpenElementId( ) const
+{
+    DZ_NOT_NULL( m_context );
+    return Clay_GetOpenElementId( );
+}
+
+DenOfIz_Float2 ClayContext::GetScrollOffset( ) const
+{
+    DZ_NOT_NULL( m_context );
+    const Clay_Vector2 offset = Clay_GetScrollOffset( );
+    return DenOfIz_Float2{ offset.x, offset.y };
 }
 
 void ClayContext::SetViewportSize( const float width, const float height ) const
@@ -170,24 +432,36 @@ void ClayContext::OpenElement( const DenOfIz_ClayElementDeclaration *declaration
 {
     DZ_NOT_NULL( m_context );
 
-    Clay__OpenElement( );
+    if ( declaration->Id != 0 )
+    {
+        Clay_ElementId elementId{ };
+        elementId.id     = declaration->Id;
+        elementId.baseId = declaration->Id;
+        Clay__OpenElementWithId( elementId );
+    }
+    else
+    {
+        Clay__OpenElement( );
+    }
 
     const bool isTextureElement = declaration->Custom.CustomData != nullptr;
     const bool enableDpiScaling = !isTextureElement;
 
-    Clay_ElementDeclaration clayDecl;
-    clayDecl.id              = Clay_ElementId{ declaration->Id, 0, 0, Clay_String{} };
+    Clay_ElementDeclaration clayDecl{ };
     clayDecl.layout          = ConvertLayoutConfig( &declaration->Layout, enableDpiScaling );
     clayDecl.backgroundColor = ConvertColor( &declaration->BackgroundColor );
+    clayDecl.overlayColor    = ConvertColor( &declaration->OverlayColor );
     clayDecl.cornerRadius    = ConvertBorderRadius( &declaration->BorderRadius, enableDpiScaling );
+    clayDecl.aspectRatio     = ConvertAspectRatioConfig( declaration );
     clayDecl.image           = ConvertImageConfig( &declaration->Image );
     clayDecl.floating        = ConvertFloatingConfig( &declaration->Floating, enableDpiScaling );
     clayDecl.custom          = ConvertCustomConfig( &declaration->Custom );
-    clayDecl.scroll          = ConvertScrollConfig( &declaration->Scroll );
+    clayDecl.clip            = ConvertClipConfig( &declaration->Scroll, &declaration->Clip, enableDpiScaling );
     clayDecl.border          = ConvertBorderConfig( &declaration->Border, enableDpiScaling );
-    clayDecl.userData        = nullptr;
+    clayDecl.transition      = ConvertTransitionConfig( &declaration->Transition, enableDpiScaling );
+    clayDecl.userData        = declaration->UserData;
 
-    Clay__ConfigureOpenElement( clayDecl );
+    Clay__ConfigureOpenElementPtr( &clayDecl );
 }
 
 void ClayContext::CloseElement( ) const
@@ -206,17 +480,31 @@ void ClayContext::Text( const DenOfIz_StringView &text, const DenOfIz_ClayTextDe
 {
     DZ_NOT_NULL( m_context );
 
-    Clay_String tempString;
-    tempString.chars  = text.Chars;
-    tempString.length = static_cast<int>( text.NumChars );
+    Clay_String clayText{ };
+    clayText.isStaticallyAllocated = false;
+    clayText.chars                 = text.Chars;
+    clayText.length                = static_cast<int32_t>( text.NumChars );
 
-    const Clay_String clayText = Clay__WriteStringToCharBuffer( &Clay_GetCurrentContext( )->dynamicStringData, tempString );
+    Clay__charArray &stringBuffer = Clay_GetCurrentContext( )->dynamicStringData;
+    if ( stringBuffer.length + clayText.length <= stringBuffer.capacity )
+    {
+        clayText = Clay__WriteStringToCharBuffer( &stringBuffer, clayText );
+    }
+    else
+    {
+        static bool reported = false;
+        if ( !reported )
+        {
+            spdlog::warn( "ClayContext::Text: per frame text exceeds {} characters, text memory must stay valid until EndLayout. Increase MaxNumElements to enlarge the buffer.",
+                          stringBuffer.capacity );
+            reported = true;
+        }
+    }
 
-    Clay_TextElementConfig tempConfig    = ConvertTextConfig( desc );
-    tempConfig.fontSize                  = tempConfig.fontSize * m_dpiScale;
-    Clay_TextElementConfig *storedConfig = Clay__StoreTextElementConfig( tempConfig );
+    Clay_TextElementConfig config = ConvertTextConfig( desc );
+    config.fontSize               = static_cast<uint16_t>( config.fontSize * m_dpiScale );
 
-    Clay__OpenTextElement( clayText, storedConfig );
+    Clay__OpenTextElement( clayText, config );
 }
 
 void ClayContext::AddFont( const uint16_t fontId, Font *font ) const
@@ -263,11 +551,12 @@ uint32_t ClayContext::HashString( const char *str, const uint32_t index, const u
 
 uint32_t ClayContext::HashString( const DenOfIz_StringView &str, const uint32_t index, const uint32_t baseId ) const
 {
-    Clay_String clayStr;
-    clayStr.chars  = str.Chars;
-    clayStr.length = static_cast<int32_t>( str.NumChars );
+    Clay_String clayStr{ };
+    clayStr.isStaticallyAllocated = false;
+    clayStr.chars                 = str.Chars;
+    clayStr.length                = static_cast<int32_t>( str.NumChars );
 
-    const Clay_ElementId id = Clay__HashString( clayStr, index, baseId );
+    const Clay_ElementId id = index == 0 ? Clay__HashString( clayStr, baseId ) : Clay__HashStringWithOffset( clayStr, index, baseId );
     return id.id;
 }
 
@@ -321,7 +610,7 @@ DenOfIz_ClayDimensions ClayContext::MeasureText( const DenOfIz_StringView &text,
 Clay_RenderCommandArray ClayContext::EndLayoutAndGetCommands( const float deltaTime ) const
 {
     DZ_NOT_NULL( m_context );
-    return Clay_EndLayout( );
+    return Clay_EndLayout( deltaTime );
 }
 
 Clay_LayoutDirection ClayContext::ConvertLayoutDirection( const DenOfIz_ClayLayoutDirection dir ) const
@@ -480,7 +769,23 @@ Clay_BorderElementConfig ClayContext::ConvertBorderConfig( const DenOfIz_ClayBor
 
 Clay_ImageElementConfig ClayContext::ConvertImageConfig( const DenOfIz_ClayImageDesc *config ) const
 {
-    return Clay_ImageElementConfig{ config->ImageData, Clay_Dimensions{ config->SourceDimensions.Width, config->SourceDimensions.Height } };
+    Clay_ImageElementConfig result{ };
+    result.imageData = config->ImageData;
+    return result;
+}
+
+Clay_AspectRatioElementConfig ClayContext::ConvertAspectRatioConfig( const DenOfIz_ClayElementDeclaration *declaration ) const
+{
+    Clay_AspectRatioElementConfig result{ };
+    if ( declaration->AspectRatio > 0.0f )
+    {
+        result.aspectRatio = declaration->AspectRatio;
+    }
+    else if ( declaration->Image.ImageData != nullptr && declaration->Image.SourceDimensions.Width > 0.0f && declaration->Image.SourceDimensions.Height > 0.0f )
+    {
+        result.aspectRatio = declaration->Image.SourceDimensions.Width / declaration->Image.SourceDimensions.Height;
+    }
+    return result;
 }
 
 Clay_FloatingAttachPointType ClayContext::ConvertFloatingAttachPoint( const DenOfIz_ClayFloatingAttachPoint point ) const
@@ -549,13 +854,102 @@ Clay_FloatingElementConfig ClayContext::ConvertFloatingConfig( const DenOfIz_Cla
     result.attachPoints.element = ConvertFloatingAttachPoint( config->ElementAttachPoint );
     result.attachPoints.parent  = ConvertFloatingAttachPoint( config->ParentAttachPoint );
     result.attachTo             = ConvertFloatingAttachTo( config->AttachTo );
-    result.pointerCaptureMode   = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH;
+    result.clipTo               = config->ClipTo == DENOFIZ_CLAY_FLOATING_CLIP_TO_ATTACHED_PARENT ? CLAY_CLIP_TO_ATTACHED_PARENT : CLAY_CLIP_TO_NONE;
+    result.pointerCaptureMode   = config->PointerCaptureMode == DENOFIZ_CLAY_POINTER_CAPTURE_MODE_CAPTURE ? CLAY_POINTER_CAPTURE_MODE_CAPTURE : CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH;
     return result;
 }
 
-Clay_ScrollElementConfig ClayContext::ConvertScrollConfig( const DenOfIz_ClayScrollDesc *config ) const
+Clay_ClipElementConfig ClayContext::ConvertClipConfig( const DenOfIz_ClayScrollDesc *scroll, const DenOfIz_ClayClipDesc *clip, const bool enableDpiScaling ) const
 {
-    return Clay_ScrollElementConfig{ config->Horizontal, config->Vertical };
+    Clay_ClipElementConfig result{ };
+    result.horizontal = scroll->Horizontal || clip->Horizontal;
+    result.vertical   = scroll->Vertical || clip->Vertical;
+
+    if ( scroll->Horizontal || scroll->Vertical )
+    {
+        const Clay_Vector2 scrollOffset = Clay_GetScrollOffset( );
+        if ( scroll->Horizontal )
+        {
+            result.childOffset.x = scrollOffset.x;
+        }
+        if ( scroll->Vertical )
+        {
+            result.childOffset.y = scrollOffset.y;
+        }
+    }
+
+    result.childOffset.x += enableDpiScaling ? PointsToPixels( clip->ChildOffset.X ) : clip->ChildOffset.X;
+    result.childOffset.y += enableDpiScaling ? PointsToPixels( clip->ChildOffset.Y ) : clip->ChildOffset.Y;
+    return result;
+}
+
+Clay_TransitionElementConfig ClayContext::ConvertTransitionConfig( const DenOfIz_ClayTransitionDesc *config, const bool enableDpiScaling ) const
+{
+    Clay_TransitionElementConfig result{ };
+    if ( !config->Enabled )
+    {
+        return result;
+    }
+
+    switch ( config->Easing )
+    {
+    case DENOFIZ_CLAY_TRANSITION_EASING_LINEAR:
+        result.handler = LinearTransitionHandler;
+        break;
+    case DENOFIZ_CLAY_TRANSITION_EASING_EASE_IN:
+        result.handler = EaseInTransitionHandler;
+        break;
+    case DENOFIZ_CLAY_TRANSITION_EASING_EASE_IN_OUT:
+        result.handler = EaseInOutTransitionHandler;
+        break;
+    case DENOFIZ_CLAY_TRANSITION_EASING_EASE_OUT:
+    default:
+        result.handler = Clay_EaseOut;
+        break;
+    }
+
+    result.duration            = config->Duration;
+    result.properties          = static_cast<Clay_TransitionProperty>( config->Properties & DENOFIZ_CLAY_TRANSITION_PROPERTY_ALL_BIT );
+    result.interactionHandling = config->InteractionHandling == DENOFIZ_CLAY_TRANSITION_INTERACTION_HANDLING_ALLOW_WHILE_MOVING
+                                     ? CLAY_TRANSITION_ALLOW_INTERACTIONS_WHILE_TRANSITIONING_POSITION
+                                     : CLAY_TRANSITION_DISABLE_INTERACTIONS_WHILE_TRANSITIONING_POSITION;
+
+    result.enter.trigger = config->Enter.Trigger == DENOFIZ_CLAY_TRANSITION_ENTER_TRIGGER_ON_FIRST_PARENT_FRAME ? CLAY_TRANSITION_ENTER_TRIGGER_ON_FIRST_PARENT_FRAME
+                                                                                                                : CLAY_TRANSITION_ENTER_SKIP_ON_FIRST_PARENT_FRAME;
+    result.exit.trigger  = config->Exit.Trigger == DENOFIZ_CLAY_TRANSITION_EXIT_TRIGGER_WHEN_PARENT_EXITS ? CLAY_TRANSITION_EXIT_TRIGGER_WHEN_PARENT_EXITS
+                                                                                                          : CLAY_TRANSITION_EXIT_SKIP_WHEN_PARENT_EXITS;
+    switch ( config->Exit.SiblingOrdering )
+    {
+    case DENOFIZ_CLAY_EXIT_TRANSITION_SIBLING_ORDERING_NATURAL_ORDER:
+        result.exit.siblingOrdering = CLAY_EXIT_TRANSITION_ORDERING_NATURAL_ORDER;
+        break;
+    case DENOFIZ_CLAY_EXIT_TRANSITION_SIBLING_ORDERING_ABOVE_SIBLINGS:
+        result.exit.siblingOrdering = CLAY_EXIT_TRANSITION_ORDERING_ABOVE_SIBLINGS;
+        break;
+    case DENOFIZ_CLAY_EXIT_TRANSITION_SIBLING_ORDERING_UNDERNEATH_SIBLINGS:
+    default:
+        result.exit.siblingOrdering = CLAY_EXIT_TRANSITION_ORDERING_UNDERNEATH_SIBLINGS;
+        break;
+    }
+
+    const float dpiScale = enableDpiScaling ? m_dpiScale : 1.0f;
+    if ( config->Enter.Enabled )
+    {
+        const int32_t slot = AcquireTransitionStateSlot( g_enterStates, NormalizeTransitionState( config->Enter.State, dpiScale ) );
+        if ( slot >= 0 )
+        {
+            result.enter.setInitialState = g_enterThunks[ slot ];
+        }
+    }
+    if ( config->Exit.Enabled )
+    {
+        const int32_t slot = AcquireTransitionStateSlot( g_exitStates, NormalizeTransitionState( config->Exit.State, dpiScale ) );
+        if ( slot >= 0 )
+        {
+            result.exit.setFinalState = g_exitThunks[ slot ];
+        }
+    }
+    return result;
 }
 
 Clay_CustomElementConfig ClayContext::ConvertCustomConfig( const DenOfIz_ClayCustomDesc *config ) const
@@ -595,10 +989,16 @@ Clay_TextAlignment ClayContext::ConvertTextAlignment( const DenOfIz_ClayTextAlig
 
 Clay_TextElementConfig ClayContext::ConvertTextConfig( const DenOfIz_ClayTextDesc *config ) const
 {
-    return Clay_TextElementConfig{
-        ConvertColor( &config->TextColor ),           config->FontId, config->FontSize, config->LetterSpacing, config->LineHeight, ConvertTextWrapMode( config->WrapMode ),
-        ConvertTextAlignment( config->TextAlignment )
-    };
+    Clay_TextElementConfig result{ };
+    result.userData      = nullptr;
+    result.textColor     = ConvertColor( &config->TextColor );
+    result.fontId        = config->FontId;
+    result.fontSize      = config->FontSize;
+    result.letterSpacing = config->LetterSpacing;
+    result.lineHeight    = config->LineHeight;
+    result.wrapMode      = ConvertTextWrapMode( config->WrapMode );
+    result.textAlignment = ConvertTextAlignment( config->TextAlignment );
+    return result;
 }
 
 DenOfIz_ClayRenderCommandType ClayContext::ConvertRenderCommandType( const Clay_RenderCommandType type ) const
@@ -619,6 +1019,10 @@ DenOfIz_ClayRenderCommandType ClayContext::ConvertRenderCommandType( const Clay_
         return DENOFIZ_CLAY_RENDER_COMMAND_TYPE_SCISSOR_START;
     case CLAY_RENDER_COMMAND_TYPE_SCISSOR_END:
         return DENOFIZ_CLAY_RENDER_COMMAND_TYPE_SCISSOR_END;
+    case CLAY_RENDER_COMMAND_TYPE_OVERLAY_COLOR_START:
+        return DENOFIZ_CLAY_RENDER_COMMAND_TYPE_OVERLAY_COLOR_START;
+    case CLAY_RENDER_COMMAND_TYPE_OVERLAY_COLOR_END:
+        return DENOFIZ_CLAY_RENDER_COMMAND_TYPE_OVERLAY_COLOR_END;
     case CLAY_RENDER_COMMAND_TYPE_CUSTOM:
         return DENOFIZ_CLAY_RENDER_COMMAND_TYPE_CUSTOM;
     default:

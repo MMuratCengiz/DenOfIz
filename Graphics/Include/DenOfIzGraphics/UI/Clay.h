@@ -161,6 +161,18 @@ extern "C"
         DENOFIZ_CLAY_FLOATING_ATTACH_TO_ROOT
     } DenOfIz_ClayFloatingAttachTo;
 
+    typedef enum DenOfIz_ClayFloatingClipTo
+    {
+        DENOFIZ_CLAY_FLOATING_CLIP_TO_NONE,
+        DENOFIZ_CLAY_FLOATING_CLIP_TO_ATTACHED_PARENT
+    } DenOfIz_ClayFloatingClipTo;
+
+    typedef enum DenOfIz_ClayPointerCaptureMode
+    {
+        DENOFIZ_CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
+        DENOFIZ_CLAY_POINTER_CAPTURE_MODE_CAPTURE
+    } DenOfIz_ClayPointerCaptureMode;
+
     typedef enum DenOfIz_ClayRenderCommandType
     {
         DENOFIZ_CLAY_RENDER_COMMAND_TYPE_NONE,
@@ -170,8 +182,63 @@ extern "C"
         DENOFIZ_CLAY_RENDER_COMMAND_TYPE_IMAGE,
         DENOFIZ_CLAY_RENDER_COMMAND_TYPE_SCISSOR_START,
         DENOFIZ_CLAY_RENDER_COMMAND_TYPE_SCISSOR_END,
+        DENOFIZ_CLAY_RENDER_COMMAND_TYPE_OVERLAY_COLOR_START,
+        DENOFIZ_CLAY_RENDER_COMMAND_TYPE_OVERLAY_COLOR_END,
         DENOFIZ_CLAY_RENDER_COMMAND_TYPE_CUSTOM
     } DenOfIz_ClayRenderCommandType;
+
+    typedef enum DenOfIz_ClayTransitionPropertyFlagBits
+    {
+        DENOFIZ_CLAY_TRANSITION_PROPERTY_NONE_BIT             = 0,
+        DENOFIZ_CLAY_TRANSITION_PROPERTY_X_BIT                = 1 << 0,
+        DENOFIZ_CLAY_TRANSITION_PROPERTY_Y_BIT                = 1 << 1,
+        DENOFIZ_CLAY_TRANSITION_PROPERTY_POSITION_BIT         = ( 1 << 0 ) | ( 1 << 1 ),
+        DENOFIZ_CLAY_TRANSITION_PROPERTY_WIDTH_BIT            = 1 << 2,
+        DENOFIZ_CLAY_TRANSITION_PROPERTY_HEIGHT_BIT           = 1 << 3,
+        DENOFIZ_CLAY_TRANSITION_PROPERTY_DIMENSIONS_BIT       = ( 1 << 2 ) | ( 1 << 3 ),
+        DENOFIZ_CLAY_TRANSITION_PROPERTY_BOUNDING_BOX_BIT     = ( 1 << 0 ) | ( 1 << 1 ) | ( 1 << 2 ) | ( 1 << 3 ),
+        DENOFIZ_CLAY_TRANSITION_PROPERTY_BACKGROUND_COLOR_BIT = 1 << 4,
+        DENOFIZ_CLAY_TRANSITION_PROPERTY_OVERLAY_COLOR_BIT    = 1 << 5,
+        DENOFIZ_CLAY_TRANSITION_PROPERTY_CORNER_RADIUS_BIT    = 1 << 6,
+        DENOFIZ_CLAY_TRANSITION_PROPERTY_BORDER_COLOR_BIT     = 1 << 7,
+        DENOFIZ_CLAY_TRANSITION_PROPERTY_BORDER_WIDTH_BIT     = 1 << 8,
+        DENOFIZ_CLAY_TRANSITION_PROPERTY_BORDER_BIT           = ( 1 << 7 ) | ( 1 << 8 ),
+        DENOFIZ_CLAY_TRANSITION_PROPERTY_ALL_BIT              = 0x1FF
+    } DenOfIz_ClayTransitionPropertyFlagBits;
+    typedef uint32_t DenOfIz_ClayTransitionPropertyFlags;
+
+    typedef enum DenOfIz_ClayTransitionEasing
+    {
+        DENOFIZ_CLAY_TRANSITION_EASING_EASE_OUT,
+        DENOFIZ_CLAY_TRANSITION_EASING_LINEAR,
+        DENOFIZ_CLAY_TRANSITION_EASING_EASE_IN,
+        DENOFIZ_CLAY_TRANSITION_EASING_EASE_IN_OUT
+    } DenOfIz_ClayTransitionEasing;
+
+    typedef enum DenOfIz_ClayTransitionInteractionHandling
+    {
+        DENOFIZ_CLAY_TRANSITION_INTERACTION_HANDLING_DISABLE_WHILE_MOVING,
+        DENOFIZ_CLAY_TRANSITION_INTERACTION_HANDLING_ALLOW_WHILE_MOVING
+    } DenOfIz_ClayTransitionInteractionHandling;
+
+    typedef enum DenOfIz_ClayTransitionEnterTrigger
+    {
+        DENOFIZ_CLAY_TRANSITION_ENTER_TRIGGER_SKIP_ON_FIRST_PARENT_FRAME,
+        DENOFIZ_CLAY_TRANSITION_ENTER_TRIGGER_ON_FIRST_PARENT_FRAME
+    } DenOfIz_ClayTransitionEnterTrigger;
+
+    typedef enum DenOfIz_ClayTransitionExitTrigger
+    {
+        DENOFIZ_CLAY_TRANSITION_EXIT_TRIGGER_SKIP_WHEN_PARENT_EXITS,
+        DENOFIZ_CLAY_TRANSITION_EXIT_TRIGGER_WHEN_PARENT_EXITS
+    } DenOfIz_ClayTransitionExitTrigger;
+
+    typedef enum DenOfIz_ClayExitTransitionSiblingOrdering
+    {
+        DENOFIZ_CLAY_EXIT_TRANSITION_SIBLING_ORDERING_UNDERNEATH_SIBLINGS,
+        DENOFIZ_CLAY_EXIT_TRANSITION_SIBLING_ORDERING_NATURAL_ORDER,
+        DENOFIZ_CLAY_EXIT_TRANSITION_SIBLING_ORDERING_ABOVE_SIBLINGS
+    } DenOfIz_ClayExitTransitionSiblingOrdering;
 
     typedef struct DenOfIz_ClayDimensions
     {
@@ -270,7 +337,6 @@ extern "C"
         uint16_t                  LineHeight;
         DenOfIz_ClayTextWrapMode  WrapMode;
         DenOfIz_ClayTextAlignment TextAlignment;
-        bool                      HashStringContents;
     } DenOfIz_ClayTextDesc;
 
     typedef struct DenOfIz_ClayImageDesc
@@ -288,6 +354,8 @@ extern "C"
         DenOfIz_ClayFloatingAttachPoint ElementAttachPoint;
         DenOfIz_ClayFloatingAttachPoint ParentAttachPoint;
         DenOfIz_ClayFloatingAttachTo    AttachTo;
+        DenOfIz_ClayFloatingClipTo      ClipTo;
+        DenOfIz_ClayPointerCaptureMode  PointerCaptureMode;
     } DenOfIz_ClayFloatingDesc;
 
     typedef struct DenOfIz_ClayBorderDesc
@@ -302,6 +370,52 @@ extern "C"
         bool Vertical;
     } DenOfIz_ClayScrollDesc;
 
+    typedef struct DenOfIz_ClayClipDesc
+    {
+        bool           Horizontal;
+        bool           Vertical;
+        DenOfIz_Float2 ChildOffset;
+    } DenOfIz_ClayClipDesc;
+
+    typedef struct DenOfIz_ClayTransitionStateDesc
+    {
+        DenOfIz_Float2    PositionOffset;
+        float             Scale;
+        DenOfIz_ClayColor OverlayColor;
+        bool              HasBackgroundColor;
+        DenOfIz_ClayColor BackgroundColor;
+        bool                    HasBorderColor;
+        DenOfIz_ClayColor       BorderColor;
+        bool                    HasBorderWidth;
+        DenOfIz_ClayBorderWidth BorderWidth;
+    } DenOfIz_ClayTransitionStateDesc;
+
+    typedef struct DenOfIz_ClayTransitionEnterDesc
+    {
+        bool                               Enabled;
+        DenOfIz_ClayTransitionEnterTrigger Trigger;
+        DenOfIz_ClayTransitionStateDesc    State;
+    } DenOfIz_ClayTransitionEnterDesc;
+
+    typedef struct DenOfIz_ClayTransitionExitDesc
+    {
+        bool                                      Enabled;
+        DenOfIz_ClayTransitionExitTrigger         Trigger;
+        DenOfIz_ClayExitTransitionSiblingOrdering SiblingOrdering;
+        DenOfIz_ClayTransitionStateDesc           State;
+    } DenOfIz_ClayTransitionExitDesc;
+
+    typedef struct DenOfIz_ClayTransitionDesc
+    {
+        bool                                      Enabled;
+        float                                     Duration;
+        DenOfIz_ClayTransitionPropertyFlags       Properties;
+        DenOfIz_ClayTransitionEasing              Easing;
+        DenOfIz_ClayTransitionInteractionHandling InteractionHandling;
+        DenOfIz_ClayTransitionEnterDesc           Enter;
+        DenOfIz_ClayTransitionExitDesc            Exit;
+    } DenOfIz_ClayTransitionDesc;
+
     typedef struct DenOfIz_ClayCustomDesc
     {
         void *CustomData;
@@ -309,16 +423,20 @@ extern "C"
 
     typedef struct DenOfIz_ClayElementDeclaration
     {
-        uint32_t                 Id;
-        DenOfIz_ClayLayoutDesc   Layout;
-        DenOfIz_ClayColor        BackgroundColor;
-        DenOfIz_ClayBorderRadius BorderRadius;
-        DenOfIz_ClayImageDesc    Image;
-        DenOfIz_ClayFloatingDesc Floating;
-        DenOfIz_ClayCustomDesc   Custom;
-        DenOfIz_ClayScrollDesc   Scroll;
-        DenOfIz_ClayBorderDesc   Border;
-        void                    *UserData;
+        uint32_t                   Id;
+        DenOfIz_ClayLayoutDesc     Layout;
+        DenOfIz_ClayColor          BackgroundColor;
+        DenOfIz_ClayColor          OverlayColor;
+        DenOfIz_ClayBorderRadius   BorderRadius;
+        float                      AspectRatio;
+        DenOfIz_ClayImageDesc      Image;
+        DenOfIz_ClayFloatingDesc   Floating;
+        DenOfIz_ClayCustomDesc     Custom;
+        DenOfIz_ClayScrollDesc     Scroll;
+        DenOfIz_ClayClipDesc       Clip;
+        DenOfIz_ClayBorderDesc     Border;
+        DenOfIz_ClayTransitionDesc Transition;
+        void                      *UserData;
     } DenOfIz_ClayElementDeclaration;
 
     typedef struct DenOfIz_ClayDesc
@@ -358,6 +476,7 @@ extern "C"
 
     DZ_API DenOfIz_ClayElementDeclaration DenOfIz_ClayElementDeclaration_Default( );
     DZ_API DenOfIz_ClayTextDesc           DenOfIz_ClayTextDesc_Default( );
+    DZ_API DenOfIz_ClayTransitionDesc     DenOfIz_ClayTransitionDesc_Default( );
 
     DZ_API DenOfIz_Clay DenOfIz_Clay_Create( const DenOfIz_ClayDesc *desc );
     DZ_API void         DenOfIz_Clay_Destroy( DenOfIz_Clay clay );
@@ -376,8 +495,10 @@ extern "C"
 
     DZ_API void DenOfIz_Clay_HandleEvent( DenOfIz_Clay clay, const DenOfIz_Event *ev );
 
-    DZ_API void DenOfIz_Clay_OpenElement( DenOfIz_Clay clay, const DenOfIz_ClayElementDeclaration *declaration );
-    DZ_API void DenOfIz_Clay_CloseElement( DenOfIz_Clay clay );
+    DZ_API void           DenOfIz_Clay_OpenElement( DenOfIz_Clay clay, const DenOfIz_ClayElementDeclaration *declaration );
+    DZ_API void           DenOfIz_Clay_CloseElement( DenOfIz_Clay clay );
+    DZ_API uint32_t       DenOfIz_Clay_GetOpenElementId( DenOfIz_Clay clay );
+    DZ_API DenOfIz_Float2 DenOfIz_Clay_GetScrollOffset( DenOfIz_Clay clay );
 
     DZ_API void DenOfIz_Clay_Text( DenOfIz_Clay clay, DenOfIz_StringView text, const DenOfIz_ClayTextDesc *desc );
     DZ_API void DenOfIz_Clay_Texture( DenOfIz_Clay clay, DenOfIz_Texture texture, float width, float height );

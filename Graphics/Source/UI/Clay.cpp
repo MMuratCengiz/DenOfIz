@@ -180,6 +180,18 @@ namespace DenOfIz
             m_clayContext->CloseElement( );
         }
 
+        uint32_t GetOpenElementId( ) const
+        {
+            DZ_NOT_NULL( m_clayContext );
+            return m_clayContext->GetOpenElementId( );
+        }
+
+        DenOfIz_Float2 GetScrollOffset( ) const
+        {
+            DZ_NOT_NULL( m_clayContext );
+            return m_clayContext->GetScrollOffset( );
+        }
+
         void Text( const DenOfIz_StringView &text, const DenOfIz_ClayTextDesc *desc )
         {
             DZ_NOT_NULL( m_clayContext );
@@ -448,7 +460,22 @@ extern "C"
         desc.FontSize           = 16;
         desc.WrapMode           = DENOFIZ_CLAY_TEXT_WRAP_MODE_WORDS;
         desc.TextAlignment      = DENOFIZ_CLAY_TEXT_ALIGNMENT_LEFT;
-        desc.HashStringContents = false;
+        return desc;
+    }
+
+    DenOfIz_ClayTransitionDesc DenOfIz_ClayTransitionDesc_Default( )
+    {
+        DenOfIz_ClayTransitionDesc desc;
+        memset( &desc, 0, sizeof( desc ) );
+        desc.Enabled             = true;
+        desc.Duration            = 0.25f;
+        desc.Properties          = DENOFIZ_CLAY_TRANSITION_PROPERTY_BOUNDING_BOX_BIT | DENOFIZ_CLAY_TRANSITION_PROPERTY_BACKGROUND_COLOR_BIT |
+                          DENOFIZ_CLAY_TRANSITION_PROPERTY_OVERLAY_COLOR_BIT | DENOFIZ_CLAY_TRANSITION_PROPERTY_BORDER_BIT;
+        desc.Easing              = DENOFIZ_CLAY_TRANSITION_EASING_EASE_OUT;
+        desc.InteractionHandling = DENOFIZ_CLAY_TRANSITION_INTERACTION_HANDLING_DISABLE_WHILE_MOVING;
+        desc.Enter.Trigger       = DENOFIZ_CLAY_TRANSITION_ENTER_TRIGGER_SKIP_ON_FIRST_PARENT_FRAME;
+        desc.Exit.Trigger        = DENOFIZ_CLAY_TRANSITION_EXIT_TRIGGER_SKIP_WHEN_PARENT_EXITS;
+        desc.Exit.SiblingOrdering = DENOFIZ_CLAY_EXIT_TRANSITION_SIBLING_ORDERING_UNDERNEATH_SIBLINGS;
         return desc;
     }
 
@@ -587,6 +614,24 @@ extern "C"
             return;
         }
         CLAY_IMPL( clay )->CloseElement( );
+    }
+
+    uint32_t DenOfIz_Clay_GetOpenElementId( DenOfIz_Clay clay )
+    {
+        if ( !DENOFIZ_HANDLE_IS_VALID( clay ) )
+        {
+            return 0;
+        }
+        return CLAY_IMPL( clay )->GetOpenElementId( );
+    }
+
+    DenOfIz_Float2 DenOfIz_Clay_GetScrollOffset( DenOfIz_Clay clay )
+    {
+        if ( !DENOFIZ_HANDLE_IS_VALID( clay ) )
+        {
+            return DenOfIz_Float2{ 0.0f, 0.0f };
+        }
+        return CLAY_IMPL( clay )->GetScrollOffset( );
     }
 
     void DenOfIz_Clay_Text( DenOfIz_Clay clay, DenOfIz_StringView text, const DenOfIz_ClayTextDesc *desc )

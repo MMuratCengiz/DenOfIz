@@ -121,6 +121,18 @@ namespace DenOfIz
             Methods.DenOfIz_Clay_CloseElement(Handle);
         }
 
+        public uint GetOpenElementId()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Clay_GetOpenElementId(Handle);
+        }
+
+        public Vector2 GetScrollOffset()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Clay_GetScrollOffset(Handle);
+        }
+
         public void Text(StringView text, in ClayTextDesc desc)
         {
             ThrowIfDisposed();

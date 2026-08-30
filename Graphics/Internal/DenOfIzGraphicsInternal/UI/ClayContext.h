@@ -74,13 +74,15 @@ namespace DenOfIz
         float PointsToPixels( float points ) const override;
         float PixelsToPoints( float pixels ) const override;
 
-        void BeginLayout( ) const;
-        void SetViewportSize( float width, float height ) const;
-        void SetDpiScale( float dpiScale );
-        void UpdatePointerPosition( DenOfIz_Float2 position, DenOfIz_ClayPointerState state );
-        void SetPointerState( DenOfIz_Float2 position, DenOfIz_ClayPointerState state );
-        void UpdateScrollContainers( bool enableDragScrolling, DenOfIz_Float2 scrollDelta, float deltaTime );
-        void SetDebugModeEnabled( bool enabled );
+        void           BeginLayout( ) const;
+        uint32_t       GetOpenElementId( ) const;
+        DenOfIz_Float2 GetScrollOffset( ) const;
+        void           SetViewportSize( float width, float height ) const;
+        void           SetDpiScale( float dpiScale );
+        void           UpdatePointerPosition( DenOfIz_Float2 position, DenOfIz_ClayPointerState state );
+        void           SetPointerState( DenOfIz_Float2 position, DenOfIz_ClayPointerState state );
+        void           UpdateScrollContainers( bool enableDragScrolling, DenOfIz_Float2 scrollDelta, float deltaTime );
+        void           SetDebugModeEnabled( bool enabled );
 
         void  AddFont( uint16_t fontId, Font *font ) const;
         void  RemoveFont( uint16_t fontId ) const;
@@ -112,10 +114,12 @@ namespace DenOfIz
         Clay_BorderWidth               ConvertBorderWidth( const DenOfIz_ClayBorderWidth *width, bool enableDpiScaling ) const;
         Clay_BorderElementConfig       ConvertBorderConfig( const DenOfIz_ClayBorderDesc *config, bool enableDpiScaling ) const;
         Clay_ImageElementConfig        ConvertImageConfig( const DenOfIz_ClayImageDesc *config ) const;
+        Clay_AspectRatioElementConfig  ConvertAspectRatioConfig( const DenOfIz_ClayElementDeclaration *declaration ) const;
         Clay_FloatingAttachPointType   ConvertFloatingAttachPoint( DenOfIz_ClayFloatingAttachPoint point ) const;
         Clay_FloatingAttachToElement   ConvertFloatingAttachTo( DenOfIz_ClayFloatingAttachTo attachTo ) const;
         Clay_FloatingElementConfig     ConvertFloatingConfig( const DenOfIz_ClayFloatingDesc *config, bool enableDpiScaling ) const;
-        Clay_ScrollElementConfig       ConvertScrollConfig( const DenOfIz_ClayScrollDesc *config ) const;
+        Clay_ClipElementConfig         ConvertClipConfig( const DenOfIz_ClayScrollDesc *scroll, const DenOfIz_ClayClipDesc *clip, bool enableDpiScaling ) const;
+        Clay_TransitionElementConfig   ConvertTransitionConfig( const DenOfIz_ClayTransitionDesc *config, bool enableDpiScaling ) const;
         Clay_CustomElementConfig       ConvertCustomConfig( const DenOfIz_ClayCustomDesc *config ) const;
         Clay_TextElementConfigWrapMode ConvertTextWrapMode( DenOfIz_ClayTextWrapMode mode ) const;
         Clay_TextAlignment             ConvertTextAlignment( DenOfIz_ClayTextAlignment align ) const;

@@ -148,6 +148,7 @@ namespace DenOfIz
         DenOfIz_Float4x4 m_projectionMatrix;
 
         std::vector<ScissorState> m_scissorStack;
+        std::vector<Clay_Color>   m_overlayColorStack;
         DenOfIz_Sampler           m_linearSampler        = DENOFIZ_NULL_HANDLE;
         DenOfIz_ResourceTracking  m_resourceTracking     = DENOFIZ_NULL_HANDLE;
         bool                      m_ownsResourceTracking = false;
@@ -189,6 +190,8 @@ namespace DenOfIz
         void RenderCustom( const Clay_RenderCommand *command, uint32_t frameIndex );
         void SetScissor( const Clay_RenderCommand *command );
         void ClearScissor( );
+        void PushOverlayColor( const Clay_RenderCommand *command );
+        void PopOverlayColor( );
         void FlushBatchedGeometry( DenOfIz_CommandList commandList );
         void FlushCurrentBatch( );
         void ExecuteDrawBatches( DenOfIz_CommandList commandList ) const;

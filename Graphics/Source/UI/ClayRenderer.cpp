@@ -45,7 +45,7 @@ ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc ), m_l
     }
     m_clayText = m_clayContext->GetClayText( );
 
-    DenOfIz_PhysicalDevice deviceInfo{ };
+    DenOfIz_PhysicalDevice deviceInfo{};
     DenOfIz_LogicalDevice_DeviceInfo( m_logicalDevice, &deviceInfo );
     m_supportsSrvArray = deviceInfo.Capabilities.SrvArray;
     spdlog::info( "ClayRenderer: SrvArray support: {}", m_supportsSrvArray ? "yes" : "no" );
@@ -64,11 +64,11 @@ ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc ), m_l
     m_viewportWidth  = desc.Width;
     m_viewportHeight = desc.Height;
 
-    DenOfIz_CommandQueueDesc commandQueueDesc{ };
+    DenOfIz_CommandQueueDesc commandQueueDesc{};
     commandQueueDesc.QueueType = DENOFIZ_QUEUE_TYPE_GRAPHICS;
     DenOfIz_LogicalDevice_CreateCommandQueue( m_logicalDevice, &commandQueueDesc, &m_commandQueue );
 
-    DenOfIz_CommandListPoolDesc poolDesc{ };
+    DenOfIz_CommandListPoolDesc poolDesc{};
     poolDesc.CommandQueue    = m_commandQueue;
     poolDesc.NumCommandLists = desc.NumFrames;
     DenOfIz_LogicalDevice_CreateCommandListPool( m_logicalDevice, &poolDesc, &m_commandListPool );
@@ -85,7 +85,7 @@ ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc ), m_l
     CreateRenderTargets( );
     UpdateProjectionMatrix( );
 
-    DenOfIz_CommandListArray commandLists{ };
+    DenOfIz_CommandListArray commandLists{};
     DenOfIz_CommandListPool_GetCommandLists( m_commandListPool, &commandLists );
     for ( uint32_t i = 0; i < desc.NumFrames && i < commandLists.NumElements; ++i )
     {
@@ -216,7 +216,7 @@ void ClayRenderer::CreateShaderProgram( )
 
 void ClayRenderer::CreatePipeline( )
 {
-    DenOfIz_ShaderReflectDesc reflectDesc{ };
+    DenOfIz_ShaderReflectDesc reflectDesc{};
     DenOfIz_ShaderProgram_Reflect( m_shaderProgram, &reflectDesc );
 
     m_bindGroupLayouts.resize( reflectDesc.BindGroupLayouts.NumElements );
@@ -225,14 +225,14 @@ void ClayRenderer::CreatePipeline( )
         DenOfIz_LogicalDevice_CreateBindGroupLayout( m_logicalDevice, &reflectDesc.BindGroupLayouts.Elements[ i ], &m_bindGroupLayouts[ i ] );
     }
 
-    DenOfIz_RootSignatureDesc rootSigDesc{ };
+    DenOfIz_RootSignatureDesc rootSigDesc{};
     rootSigDesc.BindGroupLayouts.Elements    = m_bindGroupLayouts.data( );
     rootSigDesc.BindGroupLayouts.NumElements = m_bindGroupLayouts.size( );
     rootSigDesc.RootConstants                = reflectDesc.RootConstants;
     DenOfIz_LogicalDevice_CreateRootSignature( m_logicalDevice, &rootSigDesc, &m_rootSignature );
     DenOfIz_LogicalDevice_CreateInputLayout( m_logicalDevice, &reflectDesc.InputLayout, &m_inputLayout );
 
-    DenOfIz_PipelineDesc pipelineDesc{ };
+    DenOfIz_PipelineDesc pipelineDesc{};
     pipelineDesc.RootSignature = m_rootSignature;
     pipelineDesc.InputLayout   = m_inputLayout;
     pipelineDesc.ShaderProgram = m_shaderProgram;
@@ -247,7 +247,7 @@ void ClayRenderer::CreatePipeline( )
     pipelineDesc.Graphics.DepthTest.Write              = true;
     pipelineDesc.Graphics.DepthStencilAttachmentFormat = DENOFIZ_FORMAT_D32_FLOAT;
 
-    DenOfIz_RenderTargetDesc renderTarget{ };
+    DenOfIz_RenderTargetDesc renderTarget{};
     renderTarget.Format                      = m_desc.RenderTargetFormat;
     renderTarget.Blend.Enable                = true;
     renderTarget.Blend.SrcBlend              = DENOFIZ_BLEND_SRC_ALPHA;
@@ -266,7 +266,7 @@ void ClayRenderer::CreatePipeline( )
 
 void ClayRenderer::CreateBuffers( )
 {
-    DenOfIz_BufferDesc vertexBufferDesc{ };
+    DenOfIz_BufferDesc vertexBufferDesc{};
     vertexBufferDesc.NumBytes  = m_desc.MaxVertices * sizeof( UIVertex );
     vertexBufferDesc.Usage     = DENOFIZ_BUFFER_USAGE_VERTEX_BIT;
     vertexBufferDesc.HeapType  = DENOFIZ_HEAP_TYPE_CPU_GPU;
@@ -274,7 +274,7 @@ void ClayRenderer::CreateBuffers( )
     DenOfIz_LogicalDevice_CreateBuffer( m_logicalDevice, &vertexBufferDesc, &m_vertexBuffer );
     DenOfIz_Buffer_MapMemory( m_vertexBuffer, (void **)&m_vertexBufferData );
 
-    DenOfIz_BufferDesc indexBufferDesc{ };
+    DenOfIz_BufferDesc indexBufferDesc{};
     indexBufferDesc.NumBytes  = m_desc.MaxIndices * sizeof( uint32_t );
     indexBufferDesc.Usage     = DENOFIZ_BUFFER_USAGE_INDEX_BIT;
     indexBufferDesc.HeapType  = DENOFIZ_HEAP_TYPE_CPU_GPU;
@@ -283,7 +283,7 @@ void ClayRenderer::CreateBuffers( )
     DenOfIz_Buffer_MapMemory( m_indexBuffer, (void **)&m_indexBufferData );
 
     m_alignedUniformSize = Utilities::Align( sizeof( UIUniforms ), 256 );
-    DenOfIz_BufferDesc uniformBufferDesc{ };
+    DenOfIz_BufferDesc uniformBufferDesc{};
     uniformBufferDesc.NumBytes  = m_desc.NumFrames * m_alignedUniformSize;
     uniformBufferDesc.Usage     = DENOFIZ_BUFFER_USAGE_UNIFORM_BIT;
     uniformBufferDesc.HeapType  = DENOFIZ_HEAP_TYPE_CPU_GPU;
@@ -291,7 +291,7 @@ void ClayRenderer::CreateBuffers( )
     DenOfIz_LogicalDevice_CreateBuffer( m_logicalDevice, &uniformBufferDesc, &m_uniformBuffer );
     DenOfIz_Buffer_MapMemory( m_uniformBuffer, (void **)&m_uniformBufferData );
 
-    DenOfIz_SamplerDesc samplerDesc{ };
+    DenOfIz_SamplerDesc samplerDesc{};
     samplerDesc.MagFilter    = DENOFIZ_FILTER_LINEAR;
     samplerDesc.MinFilter    = DENOFIZ_FILTER_LINEAR;
     samplerDesc.MipmapMode   = DENOFIZ_MIPMAP_MODE_LINEAR;
@@ -305,11 +305,11 @@ void ClayRenderer::CreateBuffers( )
     {
         FrameData &frame = m_frameData[ frameIdx ];
 
-        DenOfIz_BindGroupDesc constantGroupDesc{ };
+        DenOfIz_BindGroupDesc constantGroupDesc{};
         constantGroupDesc.Layout = m_bindGroupLayouts[ 1 ];
         DenOfIz_LogicalDevice_CreateBindGroup( m_logicalDevice, &constantGroupDesc, &frame.ConstantsBindGroup );
 
-        DenOfIz_BindBufferDesc bindUniformsDesc{ };
+        DenOfIz_BindBufferDesc bindUniformsDesc{};
         bindUniformsDesc.Resource       = m_uniformBuffer;
         bindUniformsDesc.ResourceOffset = frameIdx * m_alignedUniformSize;
 
@@ -319,7 +319,7 @@ void ClayRenderer::CreateBuffers( )
 
         if ( m_supportsSrvArray )
         {
-            DenOfIz_BindGroupDesc textureGroupDesc{ };
+            DenOfIz_BindGroupDesc textureGroupDesc{};
             textureGroupDesc.Layout = m_bindGroupLayouts[ 0 ];
             DenOfIz_LogicalDevice_CreateBindGroup( m_logicalDevice, &textureGroupDesc, &frame.TextureBindGroup );
         }
@@ -330,7 +330,7 @@ void ClayRenderer::CreateBuffers( )
         m_perTextureBindGroups.resize( m_desc.MaxTextures );
         for ( uint32_t i = 0; i < m_desc.MaxTextures; ++i )
         {
-            DenOfIz_BindGroupDesc perTextureGroupDesc{ };
+            DenOfIz_BindGroupDesc perTextureGroupDesc{};
             perTextureGroupDesc.Layout = m_bindGroupLayouts[ 0 ];
             DenOfIz_LogicalDevice_CreateBindGroup( m_logicalDevice, &perTextureGroupDesc, &m_perTextureBindGroups[ i ] );
         }
@@ -344,7 +344,7 @@ void ClayRenderer::CreateBuffers( )
 
 void ClayRenderer::CreateNullTexture( )
 {
-    DenOfIz_TextureDesc textureDesc{ };
+    DenOfIz_TextureDesc textureDesc{};
     textureDesc.Width     = 1;
     textureDesc.Height    = 1;
     textureDesc.Depth     = 1;
@@ -380,7 +380,7 @@ void ClayRenderer::CreateRenderTargets( )
             DenOfIz_TextureResource_Destroy( frame.DepthBuffer );
         }
 
-        DenOfIz_TextureDesc colorDesc{ };
+        DenOfIz_TextureDesc colorDesc{};
         colorDesc.Width             = static_cast<uint32_t>( m_viewportWidth );
         colorDesc.Height            = static_cast<uint32_t>( m_viewportHeight );
         colorDesc.Depth             = 1;
@@ -394,7 +394,7 @@ void ClayRenderer::CreateRenderTargets( )
 
         DenOfIz_LogicalDevice_CreateTexture( m_logicalDevice, &colorDesc, &frame.ColorTarget );
 
-        DenOfIz_TextureDesc depthDesc{ };
+        DenOfIz_TextureDesc depthDesc{};
         depthDesc.Width                 = static_cast<uint32_t>( m_viewportWidth );
         depthDesc.Height                = static_cast<uint32_t>( m_viewportHeight );
         depthDesc.Depth                 = 1;
@@ -514,6 +514,7 @@ void ClayRenderer::RenderToCommandList( Clay_RenderCommandArray commands, const 
     memcpy( uniformLocation, &tempUniforms, sizeof( UIUniforms ) );
 
     m_drawBatches.clear( );
+    m_overlayColorStack.clear( );
     m_totalVertexCount         = 0;
     m_totalIndexCount          = 0;
     m_currentDepth             = 0.9f;
@@ -599,6 +600,7 @@ void ClayRenderer::RenderInternal( Clay_RenderCommandArray commands, uint32_t fr
     memcpy( uniformLocation, &tempUniforms, sizeof( UIUniforms ) );
 
     m_drawBatches.clear( );
+    m_overlayColorStack.clear( );
     m_totalVertexCount         = 0;
     m_totalIndexCount          = 0;
     m_currentDepth             = 0.9f;
@@ -623,13 +625,13 @@ void ClayRenderer::RenderInternal( Clay_RenderCommandArray commands, uint32_t fr
     std::array textureTransitions = { DenOfIz_TransitionTextureDesc{ frame.ColorTarget, DENOFIZ_RESOURCE_USAGE_RENDER_TARGET_BIT, DENOFIZ_QUEUE_TYPE_GRAPHICS },
                                       DenOfIz_TransitionTextureDesc{ frame.DepthBuffer, DENOFIZ_RESOURCE_USAGE_DEPTH_WRITE_BIT, DENOFIZ_QUEUE_TYPE_GRAPHICS } };
 
-    DenOfIz_BatchTransitionDesc batchTransitionDesc{ };
+    DenOfIz_BatchTransitionDesc batchTransitionDesc{};
     batchTransitionDesc.Textures = { .Elements = textureTransitions.data( ), .NumElements = textureTransitions.size( ) };
     DenOfIz_ResourceTracking_BatchTransition( m_resourceTracking, uiCmdList, &batchTransitionDesc );
 
     {
-        DenOfIz_RenderingDesc           renderingDesc{ };
-        DenOfIz_RenderingAttachmentDesc colorAttachment{ };
+        DenOfIz_RenderingDesc           renderingDesc{};
+        DenOfIz_RenderingAttachmentDesc colorAttachment{};
         colorAttachment.Resource = frame.ColorTarget;
         colorAttachment.LoadOp   = DENOFIZ_LOAD_OP_CLEAR;
         colorAttachment.StoreOp  = DENOFIZ_STORE_OP_STORE;
@@ -666,7 +668,7 @@ void ClayRenderer::RenderInternal( Clay_RenderCommandArray commands, uint32_t fr
 
     DenOfIz_CommandList_End( uiCmdList );
 
-    DenOfIz_ExecuteCommandListsDesc executeDesc{ };
+    DenOfIz_ExecuteCommandListsDesc executeDesc{};
     executeDesc.CommandLists.Elements        = &uiCmdList;
     executeDesc.CommandLists.NumElements     = 1;
     executeDesc.Signal                       = frame.FrameFence;
@@ -713,6 +715,14 @@ void ClayRenderer::ProcessRenderCommand( const Clay_RenderCommand *command, DenO
         ClearScissor( );
         break;
 
+    case CLAY_RENDER_COMMAND_TYPE_OVERLAY_COLOR_START:
+        PushOverlayColor( command );
+        break;
+
+    case CLAY_RENDER_COMMAND_TYPE_OVERLAY_COLOR_END:
+        PopOverlayColor( );
+        break;
+
     case CLAY_RENDER_COMMAND_TYPE_CUSTOM:
         RenderCustom( command, frameIndex );
         break;
@@ -737,7 +747,7 @@ void ClayRenderer::RenderRectangle( const Clay_RenderCommand *command, DenOfIz_C
 
         if ( data.cornerRadius.topLeft > 0 || data.cornerRadius.topRight > 0 || data.cornerRadius.bottomLeft > 0 || data.cornerRadius.bottomRight > 0 )
         {
-            UIShapes::GenerateRoundedRectangleDesc desc{ };
+            UIShapes::GenerateRoundedRectangleDesc desc{};
             desc.Bounds            = bounds;
             desc.Color             = data.backgroundColor;
             desc.CornerRadius      = data.cornerRadius;
@@ -748,7 +758,7 @@ void ClayRenderer::RenderRectangle( const Clay_RenderCommand *command, DenOfIz_C
         }
         else
         {
-            UIShapes::GenerateRectangleDesc desc{ };
+            UIShapes::GenerateRectangleDesc desc{};
             desc.Bounds       = bounds;
             desc.Color        = data.backgroundColor;
             desc.TextureIndex = 0;
@@ -775,7 +785,7 @@ void ClayRenderer::RenderBorder( const Clay_RenderCommand *command )
     {
         constexpr uint32_t currentVertexCount = 0;
 
-        UIShapes::GenerateBorderDesc desc{ };
+        UIShapes::GenerateBorderDesc desc{};
         desc.Bounds            = bounds;
         desc.Color             = data.color;
         desc.BorderWidth       = data.width;
@@ -883,7 +893,7 @@ void ClayRenderer::RenderSingleLineText( const Clay_RenderCommand *command, cons
             std::vector<GlyphVertex> glyphVertices( allocInfo.VertexCount );
             std::vector<uint32_t>    glyphIndices( allocInfo.IndexCount );
 
-            GenerateTextVerticesDesc generateDesc{ };
+            GenerateTextVerticesDesc generateDesc{};
             generateDesc.StartPosition   = DenOfIz_Float2{ bounds.x, adjustedY };
             generateDesc.Color           = DenOfIz_Float4{ data.textColor.r / 255.0f, data.textColor.g / 255.0f, data.textColor.b / 255.0f, data.textColor.a / 255.0f };
             generateDesc.OutVertices     = glyphVertices.data( );
@@ -900,7 +910,7 @@ void ClayRenderer::RenderSingleLineText( const Clay_RenderCommand *command, cons
             for ( uint32_t i = 0; i < allocInfo.VertexCount; ++i )
             {
                 const GlyphVertex &glyph = glyphVertices[ i ];
-                UIVertex           vertex{ };
+                UIVertex           vertex{};
                 vertex.Position     = DenOfIz_Float3{ glyph.Position.X, glyph.Position.Y, 0.0f }; // Z will be set in AddVerticesWithDepth
                 vertex.TexCoord     = glyph.UV;
                 vertex.Color        = glyph.Color;
@@ -944,7 +954,7 @@ void ClayRenderer::RenderImage( const Clay_RenderCommand *command, const uint32_
     std::vector<UIVertex> vertices;
     std::vector<uint32_t> indices;
 
-    UIShapes::GenerateRectangleDesc desc{ };
+    UIShapes::GenerateRectangleDesc desc{};
     desc.Bounds       = bounds;
     desc.Color        = Clay_Color{ 255, 255, 255, 255 };
     desc.TextureIndex = textureIndex;
@@ -1000,6 +1010,19 @@ void ClayRenderer::ClearScissor( )
     }
 }
 
+void ClayRenderer::PushOverlayColor( const Clay_RenderCommand *command )
+{
+    m_overlayColorStack.push_back( command->renderData.overlayColor.color );
+}
+
+void ClayRenderer::PopOverlayColor( )
+{
+    if ( !m_overlayColorStack.empty( ) )
+    {
+        m_overlayColorStack.pop_back( );
+    }
+}
+
 uint32_t ClayRenderer::RegisterTexture( DenOfIz_Texture texture, const uint32_t frameIndex )
 {
     FrameData &frameData = m_frameData[ frameIndex ];
@@ -1036,7 +1059,7 @@ void ClayRenderer::UpdateTextureBindings( const uint32_t frameIndex ) const
             textureVector.push_back( DENOFIZ_HANDLE_IS_VALID( tex ) ? tex : m_nullTexture );
         }
 
-        DenOfIz_TextureArray textureArray{ };
+        DenOfIz_TextureArray textureArray{};
         textureArray.Elements    = textureVector.data( );
         textureArray.NumElements = static_cast<uint32_t>( textureVector.size( ) );
 
@@ -1100,11 +1123,11 @@ DenOfIz_ClayDimensions ClayRenderer::MeasureText( const DenOfIz_StringView &text
 
 void ClayRenderer::AddVerticesWithDepthVec( std::vector<UIVertex> &vertices, std::vector<uint32_t> &indices )
 {
-    UIVertexArray vertexArray{ };
+    UIVertexArray vertexArray{};
     vertexArray.Elements    = vertices.data( );
     vertexArray.NumElements = static_cast<uint32_t>( vertices.size( ) );
 
-    DenOfIz_UInt32Array indexArray{ };
+    DenOfIz_UInt32Array indexArray{};
     indexArray.Elements    = indices.data( );
     indexArray.NumElements = static_cast<uint32_t>( indices.size( ) );
     AddVerticesWithDepth( vertexArray, indexArray );
@@ -1125,11 +1148,31 @@ void ClayRenderer::AddVerticesWithDepth( const UIVertexArray &vertices, const De
     }
     m_currentBatchTextureIndex = textureIndex;
 
+    float overlayMix = 0.0f;
+    float overlayR   = 0.0f;
+    float overlayG   = 0.0f;
+    float overlayB   = 0.0f;
+    if ( !m_overlayColorStack.empty( ) )
+    {
+        const Clay_Color &overlay = m_overlayColorStack.back( );
+        overlayMix                = overlay.a / 255.0f;
+        overlayR                  = overlay.r / 255.0f;
+        overlayG                  = overlay.g / 255.0f;
+        overlayB                  = overlay.b / 255.0f;
+    }
+
     const uint32_t baseVertexIndex = m_batchedVertices.size( );
     for ( uint32_t i = 0; i < vertices.NumElements; ++i )
     {
         UIVertex vertex   = vertices.Elements[ i ];
         vertex.Position.Z = m_currentDepth;
+
+        if ( overlayMix > 0.0f )
+        {
+            vertex.Color.X += ( overlayR - vertex.Color.X ) * overlayMix;
+            vertex.Color.Y += ( overlayG - vertex.Color.Y ) * overlayMix;
+            vertex.Color.Z += ( overlayB - vertex.Color.Z ) * overlayMix;
+        }
 
         if ( !m_supportsSrvArray && textureIndex > 0 )
         {
