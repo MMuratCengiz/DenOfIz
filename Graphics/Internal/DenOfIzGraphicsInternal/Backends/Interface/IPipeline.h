@@ -19,10 +19,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Backends/Interface/Pipeline.h"
+#include "../Common/DeferredDestroyQueue.h"
 
 namespace DenOfIz
 {
-    class IPipeline
+    class IPipeline : public IDeviceObject
     {
     public:
         virtual ~IPipeline( ) = default;

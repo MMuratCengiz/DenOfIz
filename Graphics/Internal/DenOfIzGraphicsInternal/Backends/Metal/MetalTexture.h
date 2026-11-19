@@ -57,6 +57,10 @@ namespace DenOfIz
         [[nodiscard]] uint32_t       GetDepth( ) const;
         [[nodiscard]] DenOfIz_Format GetFormat( ) const override;
         [[nodiscard]] uint32_t       GetMipLevels( ) const override;
+        [[nodiscard]] const DenOfIz_TextureDesc &GetDesc( ) const override
+        {
+            return m_desc;
+        }
 
         ~MetalTexture( ) override;
 

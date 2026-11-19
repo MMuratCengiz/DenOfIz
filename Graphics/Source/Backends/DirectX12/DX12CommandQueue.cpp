@@ -61,17 +61,46 @@ DX12CommandQueue::DX12CommandQueue( DX12Context *context, const DenOfIz_CommandQ
 
     DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandQueue( &queueDesc, IID_PPV_ARGS( m_commandQueue.put( ) ) ) );
     DX_CHECK_RESULT( m_context->D3DDevice->CreateFence( 0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( m_fence.put( ) ) ) );
+
+    std::lock_guard lock( m_context->CommandQueuesMutex );
+    m_context->CommandQueues.push_back( this );
 }
 
 DX12CommandQueue::~DX12CommandQueue( )
 {
+    {
+        std::lock_guard lock( m_context->CommandQueuesMutex );
+        std::erase( m_context->CommandQueues, this );
+    }
     WaitIdle( );
+}
+
+uint64_t DX12CommandQueue::SignalFence( )
+{
+    if ( !m_commandQueue || !m_fence )
+    {
+        return 0;
+    }
+    const uint64_t fenceValue = ++m_fenceValue;
+    if ( FAILED( m_commandQueue->Signal( m_fence.get( ), fenceValue ) ) )
+    {
+        return 0;
+    }
+    return fenceValue;
+}
+
+ID3D12Fence1 *DX12CommandQueue::GetFence( ) const
+{
+    return m_fence.get( );
 }
 
 void DX12CommandQueue::WaitIdle( )
 {
-    const uint64_t fenceValue = m_fence->GetCompletedValue( ) + 1;
-    DX_CHECK_RESULT( m_commandQueue->Signal( m_fence.get( ), fenceValue ) );
+    const uint64_t fenceValue = SignalFence( );
+    if ( fenceValue == 0 )
+    {
+        return;
+    }
     if ( m_fence->GetCompletedValue( ) < fenceValue )
     {
         const HANDLE eventHandle = CreateEvent( nullptr, FALSE, FALSE, nullptr );

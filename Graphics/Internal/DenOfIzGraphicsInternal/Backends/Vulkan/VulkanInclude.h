@@ -41,10 +41,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define VK_CHECK_RESULT( R )                                                                                                                                                       \
     do                                                                                                                                                                             \
     {                                                                                                                                                                              \
-        VkResult result = ( R );                                                                                                                                                   \
-        if ( result != VK_SUCCESS )                                                                                                                                                \
+        VkResult dzVkCheckResult = ( R );                                                                                                                                                   \
+        if ( dzVkCheckResult != VK_SUCCESS )                                                                                                                                                \
         {                                                                                                                                                                          \
-            spdlog::error( "[Vulkan] VK_CHECK_RESULT failed at {}:{} with result: {}", __FILE__, __LINE__, (int)result );                                                          \
+            spdlog::error( "[Vulkan] VK_CHECK_RESULT failed at {}:{} with result: {}", __FILE__, __LINE__, (int)dzVkCheckResult );                                                          \
         }                                                                                                                                                                          \
     }                                                                                                                                                                              \
     while ( 0 )

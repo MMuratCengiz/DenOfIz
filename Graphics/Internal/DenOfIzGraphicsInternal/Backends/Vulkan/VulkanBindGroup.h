@@ -33,6 +33,7 @@ namespace DenOfIz
 
         VkDescriptorSetLayout             m_emptyLayout{ };
         VkDescriptorSet                   m_descriptorSet{ };
+        VkDescriptorPool                  m_descriptorPool{ };
         std::vector<VkWriteDescriptorSet> m_writeDescriptorSets;
         Storage                           m_storage;
 

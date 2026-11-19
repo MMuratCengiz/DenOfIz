@@ -51,12 +51,17 @@ namespace DenOfIz
         [[nodiscard]] WGPUTexture                GetTexture( ) const;
         [[nodiscard]] WGPUTextureView            GetTextureView( ) const;
         [[nodiscard]] WGPUTextureView            GetMipTextureView( uint32_t mipLevel );
-        [[nodiscard]] const DenOfIz_TextureDesc &GetDesc( ) const
+        [[nodiscard]] const DenOfIz_TextureDesc &GetDesc( ) const override
         {
             return m_desc;
         }
         void SetCurrentState( uint32_t state );
         void UpdateExternalTexture( WGPUTexture texture );
+        void SetExtent( const uint32_t width, const uint32_t height )
+        {
+            m_desc.Width  = width;
+            m_desc.Height = height;
+        }
 #if !DZ_WEBGPU_USE_DAWN_API
         void UpdateExternalTextureView( WGPUTextureView textureView );
 #endif

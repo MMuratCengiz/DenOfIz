@@ -10,6 +10,8 @@
 #import <metal_irconverter_runtime/metal_irconverter_runtime.h>
 
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include <mutex>
+#include <vector>
 
 #ifdef __APPLE__
 #import <CoreFoundation/CoreFoundation.h>
@@ -32,6 +34,60 @@ namespace DenOfIz
         bool                CaptureEnabled;
         bool                IsCapturing;
         std::string         CaptureOutputPath;
+
+        std::mutex                        InFlightMutex;
+        std::vector<id<MTLCommandBuffer>> InFlightCommandBuffers;
+
+        static bool IsFinished( const id<MTLCommandBuffer> &commandBuffer )
+        {
+            const MTLCommandBufferStatus status = commandBuffer.status;
+            return status == MTLCommandBufferStatusCompleted || status == MTLCommandBufferStatusError;
+        }
+
+        //! Call right after committing a command buffer.
+        void TrackCommandBuffer( const id<MTLCommandBuffer> &commandBuffer )
+        {
+            if ( commandBuffer == nil )
+            {
+                return;
+            }
+            std::lock_guard<std::mutex> lock( InFlightMutex );
+            RemoveFinishedLocked( );
+            InFlightCommandBuffers.push_back( commandBuffer );
+        }
+
+        //! The command buffers that are still executing at the time of the call.
+        std::vector<id<MTLCommandBuffer>> InFlightSnapshot( )
+        {
+            std::lock_guard<std::mutex> lock( InFlightMutex );
+            RemoveFinishedLocked( );
+            return InFlightCommandBuffers;
+        }
+
+        //! Blocks until everything committed before the call has finished.
+        void WaitIdle( )
+        {
+            const std::vector<id<MTLCommandBuffer>> inFlight = InFlightSnapshot( );
+            for ( const id<MTLCommandBuffer> &commandBuffer : inFlight )
+            {
+                [commandBuffer waitUntilCompleted];
+            }
+        }
+
+        //! InFlightMutex must be held.
+        void RemoveFinishedLocked( )
+        {
+            std::vector<id<MTLCommandBuffer>> remaining;
+            remaining.reserve( InFlightCommandBuffers.size( ) );
+            for ( const id<MTLCommandBuffer> &commandBuffer : InFlightCommandBuffers )
+            {
+                if ( !IsFinished( commandBuffer ) )
+                {
+                    remaining.push_back( commandBuffer );
+                }
+            }
+            InFlightCommandBuffers.swap( remaining );
+        }
     };
 
 } // namespace DenOfIz

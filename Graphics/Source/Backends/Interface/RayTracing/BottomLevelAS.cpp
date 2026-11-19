@@ -38,6 +38,6 @@ extern "C"
         {
             return;
         }
-        delete BLAS_IMPL( bottomLevelAS );
+        DenOfIz::DeferredDestroyQueue::Destroy( BLAS_IMPL( bottomLevelAS ) );
     }
 }

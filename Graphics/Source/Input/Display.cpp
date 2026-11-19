@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Input/Display.h"
+#include <algorithm>
 #include <vector>
 
 #include "DenOfIzGraphicsInternal/Backends/Common/SDLInclude.h"
@@ -25,6 +26,16 @@ namespace
 {
     std::vector<DenOfIz_Display> s_cachedDisplays;
     bool                         s_displaysInitialized = false;
+
+    float GetDisplayScale( const SDL_DisplayID displayID )
+    {
+        float scale = SDL_GetDisplayContentScale( displayID );
+        if ( const SDL_DisplayMode *mode = SDL_GetDesktopDisplayMode( displayID ) )
+        {
+            scale = std::max( scale, mode->pixel_density );
+        }
+        return scale > 0.0f ? scale : 1.0f;
+    }
 
     void InitializeDisplays( )
     {
@@ -51,7 +62,7 @@ namespace
                     display.Size.Width  = bounds.w;
                     display.Size.Height = bounds.h;
                     display.IsPrimary   = ( displayID == primaryDisplayID );
-                    display.DpiScale    = SDL_GetDisplayContentScale( displayID );
+                    display.DisplayScale = GetDisplayScale( displayID );
 
                     s_cachedDisplays.push_back( display );
                 }

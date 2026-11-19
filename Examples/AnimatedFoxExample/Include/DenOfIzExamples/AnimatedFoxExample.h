@@ -70,7 +70,6 @@ namespace DenOfIz
         DenOfIz_Texture m_texture              = DENOFIZ_NULL_HANDLE;
         DenOfIz_Sampler m_defaultSampler       = DENOFIZ_NULL_HANDLE;
 
-        std::vector<DenOfIz_Texture> m_depthTextures;
 
         DenOfIz_Pipeline                     m_skinnedMeshPipeline      = DENOFIZ_NULL_HANDLE;
         DenOfIz_RootSignature                m_skinnedMeshRootSignature = DENOFIZ_NULL_HANDLE;

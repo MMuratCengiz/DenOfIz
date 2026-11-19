@@ -92,6 +92,6 @@ extern "C"
         {
             return;
         }
-        delete BUFFER_IMPL( buffer );
+        DenOfIz::DeferredDestroyQueue::Destroy( BUFFER_IMPL( buffer ) );
     }
 }

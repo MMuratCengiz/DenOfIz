@@ -47,6 +47,7 @@ namespace DenOfIz
         DenOfIz_BindGroupDesc           m_desc;
         uint32_t                        m_samplerCount   = 0;
         uint32_t                        m_cbvSrvUavCount = 0;
+        uint32_t                        m_version        = 0;
         DescriptorHandle                m_cbvSrvUavHandle;
         DescriptorHandle                m_samplerHandle;
         DX12BindGroupLayout            *m_bindGroupLayout;
@@ -58,6 +59,7 @@ namespace DenOfIz
         // Properties: --
         [[nodiscard]] DescriptorHandle                       CbvSrvUavHandle( ) const;
         [[nodiscard]] DescriptorHandle                       SamplerHandle( ) const;
+        [[nodiscard]] uint32_t                               Version( ) const;
         [[nodiscard]] uint32_t                               CbvSrvUavCount( ) const;
         [[nodiscard]] uint32_t                               SamplerCount( ) const;
         [[nodiscard]] DX12BindGroupLayout                   *BindGroupLayout( ) const;

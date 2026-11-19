@@ -141,3 +141,25 @@ bool VulkanBindGroupLayout::HasBindings( ) const
 {
     return !m_layoutBindings.empty( );
 }
+
+bool VulkanBindGroupLayout::IsCompatibleWith( const VulkanBindGroupLayout *other ) const
+{
+    if ( other == this )
+    {
+        return true;
+    }
+    if ( other == nullptr || m_layoutBindings.size( ) != other->m_layoutBindings.size( ) || m_bindingFlags != other->m_bindingFlags )
+    {
+        return false;
+    }
+    for ( size_t i = 0; i < m_layoutBindings.size( ); ++i )
+    {
+        const VkDescriptorSetLayoutBinding &a = m_layoutBindings[ i ];
+        const VkDescriptorSetLayoutBinding &b = other->m_layoutBindings[ i ];
+        if ( a.binding != b.binding || a.descriptorType != b.descriptorType || a.descriptorCount != b.descriptorCount || a.stageFlags != b.stageFlags )
+        {
+            return false;
+        }
+    }
+    return true;
+}

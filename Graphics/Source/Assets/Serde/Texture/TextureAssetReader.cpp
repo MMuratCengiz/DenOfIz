@@ -204,7 +204,7 @@ namespace DenOfIz
                 copyDesc.DstX       = 0;
                 copyDesc.DstY       = 0;
                 copyDesc.DstZ       = 0;
-                DenOfIz_TextureResource_GetFormat( desc.Texture, &copyDesc.Format );
+                DenOfIz_Texture_GetFormat( desc.Texture, &copyDesc.Format );
                 copyDesc.MipLevel   = mip.MipIndex;
                 copyDesc.ArrayLayer = mip.ArrayIndex;
                 copyDesc.RowPitch   = mip.RowPitch;

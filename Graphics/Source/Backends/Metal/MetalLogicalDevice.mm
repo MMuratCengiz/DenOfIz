@@ -39,6 +39,24 @@ MetalLogicalDevice::MetalLogicalDevice( )
 
 MetalLogicalDevice::~MetalLogicalDevice( )
 {
+    ReleaseDestroyedObjects( );
+    m_destroyQueue.reset( );
+}
+
+DeferredDestroyQueue::Completion MetalLogicalDevice::CaptureGpuCompletion( ) const
+{
+    auto inFlight = std::make_shared<std::vector<id<MTLCommandBuffer>>>( m_context->InFlightSnapshot( ) );
+    return [ inFlight ]
+    {
+        for ( const id<MTLCommandBuffer> &commandBuffer : *inFlight )
+        {
+            if ( !MetalContext::IsFinished( commandBuffer ) )
+            {
+                return false;
+            }
+        }
+        return true;
+    };
 }
 
 void MetalLogicalDevice::CreateDevice( const DenOfIz_LogicalDeviceDesc &desc )
@@ -125,6 +143,7 @@ void MetalLogicalDevice::LoadPhysicalDevice( const DenOfIz_PhysicalDevice &devic
     
     m_autoSync          = std::make_unique<InternalAutoSync>( m_deviceDesc.AutoSync );
     m_context->AutoSync = m_autoSync.get( );
+    m_destroyQueue      = std::make_unique<DeferredDestroyQueue>( [ this ] { return CaptureGpuCompletion( ); } );
 
     InitializeCaptureManager( );
 }
@@ -231,6 +250,14 @@ IShaderLocalData *MetalLogicalDevice::CreateShaderLocalData( const DenOfIz_Shade
 
 void MetalLogicalDevice::WaitIdle( )
 {
+    if ( m_context == nullptr )
+    {
+        return;
+    }
+    @autoreleasepool
+    {
+        m_context->WaitIdle( );
+    }
 }
 
 bool MetalLogicalDevice::IsDeviceLost( )

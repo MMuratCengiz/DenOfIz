@@ -53,6 +53,7 @@ namespace DenOfIz
         // Use as render target
         VulkanTexture( const VkImage &image, const VkImageView &imageView, const VkFormat format, const VkImageAspectFlags imageAspect, const DenOfIz_TextureDesc &desc );
         void NotifyLayoutChange( const VkImageLayout newLayout ) const;
+        void UpdateExternal( const VkImage &image, const VkImageView &imageView, const DenOfIz_TextureDesc &desc );
 
         ~VulkanTexture( ) override;
         [[nodiscard]] VkImage            Image( ) const;
@@ -65,6 +66,10 @@ namespace DenOfIz
         [[nodiscard]] uint32_t       GetDepth( ) const;
         [[nodiscard]] DenOfIz_Format GetFormat( ) const override;
         [[nodiscard]] uint32_t       GetMipLevels( ) const override;
+        [[nodiscard]] const DenOfIz_TextureDesc &GetDesc( ) const override
+        {
+            return m_desc;
+        }
 
     private:
         void TransitionToInitialLayout( ) const;

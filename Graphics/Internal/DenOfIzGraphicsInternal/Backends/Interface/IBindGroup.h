@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <algorithm>
 #include "DenOfIzGraphics/Backends/Interface/BindGroup.h"
+#include "../Common/DeferredDestroyQueue.h"
 #include "IBindGroupLayout.h"
 #include "IBuffer.h"
 #include "ITexture.h"
@@ -30,7 +31,7 @@ namespace DenOfIz
     /// Sentinel value meaning "all mip levels" (i.e. default full-texture view).
     static constexpr uint32_t DZ_ALL_MIP_LEVELS = UINT32_MAX;
 
-    class IBindGroup
+    class IBindGroup : public IDeviceObject
     {
     public:
         virtual ~IBindGroup( )                                                                               = default;

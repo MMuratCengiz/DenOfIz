@@ -17,9 +17,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
+#include "DenOfIzExamples/IExample.h"
+
 #include <DirectXMath.h>
 #include "DenOfIzExamples/ColoredSphereAsset.h"
-#include "DenOfIzExamples/IExample.h"
 #include "DenOfIzExamples/QuadPipeline.h"
 
 #include "ColoredSpherePipeline.h"
@@ -33,7 +34,6 @@ namespace DenOfIz
         std::vector<XMFLOAT4X4>           m_sphereTransforms;
         ColoredSpherePipeline            *m_opaquePipeline      = nullptr;
         ColoredSpherePipeline            *m_transparentPipeline = nullptr;
-        DenOfIz_Texture                   m_depthBuffer         = DENOFIZ_NULL_HANDLE;
 
         float m_alphaValue     = 0.0f;
         int   m_alphaDirection = 0;

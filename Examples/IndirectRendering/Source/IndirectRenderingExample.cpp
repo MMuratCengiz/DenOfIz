@@ -135,11 +135,7 @@ void IndirectRenderingExample::Render( const uint32_t frameIndex, DenOfIz_Comman
     batchTransitionDesc.Buffers.NumElements = 2;
     DenOfIz_ResourceTracking_BatchTransition( m_resourceTracking, commandList, &batchTransitionDesc );
 
-    uint32_t imageIndex = 0;
-    DenOfIz_FrameSync_AcquireNextImage( m_frameSync, &imageIndex );
-
-    DenOfIz_Texture renderTarget = DENOFIZ_NULL_HANDLE;
-    DenOfIz_SwapChain_GetRenderTarget( m_swapChain, imageIndex, &renderTarget );
+    DenOfIz_Texture renderTarget = m_frame.BackBuffer;
     DenOfIz_ResourceTracking_TransitionTexture( m_resourceTracking, commandList, renderTarget, DENOFIZ_RESOURCE_USAGE_RENDER_TARGET_BIT, DENOFIZ_QUEUE_TYPE_GRAPHICS );
 
     DenOfIz_RenderingAttachmentDesc attachmentDesc{ };

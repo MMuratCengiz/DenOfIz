@@ -19,7 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphicsInternal/Backends/Interface/ICommandList.h>
+#include <mutex>
 #include <unordered_map>
+#include <vector>
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include "DenOfIzGraphicsInternal/Backends/Common/InternalAutoSync.h"
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanDescriptorPoolManager.h"
@@ -65,10 +67,20 @@ namespace DenOfIz
 
         InternalAutoSync *AutoSync;
 
+        std::vector<VkQueue> SubmitQueues;
+        std::mutex           CompletionFenceMutex;
+        std::vector<VkFence> FreeCompletionFences;
+
+        void    RegisterSubmitQueue( VkQueue queue );
+        VkFence AcquireCompletionFence( );
+        void    ReleaseCompletionFence( VkFence fence );
+
         bool                              DebugUtilsEnabled             = false;
         PFN_vkCmdBeginDebugUtilsLabelEXT  vkCmdBeginDebugUtilsLabelEXT  = nullptr;
         PFN_vkCmdEndDebugUtilsLabelEXT    vkCmdEndDebugUtilsLabelEXT    = nullptr;
         PFN_vkCmdInsertDebugUtilsLabelEXT vkCmdInsertDebugUtilsLabelEXT = nullptr;
+
+        bool CheckDeviceLost( VkResult result, const char *operation );
     };
 
 } // namespace DenOfIz

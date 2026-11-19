@@ -149,9 +149,16 @@ void VulkanLogicalDevice::CreateDevice( const DenOfIz_LogicalDeviceDesc &desc )
 {
     m_deviceDesc = desc;
 
-    VK_CHECK_RESULT( volkInitialize( ) );
+    m_context                 = std::make_unique<VulkanContext>( );
+    m_context->Instance       = VK_NULL_HANDLE;
+    m_context->PhysicalDevice = VK_NULL_HANDLE;
+    m_context->LogicalDevice  = VK_NULL_HANDLE;
 
-    m_context = std::make_unique<VulkanContext>( );
+    if ( const VkResult volkResult = volkInitialize( ); volkResult != VK_SUCCESS )
+    {
+        spdlog::critical( "[Vulkan] Loader not found: {}", static_cast<int>( volkResult ) );
+        return;
+    }
 
     VkApplicationInfo appInfo{ };
     appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -189,7 +196,12 @@ void VulkanLogicalDevice::CreateDevice( const DenOfIz_LogicalDeviceDesc &desc )
     createInfo.enabledLayerCount       = layers.size( );
     createInfo.ppEnabledLayerNames     = layers.data( );
 
-    vkCreateInstance( &createInfo, nullptr, &m_context->Instance );
+    if ( const VkResult instanceResult = vkCreateInstance( &createInfo, nullptr, &m_context->Instance ); instanceResult != VK_SUCCESS )
+    {
+        m_context->Instance = VK_NULL_HANDLE;
+        spdlog::critical( "[Vulkan] Failed to create instance: {}", static_cast<int>( instanceResult ) );
+        return;
+    }
     volkLoadInstance( m_context->Instance );
 
     if ( m_supportedLayers.contains( "VK_LAYER_KHRONOS_validation" ) )
@@ -285,17 +297,27 @@ void VulkanLogicalDevice::InitSupportedLayers( std::vector<const char *> &layers
 
 DenOfIz_PhysicalDeviceArray VulkanLogicalDevice::ListPhysicalDevices( )
 {
+    m_physicalDevices.clear( );
+    m_deviceNameStorage.clear( );
+    if ( m_context == nullptr || m_context->Instance == VK_NULL_HANDLE )
+    {
+        return DenOfIz_PhysicalDeviceArray{ nullptr, 0 };
+    }
+
     uint32_t count = 0;
     vkEnumeratePhysicalDevices( m_context->Instance, &count, nullptr );
     std::vector<VkPhysicalDevice> devices( count );
-    vkEnumeratePhysicalDevices( m_context->Instance, &count, devices.data( ) );
+    if ( count > 0 )
+    {
+        vkEnumeratePhysicalDevices( m_context->Instance, &count, devices.data( ) );
+        devices.resize( count );
+    }
+    if ( count == 0 )
+    {
+        return DenOfIz_PhysicalDeviceArray{ nullptr, 0 };
+    }
 
-    DZ_ASSERTM( count > 0, "No Vulkan Devices Found." );
-    DZ_ASSERTM( count < 4, "Too many devices, consider upgrading library limits." );
-
-    m_physicalDevices.clear( );
     m_physicalDevices.reserve( count );
-    m_deviceNameStorage.clear( );
 
     for ( const auto &device : devices )
     {
@@ -413,7 +435,10 @@ void VulkanLogicalDevice::LoadPhysicalDevice( const DenOfIz_PhysicalDevice &devi
 
     DZ_ASSERTM( m_context->PhysicalDevice != VK_NULL_HANDLE, "Invalid DeviceID provided." );
 
-    CreateLogicalDevice( );
+    if ( !CreateLogicalDevice( ) )
+    {
+        return;
+    }
     InitializeVma( );
 
     VkCommandPoolCreateInfo graphicsCommandPoolCreateInfo{ };
@@ -481,7 +506,7 @@ void VulkanLogicalDevice::SetupQueueFamilies( ) const
     }
 }
 
-void VulkanLogicalDevice::CreateLogicalDevice( )
+bool VulkanLogicalDevice::CreateLogicalDevice( )
 {
     SetupQueueFamilies( );
 
@@ -590,7 +615,13 @@ void VulkanLogicalDevice::CreateLogicalDevice( )
     createInfo.pEnabledFeatures        = &features;
     createInfo.pNext                   = pNext;
 
-    vkCreateDevice( m_context->PhysicalDevice, &createInfo, nullptr, &m_context->LogicalDevice );
+    if ( const VkResult deviceResult = vkCreateDevice( m_context->PhysicalDevice, &createInfo, nullptr, &m_context->LogicalDevice ); deviceResult != VK_SUCCESS )
+    {
+        m_context->LogicalDevice = VK_NULL_HANDLE;
+        m_context->IsDeviceLost  = true;
+        spdlog::critical( "[Vulkan] Failed to create the logical device: {}", static_cast<int>( deviceResult ) );
+        return false;
+    }
     volkLoadDevice( m_context->LogicalDevice );
 
     m_context->vkCmdBeginDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>( vkGetDeviceProcAddr( m_context->LogicalDevice, "vkCmdBeginDebugUtilsLabelEXT" ) );
@@ -613,9 +644,127 @@ void VulkanLogicalDevice::CreateLogicalDevice( )
     m_context->SelectedDeviceInfo.Capabilities.DedicatedCopyQueue =
         m_context->QueueFamilies.at( VulkanQueueType::Copy ).Index != m_context->QueueFamilies.at( VulkanQueueType::Graphics ).Index;
     m_context->DescriptorPoolManager = std::make_unique<VulkanDescriptorPoolManager>( m_context->LogicalDevice, m_context->PhysicalDevice );
+    for ( const auto &queue : m_context->Queues )
+    {
+        m_context->RegisterSubmitQueue( queue.second );
+    }
 
     m_autoSync          = std::make_unique<InternalAutoSync>( m_deviceDesc.AutoSync );
     m_context->AutoSync = m_autoSync.get( );
+    m_destroyQueue      = std::make_unique<DeferredDestroyQueue>( [ this ] { return CaptureGpuCompletion( ); } );
+    return true;
+}
+
+void VulkanContext::RegisterSubmitQueue( const VkQueue queue )
+{
+    if ( queue != VK_NULL_HANDLE && std::ranges::find( SubmitQueues, queue ) == SubmitQueues.end( ) )
+    {
+        SubmitQueues.push_back( queue );
+    }
+}
+
+VkFence VulkanContext::AcquireCompletionFence( )
+{
+    {
+        std::lock_guard lock( CompletionFenceMutex );
+        if ( !FreeCompletionFences.empty( ) )
+        {
+            const VkFence fence = FreeCompletionFences.back( );
+            FreeCompletionFences.pop_back( );
+            vkResetFences( LogicalDevice, 1, &fence );
+            return fence;
+        }
+    }
+    VkFenceCreateInfo fenceCreateInfo{ };
+    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    VkFence fence         = VK_NULL_HANDLE;
+    VK_CHECK_RESULT( vkCreateFence( LogicalDevice, &fenceCreateInfo, nullptr, &fence ) );
+    return fence;
+}
+
+void VulkanContext::ReleaseCompletionFence( const VkFence fence )
+{
+    if ( fence == VK_NULL_HANDLE )
+    {
+        return;
+    }
+    if ( IsDeviceLost )
+    {
+        vkDestroyFence( LogicalDevice, fence, nullptr );
+        return;
+    }
+    std::lock_guard lock( CompletionFenceMutex );
+    FreeCompletionFences.push_back( fence );
+}
+
+DeferredDestroyQueue::Completion VulkanLogicalDevice::CaptureGpuCompletion( ) const
+{
+    struct Marker
+    {
+        VulkanContext       *Context;
+        std::vector<VkFence> Fences;
+
+        ~Marker( )
+        {
+            for ( const VkFence fence : Fences )
+            {
+                Context->ReleaseCompletionFence( fence );
+            }
+        }
+    };
+
+    VulkanContext *context = m_context.get( );
+    if ( context->IsDeviceLost )
+    {
+        return { };
+    }
+
+    auto marker     = std::make_shared<Marker>( );
+    marker->Context = context;
+    for ( const VkQueue queue : context->SubmitQueues )
+    {
+        VkSubmitInfo submitInfo{ };
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+        const VkFence  fence  = context->AcquireCompletionFence( );
+        const VkResult result = fence != VK_NULL_HANDLE ? vkQueueSubmit( queue, 1, &submitInfo, fence ) : VK_ERROR_OUT_OF_HOST_MEMORY;
+        if ( result != VK_SUCCESS )
+        {
+            if ( fence != VK_NULL_HANDLE )
+            {
+                vkDestroyFence( context->LogicalDevice, fence, nullptr );
+            }
+            if ( context->CheckDeviceLost( result, "vkQueueSubmit" ) )
+            {
+                return { };
+            }
+            spdlog::warn( "[Vulkan] Could not submit a completion fence ({}), waiting for the queue instead", static_cast<int>( result ) );
+            context->CheckDeviceLost( vkQueueWaitIdle( queue ), "vkQueueWaitIdle" );
+            continue;
+        }
+        marker->Fences.push_back( fence );
+    }
+
+    return [ marker ]
+    {
+        if ( marker->Context->IsDeviceLost )
+        {
+            return true;
+        }
+        for ( const VkFence fence : marker->Fences )
+        {
+            const VkResult status = vkGetFenceStatus( marker->Context->LogicalDevice, fence );
+            if ( status == VK_NOT_READY )
+            {
+                return false;
+            }
+            if ( marker->Context->CheckDeviceLost( status, "vkGetFenceStatus" ) )
+            {
+                return true;
+            }
+        }
+        return true;
+    };
 }
 
 void VulkanLogicalDevice::InitializeVma( ) const
@@ -677,11 +826,32 @@ std::vector<VkDeviceQueueCreateInfo> VulkanLogicalDevice::CreateUniqueDeviceQueu
 
 void VulkanLogicalDevice::WaitIdle( )
 {
-    vkDeviceWaitIdle( m_context->LogicalDevice );
+    if ( m_context == nullptr || m_context->LogicalDevice == VK_NULL_HANDLE || m_context->IsDeviceLost )
+    {
+        return;
+    }
+    m_context->CheckDeviceLost( vkDeviceWaitIdle( m_context->LogicalDevice ), "vkDeviceWaitIdle" );
+}
+
+bool VulkanContext::CheckDeviceLost( const VkResult result, const char *operation )
+{
+    if ( result != VK_ERROR_DEVICE_LOST )
+    {
+        return false;
+    }
+    if ( !IsDeviceLost )
+    {
+        IsDeviceLost = true;
+        spdlog::critical( "[Vulkan] Device lost during {}", operation );
+    }
+    return true;
 }
 
 VulkanLogicalDevice::~VulkanLogicalDevice( )
 {
+    ReleaseDestroyedObjects( );
+    m_destroyQueue.reset( );
+
     DestroyDebugUtils( );
 
     if ( m_context == nullptr )
@@ -691,20 +861,32 @@ VulkanLogicalDevice::~VulkanLogicalDevice( )
 
     m_context->DescriptorPoolManager.reset( );
 
-    vkDestroyCommandPool( m_context->LogicalDevice, m_context->TransferQueueCommandPool, nullptr );
-    vkDestroyCommandPool( m_context->LogicalDevice, m_context->GraphicsQueueCommandPool, nullptr );
-    vkDestroyCommandPool( m_context->LogicalDevice, m_context->ComputeQueueCommandPool, nullptr );
+    if ( m_context->LogicalDevice != VK_NULL_HANDLE )
+    {
+        for ( const VkFence fence : m_context->FreeCompletionFences )
+        {
+            vkDestroyFence( m_context->LogicalDevice, fence, nullptr );
+        }
+        m_context->FreeCompletionFences.clear( );
 
-    vmaDestroyAllocator( m_context->Vma );
-    vkDestroyDevice( m_context->LogicalDevice, nullptr );
-    vkDestroyInstance( m_context->Instance, nullptr );
+        vkDestroyCommandPool( m_context->LogicalDevice, m_context->TransferQueueCommandPool, nullptr );
+        vkDestroyCommandPool( m_context->LogicalDevice, m_context->GraphicsQueueCommandPool, nullptr );
+        vkDestroyCommandPool( m_context->LogicalDevice, m_context->ComputeQueueCommandPool, nullptr );
 
-    volkFinalize( );
+        vmaDestroyAllocator( m_context->Vma );
+        vkDestroyDevice( m_context->LogicalDevice, nullptr );
+    }
+    if ( m_context->Instance != VK_NULL_HANDLE )
+    {
+        vkDestroyInstance( m_context->Instance, nullptr );
+        volkFinalize( );
+    }
 }
 
 void VulkanLogicalDevice::DestroyDebugUtils( ) const
 {
     DZ_RETURN_IF( m_debugMessenger == nullptr );
+    DZ_RETURN_IF( m_context == nullptr || m_context->Instance == VK_NULL_HANDLE );
 
     if ( const auto deleteDebugUtils = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>( vkGetInstanceProcAddr( m_context->Instance, "vkDestroyDebugUtilsMessengerEXT" ) ) )
     {
@@ -782,12 +964,24 @@ IBindGroup *VulkanLogicalDevice::CreateBindGroup( const DenOfIz_BindGroupDesc &d
 
 IBuffer *VulkanLogicalDevice::CreateBuffer( const DenOfIz_BufferDesc &desc )
 {
-    return new VulkanBuffer( m_context.get( ), desc );
+    auto *buffer = new VulkanBuffer( m_context.get( ), desc );
+    if ( buffer->Instance( ) == VK_NULL_HANDLE )
+    {
+        delete buffer;
+        return nullptr;
+    }
+    return buffer;
 }
 
 ITexture *VulkanLogicalDevice::CreateTexture( const DenOfIz_TextureDesc &desc )
 {
-    return new VulkanTexture( m_context.get( ), desc );
+    auto *texture = new VulkanTexture( m_context.get( ), desc );
+    if ( texture->Image( ) == VK_NULL_HANDLE )
+    {
+        delete texture;
+        return nullptr;
+    }
+    return texture;
 }
 
 IFence *VulkanLogicalDevice::CreateFence( )

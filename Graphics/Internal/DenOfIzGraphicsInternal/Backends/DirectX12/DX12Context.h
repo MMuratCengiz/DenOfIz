@@ -22,6 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/CommonData.h>
 #include <DenOfIzGraphics/Utilities/Common_Windows.h>
 #include <array>
+#include <atomic>
+#include <mutex>
+#include <vector>
 #include <directx/d3d12.h>
 #include <directx/d3dx12.h>
 #include <directx/dxgicommon.h>
@@ -77,6 +80,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    class DX12CommandQueue;
+
     struct DX12Capabilities
     {
         bool EnhancedBarriers                 = false;
@@ -98,6 +103,11 @@ namespace DenOfIz
         wil::com_ptr<ID3D12Fence1>       ComputeCommandQueueFence;
         wil::com_ptr<ID3D12CommandQueue> CopyCommandQueue;
         wil::com_ptr<ID3D12Fence1>       CopyCommandQueueFence;
+        std::atomic<uint64_t> GraphicsCommandQueueFenceValue{ 0 };
+        std::atomic<uint64_t> ComputeCommandQueueFenceValue{ 0 };
+        std::atomic<uint64_t> CopyCommandQueueFenceValue{ 0 };
+        std::mutex                      CommandQueuesMutex;
+        std::vector<DX12CommandQueue *> CommandQueues;
 
         wil::com_ptr<ID3D12CommandAllocator>     CopyCommandListAllocator;
         wil::com_ptr<ID3D12GraphicsCommandList4> CopyCommandList;

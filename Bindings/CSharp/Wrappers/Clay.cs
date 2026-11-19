@@ -42,10 +42,16 @@ namespace DenOfIz
             return outSize;
         }
 
-        public void SetDpiScale(float dpiScale)
+        public void SetDisplayScale(float displayScale)
         {
             ThrowIfDisposed();
-            Methods.DenOfIz_Clay_SetDpiScale(Handle, dpiScale);
+            Methods.DenOfIz_Clay_SetDisplayScale(Handle, displayScale);
+        }
+
+        public void ResetDisplayScale()
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Clay_ResetDisplayScale(Handle);
         }
 
         public void SetPointerState(Vector2 position, ClayPointerState state)
@@ -255,10 +261,10 @@ namespace DenOfIz
             return Methods.DenOfIz_Clay_GetCharIndexAtOffset(Handle, StringView.Scratch(text), pixelOffset, fontId, fontSize);
         }
 
-        public float GetDpiScale()
+        public float GetDisplayScale()
         {
             ThrowIfDisposed();
-            return Methods.DenOfIz_Clay_GetDpiScale(Handle);
+            return Methods.DenOfIz_Clay_GetDisplayScale(Handle);
         }
 
         public float PointsToPixels(float points)

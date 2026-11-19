@@ -30,12 +30,30 @@ VulkanFence::VulkanFence( VulkanContext *context ) : m_context( context )
 
 void VulkanFence::Wait( )
 {
-    VK_CHECK_RESULT( vkWaitForFences( m_context->LogicalDevice, 1, &m_fence, true, UINT64_MAX ) );
+    if ( m_context->IsDeviceLost )
+    {
+        return;
+    }
+    const VkResult result = vkWaitForFences( m_context->LogicalDevice, 1, &m_fence, true, UINT64_MAX );
+    if ( m_context->CheckDeviceLost( result, "vkWaitForFences" ) )
+    {
+        return;
+    }
+    VK_CHECK_RESULT( result );
 }
 
 void VulkanFence::Reset( )
 {
-    VK_CHECK_RESULT( vkResetFences( m_context->LogicalDevice, 1, &m_fence ) );
+    if ( m_context->IsDeviceLost )
+    {
+        return;
+    }
+    const VkResult result = vkResetFences( m_context->LogicalDevice, 1, &m_fence );
+    if ( m_context->CheckDeviceLost( result, "vkResetFences" ) )
+    {
+        return;
+    }
+    VK_CHECK_RESULT( result );
 }
 
 VulkanFence::~VulkanFence( )

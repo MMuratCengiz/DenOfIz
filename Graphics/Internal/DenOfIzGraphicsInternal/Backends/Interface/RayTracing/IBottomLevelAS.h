@@ -19,11 +19,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Backends/Interface/RayTracing/BottomLevelAS.h"
+#include "../../Common/DeferredDestroyQueue.h"
 
 namespace DenOfIz
 {
 
-    class IBottomLevelAS
+    class IBottomLevelAS : public IDeviceObject
     {
     public:
         virtual ~IBottomLevelAS( )            = default;

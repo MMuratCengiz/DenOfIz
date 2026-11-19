@@ -123,10 +123,32 @@ DX12Texture::DX12Texture( ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_
     isExternalResource = true;
 }
 
+void DX12Texture::UpdateExternal( ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle, const DenOfIz_TextureDesc &desc )
+{
+    m_resource  = resource;
+    m_rtvHandle = cpuHandle;
+    m_desc      = desc;
+}
+
 DX12Texture::~DX12Texture( )
 {
     if ( !isExternalResource )
     {
+        if ( m_context != nullptr )
+        {
+            if ( m_rtvHandle.ptr != 0 && m_context->RtvDescriptorHeap )
+            {
+                DescriptorHandle handle{ };
+                handle.Cpu.ptr = m_rtvHandle.ptr;
+                m_context->RtvDescriptorHeap->FreeDescriptors( handle, 1 );
+            }
+            if ( m_dsvHandle.ptr != 0 && m_context->DsvDescriptorHeap )
+            {
+                DescriptorHandle handle{ };
+                handle.Cpu.ptr = m_dsvHandle.ptr;
+                m_context->DsvDescriptorHeap->FreeDescriptors( handle, 1 );
+            }
+        }
         // DX12Texture is a unique use case, since it can also be initialized by SwapChain which owns its own resource
         // Therefore manual memory management is required in this specific use case.
         m_allocation->Release( );

@@ -137,11 +137,11 @@ ClayRenderer::~ClayRenderer( )
         }
         if ( DENOFIZ_HANDLE_IS_VALID( frame.ColorTarget ) )
         {
-            DenOfIz_TextureResource_Destroy( frame.ColorTarget );
+            DenOfIz_Texture_Destroy( frame.ColorTarget );
         }
         if ( DENOFIZ_HANDLE_IS_VALID( frame.DepthBuffer ) )
         {
-            DenOfIz_TextureResource_Destroy( frame.DepthBuffer );
+            DenOfIz_Texture_Destroy( frame.DepthBuffer );
         }
         if ( DENOFIZ_HANDLE_IS_VALID( frame.FrameFence ) )
         {
@@ -159,7 +159,7 @@ ClayRenderer::~ClayRenderer( )
     }
     if ( DENOFIZ_HANDLE_IS_VALID( m_nullTexture ) )
     {
-        DenOfIz_TextureResource_Destroy( m_nullTexture );
+        DenOfIz_Texture_Destroy( m_nullTexture );
     }
     if ( DENOFIZ_HANDLE_IS_VALID( m_uniformBuffer ) )
     {
@@ -374,12 +374,12 @@ void ClayRenderer::CreateRenderTargets( )
         if ( DENOFIZ_HANDLE_IS_VALID( frame.ColorTarget ) )
         {
             DenOfIz_ResourceTracking_UntrackTexture( m_resourceTracking, frame.ColorTarget );
-            DenOfIz_TextureResource_Destroy( frame.ColorTarget );
+            DenOfIz_Texture_Destroy( frame.ColorTarget );
         }
         if ( DENOFIZ_HANDLE_IS_VALID( frame.DepthBuffer ) )
         {
             DenOfIz_ResourceTracking_UntrackTexture( m_resourceTracking, frame.DepthBuffer );
-            DenOfIz_TextureResource_Destroy( frame.DepthBuffer );
+            DenOfIz_Texture_Destroy( frame.DepthBuffer );
         }
 
         DenOfIz_TextureDesc colorDesc{};
@@ -430,6 +430,11 @@ void ClayRenderer::Resize( const float width, const float height )
     {
         return;
     }
+    if ( width < 1.0f || height < 1.0f )
+    {
+        return;
+    }
+    DenOfIz_LogicalDevice_WaitIdle( m_logicalDevice );
     m_viewportWidth  = width;
     m_viewportHeight = height;
     CreateRenderTargets( );

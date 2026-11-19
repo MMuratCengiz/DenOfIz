@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Backends/Interface/SwapChain.h"
+#include "../Common/DeferredDestroyQueue.h"
 #include "DenOfIzGraphicsInternal/Backends/Interface/ITexture.h"
 #include "ICommandQueue.h"
 
@@ -34,18 +35,20 @@ namespace DenOfIz
     //! auto swapChain = logicalDevice->CreateSwapChain( swapChainDesc );
     //! auto renderTarget = swapChain->GetRenderTarget( imageIndex );
     //! @endcode
-    class ISwapChain
+    class ISwapChain : public IDeviceObject
     {
     public:
         virtual ~ISwapChain( ) = default;
 
-        virtual DenOfIz_Format        GetPreferredFormat( )                     = 0;
-        virtual uint32_t              AcquireNextImage( )                       = 0;
-        virtual DenOfIz_PresentResult Present( uint32_t imageIndex )            = 0;
-        virtual void                  Resize( uint32_t width, uint32_t height ) = 0;
+        virtual DenOfIz_Format GetPreferredFormat( ) = 0;
+        virtual DenOfIz_Result AcquireNextImage( uint32_t &outImageIndex ) = 0;
+        virtual DenOfIz_Result Present( )                                  = 0;
+        virtual DenOfIz_Result Resize( uint32_t width, uint32_t height )   = 0;
 
-        virtual ITexture               *GetRenderTarget( uint32_t image ) = 0;
-        virtual const DenOfIz_Viewport &GetViewport( )                    = 0;
+        virtual ITexture                    *GetRenderTarget( uint32_t image ) = 0;
+        virtual ITexture                    *GetDepthBuffer( )                 = 0;
+        virtual const DenOfIz_Viewport      &GetViewport( )                    = 0;
+        virtual const DenOfIz_SwapChainDesc &GetDesc( )                        = 0;
     };
 
 } // namespace DenOfIz

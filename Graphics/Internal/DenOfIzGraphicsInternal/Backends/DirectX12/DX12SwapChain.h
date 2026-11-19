@@ -36,11 +36,11 @@ namespace DenOfIz
         std::vector<std::unique_ptr<DX12Texture>>  m_renderTargets{ };
         std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>   m_renderTargetCpuHandles{ };
         std::vector<wil::com_ptr<ID3D12Resource2>> m_buffers;
-        wil::com_ptr<ID3D12Resource>               m_depthStencil = nullptr;
-        D3D12_CPU_DESCRIPTOR_HANDLE                m_depthStencilCpuHandle{ };
+        std::unique_ptr<DX12Texture>               m_depthBuffer;
 
         DXGI_COLOR_SPACE_TYPE m_colorSpace{ };
         DenOfIz_Viewport      m_viewport{ };
+        UINT m_swapChainFlags = 0;
 
     public:
         DX12SwapChain( DX12Context *context, const DenOfIz_SwapChainDesc &desc );
@@ -48,15 +48,22 @@ namespace DenOfIz
 
         [[nodiscard]] IDXGISwapChain4 *GetSwapChain( ) const;
 
-        uint32_t                AcquireNextImage( ) override;
-        DenOfIz_PresentResult   Present( uint32_t imageIndex ) override;
+        DenOfIz_Result          AcquireNextImage( uint32_t &outImageIndex ) override;
+        DenOfIz_Result          Present( ) override;
         DenOfIz_Format          GetPreferredFormat( ) override;
         ITexture               *GetRenderTarget( uint32_t image ) override;
+        ITexture               *GetDepthBuffer( ) override;
         const DenOfIz_Viewport &GetViewport( ) override;
-        void                    Resize( uint32_t width, uint32_t height ) override;
+        const DenOfIz_SwapChainDesc &GetDesc( ) override;
+        DenOfIz_Result          Resize( uint32_t width, uint32_t height ) override;
         void                    CreateSwapChain( );
 
         void SetColorSpace( );
+
+    private:
+        void CreateBackBuffers( );
+        void ReleaseBackBuffers( );
+        void NotifyDeviceRemoved( HRESULT hr, const char *operation ) const;
     };
 
 } // namespace DenOfIz

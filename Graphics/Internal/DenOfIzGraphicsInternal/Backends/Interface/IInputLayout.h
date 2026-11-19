@@ -19,11 +19,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Backends/Interface/InputLayout.h"
+#include "../Common/DeferredDestroyQueue.h"
 
 namespace DenOfIz
 {
 
-    class IInputLayout
+    class IInputLayout : public IDeviceObject
     {
     public:
         virtual ~IInputLayout( ) = default;

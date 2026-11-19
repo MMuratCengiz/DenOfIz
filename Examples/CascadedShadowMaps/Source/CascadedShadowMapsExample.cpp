@@ -386,20 +386,6 @@ void CascadedShadowMapsExample::CreateShadowResources( )
 
 void CascadedShadowMapsExample::CreateMainResources( )
 {
-    // Screen-sized depth buffer
-    DenOfIz_TextureDesc depthDesc{};
-    depthDesc.Width                 = m_pixelWidth;
-    depthDesc.Height                = m_pixelHeight;
-    depthDesc.Depth                 = 1;
-    depthDesc.ArraySize             = 1;
-    depthDesc.MipLevels             = 1;
-    depthDesc.Format                = DENOFIZ_FORMAT_D32_FLOAT;
-    depthDesc.Usage                 = DENOFIZ_TEXTURE_USAGE_RENDER_ATTACHMENT_BIT;
-    depthDesc.HeapType              = DENOFIZ_HEAP_TYPE_GPU;
-    depthDesc.ClearDepthStencilHint = { 1.0f, 0.0f };
-    depthDesc.DebugName             = DENOFIZ_STRING( "CSM Depth Buffer" );
-    DenOfIz_LogicalDevice_CreateTexture( m_logicalDevice, &depthDesc, &m_depthBuffer );
-    DenOfIz_ResourceTracking_TrackTexture( m_resourceTracking, m_depthBuffer, DENOFIZ_QUEUE_TYPE_GRAPHICS );
 
     std::array<DenOfIz_ShaderStageDesc, 2> mainStages{};
     mainStages[ 0 ].Stage      = DENOFIZ_SHADER_STAGE_VERTEX_BIT;
@@ -637,9 +623,6 @@ void CascadedShadowMapsExample::Render( const uint32_t frameIndex, DenOfIz_Comma
 
     DenOfIz_CommandList_Begin( commandList );
 
-    uint32_t imageIndex = 0;
-    DenOfIz_FrameSync_AcquireNextImage( m_frameSync, &imageIndex );
-
     DenOfIz_ResourceTracking_TransitionTexture( m_resourceTracking, commandList, m_shadowMapArray, DENOFIZ_RESOURCE_USAGE_DEPTH_WRITE_BIT, DENOFIZ_QUEUE_TYPE_GRAPHICS );
 
     DenOfIz_RenderingDesc shadowRenderingDesc{};
@@ -675,8 +658,7 @@ void CascadedShadowMapsExample::Render( const uint32_t frameIndex, DenOfIz_Comma
 
     DenOfIz_CommandList_EndRendering( commandList );
 
-    DenOfIz_Texture renderTarget = DENOFIZ_NULL_HANDLE;
-    DenOfIz_SwapChain_GetRenderTarget( m_swapChain, imageIndex, &renderTarget );
+    DenOfIz_Texture renderTarget = m_frame.BackBuffer;
 
     DenOfIz_TransitionTextureDesc textureTransitions[ 3 ] = {};
     textureTransitions[ 0 ].Texture                       = m_shadowMapArray;
@@ -685,7 +667,7 @@ void CascadedShadowMapsExample::Render( const uint32_t frameIndex, DenOfIz_Comma
     textureTransitions[ 1 ].Texture                       = renderTarget;
     textureTransitions[ 1 ].NewUsage                      = DENOFIZ_RESOURCE_USAGE_RENDER_TARGET_BIT;
     textureTransitions[ 1 ].QueueType                     = DENOFIZ_QUEUE_TYPE_GRAPHICS;
-    textureTransitions[ 2 ].Texture                       = m_depthBuffer;
+    textureTransitions[ 2 ].Texture                       = m_frame.DepthBuffer;
     textureTransitions[ 2 ].NewUsage                      = DENOFIZ_RESOURCE_USAGE_DEPTH_WRITE_BIT;
     textureTransitions[ 2 ].QueueType                     = DENOFIZ_QUEUE_TYPE_GRAPHICS;
 
@@ -703,7 +685,7 @@ void CascadedShadowMapsExample::Render( const uint32_t frameIndex, DenOfIz_Comma
     DenOfIz_RenderingDesc mainRenderingDesc{};
     mainRenderingDesc.RTAttachments.Elements            = &colorAttachment;
     mainRenderingDesc.RTAttachments.NumElements         = 1;
-    mainRenderingDesc.DepthAttachment.Resource          = m_depthBuffer;
+    mainRenderingDesc.DepthAttachment.Resource          = m_frame.DepthBuffer;
     mainRenderingDesc.DepthAttachment.LoadOp            = DENOFIZ_LOAD_OP_CLEAR;
     mainRenderingDesc.DepthAttachment.StoreOp           = DENOFIZ_STORE_OP_DONT_CARE;
     mainRenderingDesc.DepthAttachment.ClearDepthStencil = { 1.0f, 0.0f };
@@ -791,7 +773,7 @@ void CascadedShadowMapsExample::Quit( )
 
     if ( DENOFIZ_HANDLE_IS_VALID( m_shadowMapArray ) )
     {
-        DenOfIz_TextureResource_Destroy( m_shadowMapArray );
+        DenOfIz_Texture_Destroy( m_shadowMapArray );
     }
     if ( DENOFIZ_HANDLE_IS_VALID( m_shadowUniformBuffer ) )
     {
@@ -823,10 +805,6 @@ void CascadedShadowMapsExample::Quit( )
             DenOfIz_BindGroupLayout_Destroy( layout );
     }
 
-    if ( DENOFIZ_HANDLE_IS_VALID( m_depthBuffer ) )
-    {
-        DenOfIz_TextureResource_Destroy( m_depthBuffer );
-    }
     if ( DENOFIZ_HANDLE_IS_VALID( m_sceneUniformBuffer ) )
     {
         DenOfIz_Buffer_Destroy( m_sceneUniformBuffer );

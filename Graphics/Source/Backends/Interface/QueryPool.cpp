@@ -65,6 +65,6 @@ extern "C"
         {
             return;
         }
-        delete QUERY_POOL_IMPL( queryPool );
+        DenOfIz::DeferredDestroyQueue::Destroy( QUERY_POOL_IMPL( queryPool ) );
     }
 }

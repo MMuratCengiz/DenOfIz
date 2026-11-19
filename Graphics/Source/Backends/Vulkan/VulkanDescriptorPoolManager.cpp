@@ -73,14 +73,15 @@ VulkanDescriptorPoolManager::VulkanDescriptorPoolManager( const VkDevice &device
     m_currentPool = std::make_unique<VulkanDescriptorPool>( m_device, m_maxSets );
 }
 
-void VulkanDescriptorPoolManager::AllocateDescriptorSets( const VkDescriptorSetAllocateInfo &allocateInfo, VkDescriptorSet *sets )
+VkDescriptorPool VulkanDescriptorPoolManager::AllocateDescriptorSets( const VkDescriptorSetAllocateInfo &allocateInfo, VkDescriptorSet *sets )
 {
     if ( allocateInfo.descriptorSetCount > m_maxSets )
     {
         spdlog::error( "Descriptor set count {} exceeds maximum set count {}", allocateInfo.descriptorSetCount, m_maxSets );
-        return;
+        return VK_NULL_HANDLE;
     }
 
+    std::lock_guard lock( m_mutex );
     if ( m_currentPool->m_setsAllocated + allocateInfo.descriptorSetCount > m_currentPool->m_numSets )
     {
         m_pools.push_back( std::move( m_currentPool ) );
@@ -90,22 +91,49 @@ void VulkanDescriptorPoolManager::AllocateDescriptorSets( const VkDescriptorSetA
     VkDescriptorSetAllocateInfo copyAllocateInfo = allocateInfo;
     copyAllocateInfo.descriptorPool              = m_currentPool->m_pool;
 
-    const VkResult result = vkAllocateDescriptorSets( m_device, &copyAllocateInfo, sets );
-    if ( result == VK_SUCCESS )
-    {
-        m_currentPool->m_setsAllocated += allocateInfo.descriptorSetCount;
-    }
-    else if ( result == VK_ERROR_OUT_OF_POOL_MEMORY || result == VK_ERROR_FRAGMENTED_POOL )
+    VkResult result = vkAllocateDescriptorSets( m_device, &copyAllocateInfo, sets );
+    if ( result == VK_ERROR_OUT_OF_POOL_MEMORY || result == VK_ERROR_FRAGMENTED_POOL )
     {
         m_pools.push_back( std::move( m_currentPool ) );
         m_currentPool = std::make_unique<VulkanDescriptorPool>( m_device, m_maxSets );
 
         copyAllocateInfo.descriptorPool = m_currentPool->m_pool;
-        VK_CHECK_RESULT( vkAllocateDescriptorSets( m_device, &copyAllocateInfo, sets ) );
-        m_currentPool->m_setsAllocated += allocateInfo.descriptorSetCount;
+        result                          = vkAllocateDescriptorSets( m_device, &copyAllocateInfo, sets );
     }
-    else
+    if ( result != VK_SUCCESS )
     {
         VK_CHECK_RESULT( result );
+        return VK_NULL_HANDLE;
+    }
+    m_currentPool->m_setsAllocated += allocateInfo.descriptorSetCount;
+    return m_currentPool->m_pool;
+}
+
+void VulkanDescriptorPoolManager::FreeDescriptorSet( const VkDescriptorPool pool, const VkDescriptorSet set )
+{
+    if ( pool == VK_NULL_HANDLE || set == VK_NULL_HANDLE )
+    {
+        return;
+    }
+
+    std::lock_guard lock( m_mutex );
+    if ( m_currentPool && m_currentPool->m_pool == pool )
+    {
+        VK_CHECK_RESULT( vkFreeDescriptorSets( m_device, pool, 1, &set ) );
+        m_currentPool->m_setsAllocated--;
+        return;
+    }
+    for ( auto it = m_pools.begin( ); it != m_pools.end( ); ++it )
+    {
+        if ( ( *it )->m_pool != pool )
+        {
+            continue;
+        }
+        VK_CHECK_RESULT( vkFreeDescriptorSets( m_device, pool, 1, &set ) );
+        if ( --( *it )->m_setsAllocated == 0 )
+        {
+            m_pools.erase( it );
+        }
+        return;
     }
 }

@@ -82,13 +82,45 @@ void DescriptorTable::EncodeAccelerationStructure( id<MTLBuffer> asHeader, uint3
 MetalArgumentBuffer::MetalArgumentBuffer( MetalContext *context, size_t capacity ) : m_context( context ), m_capacity( capacity )
 {
     m_nextOffset = 0;
-    m_buffer     = [m_context->Device newBufferWithLength:m_capacity options:MTLResourceStorageModeShared];
-    if ( !m_buffer )
+    m_contents   = nullptr;
+    if ( AddSegment( ) )
+    {
+        m_contents = (Byte *)m_segments[ 0 ].contents;
+    }
+    else
     {
         spdlog::error( "Failed to allocate Metal argument buffer" );
+        m_segments.push_back( nil );
     }
-    [m_buffer setLabel:@"MetalArgumentBuffer"];
-    m_contents = (Byte *)m_buffer.contents;
+}
+
+bool MetalArgumentBuffer::AddSegment( )
+{
+    id<MTLBuffer> buffer = [m_context->Device newBufferWithLength:m_capacity options:MTLResourceStorageModeShared];
+    if ( !buffer )
+    {
+        return false;
+    }
+    [buffer setLabel:@"MetalArgumentBuffer"];
+    m_segments.push_back( buffer );
+    return true;
+}
+
+bool MetalArgumentBuffer::NextSegment( )
+{
+    if ( m_segments.empty( ) )
+    {
+        return false;
+    }
+    if ( m_segment + 1 >= m_segments.size( ) && !AddSegment( ) )
+    {
+        return false;
+    }
+    m_segment++;
+    m_contents      = (Byte *)m_segments[ m_segment ].contents;
+    m_nextOffset    = 0;
+    m_currentOffset = 0;
+    return true;
 }
 
 std::pair<Byte *, uint64_t> MetalArgumentBuffer::Reserve( size_t numBytes )
@@ -96,7 +128,12 @@ std::pair<Byte *, uint64_t> MetalArgumentBuffer::Reserve( size_t numBytes )
     std::lock_guard<std::mutex> lock( m_reserveMutex );
 
     const uint64_t alignedNumBytes = Utilities::Align( static_cast<uint32_t>( numBytes ), 8 );
-    if ( m_nextOffset + alignedNumBytes > m_capacity )
+    if ( m_contents == nullptr || alignedNumBytes > m_capacity )
+    {
+        spdlog::error( "MetalArgumentBuffer::Reserve: {} bytes do not fit into an argument buffer segment of {} bytes", alignedNumBytes, m_capacity );
+        return std::pair<Byte *, uint64_t>( nullptr, 0 );
+    }
+    if ( m_nextOffset + alignedNumBytes > m_capacity && !NextSegment( ) )
     {
         spdlog::error( "MetalArgumentBuffer::Reserve: out of memory" );
         return std::pair<Byte *, uint64_t>( nullptr, 0 );
@@ -110,6 +147,10 @@ std::pair<Byte *, uint64_t> MetalArgumentBuffer::Reserve( size_t numBytes )
 
 std::pair<Byte *, uint64_t> MetalArgumentBuffer::Duplicate( size_t numBytes )
 {
+    if ( m_contents == nullptr )
+    {
+        return std::pair<Byte *, uint64_t>( nullptr, 0 );
+    }
     Byte *prevPtr = &m_contents[ m_currentOffset ];
     auto  result  = Reserve( numBytes );
     if ( result.first != nullptr && numBytes > 0 )
@@ -148,6 +189,8 @@ void MetalArgumentBuffer::EncodeAddress( uint64_t offset, uint64_t address ) con
 
 void MetalArgumentBuffer::Reset( )
 {
+    m_segment       = 0;
+    m_contents      = m_segments.empty( ) ? nullptr : (Byte *)m_segments[ 0 ].contents;
     m_nextOffset    = 0;
     m_currentOffset = 0;
 }
@@ -159,5 +202,10 @@ uint64_t MetalArgumentBuffer::Offset( ) const
 
 const id<MTLBuffer> &MetalArgumentBuffer::Buffer( ) const
 {
-    return m_buffer;
+    return m_segments[ m_segment ];
+}
+
+size_t MetalArgumentBuffer::Segment( ) const
+{
+    return m_segment;
 }

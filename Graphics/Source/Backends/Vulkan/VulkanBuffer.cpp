@@ -79,7 +79,14 @@ VulkanBuffer::VulkanBuffer( VulkanContext *context, DenOfIz_BufferDesc desc ) :
         allocationCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     }
     VmaAllocationInfo allocationInfo;
-    vmaCreateBuffer( m_context->Vma, &bufferCreateInfo, &allocationCreateInfo, &m_instance, &m_allocation, &allocationInfo );
+    if ( const VkResult result = vmaCreateBuffer( m_context->Vma, &bufferCreateInfo, &allocationCreateInfo, &m_instance, &m_allocation, &allocationInfo );
+         result != VK_SUCCESS )
+    {
+        spdlog::error( "[Vulkan] Failed to create buffer '{}' of {} bytes: {}", m_debugName, m_numBytes, static_cast<int>( result ) );
+        m_instance   = VK_NULL_HANDLE;
+        m_allocation = VK_NULL_HANDLE;
+        return;
+    }
 
     m_offset   = 0; // This used to be allocationInfo.offset, but seems to be applied automatically in almost every case, not sure if required.
     m_numBytes = allocationInfo.size;

@@ -75,6 +75,6 @@ extern "C"
         {
             return;
         }
-        delete SBT_IMPL( sbt );
+        DenOfIz::DeferredDestroyQueue::Destroy( SBT_IMPL( sbt ) );
     }
 }

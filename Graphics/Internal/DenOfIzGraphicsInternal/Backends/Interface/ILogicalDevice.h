@@ -18,7 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <memory>
 #include "DenOfIzGraphics/Backends/Interface/LogicalDevice.h"
+#include "../Common/DeferredDestroyQueue.h"
 #include "IBindGroup.h"
 #include "IBindGroupLayout.h"
 #include "IBuffer.h"
@@ -45,9 +47,27 @@ namespace DenOfIz
     {
     protected:
         DenOfIz_PhysicalDevice m_selectedDeviceInfo{ };
+        //! Created by the backends that defer destruction, null means objects are deleted as soon as they are destroyed.
+        std::unique_ptr<DeferredDestroyQueue> m_destroyQueue;
+
+        //! Deletes everything that is still waiting in the destroy queue. Every backend calls this first thing in its destructor, the objects
+        //! need the device to release what they own.
+        void ReleaseDestroyedObjects( )
+        {
+            if ( m_destroyQueue )
+            {
+                WaitIdle( );
+                m_destroyQueue->ReleaseAll( );
+            }
+        }
 
     public:
         virtual ~ILogicalDevice( ) = default;
+
+        [[nodiscard]] DeferredDestroyQueue *DestroyQueue( ) const
+        {
+            return m_destroyQueue.get( );
+        }
 
         virtual void                        CreateDevice( const DenOfIz_LogicalDeviceDesc &desc = { } ) = 0;
         virtual DenOfIz_PhysicalDeviceArray ListPhysicalDevices( )                                      = 0;

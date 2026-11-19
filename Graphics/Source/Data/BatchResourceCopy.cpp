@@ -223,7 +223,7 @@ void BatchResourceCopy::CopyDataToTexture( const DenOfIz_CopyDataToTextureDesc &
     DenOfIz_LogicalDevice_DeviceInfo( m_device, &deviceInfo );
 
     DenOfIz_Format textureFormat;
-    DenOfIz_TextureResource_GetFormat( copyDesc.DstTexture, &textureFormat );
+    DenOfIz_Texture_GetFormat( copyDesc.DstTexture, &textureFormat );
 
     DenOfIz_BufferDesc stagingBufferDesc{ };
     stagingBufferDesc.HeapType  = DENOFIZ_HEAP_TYPE_CPU_GPU;
@@ -528,7 +528,7 @@ void BatchResourceCopy::LoadTextureInternal( DenOfIz_TextureData texture, DenOfI
     DenOfIz_LogicalDevice_DeviceInfo( m_device, &deviceInfo );
 
     DenOfIz_Format textureFormat;
-    DenOfIz_TextureResource_GetFormat( dstTexture, &textureFormat );
+    DenOfIz_Texture_GetFormat( dstTexture, &textureFormat );
 
     DenOfIz_BufferDesc stagingBufferDesc = { };
     stagingBufferDesc.HeapType           = DENOFIZ_HEAP_TYPE_CPU_GPU;

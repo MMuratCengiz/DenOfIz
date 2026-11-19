@@ -55,20 +55,36 @@ DX12BindGroup::DX12BindGroup( DX12Context *context, const DenOfIz_BindGroupDesc 
     if ( numCbvSrvUav > 0 )
     {
         m_cbvSrvUavHandle = m_context->ShaderVisibleCbvSrvUavDescriptorHeap->AllocateDescriptors( numCbvSrvUav );
+        if ( m_cbvSrvUavHandle.Cpu.ptr != 0 )
+        {
+            m_cbvSrvUavCount = numCbvSrvUav;
+        }
+        else
+        {
+            spdlog::error( "The CBV/SRV/UAV descriptor heap is full, a bind group with {} descriptors cannot be bound.", numCbvSrvUav );
+        }
     }
     if ( numSamplers > 0 )
     {
         m_samplerHandle = m_context->ShaderVisibleSamplerDescriptorHeap->AllocateDescriptors( numSamplers );
+        if ( m_samplerHandle.Cpu.ptr != 0 )
+        {
+            m_samplerCount = numSamplers;
+        }
+        else
+        {
+            spdlog::error( "The sampler descriptor heap is full, a bind group with {} samplers cannot be bound.", numSamplers );
+        }
     }
 }
 
 DX12BindGroup::~DX12BindGroup( )
 {
-    if ( m_cbvSrvUavCount > 0 && m_cbvSrvUavHandle.Cpu.ptr != 0 )
+    if ( m_cbvSrvUavCount > 0 )
     {
         m_context->ShaderVisibleCbvSrvUavDescriptorHeap->FreeDescriptors( m_cbvSrvUavHandle, m_cbvSrvUavCount );
     }
-    if ( m_samplerCount > 0 && m_samplerHandle.Cpu.ptr != 0 )
+    if ( m_samplerCount > 0 )
     {
         m_context->ShaderVisibleSamplerDescriptorHeap->FreeDescriptors( m_samplerHandle, m_samplerCount );
     }
@@ -76,8 +92,7 @@ DX12BindGroup::~DX12BindGroup( )
 
 IBindGroup *DX12BindGroup::BeginUpdate( )
 {
-    m_cbvSrvUavCount = 0;
-    m_samplerCount   = 0;
+    m_version++;
     return this;
 }
 
@@ -105,7 +120,6 @@ IBindGroup *DX12BindGroup::Cbv( const uint32_t binding, IBuffer *resource, size_
 
     const uint32_t offset = m_bindGroupLayout->GetResourceOffset( slot );
     dx12Buffer->CreateView( CpuHandleCbvSrvUav( offset ), slot.Type, resourceOffset );
-    m_cbvSrvUavCount++;
 
     return this;
 }
@@ -130,7 +144,6 @@ IBindGroup *DX12BindGroup::Srv( const uint32_t binding, IBuffer *resource, size_
 
     const uint32_t offset = m_bindGroupLayout->GetResourceOffset( slot );
     dx12Buffer->CreateView( CpuHandleCbvSrvUav( offset ), slot.Type, resourceOffset );
-    m_cbvSrvUavCount++;
     return this;
 }
 
@@ -149,7 +162,6 @@ IBindGroup *DX12BindGroup::SrvArray( const uint32_t binding, const DenOfIz_Textu
         DZ_NOT_NULL( resources.Elements[ i ] );
         const uint32_t descriptorOffset = baseOffset + i;
         reinterpret_cast<DX12Texture *>( resources.Elements[ i ] )->CreateView( CpuHandleCbvSrvUav( descriptorOffset ) );
-        m_cbvSrvUavCount++;
     }
     return this;
 }
@@ -190,7 +202,6 @@ IBindGroup *DX12BindGroup::Uav( const uint32_t binding, IBuffer *resource, size_
 
     const uint32_t offset = m_bindGroupLayout->GetResourceOffset( slot );
     dx12Buffer->CreateView( CpuHandleCbvSrvUav( offset ), slot.Type, resourceOffset );
-    m_cbvSrvUavCount++;
     return this;
 }
 
@@ -208,6 +219,7 @@ IBindGroup *DX12BindGroup::Sampler( const uint32_t binding, ISampler *sampler )
 
 void DX12BindGroup::EndUpdate( )
 {
+    m_version++;
 }
 
 void DX12BindGroup::BindTexture( const DenOfIz_ResourceBindingSlot &slot, ITexture *resource, const uint32_t mipLevel )
@@ -215,7 +227,6 @@ void DX12BindGroup::BindTexture( const DenOfIz_ResourceBindingSlot &slot, ITextu
     DZ_NOT_NULL( resource );
     const uint32_t offset = m_bindGroupLayout->GetResourceOffset( slot );
     reinterpret_cast<DX12Texture *>( resource )->CreateView( CpuHandleCbvSrvUav( offset ), mipLevel );
-    m_cbvSrvUavCount++;
 }
 
 void DX12BindGroup::BindBuffer( const DenOfIz_ResourceBindingSlot &slot, IBuffer *resource )
@@ -225,7 +236,6 @@ void DX12BindGroup::BindBuffer( const DenOfIz_ResourceBindingSlot &slot, IBuffer
 
     const uint32_t offset = m_bindGroupLayout->GetResourceOffset( slot );
     reinterpret_cast<DX12Buffer *>( resource )->CreateView( CpuHandleCbvSrvUav( offset ), slot.Type );
-    m_cbvSrvUavCount++;
 }
 
 void DX12BindGroup::BindSampler( const DenOfIz_ResourceBindingSlot &slot, ISampler *sampler )
@@ -233,7 +243,6 @@ void DX12BindGroup::BindSampler( const DenOfIz_ResourceBindingSlot &slot, ISampl
     DZ_NOT_NULL( sampler );
     const uint32_t offset = m_bindGroupLayout->GetResourceOffset( slot );
     reinterpret_cast<DX12Sampler *>( sampler )->CreateView( CpuHandleSampler( offset ) );
-    m_samplerCount++;
 }
 
 bool DX12BindGroup::UpdateRootDescriptor( const DenOfIz_ResourceBindingSlot &slot, const D3D12_GPU_VIRTUAL_ADDRESS &gpuAddress )
@@ -246,6 +255,7 @@ bool DX12BindGroup::UpdateRootDescriptor( const DenOfIz_ResourceBindingSlot &slo
         }
 
         m_rootDescriptors[ slot.Binding ].GpuAddress = gpuAddress;
+        m_version++;
         return true;
     }
 
@@ -270,6 +280,11 @@ DescriptorHandle DX12BindGroup::CbvSrvUavHandle( ) const
 DescriptorHandle DX12BindGroup::SamplerHandle( ) const
 {
     return m_samplerHandle;
+}
+
+uint32_t DX12BindGroup::Version( ) const
+{
+    return m_version;
 }
 
 uint32_t DX12BindGroup::CbvSrvUavCount( ) const

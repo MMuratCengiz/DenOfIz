@@ -33,41 +33,70 @@ extern "C"
         *outFormat = SWAPCHAIN_IMPL( swapChain )->GetPreferredFormat( );
     }
 
-    void DenOfIz_SwapChain_AcquireNextImage( DenOfIz_SwapChain swapChain, uint32_t *outImageIndex )
+    DenOfIz_Result DenOfIz_SwapChain_AcquireNextImage( DenOfIz_SwapChain swapChain, DenOfIz_Texture *outBackBuffer )
     {
-        if ( !DENOFIZ_HANDLE_IS_VALID( swapChain ) || outImageIndex == NULL )
+        if ( outBackBuffer == NULL )
         {
-            return;
+            return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
-        *outImageIndex = SWAPCHAIN_IMPL( swapChain )->AcquireNextImage( );
+        *outBackBuffer = DENOFIZ_NULL_HANDLE;
+        if ( !DENOFIZ_HANDLE_IS_VALID( swapChain ) )
+        {
+            return DENOFIZ_ERROR_INVALID_HANDLE;
+        }
+
+        DenOfIz::ISwapChain *impl       = SWAPCHAIN_IMPL( swapChain );
+        uint32_t             imageIndex = 0;
+        const DenOfIz_Result result     = impl->AcquireNextImage( imageIndex );
+        if ( result != DENOFIZ_SUCCESS )
+        {
+            return result;
+        }
+        DenOfIz::ITexture *backBuffer = impl->GetRenderTarget( imageIndex );
+        if ( backBuffer == nullptr )
+        {
+            return DENOFIZ_ERROR_UNKNOWN;
+        }
+        *outBackBuffer = DENOFIZ_TO_HANDLE( backBuffer );
+        return DENOFIZ_SUCCESS;
     }
 
-    DenOfIz_PresentResult DenOfIz_SwapChain_Present( DenOfIz_SwapChain swapChain, uint32_t imageIndex )
+    DenOfIz_Result DenOfIz_SwapChain_Present( DenOfIz_SwapChain swapChain )
     {
         if ( !DENOFIZ_HANDLE_IS_VALID( swapChain ) )
         {
-            return DENOFIZ_PRESENT_RESULT_ERROR;
+            return DENOFIZ_ERROR_INVALID_HANDLE;
         }
-        return SWAPCHAIN_IMPL( swapChain )->Present( imageIndex );
+        DenOfIz::ISwapChain *impl   = SWAPCHAIN_IMPL( swapChain );
+        const DenOfIz_Result result = impl->Present( );
+        if ( DenOfIz::DeferredDestroyQueue *destroyQueue = impl->DestroyQueue( ) )
+        {
+            destroyQueue->EndFrame( );
+        }
+        return result;
     }
 
-    void DenOfIz_SwapChain_Resize( DenOfIz_SwapChain swapChain, uint32_t width, uint32_t height )
+    void DenOfIz_SwapChain_GetDepthBuffer( DenOfIz_SwapChain swapChain, DenOfIz_Texture *outDepthBuffer )
     {
+        if ( outDepthBuffer == NULL )
+        {
+            return;
+        }
+        *outDepthBuffer = DENOFIZ_NULL_HANDLE;
         if ( !DENOFIZ_HANDLE_IS_VALID( swapChain ) )
         {
             return;
         }
-        SWAPCHAIN_IMPL( swapChain )->Resize( width, height );
+        *outDepthBuffer = DENOFIZ_TO_HANDLE( SWAPCHAIN_IMPL( swapChain )->GetDepthBuffer( ) );
     }
 
-    void DenOfIz_SwapChain_GetRenderTarget( DenOfIz_SwapChain swapChain, uint32_t image, DenOfIz_Texture *outRenderTarget )
+    void DenOfIz_SwapChain_GetDesc( DenOfIz_SwapChain swapChain, DenOfIz_SwapChainDesc *outDesc )
     {
-        if ( !DENOFIZ_HANDLE_IS_VALID( swapChain ) || outRenderTarget == NULL )
+        if ( !DENOFIZ_HANDLE_IS_VALID( swapChain ) || outDesc == NULL )
         {
             return;
         }
-        DenOfIz::ITexture *renderTarget = SWAPCHAIN_IMPL( swapChain )->GetRenderTarget( image );
-        *outRenderTarget                = DENOFIZ_TO_HANDLE( renderTarget );
+        *outDesc = SWAPCHAIN_IMPL( swapChain )->GetDesc( );
     }
 
     void DenOfIz_SwapChain_GetViewport( DenOfIz_SwapChain swapChain, const DenOfIz_Viewport **outViewport )

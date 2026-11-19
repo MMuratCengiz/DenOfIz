@@ -22,6 +22,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define FMT_EXCEPTIONS 0
 #include <spdlog/spdlog.h>
 
+#include <cmath>
+#include <cstdlib>
+#include <memory>
+
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include "DenOfIzGraphics/Backends/GraphicsApi.h"
 #include "DenOfIzGraphics/Backends/Interface/LogicalDevice.h"
@@ -71,6 +75,8 @@ namespace DenOfIz
         bool                         m_isRunning         = true;
         DenOfIz_StepTimer            m_stepTimer         = DENOFIZ_NULL_HANDLE;
         uint32_t                     m_lastElapsedSecond = 0;
+        DenOfIz_Frame m_frame{ };
+        DenOfIz_CommandListPool      m_destroyStressPool = DENOFIZ_NULL_HANDLE;
 
     public:
         virtual ~IExample( ) = default;
@@ -94,14 +100,15 @@ namespace DenOfIz
 
             DenOfIz_ResourceTracking_Create( &m_resourceTracking );
             CreateSwapChain( );
-            m_camera           = std::make_unique<FreeCamera>( static_cast<float>( m_pixelWidth ) / m_pixelHeight );
+            m_camera           = std::make_unique<FreeCamera>( static_cast<float>( m_pixelWidth ) / static_cast<float>( m_pixelHeight ) );
             m_worldData.Camera = m_camera.get( );
 
             DenOfIz_FrameSyncDesc frameSyncDesc{ };
-            frameSyncDesc.SwapChain    = m_swapChain;
-            frameSyncDesc.Device       = m_logicalDevice;
-            frameSyncDesc.NumFrames    = NumSwapChainBuffers;
-            frameSyncDesc.CommandQueue = m_graphicsQueue;
+            frameSyncDesc.SwapChain        = m_swapChain;
+            frameSyncDesc.Device           = m_logicalDevice;
+            frameSyncDesc.NumFrames        = NumSwapChainBuffers;
+            frameSyncDesc.CommandQueue     = m_graphicsQueue;
+            frameSyncDesc.ResourceTracking = m_resourceTracking;
             DenOfIz_FrameSync_Create( &frameSyncDesc, &m_frameSync );
             m_stepTimer = DenOfIz_StepTimer_Create( );
             Init( );
@@ -111,25 +118,19 @@ namespace DenOfIz
         {
             DenOfIz_SwapChainDesc swapChainDesc{ };
             swapChainDesc.WindowHandle      = m_windowHandle;
-            swapChainDesc.Width             = m_pixelWidth;
-            swapChainDesc.Height            = m_pixelHeight;
             swapChainDesc.NumBuffers        = NumSwapChainBuffers;
             swapChainDesc.BackBufferFormat  = DENOFIZ_FORMAT_B8G8R8A8_UNORM;
             swapChainDesc.DepthBufferFormat = DENOFIZ_FORMAT_D32_FLOAT;
             swapChainDesc.CommandQueue      = m_graphicsQueue;
             swapChainDesc.ImageUsages       = DENOFIZ_RESOURCE_USAGE_COPY_DST_BIT;
-            swapChainDesc.AllowTearing      = true;
+            swapChainDesc.PresentMode       = DENOFIZ_PRESENT_MODE_IMMEDIATE;
             swapChainDesc.EnableHDR         = false;
             swapChainDesc.ColorSpace        = DENOFIZ_COLOR_SPACE_SRGB;
-            swapChainDesc.SampleCount       = DENOFIZ_MSAA_SAMPLE_COUNT_1;
             DenOfIz_LogicalDevice_CreateSwapChain( m_logicalDevice, &swapChainDesc, &m_swapChain );
 
-            for ( uint32_t i = 0; i < swapChainDesc.NumBuffers; i++ )
-            {
-                DenOfIz_Texture renderTarget = DENOFIZ_NULL_HANDLE;
-                DenOfIz_SwapChain_GetRenderTarget( m_swapChain, i, &renderTarget );
-                DenOfIz_ResourceTracking_TrackTexture( m_resourceTracking, renderTarget, DENOFIZ_QUEUE_TYPE_GRAPHICS );
-            }
+            DenOfIz_SwapChain_GetDesc( m_swapChain, &swapChainDesc );
+            m_pixelWidth  = swapChainDesc.Width;
+            m_pixelHeight = swapChainDesc.Height;
         }
 
         void Tick( )
@@ -146,49 +147,108 @@ namespace DenOfIz
         virtual void RenderAndPresentFrame( )
         {
             uint32_t frameIndex = 0;
-            DenOfIz_FrameSync_NextFrame( m_frameSync, &frameIndex );
-            DenOfIz_CommandList commandList = DENOFIZ_NULL_HANDLE;
-            DenOfIz_FrameSync_GetCommandList( m_frameSync, frameIndex, &commandList );
-            Render( frameIndex, commandList );
-            DenOfIz_FrameSync_ExecuteCommandList( m_frameSync, frameIndex, nullptr );
-            Present( frameIndex );
+            if ( !BeginFrame( frameIndex ) )
+            {
+                return;
+            }
+            Render( frameIndex, m_frame.CommandList );
+            EndFrame( );
+        }
+
+        bool BeginFrame( uint32_t &outFrameIndex )
+        {
+            if ( !m_isRunning )
+            {
+                return false;
+            }
+
+            const DenOfIz_Result result = DenOfIz_FrameSync_BeginFrame( m_frameSync, &m_frame );
+            if ( result == DENOFIZ_ERROR_DEVICE_LOST )
+            {
+                m_isRunning = false;
+            }
+            if ( result != DENOFIZ_SUCCESS )
+            {
+                return false;
+            }
+
+            outFrameIndex = m_frame.Index;
+            if ( m_frame.Resized )
+            {
+                m_pixelWidth  = m_frame.Width;
+                m_pixelHeight = m_frame.Height;
+                if ( m_camera )
+                {
+                    m_camera->SetAspectRatio( static_cast<float>( m_pixelWidth ) / static_cast<float>( m_pixelHeight ) );
+                }
+                OnResize( m_pixelWidth, m_pixelHeight );
+            }
+            return true;
         }
 
         virtual void Render( uint32_t frameIndex, DenOfIz_CommandList commandList )
         {
         }
-        void Present( const uint32_t frameIndex )
+
+        void DestroyStress( )
         {
-            DenOfIz_PresentResult presentResult = DENOFIZ_PRESENT_RESULT_SUCCESS;
-            DenOfIz_FrameSync_Present( m_frameSync, frameIndex, &presentResult );
-            switch ( presentResult )
+            static const bool enabled = std::getenv( "DENOFIZ_EXAMPLE_DESTROY_STRESS" ) != nullptr;
+            if ( !enabled )
             {
-            case DENOFIZ_PRESENT_RESULT_SUCCESS:
-                break;
-            case DENOFIZ_PRESENT_RESULT_SUBOPTIMAL:
-                spdlog::info( "Swap chain is suboptimal, recreating..." );
-                if ( DENOFIZ_HANDLE_IS_VALID( m_window ) )
-                {
-                    DenOfIz_DisplaySize pixelSize = DenOfIz_Window_GetSizeInPixels( m_window );
-                    if ( pixelSize.Width > 0 && pixelSize.Height > 0 )
-                    {
-                        HandleResize( pixelSize.Width, pixelSize.Height );
-                    }
-                }
-                break;
+                return;
+            }
+            if ( !DENOFIZ_HANDLE_IS_VALID( m_destroyStressPool ) )
+            {
+                DenOfIz_CommandListPoolDesc poolDesc{ };
+                poolDesc.CommandQueue    = m_graphicsQueue;
+                poolDesc.NumCommandLists = NumSwapChainBuffers;
+                DenOfIz_LogicalDevice_CreateCommandListPool( m_logicalDevice, &poolDesc, &m_destroyStressPool );
+            }
+            DenOfIz_CommandListArray commandLists{ };
+            DenOfIz_CommandListPool_GetCommandLists( m_destroyStressPool, &commandLists );
+            DenOfIz_CommandList commandList = commandLists.Elements[ m_frame.Index % commandLists.NumElements ];
 
-            case DENOFIZ_PRESENT_RESULT_TIMEOUT:
-                spdlog::warn( "Present timed out, continuing..." );
-                break;
+            DenOfIz_BufferDesc srcDesc{ };
+            srcDesc.NumBytes  = 256;
+            srcDesc.HeapType  = DENOFIZ_HEAP_TYPE_CPU_GPU;
+            srcDesc.Usage     = DENOFIZ_BUFFER_USAGE_COPY_SRC_BIT;
+            srcDesc.DebugName = DENOFIZ_STRING( "DestroyStressSrc" );
 
-            case DENOFIZ_PRESENT_RESULT_DEVICE_LOST:
-                spdlog::error( "Device lost during presentation, recreating swap chain..." );
-                DenOfIz_LogicalDevice_WaitIdle( m_logicalDevice );
-                DenOfIz_DisplaySize pixelSize = DenOfIz_Window_GetSizeInPixels( m_window );
-                m_pixelWidth                  = pixelSize.Width;
-                m_pixelHeight                 = pixelSize.Height;
-                CreateSwapChain( );
-                break;
+            DenOfIz_BufferDesc dstDesc{ };
+            dstDesc.NumBytes  = 256;
+            dstDesc.HeapType  = DENOFIZ_HEAP_TYPE_GPU;
+            dstDesc.Usage     = DENOFIZ_BUFFER_USAGE_UNIFORM_BIT | DENOFIZ_BUFFER_USAGE_COPY_DST_BIT;
+            dstDesc.DebugName = DENOFIZ_STRING( "DestroyStressDst" );
+
+            DenOfIz_Buffer src = DENOFIZ_NULL_HANDLE;
+            DenOfIz_Buffer dst = DENOFIZ_NULL_HANDLE;
+            if ( DenOfIz_LogicalDevice_CreateBuffer( m_logicalDevice, &srcDesc, &src ) == DENOFIZ_SUCCESS &&
+                 DenOfIz_LogicalDevice_CreateBuffer( m_logicalDevice, &dstDesc, &dst ) == DENOFIZ_SUCCESS )
+            {
+                DenOfIz_CopyBufferRegionDesc copyDesc{ };
+                copyDesc.SrcBuffer = src;
+                copyDesc.DstBuffer = dst;
+                copyDesc.NumBytes  = 256;
+
+                DenOfIz_CommandList_Begin( commandList );
+                DenOfIz_CommandList_CopyBufferRegion( commandList, &copyDesc );
+                DenOfIz_CommandList_End( commandList );
+
+                DenOfIz_ExecuteCommandListsDesc executeDesc{ };
+                executeDesc.CommandLists.Elements    = &commandList;
+                executeDesc.CommandLists.NumElements = 1;
+                DenOfIz_CommandQueue_ExecuteCommandLists( m_graphicsQueue, &executeDesc );
+            }
+            DenOfIz_Buffer_Destroy( src );
+            DenOfIz_Buffer_Destroy( dst );
+        }
+
+        void EndFrame( const DenOfIz_SemaphoreArray *waitSemaphores = nullptr )
+        {
+            DestroyStress( );
+            if ( DenOfIz_FrameSync_EndFrame( m_frameSync, waitSemaphores ) == DENOFIZ_ERROR_DEVICE_LOST )
+            {
+                m_isRunning = false;
             }
         }
         virtual void Init( ) = 0;
@@ -221,52 +281,33 @@ namespace DenOfIz
                     break;
                 }
             }
-            else if ( event.Type == DENOFIZ_EVENT_TYPE_WINDOW_EVENT )
-            {
-                if ( event.Window.Event == DENOFIZ_WINDOW_EVENT_TYPE_SIZE_CHANGED )
-                {
-                    const uint32_t newWidth  = event.Window.Data1;
-                    const uint32_t newHeight = event.Window.Data2;
-                    if ( newWidth > 0 && newHeight > 0 && ( newWidth != m_pixelWidth || newHeight != m_pixelHeight ) )
-                    {
-                        spdlog::info( "Window pixel size changed to {}x{}", newWidth, newHeight );
-                        HandleResize( newWidth, newHeight );
-                    }
-                }
-            }
-        }
-
-        void HandleResize( const uint32_t pixelWidth, const uint32_t pixelHeight )
-        {
-            DenOfIz_FrameSync_WaitIdle( m_frameSync );
-            DenOfIz_CommandQueue_WaitIdle( m_graphicsQueue );
-            m_pixelWidth  = pixelWidth;
-            m_pixelHeight = pixelHeight;
-            DenOfIz_SwapChain_Resize( m_swapChain, pixelWidth, pixelHeight );
-            if ( m_camera )
-            {
-                m_camera->SetAspectRatio( static_cast<float>( pixelWidth ) / pixelHeight );
-            }
-            for ( uint32_t i = 0; i < NumSwapChainBuffers; i++ )
-            {
-                DenOfIz_Texture renderTarget = DENOFIZ_NULL_HANDLE;
-                DenOfIz_SwapChain_GetRenderTarget( m_swapChain, i, &renderTarget );
-                DenOfIz_ResourceTracking_TrackTexture( m_resourceTracking, renderTarget, DENOFIZ_QUEUE_TYPE_GRAPHICS );
-            }
-            OnResize( pixelWidth, pixelHeight );
-            DenOfIz_FrameSync_WaitIdle( m_frameSync );
-            DenOfIz_CommandQueue_WaitIdle( m_graphicsQueue );
-            DenOfIz_LogicalDevice_WaitIdle( m_logicalDevice );
         }
 
         virtual void OnResize( uint32_t width, uint32_t height )
         {
         }
+
+        void RecreateScreenSizedTexture( DenOfIz_Texture &texture, DenOfIz_TextureDesc desc ) const
+        {
+            if ( DENOFIZ_HANDLE_IS_VALID( texture ) )
+            {
+                DenOfIz_ResourceTracking_UntrackTexture( m_resourceTracking, texture );
+                DenOfIz_Texture_Destroy( texture );
+                texture = DENOFIZ_NULL_HANDLE;
+            }
+            desc.Width  = m_pixelWidth;
+            desc.Height = m_pixelHeight;
+            DenOfIz_LogicalDevice_CreateTexture( m_logicalDevice, &desc, &texture );
+            DenOfIz_ResourceTracking_TrackTexture( m_resourceTracking, texture, DENOFIZ_QUEUE_TYPE_GRAPHICS );
+        }
+
         virtual void Update( ) = 0;
         virtual void Quit( )
         {
+            DenOfIz_FrameSync_WaitIdle( m_frameSync );
             DenOfIz_CommandQueue_WaitIdle( m_graphicsQueue );
             DenOfIz_LogicalDevice_WaitIdle( m_logicalDevice );
+            DenOfIz_CommandListPool_Destroy( m_destroyStressPool );
             DenOfIz_FrameSync_Destroy( m_frameSync );
             DenOfIz_SwapChain_Destroy( m_swapChain );
             DenOfIz_CommandQueue_Destroy( m_graphicsQueue );

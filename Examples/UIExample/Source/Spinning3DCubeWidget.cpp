@@ -82,14 +82,14 @@ Spinning3DCubeWidget::~Spinning3DCubeWidget( )
     {
         if ( DENOFIZ_HANDLE_IS_VALID( rt ) )
         {
-            DenOfIz_TextureResource_Destroy( rt );
+            DenOfIz_Texture_Destroy( rt );
         }
     }
     for ( auto &db : m_depthBuffers )
     {
         if ( DENOFIZ_HANDLE_IS_VALID( db ) )
         {
-            DenOfIz_TextureResource_Destroy( db );
+            DenOfIz_Texture_Destroy( db );
         }
     }
 
@@ -386,11 +386,11 @@ void Spinning3DCubeWidget::ResizeRenderResources( const uint32_t width, const ui
     {
         if ( DENOFIZ_HANDLE_IS_VALID( m_renderTargets[ frameIdx ] ) )
         {
-            DenOfIz_TextureResource_Destroy( m_renderTargets[ frameIdx ] );
+            DenOfIz_Texture_Destroy( m_renderTargets[ frameIdx ] );
         }
         if ( DENOFIZ_HANDLE_IS_VALID( m_depthBuffers[ frameIdx ] ) )
         {
-            DenOfIz_TextureResource_Destroy( m_depthBuffers[ frameIdx ] );
+            DenOfIz_Texture_Destroy( m_depthBuffers[ frameIdx ] );
         }
 
         DenOfIz_TextureDesc rtDesc{ };

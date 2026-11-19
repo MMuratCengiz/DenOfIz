@@ -62,6 +62,19 @@ extern "C"
     DZ_API DenOfIz_Result DenOfIz_LogicalDevice_DeviceInfo( DenOfIz_LogicalDevice device, DenOfIz_PhysicalDevice *outDevice );
     DZ_API DenOfIz_Result DenOfIz_LogicalDevice_IsDeviceLost( DenOfIz_LogicalDevice device, bool *outLost );
     DZ_API DenOfIz_Result DenOfIz_LogicalDevice_WaitIdle( DenOfIz_LogicalDevice device );
+    /**
+     * @brief Marks a frame boundary for applications that never present.
+     *
+     * Destroying a buffer, texture, sampler, bind group, pipeline or any other resource created from a logical device does not release it
+     * right away: the GPU may still be using it, and command lists recorded earlier in the frame may reference it. The resource is released
+     * once a frame boundary has passed and the GPU has finished everything submitted before that boundary.
+     *
+     * `DenOfIz_SwapChain_Present` is a frame boundary, applications that present do not need this function. Off-screen and compute only
+     * applications call it once per iteration, after submitting their command lists. It does not block.
+     *
+     * Everything that is still pending is released when the logical device is destroyed.
+     */
+    DZ_API DenOfIz_Result DenOfIz_LogicalDevice_ReleaseDestroyedResources( DenOfIz_LogicalDevice device );
 
     /**
      * @brief Creates a command queue for submitting work to the GPU.
@@ -493,7 +506,7 @@ extern "C"
      * @endcode
      *
      * @see DenOfIz_TextureDesc
-     * @see DenOfIz_TextureResource_Destroy
+     * @see DenOfIz_Texture_Destroy
      */
     DZ_API DenOfIz_Result DenOfIz_LogicalDevice_CreateTexture( DenOfIz_LogicalDevice device, const DenOfIz_TextureDesc *desc, DenOfIz_Texture *outTexture );
 

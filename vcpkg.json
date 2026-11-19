@@ -48,6 +48,11 @@
       "platform": "osx"
     },
     {
+      "name": "dbus",
+      "default-features": false,
+      "platform": "linux"
+    },
+    {
       "name": "directx-headers",
       "platform": "windows|linux"
     }

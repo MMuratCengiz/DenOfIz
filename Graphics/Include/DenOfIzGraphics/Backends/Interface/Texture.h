@@ -151,7 +151,12 @@ extern "C"
      * - @p texture must be a valid handle
      * - @p outFormat must not be NULL
      */
-    DZ_API void DenOfIz_TextureResource_GetFormat( DenOfIz_Texture texture, DenOfIz_Format *outFormat );
+    DZ_API void DenOfIz_Texture_GetFormat( DenOfIz_Texture texture, DenOfIz_Format *outFormat );
+
+    /**
+     * @brief Returns the description of the texture (size, format, mip levels).
+     */
+    DZ_API void DenOfIz_Texture_GetDesc( DenOfIz_Texture texture, DenOfIz_TextureDesc *outDesc );
 
     /**
      * @brief Destroys the texture and releases GPU memory.
@@ -162,9 +167,9 @@ extern "C"
      * - All command lists referencing this texture must have completed
      * - After this call, @p texture is invalid and must not be used
      *
-     * @warning Do not destroy textures obtained from DenOfIz_SwapChain_GetRenderTarget().
+     * @warning Do not destroy textures owned by a swap chain.
      */
-    DZ_API void DenOfIz_TextureResource_Destroy( DenOfIz_Texture texture );
+    DZ_API void DenOfIz_Texture_Destroy( DenOfIz_Texture texture );
 
     /**
      * @brief Destroys the sampler.

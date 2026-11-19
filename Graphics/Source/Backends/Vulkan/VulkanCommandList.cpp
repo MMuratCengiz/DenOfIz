@@ -27,6 +27,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanSwapChain.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
+#include <algorithm>
+
 using namespace DenOfIz;
 
 VulkanCommandList::VulkanCommandList( VulkanContext *context, const DenOfIz_CommandListDesc desc, const VkCommandPool commandPool ) :
@@ -46,11 +48,13 @@ VulkanCommandList::VulkanCommandList( VulkanContext *context, const DenOfIz_Comm
 void VulkanCommandList::Begin( )
 {
     VK_CHECK_RESULT( vkResetCommandBuffer( m_commandBuffer, 0 ) );
-    m_queuedBindGroups.clear( );
-    m_queuedRootConstants.clear( );
+    m_boundGroups.clear( );
+    m_boundRootConstants.clear( );
+    m_boundLayout     = VK_NULL_HANDLE;
     m_currentPipeline = nullptr;
     m_viewportDirty   = true;
     m_scissorDirty    = true;
+    m_insideRendering = false;
 
     VkCommandBufferBeginInfo beginInfo{ };
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -75,7 +79,7 @@ void VulkanCommandList::BeginRendering( const DenOfIz_RenderingDesc &renderingDe
     renderInfo.sType             = VK_STRUCTURE_TYPE_RENDERING_INFO;
     renderInfo.renderArea.extent = VkExtent2D( renderingDesc.RenderAreaWidth, renderingDesc.RenderAreaHeight );
     renderInfo.renderArea.offset = VkOffset2D( renderingDesc.RenderAreaOffsetX, renderingDesc.RenderAreaOffsetY );
-    renderInfo.layerCount        = renderingDesc.NumLayers;
+    renderInfo.layerCount        = std::max( 1u, renderingDesc.NumLayers );
     renderInfo.viewMask          = 0;
 
     std::vector<VkRenderingAttachmentInfo> colorAttachments;
@@ -176,12 +180,64 @@ void VulkanCommandList::BeginRendering( const DenOfIz_RenderingDesc &renderingDe
         renderInfo.pStencilAttachment = &stencilAttachmentInfo;
     }
 
+    uint32_t   attachmentWidth   = UINT32_MAX;
+    uint32_t   attachmentHeight  = UINT32_MAX;
+    bool       differentSizes    = false;
+    const auto includeAttachment = [ & ]( const DenOfIz_Texture resource )
+    {
+        if ( resource == DENOFIZ_NULL_HANDLE )
+        {
+            return;
+        }
+        const auto *texture = dynamic_cast<VulkanTexture *>( DENOFIZ_FROM_HANDLE( ITexture, resource ) );
+        if ( texture == nullptr )
+        {
+            return;
+        }
+        const uint32_t width  = std::max( 1u, texture->GetWidth( ) );
+        const uint32_t height = std::max( 1u, texture->GetHeight( ) );
+        differentSizes        = differentSizes || ( attachmentWidth != UINT32_MAX && ( attachmentWidth != width || attachmentHeight != height ) );
+        attachmentWidth       = std::min( attachmentWidth, width );
+        attachmentHeight      = std::min( attachmentHeight, height );
+    };
+    for ( uint32_t i = 0; i < renderingDesc.RTAttachments.NumElements; ++i )
+    {
+        includeAttachment( renderingDesc.RTAttachments.Elements[ i ].Resource );
+    }
+    includeAttachment( renderingDesc.DepthAttachment.Resource );
+    includeAttachment( renderingDesc.StencilAttachment.Resource );
+
+    if ( attachmentWidth != UINT32_MAX )
+    {
+        VkRect2D &renderArea = renderInfo.renderArea;
+        renderArea.offset.x  = std::clamp( renderArea.offset.x, 0, static_cast<int32_t>( attachmentWidth ) );
+        renderArea.offset.y  = std::clamp( renderArea.offset.y, 0, static_cast<int32_t>( attachmentHeight ) );
+
+        const uint32_t availableWidth  = attachmentWidth - static_cast<uint32_t>( renderArea.offset.x );
+        const uint32_t availableHeight = attachmentHeight - static_cast<uint32_t>( renderArea.offset.y );
+        if ( differentSizes && ( renderArea.extent.width > availableWidth || renderArea.extent.height > availableHeight ) && !m_warnedAttachmentSizes )
+        {
+            m_warnedAttachmentSizes = true;
+            spdlog::error( "BeginRendering: attachment sizes differ, render area clamped to {}x{}", attachmentWidth, attachmentHeight );
+        }
+        renderArea.extent.width  = std::min( renderArea.extent.width, availableWidth );
+        renderArea.extent.height = std::min( renderArea.extent.height, availableHeight );
+    }
+
+    m_renderArea      = renderInfo.renderArea;
+    m_insideRendering = true;
     vkCmdBeginRendering( m_commandBuffer, &renderInfo );
+
+    if ( !m_scissorDirty )
+    {
+        ApplyScissor( );
+    }
 }
 
 void VulkanCommandList::EndRendering( )
 {
     vkCmdEndRendering( m_commandBuffer );
+    m_insideRendering = false;
 }
 
 void VulkanCommandList::End( )
@@ -261,18 +317,39 @@ void VulkanCommandList::BindScissorRect( const float offsetX, const float offset
         spdlog::error( "Invalid scissor rect dimensions: width= {} , height={}", width, height );
         return;
     }
-    if ( m_scissorRect.offset.x == static_cast<int32_t>( offsetX ) && m_scissorRect.offset.y == static_cast<int32_t>( offsetY ) &&
-         m_scissorRect.extent.width == static_cast<uint32_t>( width ) && m_scissorRect.extent.height == static_cast<uint32_t>( height ) && !m_scissorDirty )
+    if ( m_requestedScissor.offset.x == static_cast<int32_t>( offsetX ) && m_requestedScissor.offset.y == static_cast<int32_t>( offsetY ) &&
+         m_requestedScissor.extent.width == static_cast<uint32_t>( width ) && m_requestedScissor.extent.height == static_cast<uint32_t>( height ) && !m_scissorDirty )
     {
         return;
     }
 
-    m_scissorRect               = VkRect2D( );
-    m_scissorRect.offset.x      = offsetX;
-    m_scissorRect.offset.y      = offsetY;
-    m_scissorRect.extent.width  = width;
-    m_scissorRect.extent.height = height;
-    m_scissorDirty              = false;
+    m_requestedScissor               = VkRect2D( );
+    m_requestedScissor.offset.x      = static_cast<int32_t>( offsetX );
+    m_requestedScissor.offset.y      = static_cast<int32_t>( offsetY );
+    m_requestedScissor.extent.width  = static_cast<uint32_t>( width );
+    m_requestedScissor.extent.height = static_cast<uint32_t>( height );
+    m_scissorDirty                   = false;
+    ApplyScissor( );
+}
+
+void VulkanCommandList::ApplyScissor( )
+{
+    VkRect2D scissor = m_requestedScissor;
+    scissor.offset.x = std::max( 0, scissor.offset.x );
+    scissor.offset.y = std::max( 0, scissor.offset.y );
+    if ( m_insideRendering )
+    {
+        const int64_t left   = std::max<int64_t>( scissor.offset.x, m_renderArea.offset.x );
+        const int64_t top    = std::max<int64_t>( scissor.offset.y, m_renderArea.offset.y );
+        const int64_t right  = std::min<int64_t>( static_cast<int64_t>( scissor.offset.x ) + scissor.extent.width, static_cast<int64_t>( m_renderArea.offset.x ) + m_renderArea.extent.width );
+        const int64_t bottom = std::min<int64_t>( static_cast<int64_t>( scissor.offset.y ) + scissor.extent.height, static_cast<int64_t>( m_renderArea.offset.y ) + m_renderArea.extent.height );
+
+        scissor.offset.x      = static_cast<int32_t>( std::min( left, right ) );
+        scissor.offset.y      = static_cast<int32_t>( std::min( top, bottom ) );
+        scissor.extent.width  = static_cast<uint32_t>( std::max<int64_t>( 0, right - left ) );
+        scissor.extent.height = static_cast<uint32_t>( std::max<int64_t>( 0, bottom - top ) );
+    }
+    m_scissorRect = scissor;
     vkCmdSetScissorWithCount( m_commandBuffer, 1, &m_scissorRect );
 }
 
@@ -280,16 +357,41 @@ void VulkanCommandList::BindResourceGroup( IBindGroup *bindGroup )
 {
     DZ_NOT_NULL( bindGroup );
     const auto *vkBindGroup = dynamic_cast<VulkanBindGroup *>( bindGroup );
-    m_queuedBindGroups.push_back( vkBindGroup );
+    DZ_NOT_NULL( vkBindGroup );
+
+    const uint32_t registerSpace = vkBindGroup->RegisterSpace( );
+    for ( BoundGroup &bound : m_boundGroups )
+    {
+        if ( bound.RegisterSpace == registerSpace )
+        {
+            bound.Group = vkBindGroup;
+            bound.Dirty = true;
+            return;
+        }
+    }
+    m_boundGroups.push_back( { registerSpace, vkBindGroup, true } );
 }
 
 void VulkanCommandList::SetRootConstants( const uint32_t binding, const DenOfIz_ByteArray &data )
 {
-    QueuedRootConstant rootConstant;
-    rootConstant.Binding = binding;
-    rootConstant.Data    = data.Elements;
-    rootConstant.Size    = static_cast<uint32_t>( data.NumElements );
-    m_queuedRootConstants.push_back( rootConstant );
+    if ( data.Elements == nullptr || data.NumElements == 0 )
+    {
+        return;
+    }
+    const auto *bytes = static_cast<const uint8_t *>( data.Elements );
+    for ( BoundRootConstant &bound : m_boundRootConstants )
+    {
+        if ( bound.Binding == binding )
+        {
+            bound.Data.assign( bytes, bytes + data.NumElements );
+            bound.Dirty = true;
+            return;
+        }
+    }
+    BoundRootConstant &bound = m_boundRootConstants.emplace_back( );
+    bound.Binding            = binding;
+    bound.Data.assign( bytes, bytes + data.NumElements );
+    bound.Dirty = true;
 }
 
 void VulkanCommandList::PipelineBarrier( const DenOfIz_PipelineBarrierDesc *barrier )
@@ -579,32 +681,64 @@ VkCommandBuffer &VulkanCommandList::GetCommandBuffer( )
     return m_commandBuffer;
 }
 
-void VulkanCommandList::ProcessBindGroups( ) const
+void VulkanCommandList::ProcessBindGroups( )
 {
     if ( m_currentPipeline == nullptr )
     {
         return;
     }
 
-    VulkanRootSignature *rootSignature = m_currentPipeline->RootSignature( );
+    const VulkanRootSignature *rootSignature = m_currentPipeline->RootSignature( );
     if ( rootSignature == nullptr )
     {
         return;
     }
 
-    for ( auto &vkBindGroup : m_queuedBindGroups )
+    const VkPipelineLayout    layout    = rootSignature->PipelineLayout( );
+    const VkPipelineBindPoint bindPoint = m_currentPipeline->DenOfIz_BindPoint( );
+    if ( layout != m_boundLayout || bindPoint != m_boundBindPoint )
     {
-        if ( vkBindGroup->HasDescriptorSet( ) )
+        m_boundLayout    = layout;
+        m_boundBindPoint = bindPoint;
+        for ( BoundGroup &bound : m_boundGroups )
         {
-            vkCmdBindDescriptorSets( m_commandBuffer, m_currentPipeline->DenOfIz_BindPoint( ), rootSignature->PipelineLayout( ), vkBindGroup->RegisterSpace( ), 1,
-                                     &vkBindGroup->GetDescriptorSet( ), 0, nullptr );
+            bound.Dirty = true;
+        }
+        for ( BoundRootConstant &bound : m_boundRootConstants )
+        {
+            bound.Dirty = true;
         }
     }
 
-    for ( const auto &rootConstant : m_queuedRootConstants )
+    const std::vector<VulkanBindGroupLayout *> &layouts = rootSignature->BindGroupLayouts( );
+    for ( BoundGroup &bound : m_boundGroups )
     {
-        VkPushConstantRange range = rootSignature->PushConstantRange( rootConstant.Binding );
-        vkCmdPushConstants( m_commandBuffer, rootSignature->PipelineLayout( ), range.stageFlags, range.offset, rootConstant.Size, rootConstant.Data );
+        if ( !bound.Dirty )
+        {
+            continue;
+        }
+        if ( bound.RegisterSpace >= layouts.size( ) || !bound.Group->BindGroupLayout( )->IsCompatibleWith( layouts[ bound.RegisterSpace ] ) )
+        {
+            continue;
+        }
+        bound.Dirty = false;
+        if ( bound.Group->HasDescriptorSet( ) )
+        {
+            vkCmdBindDescriptorSets( m_commandBuffer, bindPoint, layout, bound.RegisterSpace, 1, &bound.Group->GetDescriptorSet( ), 0, nullptr );
+        }
+    }
+
+    const uint32_t numRootConstants = rootSignature->NumRootConstants( );
+    for ( BoundRootConstant &bound : m_boundRootConstants )
+    {
+        if ( !bound.Dirty || bound.Binding >= numRootConstants )
+        {
+            continue;
+        }
+        bound.Dirty                     = false;
+        const VkPushConstantRange range = rootSignature->PushConstantRange( bound.Binding );
+        const uint32_t            size  = std::min( static_cast<uint32_t>( bound.Data.size( ) ), range.size );
+        vkCmdPushConstants( m_commandBuffer, layout, range.stageFlags, range.offset, size, bound.Data.data( ) );
     }
 }
 

@@ -30,7 +30,7 @@ RayTracedTriangleExample::~RayTracedTriangleExample( )
     {
         if ( DENOFIZ_HANDLE_IS_VALID( m_raytracingOutput[ i ] ) )
         {
-            DenOfIz_TextureResource_Destroy( m_raytracingOutput[ i ] );
+            DenOfIz_Texture_Destroy( m_raytracingOutput[ i ] );
         }
         if ( DENOFIZ_HANDLE_IS_VALID( m_rayTracingBindGroups[ i ] ) )
         {
@@ -117,11 +117,7 @@ void RayTracedTriangleExample::Render( const uint32_t frameIndex, DenOfIz_Comman
 {
     DenOfIz_CommandList_Begin( commandList );
 
-    uint32_t imageIndex = 0;
-    DenOfIz_FrameSync_AcquireNextImage( m_frameSync, &imageIndex );
-
-    DenOfIz_Texture renderTarget = DENOFIZ_NULL_HANDLE;
-    DenOfIz_SwapChain_GetRenderTarget( m_swapChain, imageIndex, &renderTarget );
+    DenOfIz_Texture renderTarget = m_frame.BackBuffer;
 
     DenOfIz_TransitionBufferDesc bufferTransition = { };
     bufferTransition.Buffer                       = m_rayGenCBResource;
@@ -316,11 +312,7 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     for ( int i = 0; i < 3; ++i )
     {
         DenOfIz_LogicalDevice_CreateBindGroup( m_logicalDevice, &bindGroupDesc, &m_rayTracingBindGroups[ i ] );
-        DenOfIz_BindGroup_BeginUpdate( m_rayTracingBindGroups[ i ] );
-        DenOfIz_BindGroup_SrvTopLevelAS( m_rayTracingBindGroups[ i ], 0, m_topLevelAS );
-        DenOfIz_BindGroup_UavTexture( m_rayTracingBindGroups[ i ], 0, m_raytracingOutput[ i ] );
-        DenOfIz_BindGroup_Cbv( m_rayTracingBindGroups[ i ], 0, m_rayGenCBResource );
-        DenOfIz_BindGroup_EndUpdate( m_rayTracingBindGroups[ i ] );
+        UpdateRayTracingBindGroup( i );
     }
 
     DenOfIz_HitGroupDesc hitGroupDesc    = { };
@@ -527,4 +519,32 @@ void RayTracedTriangleExample::CreateShaderBindingTable( )
     DenOfIz_ShaderBindingTable_BindHitGroup( m_shaderBindingTable, &hitGroupBindingDesc );
 
     DenOfIz_ShaderBindingTable_Build( m_shaderBindingTable );
+}
+
+void RayTracedTriangleExample::UpdateRayTracingBindGroup( const int i )
+{
+    DenOfIz_BindGroup_BeginUpdate( m_rayTracingBindGroups[ i ] );
+    DenOfIz_BindGroup_SrvTopLevelAS( m_rayTracingBindGroups[ i ], 0, m_topLevelAS );
+    DenOfIz_BindGroup_UavTexture( m_rayTracingBindGroups[ i ], 0, m_raytracingOutput[ i ] );
+    DenOfIz_BindGroup_Cbv( m_rayTracingBindGroups[ i ], 0, m_rayGenCBResource );
+    DenOfIz_BindGroup_EndUpdate( m_rayTracingBindGroups[ i ] );
+}
+
+void RayTracedTriangleExample::OnResize( const uint32_t width, const uint32_t height )
+{
+    IExample::OnResize( width, height );
+
+    DenOfIz_TextureDesc textureDesc = { };
+    textureDesc.Depth               = 1;
+    textureDesc.ArraySize           = 1;
+    textureDesc.MipLevels           = 1;
+    textureDesc.Format              = DENOFIZ_FORMAT_B8G8R8A8_UNORM;
+    textureDesc.Usage               = DENOFIZ_TEXTURE_USAGE_STORAGE_BINDING_BIT | DENOFIZ_TEXTURE_USAGE_COPY_SRC_BIT;
+    for ( int i = 0; i < 3; ++i )
+    {
+        const std::string debugName = "RayTracing Output " + std::to_string( i );
+        textureDesc.DebugName       = DENOFIZ_STRING( debugName.c_str( ) );
+        RecreateScreenSizedTexture( m_raytracingOutput[ i ], textureDesc );
+        UpdateRayTracingBindGroup( i );
+    }
 }

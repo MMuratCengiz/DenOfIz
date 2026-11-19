@@ -68,7 +68,7 @@ Quick introduction on how to get up and running: [Getting Started](Documentation
 ## Documentation(WIP)
 
 - [Public API Documentation](Documentation/PublicApi.md)
-- [Resource Binding Guide](Documentation/ResourceBinding.md)
+- [Windows, Resizing and DPI](Documentation/WindowResizeAndDpi.md)
 - [Known Limitations](Documentation/Shortcomings.md)
 
 ## Roadmap:

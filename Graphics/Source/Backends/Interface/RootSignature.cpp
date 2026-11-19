@@ -29,6 +29,6 @@ extern "C"
         {
             return;
         }
-        delete ROOT_SIGNATURE_IMPL( rootSignature );
+        DenOfIz::DeferredDestroyQueue::Destroy( ROOT_SIGNATURE_IMPL( rootSignature ) );
     }
 }

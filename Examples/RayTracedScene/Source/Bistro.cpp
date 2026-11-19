@@ -124,7 +124,7 @@ Bistro::Bistro( DenOfIz_LogicalDevice logicalDevice )
         if ( DENOFIZ_HANDLE_IS_VALID( texture ) )
         {
             DenOfIz_Format format = DENOFIZ_FORMAT_UNDEFINED;
-            DenOfIz_TextureResource_GetFormat( texture, &format );
+            DenOfIz_Texture_GetFormat( texture, &format );
 
             const uint32_t handle = static_cast<uint32_t>( m_textureHandles.size( ) );
             m_textureHandles.push_back( texture );
@@ -468,7 +468,7 @@ Bistro::~Bistro( )
     {
         if ( DENOFIZ_HANDLE_IS_VALID( texture ) )
         {
-            DenOfIz_TextureResource_Destroy( texture );
+            DenOfIz_Texture_Destroy( texture );
         }
     }
     if ( DENOFIZ_HANDLE_IS_VALID( m_materialBuffer ) )

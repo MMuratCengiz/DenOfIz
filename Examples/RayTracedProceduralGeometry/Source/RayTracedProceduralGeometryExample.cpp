@@ -43,7 +43,7 @@ RayTracedProceduralGeometryExample::~RayTracedProceduralGeometryExample( )
         }
         if ( DENOFIZ_HANDLE_IS_VALID( m_raytracingOutput[ i ] ) )
         {
-            DenOfIz_TextureResource_Destroy( m_raytracingOutput[ i ] );
+            DenOfIz_Texture_Destroy( m_raytracingOutput[ i ] );
         }
     }
 
@@ -331,10 +331,7 @@ void RayTracedProceduralGeometryExample::Render( const uint32_t frameIndex, DenO
     dispatchRaysDesc.ShaderBindingTable = m_shaderBindingTable;
     DenOfIz_CommandList_DispatchRays( commandList, &dispatchRaysDesc );
 
-    uint32_t imageIndex = 0;
-    DenOfIz_FrameSync_AcquireNextImage( m_frameSync, &imageIndex );
-    DenOfIz_Texture renderTarget = DENOFIZ_NULL_HANDLE;
-    DenOfIz_SwapChain_GetRenderTarget( m_swapChain, imageIndex, &renderTarget );
+    DenOfIz_Texture renderTarget = m_frame.BackBuffer;
 
     std::array<DenOfIz_TransitionTextureDesc, 2> textureTransitions{ };
     textureTransitions[ 0 ].Texture   = m_raytracingOutput[ frameIndex ];
@@ -791,29 +788,7 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
     for ( int i = 0; i < 3; ++i )
     {
         DenOfIz_LogicalDevice_CreateBindGroup( m_logicalDevice, &bindGroupDesc, &m_rayTracingBindGroups[ i ] );
-        DenOfIz_BindGroup_BeginUpdate( m_rayTracingBindGroups[ i ] );
-
-        DenOfIz_BindGroup_SrvTopLevelAS( m_rayTracingBindGroups[ i ], 0, m_topLevelAS );
-        DenOfIz_BindGroup_UavTexture( m_rayTracingBindGroups[ i ], 0, m_raytracingOutput[ i ] );
-
-        DenOfIz_GPUBufferView  sceneConstantView = DenOfIz_RingBuffer_GetBufferView( m_sceneConstantRingBuffer, i );
-        DenOfIz_BindBufferDesc sceneConstantBindDesc{ };
-        sceneConstantBindDesc.Binding        = 0;
-        sceneConstantBindDesc.Resource       = sceneConstantView.Buffer;
-        sceneConstantBindDesc.ResourceOffset = sceneConstantView.Offset;
-        DenOfIz_BindGroup_CbvWithDesc( m_rayTracingBindGroups[ i ], &sceneConstantBindDesc );
-
-        DenOfIz_BindGroup_SrvBuffer( m_rayTracingBindGroups[ i ], 1, m_indexBuffer );
-        DenOfIz_BindGroup_SrvBuffer( m_rayTracingBindGroups[ i ], 2, m_vertexBuffer );
-
-        DenOfIz_GPUBufferView  aabbAttributeView = DenOfIz_RingBuffer_GetBufferView( m_aabbPrimitiveAttributeRingBuffer, i );
-        DenOfIz_BindBufferDesc aabbAttributeBindDesc{ };
-        aabbAttributeBindDesc.Binding        = 3;
-        aabbAttributeBindDesc.Resource       = aabbAttributeView.Buffer;
-        aabbAttributeBindDesc.ResourceOffset = aabbAttributeView.Offset;
-        DenOfIz_BindGroup_SrvBufferWithDesc( m_rayTracingBindGroups[ i ], &aabbAttributeBindDesc );
-
-        DenOfIz_BindGroup_EndUpdate( m_rayTracingBindGroups[ i ] );
+        UpdateRayTracingBindGroup( i );
     }
 }
 
@@ -1021,4 +996,50 @@ void RayTracedProceduralGeometryExample::Quit( )
 {
     DenOfIz_FrameSync_WaitIdle( m_frameSync );
     IExample::Quit( );
+}
+
+void RayTracedProceduralGeometryExample::UpdateRayTracingBindGroup( const int i )
+{
+    DenOfIz_BindGroup_BeginUpdate( m_rayTracingBindGroups[ i ] );
+
+    DenOfIz_BindGroup_SrvTopLevelAS( m_rayTracingBindGroups[ i ], 0, m_topLevelAS );
+    DenOfIz_BindGroup_UavTexture( m_rayTracingBindGroups[ i ], 0, m_raytracingOutput[ i ] );
+
+    DenOfIz_GPUBufferView  sceneConstantView = DenOfIz_RingBuffer_GetBufferView( m_sceneConstantRingBuffer, i );
+    DenOfIz_BindBufferDesc sceneConstantBindDesc{ };
+    sceneConstantBindDesc.Binding        = 0;
+    sceneConstantBindDesc.Resource       = sceneConstantView.Buffer;
+    sceneConstantBindDesc.ResourceOffset = sceneConstantView.Offset;
+    DenOfIz_BindGroup_CbvWithDesc( m_rayTracingBindGroups[ i ], &sceneConstantBindDesc );
+
+    DenOfIz_BindGroup_SrvBuffer( m_rayTracingBindGroups[ i ], 1, m_indexBuffer );
+    DenOfIz_BindGroup_SrvBuffer( m_rayTracingBindGroups[ i ], 2, m_vertexBuffer );
+
+    DenOfIz_GPUBufferView  aabbAttributeView = DenOfIz_RingBuffer_GetBufferView( m_aabbPrimitiveAttributeRingBuffer, i );
+    DenOfIz_BindBufferDesc aabbAttributeBindDesc{ };
+    aabbAttributeBindDesc.Binding        = 3;
+    aabbAttributeBindDesc.Resource       = aabbAttributeView.Buffer;
+    aabbAttributeBindDesc.ResourceOffset = aabbAttributeView.Offset;
+    DenOfIz_BindGroup_SrvBufferWithDesc( m_rayTracingBindGroups[ i ], &aabbAttributeBindDesc );
+
+    DenOfIz_BindGroup_EndUpdate( m_rayTracingBindGroups[ i ] );
+}
+
+void RayTracedProceduralGeometryExample::OnResize( const uint32_t width, const uint32_t height )
+{
+    IExample::OnResize( width, height );
+    for ( auto &raytracingOutput : m_raytracingOutput )
+    {
+        if ( DENOFIZ_HANDLE_IS_VALID( raytracingOutput ) )
+        {
+            DenOfIz_ResourceTracking_UntrackTexture( m_resourceTracking, raytracingOutput );
+            DenOfIz_Texture_Destroy( raytracingOutput );
+            raytracingOutput = DENOFIZ_NULL_HANDLE;
+        }
+    }
+    CreateRenderTargets( );
+    for ( int i = 0; i < 3; ++i )
+    {
+        UpdateRayTracingBindGroup( i );
+    }
 }

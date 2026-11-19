@@ -102,11 +102,7 @@ void TextRenderingExample::Render( const uint32_t frameIndex, DenOfIz_CommandLis
 {
     DenOfIz_CommandList_Begin( commandList );
 
-    uint32_t imageIndex = 0;
-    DenOfIz_FrameSync_AcquireNextImage( m_frameSync, &imageIndex );
-
-    DenOfIz_Texture renderTarget = DENOFIZ_NULL_HANDLE;
-    DenOfIz_SwapChain_GetRenderTarget( m_swapChain, imageIndex, &renderTarget );
+    DenOfIz_Texture renderTarget = m_frame.BackBuffer;
 
     DenOfIz_ResourceTracking_TransitionTexture( m_resourceTracking, commandList, renderTarget, DENOFIZ_RESOURCE_USAGE_RENDER_TARGET_BIT, DENOFIZ_QUEUE_TYPE_GRAPHICS );
 
@@ -269,4 +265,16 @@ void TextRenderingExample::ImportFont( ) const
             spdlog::critical( "Import completed but some font is still missing." );
         }
     }
+}
+
+void TextRenderingExample::OnResize( const uint32_t width, const uint32_t height )
+{
+    IExample::OnResize( width, height );
+    const DenOfIz_Viewport *viewport = nullptr;
+    DenOfIz_SwapChain_GetViewport( m_swapChain, &viewport );
+    if ( viewport != nullptr )
+    {
+        DenOfIz_TextRenderer_SetViewport( m_textRenderer, viewport );
+    }
+    DenOfIz_FrameDebugRenderer_SetViewportSize( m_debugRenderer, width, height );
 }

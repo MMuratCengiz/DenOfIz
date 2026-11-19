@@ -38,7 +38,7 @@ NullTexture::~NullTexture( )
 {
     if ( DENOFIZ_HANDLE_IS_VALID( m_texture ) )
     {
-        DenOfIz_TextureResource_Destroy( m_texture );
+        DenOfIz_Texture_Destroy( m_texture );
     }
 }
 

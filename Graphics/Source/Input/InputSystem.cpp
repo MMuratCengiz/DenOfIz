@@ -586,7 +586,7 @@ void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, DenOfIz_Eve
         outEvent.Type                    = DENOFIZ_EVENT_TYPE_WINDOW_EVENT;
         outEvent.Window.Common.Timestamp = sdlEvent.window.timestamp;
         outEvent.Window.Common.WindowID  = sdlEvent.window.windowID;
-        outEvent.Window.Event            = DENOFIZ_WINDOW_EVENT_TYPE_SIZE_CHANGED;
+        outEvent.Window.Event            = DENOFIZ_WINDOW_EVENT_TYPE_PIXEL_SIZE_CHANGED;
         if ( SDL_Window *window = SDL_GetWindowFromID( sdlEvent.window.windowID ) )
         {
             int pixelW = 0;
@@ -600,6 +600,15 @@ void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, DenOfIz_Eve
             outEvent.Window.Data1 = sdlEvent.window.data1;
             outEvent.Window.Data2 = sdlEvent.window.data2;
         }
+        break;
+
+    case SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED:
+        outEvent.Type                    = DENOFIZ_EVENT_TYPE_WINDOW_EVENT;
+        outEvent.Window.Common.Timestamp = sdlEvent.window.timestamp;
+        outEvent.Window.Common.WindowID  = sdlEvent.window.windowID;
+        outEvent.Window.Event            = DENOFIZ_WINDOW_EVENT_TYPE_DISPLAY_SCALE_CHANGED;
+        outEvent.Window.Data1            = 0;
+        outEvent.Window.Data2            = 0;
         break;
 
     case SDL_EVENT_WINDOW_RESIZED:
@@ -1064,7 +1073,7 @@ extern "C"
             case DENOFIZ_WINDOW_EVENT_TYPE_RESIZED:
                 sdlEvent.type = SDL_EVENT_WINDOW_RESIZED;
                 break;
-            case DENOFIZ_WINDOW_EVENT_TYPE_SIZE_CHANGED:
+            case DENOFIZ_WINDOW_EVENT_TYPE_PIXEL_SIZE_CHANGED:
                 sdlEvent.type = SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED;
                 break;
             case DENOFIZ_WINDOW_EVENT_TYPE_MINIMIZED:
@@ -1090,6 +1099,9 @@ extern "C"
                 break;
             case DENOFIZ_WINDOW_EVENT_TYPE_CLOSE:
                 sdlEvent.type = SDL_EVENT_WINDOW_CLOSE_REQUESTED;
+                break;
+            case DENOFIZ_WINDOW_EVENT_TYPE_DISPLAY_SCALE_CHANGED:
+                sdlEvent.type = SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED;
                 break;
             default:
                 return;

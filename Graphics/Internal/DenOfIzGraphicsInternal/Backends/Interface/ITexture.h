@@ -19,19 +19,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Backends/Interface/Texture.h"
+#include "../Common/DeferredDestroyQueue.h"
 
 namespace DenOfIz
 {
 
-    class ITexture
+    class ITexture : public IDeviceObject
     {
     public:
         virtual ~ITexture( )                        = default;
         virtual DenOfIz_Format GetFormat( ) const   = 0;
         virtual uint32_t       GetMipLevels( ) const = 0;
+        virtual const DenOfIz_TextureDesc &GetDesc( ) const = 0;
     };
 
-    class ISampler
+    class ISampler : public IDeviceObject
     {
     public:
         virtual ~ISampler( ) = default;

@@ -93,3 +93,26 @@ void InternalAutoSync::ClearCommandListSync( )
     std::lock_guard lock( m_mutex );
     m_activeSwapChains.clear( );
 }
+
+void InternalAutoSync::CollectActiveSwapChains( std::vector<ISwapChain *> &outSwapChains )
+{
+    std::lock_guard lock( m_mutex );
+    outSwapChains.assign( m_activeSwapChains.begin( ), m_activeSwapChains.end( ) );
+}
+
+void InternalAutoSync::ClearSwapChainSync( ISwapChain *swapChain )
+{
+    std::lock_guard lock( m_mutex );
+    m_activeSwapChains.erase( swapChain );
+}
+
+void InternalAutoSync::RemoveSwapChain( ISwapChain *swapChain )
+{
+    std::lock_guard lock( m_mutex );
+    m_activeSwapChains.erase( swapChain );
+    if ( const auto it = m_swapChainCurrentTextures.find( swapChain ); it != m_swapChainCurrentTextures.end( ) )
+    {
+        m_swapChainTextures.erase( it->second );
+        m_swapChainCurrentTextures.erase( it );
+    }
+}

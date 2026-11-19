@@ -46,6 +46,9 @@ namespace DenOfIz
         [[nodiscard]] VkDescriptorSetLayout DescriptorSetLayout( ) const;
         [[nodiscard]] DenOfIz_BindingDesc   GetVkShiftedBinding( const DenOfIz_ResourceBindingSlot &slot ) const;
         [[nodiscard]] bool                  HasBindings( ) const;
+        //! True when descriptor sets of this layout can be bound where a pipeline layout expects `other`: the same layout, or one that is
+        //! defined identically.
+        [[nodiscard]] bool IsCompatibleWith( const VulkanBindGroupLayout *other ) const;
 
     private:
         void                                       AddResourceBinding( const DenOfIz_BindingDesc &binding );

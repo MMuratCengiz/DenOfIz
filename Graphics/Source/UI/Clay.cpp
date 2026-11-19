@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/UI/Clay.h"
 #include "DenOfIzGraphicsInternal/Assets/Font/Font.h"
+#include "DenOfIzGraphicsInternal/Backends/Common/SDLInclude.h"
 #include "DenOfIzGraphicsInternal/Backends/Interface/ITexture.h"
 #include "DenOfIzGraphicsInternal/UI/ClayContext.h"
 #include "DenOfIzGraphicsInternal/UI/ClayRenderer.h"
@@ -49,6 +50,8 @@ namespace DenOfIz
         DenOfIz_Float2                m_scrollDelta{ 0, 0 };
         uint16_t                      m_fontId      = 1;
         bool                          m_isDebugMode = false;
+        bool     m_autoDpiScale = true;
+        uint32_t m_windowId     = 0;
 
         explicit Clay( const DenOfIz_ClayDesc &desc )
         {
@@ -84,7 +87,8 @@ namespace DenOfIz
 
             m_renderer = std::make_unique<ClayRenderer>( clayRendererDesc );
             m_time     = DenOfIz_StepTimer_Create( );
-            SetDpiScale( DenOfIz_Display_GetPrimaryDisplay( ).DpiScale );
+            m_windowId = DENOFIZ_HANDLE_IS_VALID( desc.Window ) ? DenOfIz_Window_GetWindowID( desc.Window ) : 0;
+            ApplyAutoDpiScale( );
         }
 
         ~Clay( )
@@ -98,6 +102,10 @@ namespace DenOfIz
         void SetViewportSize( const float width, const float height )
         {
             DZ_NOT_NULL( m_clayContext );
+            if ( width < 1.0f || height < 1.0f )
+            {
+                return;
+            }
             m_clayContext->SetViewportSize( width, height );
             m_renderer->Resize( width, height );
         }
@@ -108,9 +116,42 @@ namespace DenOfIz
             *outSize = m_clayContext->GetViewportSize( );
         }
 
-        void SetDpiScale( const float dpiScale )
+        void SetDisplayScale( const float displayScale )
         {
-            m_clayContext->SetDpiScale( dpiScale );
+            if ( displayScale <= 0.0f )
+            {
+                return;
+            }
+            m_autoDpiScale = false;
+            ApplyDpiScale( displayScale );
+        }
+
+        void ResetDisplayScale( )
+        {
+            m_autoDpiScale = true;
+            ApplyAutoDpiScale( );
+        }
+
+        void ApplyDpiScale( const float dpiScale ) const
+        {
+            if ( m_clayContext && dpiScale > 0.0f && dpiScale != m_clayContext->GetDpiScale( ) )
+            {
+                m_clayContext->SetDpiScale( dpiScale );
+            }
+        }
+
+        void ApplyAutoDpiScale( const uint32_t fallbackWindowId = 0 ) const
+        {
+            const uint32_t windowId = m_windowId != 0 ? m_windowId : fallbackWindowId;
+            if ( windowId != 0 )
+            {
+                if ( SDL_Window *sdlWindow = SDL_GetWindowFromID( windowId ) )
+                {
+                    ApplyDpiScale( SDL_GetWindowDisplayScale( sdlWindow ) );
+                    return;
+                }
+            }
+            ApplyDpiScale( DenOfIz_Display_GetPrimaryDisplay( ).DisplayScale );
         }
 
         void SetDebugModeEnabled( const bool enabled )
@@ -247,12 +288,16 @@ namespace DenOfIz
                 }
             }
 
-            if ( ev.Type == DENOFIZ_EVENT_TYPE_WINDOW_EVENT )
+            if ( ev.Type == DENOFIZ_EVENT_TYPE_WINDOW_EVENT && ( m_windowId == 0 || ev.Window.Common.WindowID == m_windowId ) )
             {
                 const auto windowEvent = ev.Window.Event;
-                if ( windowEvent == DENOFIZ_WINDOW_EVENT_TYPE_SIZE_CHANGED )
+                if ( windowEvent == DENOFIZ_WINDOW_EVENT_TYPE_PIXEL_SIZE_CHANGED )
                 {
                     SetViewportSize( static_cast<float>( ev.Window.Data1 ), static_cast<float>( ev.Window.Data2 ) );
+                }
+                if ( m_autoDpiScale && ( windowEvent == DENOFIZ_WINDOW_EVENT_TYPE_DISPLAY_SCALE_CHANGED || windowEvent == DENOFIZ_WINDOW_EVENT_TYPE_PIXEL_SIZE_CHANGED ) )
+                {
+                    ApplyAutoDpiScale( ev.Window.Common.WindowID );
                 }
             }
 
@@ -316,7 +361,7 @@ namespace DenOfIz
             return m_clayContext->GetCharIndexAtOffset( text, pixelOffset, fontId, fontSize );
         }
 
-        float GetDpiScale( ) const
+        float GetDisplayScale( ) const
         {
             return m_clayContext->GetDpiScale( );
         }
@@ -517,13 +562,22 @@ extern "C"
         CLAY_IMPL( clay )->GetViewportSize( outSize );
     }
 
-    void DenOfIz_Clay_SetDpiScale( DenOfIz_Clay clay, float dpiScale )
+    void DenOfIz_Clay_SetDisplayScale( DenOfIz_Clay clay, float displayScale )
     {
         if ( !DENOFIZ_HANDLE_IS_VALID( clay ) )
         {
             return;
         }
-        CLAY_IMPL( clay )->SetDpiScale( dpiScale );
+        CLAY_IMPL( clay )->SetDisplayScale( displayScale );
+    }
+
+    void DenOfIz_Clay_ResetDisplayScale( DenOfIz_Clay clay )
+    {
+        if ( !DENOFIZ_HANDLE_IS_VALID( clay ) )
+        {
+            return;
+        }
+        CLAY_IMPL( clay )->ResetDisplayScale( );
     }
 
     void DenOfIz_Clay_SetPointerState( DenOfIz_Clay clay, DenOfIz_Float2 position, DenOfIz_ClayPointerState state )
@@ -761,13 +815,13 @@ extern "C"
         return CLAY_IMPL( clay )->GetCharIndexAtOffset( text, pixelOffset, fontId, fontSize );
     }
 
-    float DenOfIz_Clay_GetDpiScale( DenOfIz_Clay clay )
+    float DenOfIz_Clay_GetDisplayScale( DenOfIz_Clay clay )
     {
         if ( !DENOFIZ_HANDLE_IS_VALID( clay ) )
         {
             return 1.0f;
         }
-        return CLAY_IMPL( clay )->GetDpiScale( );
+        return CLAY_IMPL( clay )->GetDisplayScale( );
     }
 
     float DenOfIz_Clay_PointsToPixels( DenOfIz_Clay clay, float points )

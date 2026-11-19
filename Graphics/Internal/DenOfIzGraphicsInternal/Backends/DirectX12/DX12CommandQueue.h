@@ -30,6 +30,7 @@ namespace DenOfIz
         DenOfIz_CommandQueueDesc         m_desc;
         wil::com_ptr<ID3D12CommandQueue> m_commandQueue;
         wil::com_ptr<ID3D12Fence1>       m_fence;
+        std::atomic<uint64_t>            m_fenceValue{ 0 };
 
     public:
         DX12CommandQueue( DX12Context *context, const DenOfIz_CommandQueueDesc &desc );
@@ -37,6 +38,10 @@ namespace DenOfIz
 
         void WaitIdle( ) override;
         void ExecuteCommandLists( const DenOfIz_ExecuteCommandListsDesc &executeCommandListsDesc ) override;
+
+        //! Signals the next fence value behind everything submitted so far and returns it, 0 when the queue could not be signaled.
+        uint64_t      SignalFence( );
+        ID3D12Fence1 *GetFence( ) const;
 
         ID3D12CommandQueue *GetCommandQueue( ) const;
         DenOfIz_QueueType   GetQueueType( ) const;

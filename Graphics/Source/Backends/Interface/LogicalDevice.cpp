@@ -22,6 +22,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #define LOGICAL_DEVICE_IMPL( handle ) DENOFIZ_FROM_HANDLE( DenOfIz::ILogicalDevice, handle )
 
+template <typename T>
+static T *Attach( const DenOfIz::ILogicalDevice *device, T *object )
+{
+    DenOfIz::DeferredDestroyQueue::Attach( device->DestroyQueue( ), object );
+    return object;
+}
+
 static bool DenOfIz_ValidateBufferDesc( const DenOfIz_BufferDesc *desc )
 {
     bool valid = true;
@@ -464,7 +471,7 @@ extern "C"
             return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
         LOGICAL_DEVICE_IMPL( device )->LoadPhysicalDevice( *physicalDevice );
-        return DENOFIZ_SUCCESS;
+        return LOGICAL_DEVICE_IMPL( device )->IsDeviceLost( ) ? DENOFIZ_ERROR_DEVICE_LOST : DENOFIZ_SUCCESS;
     }
 
     DenOfIz_Result DenOfIz_LogicalDevice_DeviceInfo( DenOfIz_LogicalDevice device, DenOfIz_PhysicalDevice *outDevice )
@@ -502,6 +509,23 @@ extern "C"
             return DENOFIZ_ERROR_INVALID_HANDLE;
         }
         LOGICAL_DEVICE_IMPL( device )->WaitIdle( );
+        if ( DenOfIz::DeferredDestroyQueue *destroyQueue = LOGICAL_DEVICE_IMPL( device )->DestroyQueue( ) )
+        {
+            destroyQueue->Collect( );
+        }
+        return DENOFIZ_SUCCESS;
+    }
+
+    DenOfIz_Result DenOfIz_LogicalDevice_ReleaseDestroyedResources( DenOfIz_LogicalDevice device )
+    {
+        if ( !DENOFIZ_HANDLE_IS_VALID( device ) )
+        {
+            return DENOFIZ_ERROR_INVALID_HANDLE;
+        }
+        if ( DenOfIz::DeferredDestroyQueue *destroyQueue = LOGICAL_DEVICE_IMPL( device )->DestroyQueue( ) )
+        {
+            destroyQueue->EndFrame( );
+        }
         return DENOFIZ_SUCCESS;
     }
 
@@ -547,7 +571,7 @@ extern "C"
         {
             return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
-        *outPipeline = DENOFIZ_TO_HANDLE( LOGICAL_DEVICE_IMPL( device )->CreatePipeline( *desc ) );
+        *outPipeline = DENOFIZ_TO_HANDLE( Attach( LOGICAL_DEVICE_IMPL( device ), LOGICAL_DEVICE_IMPL( device )->CreatePipeline( *desc ) ) );
         return DENOFIZ_SUCCESS;
     }
 
@@ -575,7 +599,7 @@ extern "C"
         {
             return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
-        *outSwapChain = DENOFIZ_TO_HANDLE( LOGICAL_DEVICE_IMPL( device )->CreateSwapChain( *desc ) );
+        *outSwapChain = DENOFIZ_TO_HANDLE( Attach( LOGICAL_DEVICE_IMPL( device ), LOGICAL_DEVICE_IMPL( device )->CreateSwapChain( *desc ) ) );
         return DENOFIZ_SUCCESS;
     }
 
@@ -593,7 +617,7 @@ extern "C"
         {
             return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
-        *outSignature = DENOFIZ_TO_HANDLE( LOGICAL_DEVICE_IMPL( device )->CreateRootSignature( *desc ) );
+        *outSignature = DENOFIZ_TO_HANDLE( Attach( LOGICAL_DEVICE_IMPL( device ), LOGICAL_DEVICE_IMPL( device )->CreateRootSignature( *desc ) ) );
         return DENOFIZ_SUCCESS;
     }
 
@@ -607,7 +631,7 @@ extern "C"
         {
             return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
-        *outLayout = DENOFIZ_TO_HANDLE( LOGICAL_DEVICE_IMPL( device )->CreateInputLayout( *desc ) );
+        *outLayout = DENOFIZ_TO_HANDLE( Attach( LOGICAL_DEVICE_IMPL( device ), LOGICAL_DEVICE_IMPL( device )->CreateInputLayout( *desc ) ) );
         return DENOFIZ_SUCCESS;
     }
 
@@ -625,7 +649,7 @@ extern "C"
         {
             DenOfIz_ValidateResourceBindingDesc( &desc->Bindings.Elements[ i ], i );
         }
-        *outLayout = DENOFIZ_TO_HANDLE( LOGICAL_DEVICE_IMPL( device )->CreateBindGroupLayout( *desc ) );
+        *outLayout = DENOFIZ_TO_HANDLE( Attach( LOGICAL_DEVICE_IMPL( device ), LOGICAL_DEVICE_IMPL( device )->CreateBindGroupLayout( *desc ) ) );
         return DENOFIZ_SUCCESS;
     }
 
@@ -644,7 +668,7 @@ extern "C"
             spdlog::warn( "BindGroupDesc: Layout handle is invalid" );
             return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
-        *outGroup = DENOFIZ_TO_HANDLE( LOGICAL_DEVICE_IMPL( device )->CreateBindGroup( *desc ) );
+        *outGroup = DENOFIZ_TO_HANDLE( Attach( LOGICAL_DEVICE_IMPL( device ), LOGICAL_DEVICE_IMPL( device )->CreateBindGroup( *desc ) ) );
         return DENOFIZ_SUCCESS;
     }
 
@@ -690,8 +714,8 @@ extern "C"
         {
             return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
-        *outBuffer = DENOFIZ_TO_HANDLE( LOGICAL_DEVICE_IMPL( device )->CreateBuffer( *desc ) );
-        return DENOFIZ_SUCCESS;
+        *outBuffer = DENOFIZ_TO_HANDLE( Attach( LOGICAL_DEVICE_IMPL( device ), LOGICAL_DEVICE_IMPL( device )->CreateBuffer( *desc ) ) );
+        return DENOFIZ_HANDLE_IS_VALID( *outBuffer ) ? DENOFIZ_SUCCESS : DENOFIZ_ERROR_OUT_OF_DEVICE_MEMORY;
     }
 
     DenOfIz_Result DenOfIz_LogicalDevice_CreateTexture( DenOfIz_LogicalDevice device, const DenOfIz_TextureDesc *desc, DenOfIz_Texture *outTexture )
@@ -708,8 +732,8 @@ extern "C"
         {
             return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
-        *outTexture = DENOFIZ_TO_HANDLE( LOGICAL_DEVICE_IMPL( device )->CreateTexture( *desc ) );
-        return DENOFIZ_SUCCESS;
+        *outTexture = DENOFIZ_TO_HANDLE( Attach( LOGICAL_DEVICE_IMPL( device ), LOGICAL_DEVICE_IMPL( device )->CreateTexture( *desc ) ) );
+        return DENOFIZ_HANDLE_IS_VALID( *outTexture ) ? DENOFIZ_SUCCESS : DENOFIZ_ERROR_OUT_OF_DEVICE_MEMORY;
     }
 
     DenOfIz_Result DenOfIz_LogicalDevice_CreateSampler( DenOfIz_LogicalDevice device, const DenOfIz_SamplerDesc *desc, DenOfIz_Sampler *outSampler )
@@ -722,7 +746,7 @@ extern "C"
         {
             return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
-        *outSampler = DENOFIZ_TO_HANDLE( LOGICAL_DEVICE_IMPL( device )->CreateSampler( *desc ) );
+        *outSampler = DENOFIZ_TO_HANDLE( Attach( LOGICAL_DEVICE_IMPL( device ), LOGICAL_DEVICE_IMPL( device )->CreateSampler( *desc ) ) );
         return DENOFIZ_SUCCESS;
     }
 
@@ -736,7 +760,7 @@ extern "C"
         {
             return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
-        *outPool = DENOFIZ_TO_HANDLE( LOGICAL_DEVICE_IMPL( device )->CreateQueryPool( *desc ) );
+        *outPool = DENOFIZ_TO_HANDLE( Attach( LOGICAL_DEVICE_IMPL( device ), LOGICAL_DEVICE_IMPL( device )->CreateQueryPool( *desc ) ) );
         return DENOFIZ_SUCCESS;
     }
 
@@ -754,7 +778,7 @@ extern "C"
         {
             return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
-        *outAS = DENOFIZ_TO_HANDLE( LOGICAL_DEVICE_IMPL( device )->CreateTopLevelAS( *desc ) );
+        *outAS = DENOFIZ_TO_HANDLE( Attach( LOGICAL_DEVICE_IMPL( device ), LOGICAL_DEVICE_IMPL( device )->CreateTopLevelAS( *desc ) ) );
         return DENOFIZ_SUCCESS;
     }
 
@@ -768,7 +792,7 @@ extern "C"
         {
             return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
-        *outAS = DENOFIZ_TO_HANDLE( LOGICAL_DEVICE_IMPL( device )->CreateBottomLevelAS( *desc ) );
+        *outAS = DENOFIZ_TO_HANDLE( Attach( LOGICAL_DEVICE_IMPL( device ), LOGICAL_DEVICE_IMPL( device )->CreateBottomLevelAS( *desc ) ) );
         return DENOFIZ_SUCCESS;
     }
 
@@ -786,7 +810,7 @@ extern "C"
         {
             return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
-        *outTable = DENOFIZ_TO_HANDLE( LOGICAL_DEVICE_IMPL( device )->CreateShaderBindingTable( *desc ) );
+        *outTable = DENOFIZ_TO_HANDLE( Attach( LOGICAL_DEVICE_IMPL( device ), LOGICAL_DEVICE_IMPL( device )->CreateShaderBindingTable( *desc ) ) );
         return DENOFIZ_SUCCESS;
     }
 
@@ -801,7 +825,7 @@ extern "C"
         {
             return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
-        *outSignature = DENOFIZ_TO_HANDLE( LOGICAL_DEVICE_IMPL( device )->CreateLocalRootSignature( *desc ) );
+        *outSignature = DENOFIZ_TO_HANDLE( Attach( LOGICAL_DEVICE_IMPL( device ), LOGICAL_DEVICE_IMPL( device )->CreateLocalRootSignature( *desc ) ) );
         return DENOFIZ_SUCCESS;
     }
 
@@ -815,7 +839,7 @@ extern "C"
         {
             return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
-        *outData = DENOFIZ_TO_HANDLE( LOGICAL_DEVICE_IMPL( device )->CreateShaderLocalData( *desc ) );
+        *outData = DENOFIZ_TO_HANDLE( Attach( LOGICAL_DEVICE_IMPL( device ), LOGICAL_DEVICE_IMPL( device )->CreateShaderLocalData( *desc ) ) );
         return DENOFIZ_SUCCESS;
     }
 

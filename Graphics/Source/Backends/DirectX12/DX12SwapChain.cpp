@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12SwapChain.h"
+#include <algorithm>
 #include "DenOfIzGraphicsInternal/Backends/Common/SDLInclude.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12EnumConverter.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12Semaphore.h"
@@ -27,9 +28,17 @@ using namespace Microsoft::WRL;
 
 DX12SwapChain::DX12SwapChain( DX12Context *context, const DenOfIz_SwapChainDesc &desc ) : m_context( context ), m_desc( desc )
 {
+    if ( m_desc.Width == 0 || m_desc.Height == 0 )
+    {
+        DenOfIz_GraphicsWindowSurface surface{ };
+        DenOfIz_GraphicsWindowHandle_GetSurface( m_desc.WindowHandle, &surface );
+        m_desc.Width  = surface.Width;
+        m_desc.Height = surface.Height;
+    }
     m_desc.Width  = std::max( 1u, m_desc.Width );
     m_desc.Height = std::max( 1u, m_desc.Height );
-    m_viewport    = DenOfIz_Viewport( 0.0f, 0.0f, static_cast<float>( m_desc.Width ), static_cast<float>( m_desc.Height ) );
+    m_desc.NumBuffers = std::min( std::max( 2u, m_desc.NumBuffers ), 16u );
+    m_viewport        = DenOfIz_Viewport( 0.0f, 0.0f, static_cast<float>( m_desc.Width ), static_cast<float>( m_desc.Height ) );
     CreateSwapChain( );
 }
 
@@ -38,10 +47,12 @@ void DX12SwapChain::CreateSwapChain( )
     if ( !DENOFIZ_HANDLE_IS_VALID( m_desc.WindowHandle ) )
     {
         spdlog::error( "WindowHandle cannot be null" );
+        return;
     }
     if ( !DENOFIZ_HANDLE_IS_VALID( m_desc.CommandQueue ) )
     {
         spdlog::error( "CommandQueue cannot be null" );
+        return;
     }
     m_commandQueue = static_cast<DX12CommandQueue *>( DENOFIZ_FROM_HANDLE( ICommandQueue, m_desc.CommandQueue ) );
 
@@ -54,20 +65,28 @@ void DX12SwapChain::CreateSwapChain( )
 
     uint32_t windowId = 0;
     DenOfIz_GraphicsWindowHandle_GetSDLWindowId( m_desc.WindowHandle, &windowId );
-    SDL_Window           *sdlWindow     = SDL_GetWindowFromID( windowId );
-    auto                  hwnd          = static_cast<HWND>( SDL_GetPointerProperty( SDL_GetWindowProperties( sdlWindow ), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr ) );
+    SDL_Window *sdlWindow = SDL_GetWindowFromID( windowId );
+    if ( sdlWindow == nullptr )
+    {
+        spdlog::critical( "Swap chain window no longer exists: {}", SDL_GetError( ) );
+        return;
+    }
+    auto hwnd = static_cast<HWND>( SDL_GetPointerProperty( SDL_GetWindowProperties( sdlWindow ), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr ) );
+
+    m_swapChainFlags = ( m_desc.PresentMode == DENOFIZ_PRESENT_MODE_IMMEDIATE && m_context->SelectedDeviceInfo.Capabilities.Tearing ) ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u;
+
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { };
     swapChainDesc.Width                 = m_desc.Width;
     swapChainDesc.Height                = m_desc.Height;
     swapChainDesc.Format                = DenOfIz_DX12EnumConverter_ConvertFormat( m_desc.BackBufferFormat );
     swapChainDesc.BufferUsage           = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_BACK_BUFFER;
     swapChainDesc.BufferCount           = m_desc.NumBuffers;
-    swapChainDesc.SampleDesc.Count      = DenOfIz_MSAASampleCount_ToNumSamples( m_desc.SampleCount );
+    swapChainDesc.SampleDesc.Count      = 1;
     swapChainDesc.SampleDesc.Quality    = 0;
     swapChainDesc.Scaling               = DXGI_SCALING_STRETCH;
     swapChainDesc.SwapEffect            = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swapChainDesc.AlphaMode             = DXGI_ALPHA_MODE_IGNORE;
-    swapChainDesc.Flags                 = ( m_desc.AllowTearing && m_context->SelectedDeviceInfo.Capabilities.Tearing ) ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u;
+    swapChainDesc.Flags                 = m_swapChainFlags;
 
     DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsSwapChainDesc = { };
     fsSwapChainDesc.Windowed                        = TRUE;
@@ -75,9 +94,28 @@ void DX12SwapChain::CreateSwapChain( )
     // Create a swap chain for the window.
     wil::com_ptr<IDXGISwapChain1> swapChain;
 
-    DX_CHECK_RESULT( m_context->DXGIFactory->CreateSwapChainForHwnd( m_commandQueue->GetCommandQueue( ), hwnd, &swapChainDesc, &fsSwapChainDesc, nullptr, swapChain.put( ) ) );
-    DX_CHECK_RESULT( swapChain->QueryInterface( IID_PPV_ARGS( m_swapChain.put( ) ) ) );
+    HRESULT hr = m_context->DXGIFactory->CreateSwapChainForHwnd( m_commandQueue->GetCommandQueue( ), hwnd, &swapChainDesc, &fsSwapChainDesc, nullptr, swapChain.put( ) );
+    if ( FAILED( hr ) || swapChain.get( ) == nullptr )
+    {
+        spdlog::critical( "Failed to create swap chain: 0x{:08x}", static_cast<uint32_t>( hr ) );
+        NotifyDeviceRemoved( hr, "CreateSwapChainForHwnd" );
+        return;
+    }
+    hr = swapChain->QueryInterface( IID_PPV_ARGS( m_swapChain.put( ) ) );
+    if ( FAILED( hr ) || m_swapChain.get( ) == nullptr )
+    {
+        spdlog::critical( "IDXGISwapChain4 not supported: 0x{:08x}", static_cast<uint32_t>( hr ) );
+        return;
+    }
     DX_CHECK_RESULT( m_context->DXGIFactory->MakeWindowAssociation( hwnd, DXGI_MWA_VALID ) );
+
+    CreateBackBuffers( );
+    SetColorSpace( );
+}
+
+void DX12SwapChain::CreateBackBuffers( )
+{
+    const DXGI_FORMAT backBufferFormat = DenOfIz_DX12EnumConverter_ConvertFormat( m_desc.BackBufferFormat );
 
     m_renderTargets.resize( m_desc.NumBuffers );
     m_renderTargetCpuHandles.resize( m_desc.NumBuffers );
@@ -85,42 +123,97 @@ void DX12SwapChain::CreateSwapChain( )
     for ( uint32_t i = 0; i < m_desc.NumBuffers; i++ )
     {
         DX_CHECK_RESULT( m_swapChain->GetBuffer( i, IID_PPV_ARGS( &m_buffers.at( i ) ) ) );
+        auto buffer = m_buffers.at( i ).get( );
+        if ( buffer == nullptr )
+        {
+            spdlog::critical( "Failed to get swap chain buffer {}", i );
+            continue;
+        }
 
         D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = { };
-        rtvDesc.Format                        = swapChainDesc.Format;
+        rtvDesc.Format                        = backBufferFormat;
         rtvDesc.ViewDimension                 = D3D12_RTV_DIMENSION_TEXTURE2D;
 
         m_renderTargetCpuHandles[ i ] = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_RTV ]->AllocateDescriptors( 1 ).Cpu;
-        auto buffer                   = m_buffers.at( i ).get( );
         buffer->SetName( L"SwapChain Buffer" );
-        m_renderTargets[ i ] = std::make_unique<DX12Texture>( buffer, m_renderTargetCpuHandles[ i ] );
+        DenOfIz_TextureDesc backBufferDesc{ };
+        backBufferDesc.Width     = m_desc.Width;
+        backBufferDesc.Height    = m_desc.Height;
+        backBufferDesc.Depth     = 1;
+        backBufferDesc.ArraySize = 1;
+        backBufferDesc.MipLevels = 1;
+        backBufferDesc.Format    = m_desc.BackBufferFormat;
+        if ( m_renderTargets[ i ] == nullptr )
+        {
+            m_renderTargets[ i ] = std::make_unique<DX12Texture>( buffer, m_renderTargetCpuHandles[ i ] );
+        }
+        m_renderTargets[ i ]->UpdateExternal( buffer, m_renderTargetCpuHandles[ i ], backBufferDesc );
         m_context->D3DDevice->CreateRenderTargetView( m_renderTargets[ i ]->Resource( ), &rtvDesc, m_renderTargetCpuHandles[ i ] );
     }
 
-    SetColorSpace( );
-    CD3DX12_HEAP_PROPERTIES depthHeapProperties( D3D12_HEAP_TYPE_DEFAULT );
+    if ( m_desc.DepthBufferFormat == DENOFIZ_FORMAT_UNDEFINED )
+    {
+        return;
+    }
+    if ( m_depthBuffer != nullptr && m_depthBuffer->GetWidth( ) == m_desc.Width && m_depthBuffer->GetHeight( ) == m_desc.Height )
+    {
+        return;
+    }
+    m_depthBuffer.reset( );
 
-    DXGI_FORMAT         depthBufferFormat = DenOfIz_DX12EnumConverter_ConvertFormat( m_desc.DepthBufferFormat );
-    D3D12_RESOURCE_DESC depthStencilDesc  = CD3DX12_RESOURCE_DESC::Tex2D( depthBufferFormat, m_desc.Width, m_desc.Height,
-                                                                          1, // This depth stencil view has only one texture.
-                                                                          1  // Use a single mipmap level.
-     );
-    depthStencilDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+    DenOfIz_TextureDesc depthDesc{ };
+    depthDesc.Width                 = m_desc.Width;
+    depthDesc.Height                = m_desc.Height;
+    depthDesc.Depth                 = 1;
+    depthDesc.ArraySize             = 1;
+    depthDesc.MipLevels             = 1;
+    depthDesc.Format                = m_desc.DepthBufferFormat;
+    depthDesc.Usage                 = DENOFIZ_TEXTURE_USAGE_RENDER_ATTACHMENT_BIT;
+    depthDesc.HeapType              = DENOFIZ_HEAP_TYPE_GPU;
+    depthDesc.ClearDepthStencilHint = { 1.0f, 0.0f };
+    depthDesc.DebugName             = DENOFIZ_STRING( "SwapChain Depth Buffer" );
+    m_depthBuffer                   = std::make_unique<DX12Texture>( m_context, depthDesc );
+}
 
-    D3D12_CLEAR_VALUE depthOptimizedClearValue    = { };
-    depthOptimizedClearValue.Format               = depthBufferFormat;
-    depthOptimizedClearValue.DepthStencil.Depth   = 1.0f;
-    depthOptimizedClearValue.DepthStencil.Stencil = 0;
+void DX12SwapChain::ReleaseBackBuffers( )
+{
+    for ( auto &rt : m_renderTargets )
+    {
+        if ( rt != nullptr )
+        {
+            rt->UpdateExternal( nullptr, D3D12_CPU_DESCRIPTOR_HANDLE{ }, DenOfIz_TextureDesc{ } );
+        }
+    }
+    for ( auto &buffer : m_buffers )
+    {
+        buffer.reset( );
+    }
 
-    DX_CHECK_RESULT( m_context->D3DDevice->CreateCommittedResource( &depthHeapProperties, D3D12_HEAP_FLAG_NONE, &depthStencilDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE,
-                                                                    &depthOptimizedClearValue, IID_PPV_ARGS( m_depthStencil.put( ) ) ) );
+    for ( auto &cpuHandle : m_renderTargetCpuHandles )
+    {
+        if ( cpuHandle.ptr != 0 )
+        {
+            DescriptorHandle handle{ };
+            handle.Cpu.ptr = cpuHandle.ptr;
+            m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_RTV ]->FreeDescriptors( handle, 1 );
+            cpuHandle.ptr = 0;
+        }
+    }
+}
 
-    D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = { };
-    dsvDesc.Format                        = depthBufferFormat;
-    dsvDesc.ViewDimension                 = D3D12_DSV_DIMENSION_TEXTURE2D;
-
-    m_depthStencilCpuHandle = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_DSV ]->AllocateDescriptors( 1 ).Cpu;
-    m_context->D3DDevice->CreateDepthStencilView( m_depthStencil.get( ), &dsvDesc, m_depthStencilCpuHandle );
+void DX12SwapChain::NotifyDeviceRemoved( const HRESULT hr, const char *operation ) const
+{
+    if ( hr != DXGI_ERROR_DEVICE_REMOVED && hr != DXGI_ERROR_DEVICE_RESET )
+    {
+        return;
+    }
+    if ( m_context->IsDeviceLost )
+    {
+        return;
+    }
+    m_context->IsDeviceLost = true;
+    const HRESULT reason    = hr == DXGI_ERROR_DEVICE_REMOVED ? m_context->D3DDevice->GetDeviceRemovedReason( ) : hr;
+    spdlog::critical( "Device lost during {}: 0x{:08x}", operation, static_cast<uint32_t>( reason ) );
 }
 
 void DX12SwapChain::SetColorSpace( )
@@ -166,104 +259,110 @@ void DX12SwapChain::SetColorSpace( )
     }
 }
 
-uint32_t DX12SwapChain::AcquireNextImage( )
+DenOfIz_Result DX12SwapChain::AcquireNextImage( uint32_t &outImageIndex )
 {
-    return m_swapChain->GetCurrentBackBufferIndex( );
+    outImageIndex = 0;
+    if ( m_context->IsDeviceLost )
+    {
+        return DENOFIZ_ERROR_DEVICE_LOST;
+    }
+    if ( m_swapChain.get( ) == nullptr )
+    {
+        return DENOFIZ_ERROR_INITIALIZATION;
+    }
+    DenOfIz_GraphicsWindowSurface surface{ };
+    DenOfIz_GraphicsWindowHandle_GetSurface( m_desc.WindowHandle, &surface );
+    if ( surface.Width == 0 || surface.Height == 0 )
+    {
+        return DENOFIZ_NOT_READY;
+    }
+    if ( surface.Width != m_desc.Width || surface.Height != m_desc.Height )
+    {
+        if ( const DenOfIz_Result resizeResult = Resize( surface.Width, surface.Height ); resizeResult != DENOFIZ_SUCCESS )
+        {
+            return resizeResult;
+        }
+    }
+    outImageIndex = m_swapChain->GetCurrentBackBufferIndex( );
+    return DENOFIZ_SUCCESS;
 }
 
-DenOfIz_PresentResult DX12SwapChain::Present( uint32_t imageIndex )
+DenOfIz_Result DX12SwapChain::Present( )
 {
-    uint32_t flags        = 0;
-    uint32_t syncInterval = 0;
-    if ( m_desc.AllowTearing && m_context->SelectedDeviceInfo.Capabilities.Tearing )
+    if ( m_context->IsDeviceLost )
     {
-        syncInterval = 0;
-        flags |= DXGI_PRESENT_ALLOW_TEARING;
+        return DENOFIZ_ERROR_DEVICE_LOST;
     }
-    else
+    if ( m_swapChain.get( ) == nullptr )
     {
-        syncInterval = 1;
+        return DENOFIZ_ERROR_INITIALIZATION;
     }
 
-    if ( const HRESULT hr = m_swapChain->Present( syncInterval, flags ); SUCCEEDED( hr ) )
-    {
-        return DENOFIZ_PRESENT_RESULT_SUCCESS;
-    }
+    const bool     tearing      = ( m_swapChainFlags & DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING ) != 0;
+    const uint32_t syncInterval = m_desc.PresentMode == DENOFIZ_PRESENT_MODE_FIFO ? 1 : 0;
+    const uint32_t flags        = tearing && syncInterval == 0 ? DXGI_PRESENT_ALLOW_TEARING : 0;
 
-    return DENOFIZ_PRESENT_RESULT_DEVICE_LOST;
+    const HRESULT hr = m_swapChain->Present( syncInterval, flags );
+    if ( SUCCEEDED( hr ) )
+    {
+        return DENOFIZ_SUCCESS;
+    }
+    if ( hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET )
+    {
+        NotifyDeviceRemoved( hr, "Present" );
+        return DENOFIZ_ERROR_DEVICE_LOST;
+    }
+    spdlog::error( "Present failed: 0x{:08x}", static_cast<uint32_t>( hr ) );
+    return DENOFIZ_ERROR_UNKNOWN;
 }
 
-void DX12SwapChain::Resize( const uint32_t width, const uint32_t height )
+DenOfIz_Result DX12SwapChain::Resize( uint32_t width, uint32_t height )
 {
+    if ( m_context->IsDeviceLost )
+    {
+        return DENOFIZ_ERROR_DEVICE_LOST;
+    }
+    if ( m_swapChain.get( ) == nullptr )
+    {
+        return DENOFIZ_ERROR_INITIALIZATION;
+    }
     if ( width == 0 || height == 0 )
     {
-        spdlog::debug( "Cannot resize swap chain to zero dimensions" );
-        return;
+        DenOfIz_GraphicsWindowSurface surface{ };
+        DenOfIz_GraphicsWindowHandle_GetSurface( m_desc.WindowHandle, &surface );
+        width  = surface.Width;
+        height = surface.Height;
+    }
+    if ( width == 0 || height == 0 )
+    {
+        return DENOFIZ_NOT_READY;
+    }
+    if ( width == m_desc.Width && height == m_desc.Height && !m_buffers.empty( ) && m_buffers[ 0 ].get( ) != nullptr )
+    {
+        return DENOFIZ_SUCCESS;
     }
 
     m_commandQueue->WaitIdle( );
+    ReleaseBackBuffers( );
+
+    const HRESULT hr = m_swapChain->ResizeBuffers( m_desc.NumBuffers, width, height, DenOfIz_DX12EnumConverter_ConvertFormat( m_desc.BackBufferFormat ), m_swapChainFlags );
+    if ( hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET )
+    {
+        NotifyDeviceRemoved( hr, "ResizeBuffers" );
+        return DENOFIZ_ERROR_DEVICE_LOST;
+    }
+    if ( FAILED( hr ) )
+    {
+        spdlog::error( "ResizeBuffers to {}x{} failed: 0x{:08x}", width, height, static_cast<uint32_t>( hr ) );
+        CreateBackBuffers( );
+        return DENOFIZ_ERROR_UNKNOWN;
+    }
+
     m_desc.Width  = width;
     m_desc.Height = height;
     m_viewport    = DenOfIz_Viewport( 0.0f, 0.0f, static_cast<float>( m_desc.Width ), static_cast<float>( m_desc.Height ) );
-
-    for ( auto &buffer : m_buffers )
-    {
-        buffer.reset( );
-    }
-    for ( auto &rt : m_renderTargets )
-    {
-        rt.reset( );
-    }
-
-    m_depthStencil.reset( );
-
-    HRESULT hr = m_swapChain->ResizeBuffers( m_desc.NumBuffers, width, height, DenOfIz_DX12EnumConverter_ConvertFormat( m_desc.BackBufferFormat ),
-                                             m_context->SelectedDeviceInfo.Capabilities.Tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u );
-    if ( hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET )
-    {
-        spdlog::debug( "Device Lost on ResizeBuffers: Reason code 0x{:x}", hr == DXGI_ERROR_DEVICE_REMOVED ? m_context->D3DDevice->GetDeviceRemovedReason( ) : hr );
-        m_context->IsDeviceLost = true;
-        return;
-    }
-    DX_CHECK_RESULT( hr );
-    m_renderTargets.resize( m_desc.NumBuffers );
-    m_renderTargetCpuHandles.resize( m_desc.NumBuffers );
-    m_buffers.resize( m_desc.NumBuffers );
-
-    for ( uint32_t i = 0; i < m_desc.NumBuffers; i++ )
-    {
-        DX_CHECK_RESULT( m_swapChain->GetBuffer( i, IID_PPV_ARGS( &m_buffers.at( i ) ) ) );
-        D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = { };
-        rtvDesc.Format                        = DenOfIz_DX12EnumConverter_ConvertFormat( m_desc.BackBufferFormat );
-        rtvDesc.ViewDimension                 = D3D12_RTV_DIMENSION_TEXTURE2D;
-
-        m_renderTargetCpuHandles[ i ] = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_RTV ]->AllocateDescriptors( 1 ).Cpu;
-        auto buffer                   = m_buffers.at( i ).get( );
-        buffer->SetName( L"SwapChain Buffer" );
-        m_renderTargets[ i ] = std::make_unique<DX12Texture>( buffer, m_renderTargetCpuHandles[ i ] );
-        m_context->D3DDevice->CreateRenderTargetView( m_renderTargets[ i ]->Resource( ), &rtvDesc, m_renderTargetCpuHandles[ i ] );
-    }
-
-    const CD3DX12_HEAP_PROPERTIES depthHeapProperties( D3D12_HEAP_TYPE_DEFAULT );
-
-    const DXGI_FORMAT   depthBufferFormat = DenOfIz_DX12EnumConverter_ConvertFormat( m_desc.DepthBufferFormat );
-    D3D12_RESOURCE_DESC depthStencilDesc  = CD3DX12_RESOURCE_DESC::Tex2D( depthBufferFormat, width, height, 1, 1 );
-    depthStencilDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-
-    D3D12_CLEAR_VALUE depthOptimizedClearValue    = { };
-    depthOptimizedClearValue.Format               = depthBufferFormat;
-    depthOptimizedClearValue.DepthStencil.Depth   = 1.0f;
-    depthOptimizedClearValue.DepthStencil.Stencil = 0;
-
-    DX_CHECK_RESULT( m_context->D3DDevice->CreateCommittedResource( &depthHeapProperties, D3D12_HEAP_FLAG_NONE, &depthStencilDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE,
-                                                                    &depthOptimizedClearValue, IID_PPV_ARGS( m_depthStencil.put( ) ) ) );
-
-    D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = { };
-    dsvDesc.Format                        = depthBufferFormat;
-    dsvDesc.ViewDimension                 = D3D12_DSV_DIMENSION_TEXTURE2D;
-
-    m_depthStencilCpuHandle = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_DSV ]->AllocateDescriptors( 1 ).Cpu;
-    m_context->D3DDevice->CreateDepthStencilView( m_depthStencil.get( ), &dsvDesc, m_depthStencilCpuHandle );
+    CreateBackBuffers( );
+    return DENOFIZ_SUCCESS;
 }
 
 const DenOfIz_Viewport &DX12SwapChain::GetViewport( )
@@ -271,14 +370,28 @@ const DenOfIz_Viewport &DX12SwapChain::GetViewport( )
     return m_viewport;
 }
 
+ITexture *DX12SwapChain::GetDepthBuffer( )
+{
+    return m_depthBuffer.get( );
+}
+
+const DenOfIz_SwapChainDesc &DX12SwapChain::GetDesc( )
+{
+    return m_desc;
+}
+
 ITexture *DX12SwapChain::GetRenderTarget( const uint32_t image )
 {
+    if ( image >= m_renderTargets.size( ) )
+    {
+        return nullptr;
+    }
     return m_renderTargets[ image ].get( );
 }
 
 DenOfIz_Format DX12SwapChain::GetPreferredFormat( )
 {
-    return DENOFIZ_FORMAT_R8_UNORM;
+    return DENOFIZ_FORMAT_B8G8R8A8_UNORM;
 }
 
 IDXGISwapChain4 *DX12SwapChain::GetSwapChain( ) const
@@ -286,4 +399,13 @@ IDXGISwapChain4 *DX12SwapChain::GetSwapChain( ) const
     return m_swapChain.get( );
 }
 
-DX12SwapChain::~DX12SwapChain( ) = default;
+DX12SwapChain::~DX12SwapChain( )
+{
+    if ( m_commandQueue != nullptr && !m_context->IsDeviceLost )
+    {
+        m_commandQueue->WaitIdle( );
+    }
+    ReleaseBackBuffers( );
+    m_renderTargets.clear( );
+    m_depthBuffer.reset( );
+}

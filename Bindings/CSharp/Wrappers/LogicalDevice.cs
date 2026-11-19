@@ -62,6 +62,12 @@ namespace DenOfIz
             return Methods.DenOfIz_LogicalDevice_WaitIdle(Handle);
         }
 
+        public Result ReleaseDestroyedResources()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_LogicalDevice_ReleaseDestroyedResources(Handle);
+        }
+
         public CommandQueue CreateCommandQueue(in CommandQueueDesc desc)
         {
             ThrowIfDisposed();

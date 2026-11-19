@@ -92,10 +92,7 @@ void RayTracedSceneExample::Render( const uint32_t frameIndex, DenOfIz_CommandLi
 
     DenOfIz_CommandList_Begin( commandList );
 
-    uint32_t imageIndex = 0;
-    DenOfIz_FrameSync_AcquireNextImage( m_frameSync, &imageIndex );
-    DenOfIz_Texture renderTarget = DENOFIZ_NULL_HANDLE;
-    DenOfIz_SwapChain_GetRenderTarget( m_swapChain, imageIndex, &renderTarget );
+    DenOfIz_Texture renderTarget = m_frame.BackBuffer;
 
     const DenOfIz_Texture raytracingTarget = m_raytracingOutput[ frameIndex ];
     DenOfIz_ResourceTracking_TransitionTexture( m_resourceTracking, commandList, raytracingTarget, DENOFIZ_RESOURCE_USAGE_UNORDERED_ACCESS_BIT, DENOFIZ_QUEUE_TYPE_GRAPHICS );
@@ -156,7 +153,7 @@ RayTracedSceneExample::~RayTracedSceneExample( )
     {
         if ( DENOFIZ_HANDLE_IS_VALID( raytracingOutput ) )
         {
-            DenOfIz_TextureResource_Destroy( raytracingOutput );
+            DenOfIz_Texture_Destroy( raytracingOutput );
         }
     }
 
@@ -164,7 +161,7 @@ RayTracedSceneExample::~RayTracedSceneExample( )
     {
         if ( DENOFIZ_HANDLE_IS_VALID( accumulationBuffer ) )
         {
-            DenOfIz_TextureResource_Destroy( accumulationBuffer );
+            DenOfIz_Texture_Destroy( accumulationBuffer );
         }
     }
 
@@ -337,24 +334,7 @@ void RayTracedSceneExample::CreateRayTracingPipeline( )
     for ( int i = 0; i < 3; ++i )
     {
         DenOfIz_LogicalDevice_CreateBindGroup( m_logicalDevice, &bindGroupDesc, &m_rayTracingBindGroups[ i ] );
-        DenOfIz_BindGroup_BeginUpdate( m_rayTracingBindGroups[ i ] );
-
-        DenOfIz_BindGroup_SrvTopLevelAS( m_rayTracingBindGroups[ i ], 1, m_topLevelAS );
-        DenOfIz_BindGroup_SrvBuffer( m_rayTracingBindGroups[ i ], 2, m_bistro->GetMaterialBuffer( ) );
-        DenOfIz_BindGroup_UavTexture( m_rayTracingBindGroups[ i ], 3, m_raytracingOutput[ i ] );
-        DenOfIz_BindGroup_SrvBuffer( m_rayTracingBindGroups[ i ], 4, m_bistro->GetVertexBuffer( ) );
-        DenOfIz_BindGroup_SrvBuffer( m_rayTracingBindGroups[ i ], 5, m_bistro->GetIndexBuffer( ) );
-        DenOfIz_BindGroup_SrvBuffer( m_rayTracingBindGroups[ i ], 6, m_bistro->GetMeshInfoBuffer( ) );
-        DenOfIz_BindGroup_UavTexture( m_rayTracingBindGroups[ i ], 7, m_accumulationBuffer[ i ] );
-
-        DenOfIz_GPUBufferView  sceneCBView = DenOfIz_RingBuffer_GetBufferView( m_sceneCBRingBuffer, i );
-        DenOfIz_BindBufferDesc sceneCBBindDesc{ };
-        sceneCBBindDesc.Binding        = 0;
-        sceneCBBindDesc.Resource       = sceneCBView.Buffer;
-        sceneCBBindDesc.ResourceOffset = sceneCBView.Offset;
-        DenOfIz_BindGroup_CbvWithDesc( m_rayTracingBindGroups[ i ], &sceneCBBindDesc );
-
-        DenOfIz_BindGroup_EndUpdate( m_rayTracingBindGroups[ i ] );
+        UpdateRayTracingBindGroup( i );
 
         DenOfIz_LogicalDevice_CreateBindGroup( m_logicalDevice, &bindlessBindGroupDesc, &m_bindlessBindGroups[ i ] );
         DenOfIz_BindGroup_BeginUpdate( m_bindlessBindGroups[ i ] );
@@ -629,4 +609,53 @@ void RayTracedSceneExample::UpdateCamera( const uint32_t frameIndex )
     sceneConstants->UseShadowRays = 1;
     sceneConstants->FrameCount    = m_accumulatedFrames[ frameIndex ];
     m_accumulatedFrames[ frameIndex ]++;
+}
+
+void RayTracedSceneExample::UpdateRayTracingBindGroup( const int i )
+{
+    DenOfIz_BindGroup_BeginUpdate( m_rayTracingBindGroups[ i ] );
+
+    DenOfIz_BindGroup_SrvTopLevelAS( m_rayTracingBindGroups[ i ], 1, m_topLevelAS );
+    DenOfIz_BindGroup_SrvBuffer( m_rayTracingBindGroups[ i ], 2, m_bistro->GetMaterialBuffer( ) );
+    DenOfIz_BindGroup_UavTexture( m_rayTracingBindGroups[ i ], 3, m_raytracingOutput[ i ] );
+    DenOfIz_BindGroup_SrvBuffer( m_rayTracingBindGroups[ i ], 4, m_bistro->GetVertexBuffer( ) );
+    DenOfIz_BindGroup_SrvBuffer( m_rayTracingBindGroups[ i ], 5, m_bistro->GetIndexBuffer( ) );
+    DenOfIz_BindGroup_SrvBuffer( m_rayTracingBindGroups[ i ], 6, m_bistro->GetMeshInfoBuffer( ) );
+    DenOfIz_BindGroup_UavTexture( m_rayTracingBindGroups[ i ], 7, m_accumulationBuffer[ i ] );
+
+    DenOfIz_GPUBufferView  sceneCBView = DenOfIz_RingBuffer_GetBufferView( m_sceneCBRingBuffer, i );
+    DenOfIz_BindBufferDesc sceneCBBindDesc{ };
+    sceneCBBindDesc.Binding        = 0;
+    sceneCBBindDesc.Resource       = sceneCBView.Buffer;
+    sceneCBBindDesc.ResourceOffset = sceneCBView.Offset;
+    DenOfIz_BindGroup_CbvWithDesc( m_rayTracingBindGroups[ i ], &sceneCBBindDesc );
+
+    DenOfIz_BindGroup_EndUpdate( m_rayTracingBindGroups[ i ] );
+}
+
+void RayTracedSceneExample::OnResize( const uint32_t width, const uint32_t height )
+{
+    IExample::OnResize( width, height );
+    for ( auto &raytracingOutput : m_raytracingOutput )
+    {
+        if ( DENOFIZ_HANDLE_IS_VALID( raytracingOutput ) )
+        {
+            DenOfIz_Texture_Destroy( raytracingOutput );
+            raytracingOutput = DENOFIZ_NULL_HANDLE;
+        }
+    }
+    for ( auto &accumulationBuffer : m_accumulationBuffer )
+    {
+        if ( DENOFIZ_HANDLE_IS_VALID( accumulationBuffer ) )
+        {
+            DenOfIz_Texture_Destroy( accumulationBuffer );
+            accumulationBuffer = DENOFIZ_NULL_HANDLE;
+        }
+    }
+    CreateRenderTargets( );
+    for ( int i = 0; i < 3; ++i )
+    {
+        UpdateRayTracingBindGroup( i );
+    }
+    m_accumulatedFrames.fill( 0 );
 }

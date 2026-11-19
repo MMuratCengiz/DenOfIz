@@ -52,11 +52,13 @@ public:
     ~WebGPUSwapChain( ) override;
 
     DenOfIz_Format          GetPreferredFormat( ) override;
-    uint32_t                AcquireNextImage( ) override;
-    DenOfIz_PresentResult   Present( uint32_t imageIndex ) override;
-    void                    Resize( uint32_t width, uint32_t height ) override;
+    DenOfIz_Result          AcquireNextImage( uint32_t &outImageIndex ) override;
+    DenOfIz_Result          Present( ) override;
+    DenOfIz_Result          Resize( uint32_t width, uint32_t height ) override;
     ITexture               *GetRenderTarget( uint32_t image ) override;
     const DenOfIz_Viewport &GetViewport( ) override;
+    ITexture               *GetDepthBuffer( ) override;
+    const DenOfIz_SwapChainDesc &GetDesc( ) override;
 
 private:
     void CreateSurface( );

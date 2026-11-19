@@ -44,6 +44,8 @@ namespace DenOfIz
         DenOfIz_LogicalDeviceDesc           m_deviceDesc;
         std::deque<std::string>             m_deviceNameStorage;
 
+        DeferredDestroyQueue::Completion CaptureGpuCompletion( ) const;
+
     public:
         DX12LogicalDevice( );
         ~DX12LogicalDevice( ) override;

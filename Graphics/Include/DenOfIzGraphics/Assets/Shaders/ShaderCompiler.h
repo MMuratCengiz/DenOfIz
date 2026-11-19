@@ -29,7 +29,7 @@ extern "C"
 
     DENOFIZ_DEFINE_HANDLE( DenOfIz_ShaderCompiler )
 
-    typedef struct
+    typedef struct DenOfIz_CompileDesc
     {
         DenOfIz_StringView           Path;
         DenOfIz_CodePage             CodePage;
@@ -42,7 +42,7 @@ extern "C"
         DenOfIz_ShaderIncludeHandler IncludeHandler;
     } DenOfIz_CompileDesc;
 
-    typedef struct
+    typedef struct DenOfIz_CompileResult
     {
         DenOfIz_ByteArray Code;
         DenOfIz_ByteArray Reflection;

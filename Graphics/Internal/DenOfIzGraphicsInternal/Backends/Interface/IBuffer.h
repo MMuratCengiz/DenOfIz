@@ -19,11 +19,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Backends/Interface/Buffer.h"
+#include "../Common/DeferredDestroyQueue.h"
 
 namespace DenOfIz
 {
 
-    class IBuffer
+    class IBuffer : public IDeviceObject
     {
     public:
         virtual ~IBuffer( ) = default;

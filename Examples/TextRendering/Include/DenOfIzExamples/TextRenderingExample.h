@@ -47,6 +47,7 @@ namespace DenOfIz
         void Update( ) override;
         void Render( uint32_t frameIndex, DenOfIz_CommandList commandList ) override;
         void Quit( ) override;
+        void OnResize( uint32_t width, uint32_t height ) override;
 
         struct ExampleWindowDesc WindowDesc( ) override
         {

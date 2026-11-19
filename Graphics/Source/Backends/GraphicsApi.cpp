@@ -191,7 +191,8 @@ ILogicalDevice *GraphicsApi::CreateLogicalDevice( const DenOfIz_LogicalDeviceDes
 #endif
     if ( logicalDevice == nullptr )
     {
-        throw std::runtime_error( "No supported API found for this system." );
+        spdlog::critical( "No graphics API available for this platform in this build" );
+        return nullptr;
     }
     logicalDevice->CreateDevice( desc );
     return logicalDevice;
@@ -212,10 +213,16 @@ void GraphicsApi::LogDeviceCapabilities( const DenOfIz_PhysicalDevice gpuDesc ) 
 
 ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( const DenOfIz_LogicalDeviceDesc &desc ) const
 {
-    ILogicalDevice                   *logicalDevice = CreateLogicalDevice( desc );
-    const DenOfIz_PhysicalDeviceArray devices       = logicalDevice->ListPhysicalDevices( );
+    ILogicalDevice *logicalDevice = CreateLogicalDevice( desc );
+    if ( logicalDevice == nullptr )
+    {
+        return nullptr;
+    }
+    const DenOfIz_PhysicalDeviceArray devices = logicalDevice->ListPhysicalDevices( );
     if ( devices.NumElements == 0 )
     {
+        const DenOfIz_StringView api = ActiveAPI( );
+        spdlog::critical( "No GPU supporting {} found", std::string( api.Chars, api.NumChars ) );
         delete logicalDevice;
         return nullptr;
     }
@@ -260,6 +267,13 @@ ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( const DenOfIz_Lo
     const DenOfIz_PhysicalDevice &selectedDevice = devices.Elements[ bestDeviceIndex ];
 
     logicalDevice->LoadPhysicalDevice( selectedDevice );
+    if ( logicalDevice->IsDeviceLost( ) )
+    {
+        const DenOfIz_StringView api = ActiveAPI( );
+        spdlog::critical( "The selected GPU could not be initialized for {}", std::string( api.Chars, api.NumChars ) );
+        delete logicalDevice;
+        return nullptr;
+    }
     LogDeviceCapabilities( selectedDevice );
 
     return logicalDevice;

@@ -53,14 +53,13 @@ namespace DenOfIz
         bool                                       m_waitForQueueFence = false;
         id<MTLFence>                               m_queueFence;
         MetalEncoderType                           m_activeEncoderType = MetalEncoderType::None;
-        std::vector<const MetalBindGroup *>        m_queuedBindGroups;
-        struct QueuedRootConstant
+        std::vector<const MetalBindGroup *> m_boundGroups;
+        struct BoundRootConstant
         {
-            uint32_t Binding;
-            void    *Data;
-            uint32_t Size;
+            uint32_t             Binding;
+            std::vector<uint8_t> Data;
         };
-        std::vector<QueuedRootConstant> m_queuedRootConstants;
+        std::vector<BoundRootConstant> m_boundRootConstants;
 
         // States:
         id<MTLBuffer>                        m_indexBuffer;
@@ -68,6 +67,7 @@ namespace DenOfIz
         uint64_t                             m_currentBufferOffset = 0;
         uint64_t                             m_indexBufferOffset   = 0;
         std::unique_ptr<MetalArgumentBuffer> m_argumentBuffer;
+        size_t                               m_boundArgumentSegment = 0;
         const MetalShaderLayout             *m_shaderLayout = nullptr;
         MetalPipeline                       *m_pipeline;
         bool                                 m_computeTlasBound = false;

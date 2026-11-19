@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 #include "DenOfIzGraphicsInternal/Backends/Interface/ISwapChain.h"
 #include "DenOfIzGraphicsInternal/Backends/Interface/ITexture.h"
 
@@ -43,5 +44,8 @@ namespace DenOfIz
         void BeginRendering( ITexture *renderTarget );
         bool NeedsSwapChainSync( ISwapChain *&outSwapChain );
         void ClearCommandListSync( );
+        void CollectActiveSwapChains( std::vector<ISwapChain *> &outSwapChains );
+        void ClearSwapChainSync( ISwapChain *swapChain );
+        void RemoveSwapChain( ISwapChain *swapChain );
     };
 } // namespace DenOfIz

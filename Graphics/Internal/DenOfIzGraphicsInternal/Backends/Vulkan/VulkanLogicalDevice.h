@@ -98,7 +98,8 @@ namespace DenOfIz
         void InitSupportedLayers( std::vector<const char *> &layers );
 
         void SetupQueueFamilies( ) const;
-        void CreateLogicalDevice( );
+        bool                             CreateLogicalDevice( );
+        DeferredDestroyQueue::Completion CaptureGpuCompletion( ) const;
 
         [[nodiscard]] bool                                 ValidateLayer( const std::string &layer ) const;
         void                                               InitializeVma( ) const;

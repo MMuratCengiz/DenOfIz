@@ -41,7 +41,10 @@ MetalCommandQueue::~MetalCommandQueue()
 
 void MetalCommandQueue::WaitIdle()
 {
-
+    @autoreleasepool
+    {
+        m_context->WaitIdle();
+    }
 }
 
 void MetalCommandQueue::ExecuteCommandLists(const DenOfIz_ExecuteCommandListsDesc& executeCommandListsDesc)
@@ -74,6 +77,7 @@ void MetalCommandQueue::ExecuteCommandLists(const DenOfIz_ExecuteCommandListsDes
             }
 
             [waitCommandBuffer commit];
+            m_context->TrackCommandBuffer(waitCommandBuffer);
             waitCommandBuffer = nil;
         }
 
@@ -96,6 +100,7 @@ void MetalCommandQueue::ExecuteCommandLists(const DenOfIz_ExecuteCommandListsDes
             }
 
             [cmdList->GetCommandBuffer() commit];
+            m_context->TrackCommandBuffer(cmdList->GetCommandBuffer());
         }
     }
 }

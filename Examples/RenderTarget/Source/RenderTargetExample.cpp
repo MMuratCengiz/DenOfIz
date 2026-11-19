@@ -27,7 +27,7 @@ RenderTargetExample::~RenderTargetExample( )
     {
         if ( DENOFIZ_HANDLE_IS_VALID( renderTarget ) )
         {
-            DenOfIz_TextureResource_Destroy( renderTarget );
+            DenOfIz_Texture_Destroy( renderTarget );
         }
     }
 
@@ -67,45 +67,11 @@ void RenderTargetExample::Init( )
     m_quadPipeline   = std::make_unique<QuadPipeline>( m_graphicsApi, m_logicalDevice, "Assets/Shaders/SampleBasic.ps.hlsl" );
     m_renderPipeline = std::make_unique<DefaultRenderPipeline>( m_graphicsApi, m_logicalDevice );
 
-    DenOfIz_TextureDesc textureDesc{ };
-    textureDesc.Width     = m_pixelWidth;
-    textureDesc.Height    = m_pixelHeight;
-    textureDesc.Depth     = 1;
-    textureDesc.ArraySize = 1;
-    textureDesc.MipLevels = 1;
-    textureDesc.Format    = DENOFIZ_FORMAT_B8G8R8A8_UNORM;
-    textureDesc.Usage     = DENOFIZ_TEXTURE_USAGE_TEXTURE_BINDING_BIT | DENOFIZ_TEXTURE_USAGE_RENDER_ATTACHMENT_BIT;
-
-    for ( uint32_t i = 0; i < 3; ++i )
-    {
-        const std::string debugName  = "Deferred Render Target " + std::to_string( i );
-        textureDesc.DebugName        = DENOFIZ_STRING( debugName.c_str( ) );
-        DenOfIz_Texture renderTarget = DENOFIZ_NULL_HANDLE;
-        DenOfIz_LogicalDevice_CreateTexture( m_logicalDevice, &textureDesc, &renderTarget );
-        m_deferredRenderTargets.push_back( renderTarget );
-        DenOfIz_ResourceTracking_TrackTexture( m_resourceTracking, renderTarget, DENOFIZ_QUEUE_TYPE_GRAPHICS );
-    }
-
     DenOfIz_SamplerDesc samplerDesc{ };
     DenOfIz_LogicalDevice_CreateSampler( m_logicalDevice, &samplerDesc, &m_defaultSampler );
 
-    DenOfIz_BindGroup bindGroup0 = m_quadPipeline->BindGroup( 0 );
-    DenOfIz_BindGroup_BeginUpdate( bindGroup0 );
-    DenOfIz_BindGroup_SrvTexture( bindGroup0, 0, m_deferredRenderTargets[ 0 ] );
-    DenOfIz_BindGroup_Sampler( bindGroup0, 0, m_defaultSampler );
-    DenOfIz_BindGroup_EndUpdate( bindGroup0 );
-
-    DenOfIz_BindGroup bindGroup1 = m_quadPipeline->BindGroup( 1 );
-    DenOfIz_BindGroup_BeginUpdate( bindGroup1 );
-    DenOfIz_BindGroup_SrvTexture( bindGroup1, 0, m_deferredRenderTargets[ 1 ] );
-    DenOfIz_BindGroup_Sampler( bindGroup1, 0, m_defaultSampler );
-    DenOfIz_BindGroup_EndUpdate( bindGroup1 );
-
-    DenOfIz_BindGroup bindGroup2 = m_quadPipeline->BindGroup( 2 );
-    DenOfIz_BindGroup_BeginUpdate( bindGroup2 );
-    DenOfIz_BindGroup_SrvTexture( bindGroup2, 0, m_deferredRenderTargets[ 2 ] );
-    DenOfIz_BindGroup_Sampler( bindGroup2, 0, m_defaultSampler );
-    DenOfIz_BindGroup_EndUpdate( bindGroup2 );
+    m_deferredRenderTargets.assign( 3, DENOFIZ_NULL_HANDLE );
+    CreateDeferredRenderTargets( );
 
     auto &materialBatch    = m_worldData.Batch.MaterialBatches.emplace_back( m_renderPipeline->GetPerMaterialBinding( ), m_sphere->Data( )->Material( ) );
     auto &sphereRenderItem = materialBatch.RenderItems.emplace_back( );
@@ -173,11 +139,7 @@ void RenderTargetExample::Render( const uint32_t frameIndex, DenOfIz_CommandList
 {
     DenOfIz_CommandList_Begin( commandList );
     {
-        uint32_t imageIndex = 0;
-        DenOfIz_FrameSync_AcquireNextImage( m_frameSync, &imageIndex );
-
-        DenOfIz_Texture renderTarget = DENOFIZ_NULL_HANDLE;
-        DenOfIz_SwapChain_GetRenderTarget( m_swapChain, imageIndex, &renderTarget );
+        DenOfIz_Texture renderTarget = m_frame.BackBuffer;
 
         DenOfIz_TransitionTextureDesc textureTransitions[ 2 ] = { };
         textureTransitions[ 0 ].Texture                       = m_deferredRenderTargets[ frameIndex ];
@@ -214,6 +176,35 @@ void RenderTargetExample::Render( const uint32_t frameIndex, DenOfIz_CommandList
     DenOfIz_CommandList_End( commandList );
 }
 
+void RenderTargetExample::CreateDeferredRenderTargets( )
+{
+    DenOfIz_TextureDesc textureDesc{ };
+    textureDesc.Depth     = 1;
+    textureDesc.ArraySize = 1;
+    textureDesc.MipLevels = 1;
+    textureDesc.Format    = DENOFIZ_FORMAT_B8G8R8A8_UNORM;
+    textureDesc.Usage     = DENOFIZ_TEXTURE_USAGE_TEXTURE_BINDING_BIT | DENOFIZ_TEXTURE_USAGE_RENDER_ATTACHMENT_BIT;
+
+    for ( uint32_t i = 0; i < m_deferredRenderTargets.size( ); ++i )
+    {
+        const std::string debugName = "Deferred Render Target " + std::to_string( i );
+        textureDesc.DebugName       = DENOFIZ_STRING( debugName.c_str( ) );
+        RecreateScreenSizedTexture( m_deferredRenderTargets[ i ], textureDesc );
+
+        DenOfIz_BindGroup bindGroup = m_quadPipeline->BindGroup( i );
+        DenOfIz_BindGroup_BeginUpdate( bindGroup );
+        DenOfIz_BindGroup_SrvTexture( bindGroup, 0, m_deferredRenderTargets[ i ] );
+        DenOfIz_BindGroup_Sampler( bindGroup, 0, m_defaultSampler );
+        DenOfIz_BindGroup_EndUpdate( bindGroup );
+    }
+}
+
+void RenderTargetExample::OnResize( const uint32_t width, const uint32_t height )
+{
+    IExample::OnResize( width, height );
+    CreateDeferredRenderTargets( );
+}
+
 void RenderTargetExample::ModifyApiPreferences( DenOfIz_APIPreference &defaultApiPreference )
 {
 }
@@ -224,7 +215,10 @@ void RenderTargetExample::Update( )
     m_worldData.Camera->Update( m_worldData.DeltaTime );
 
     uint32_t frameIndex = 0;
-    DenOfIz_FrameSync_NextFrame( m_frameSync, &frameIndex );
+    if ( !BeginFrame( frameIndex ) )
+    {
+        return;
+    }
     RenderDeferredImage( frameIndex );
 
     DenOfIz_CommandList commandList = DENOFIZ_NULL_HANDLE;
@@ -235,8 +229,7 @@ void RenderTargetExample::Update( )
     DenOfIz_SemaphoreArray additionalSemaphores{ };
     additionalSemaphores.Elements    = &deferredSemaphore;
     additionalSemaphores.NumElements = 1;
-    DenOfIz_FrameSync_ExecuteCommandList( m_frameSync, frameIndex, &additionalSemaphores );
-    Present( frameIndex );
+    EndFrame( &additionalSemaphores );
 }
 
 void RenderTargetExample::HandleEvent( DenOfIz_Event &event )

@@ -74,6 +74,8 @@ namespace DenOfIz
 
     private:
         void CreateRenderTargets( );
+        void UpdateRayTracingBindGroup( int i );
+        void OnResize( uint32_t width, uint32_t height ) override;
         void CreateRayTracingPipeline( );
         void CreateResources( );
         void CreateAccelerationStructures( );

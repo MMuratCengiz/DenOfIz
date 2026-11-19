@@ -44,8 +44,23 @@ namespace DenOfIz
         std::vector<DeferredVertexBuffer>  m_deferredVertexBuffers;
         ID3D12RootSignature               *m_currentRootSignature = nullptr;
         DX12Pipeline                      *m_currentPipeline      = nullptr;
-        std::vector<const DX12BindGroup *> m_queuedBindGroups;
-        std::vector<DX12RootConstant>      m_queuedRootConstants;
+        struct BoundGroup
+        {
+            uint32_t             RegisterSpace = 0;
+            const DX12BindGroup *Group         = nullptr;
+            uint32_t             Version       = 0;
+            bool                 Dirty         = true;
+        };
+        struct BoundRootConstant
+        {
+            uint32_t             Binding = 0;
+            std::vector<uint8_t> Data;
+            bool                 Dirty = true;
+        };
+        std::vector<BoundGroup>        m_boundGroups;
+        std::vector<BoundRootConstant> m_boundRootConstants;
+        bool m_currentRootSignatureIsCompute = false;
+        bool m_heapsBound                    = false;
 
         CD3DX12_RECT                        m_scissor{ };
         D3D12_VIEWPORT                      m_viewport{ };

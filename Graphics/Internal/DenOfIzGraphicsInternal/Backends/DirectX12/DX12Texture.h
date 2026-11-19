@@ -48,9 +48,10 @@ namespace DenOfIz
         DX12Texture( DX12Context *context, const DenOfIz_TextureDesc &desc );
         DX12Texture( ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle );
         ~DX12Texture( ) override;
+        void UpdateExternal( ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle, const DenOfIz_TextureDesc &desc );
         void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, uint32_t mipLevel = UINT32_MAX ) const;
 
-        [[nodiscard]] const DenOfIz_TextureDesc &GetDesc( ) const;
+        [[nodiscard]] const DenOfIz_TextureDesc &GetDesc( ) const override;
         [[nodiscard]] const D3D12_RESOURCE_DESC &GetResourceDesc( ) const;
         [[nodiscard]] ID3D12Resource            *Resource( ) const;
 

@@ -80,7 +80,6 @@ namespace DenOfIz
         ShadowCB              *m_shadowCBData = nullptr;
 
         // Main pass resources
-        DenOfIz_Texture        m_depthBuffer         = DENOFIZ_NULL_HANDLE;
         DenOfIz_ShaderProgram  m_mainShaderProgram   = DENOFIZ_NULL_HANDLE;
         DenOfIz_InputLayout    m_mainInputLayout     = DENOFIZ_NULL_HANDLE;
         DenOfIz_RootSignature  m_mainRootSignature   = DENOFIZ_NULL_HANDLE;

@@ -179,7 +179,7 @@ TextBatch::~TextBatch( )
     }
     if ( DENOFIZ_HANDLE_IS_VALID( m_impl->Atlas ) )
     {
-        DenOfIz_TextureResource_Destroy( m_impl->Atlas );
+        DenOfIz_Texture_Destroy( m_impl->Atlas );
     }
     if ( DENOFIZ_HANDLE_IS_VALID( m_impl->FontSampler ) )
     {
@@ -442,7 +442,7 @@ void TextBatch::Impl::InitializeAtlas( )
     DenOfIz_ResourceTracking_TransitionTexture( ResourceTracking, commandList, Atlas, DENOFIZ_RESOURCE_USAGE_COPY_DST_BIT, DENOFIZ_QUEUE_TYPE_GRAPHICS );
 
     DenOfIz_Format atlasFormat;
-    DenOfIz_TextureResource_GetFormat( Atlas, &atlasFormat );
+    DenOfIz_Texture_GetFormat( Atlas, &atlasFormat );
 
     DenOfIz_CopyBufferToTextureDesc copyDesc{ };
     copyDesc.SrcBuffer  = fontAtlasStagingBuffer;

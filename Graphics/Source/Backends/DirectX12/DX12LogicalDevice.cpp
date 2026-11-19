@@ -41,6 +41,8 @@ DX12LogicalDevice::DX12LogicalDevice( )
 
 DX12LogicalDevice::~DX12LogicalDevice( )
 {
+    ReleaseDestroyedObjects( );
+    m_destroyQueue.reset( );
     WaitIdle( );
 }
 
@@ -310,25 +312,105 @@ void DX12LogicalDevice::LoadPhysicalDevice( const DenOfIz_PhysicalDevice &device
 
     m_autoSync          = std::make_unique<InternalAutoSync>( m_deviceDesc.AutoSync );
     m_context->AutoSync = m_autoSync.get( );
+    m_destroyQueue      = std::make_unique<DeferredDestroyQueue>( [ this ] { return CaptureGpuCompletion( ); } );
 }
 
 void DX12LogicalDevice::WaitIdle( )
 {
-    DX_CHECK_RESULT( m_context->GraphicsCommandQueue->Signal( m_context->GraphicsCommandQueueFence.get( ), 1 ) );
-    DX_CHECK_RESULT( m_context->ComputeCommandQueue->Signal( m_context->ComputeCommandQueueFence.get( ), 1 ) );
-    DX_CHECK_RESULT( m_context->CopyCommandQueue->Signal( m_context->CopyCommandQueueFence.get( ), 1 ) );
-
-    auto waitForFence = []( ID3D12Fence *fence )
+    if ( m_context == nullptr )
     {
+        return;
+    }
+
+    auto waitForQueue = []( ID3D12CommandQueue *queue, ID3D12Fence1 *fence, std::atomic<uint64_t> &lastValue )
+    {
+        if ( queue == nullptr || fence == nullptr )
+        {
+            return;
+        }
+        const uint64_t fenceValue = ++lastValue;
+        if ( FAILED( queue->Signal( fence, fenceValue ) ) || fence->GetCompletedValue( ) >= fenceValue )
+        {
+            return;
+        }
         Wrappers::Event eventHandle;
         eventHandle.Attach( CreateEventEx( nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE ) );
-        DX_CHECK_RESULT( fence->SetEventOnCompletion( 1, eventHandle.Get( ) ) );
-        WaitForSingleObjectEx( eventHandle.Get( ), INFINITE, FALSE );
+        if ( SUCCEEDED( fence->SetEventOnCompletion( fenceValue, eventHandle.Get( ) ) ) )
+        {
+            WaitForSingleObjectEx( eventHandle.Get( ), INFINITE, FALSE );
+        }
     };
 
-    waitForFence( m_context->GraphicsCommandQueueFence.get( ) );
-    waitForFence( m_context->ComputeCommandQueueFence.get( ) );
-    waitForFence( m_context->CopyCommandQueueFence.get( ) );
+    waitForQueue( m_context->GraphicsCommandQueue.get( ), m_context->GraphicsCommandQueueFence.get( ), m_context->GraphicsCommandQueueFenceValue );
+    waitForQueue( m_context->ComputeCommandQueue.get( ), m_context->ComputeCommandQueueFence.get( ), m_context->ComputeCommandQueueFenceValue );
+    waitForQueue( m_context->CopyCommandQueue.get( ), m_context->CopyCommandQueueFence.get( ), m_context->CopyCommandQueueFenceValue );
+
+    std::lock_guard lock( m_context->CommandQueuesMutex );
+    for ( DX12CommandQueue *queue : m_context->CommandQueues )
+    {
+        queue->WaitIdle( );
+    }
+}
+
+DeferredDestroyQueue::Completion DX12LogicalDevice::CaptureGpuCompletion( ) const
+{
+    struct Marker
+    {
+        wil::com_ptr<ID3D12Fence1> Fence;
+        uint64_t                   Value;
+    };
+
+    DX12Context *context = m_context.get( );
+    if ( context->IsDeviceLost )
+    {
+        return { };
+    }
+
+    auto markers = std::make_shared<std::vector<Marker>>( );
+    auto signal  = [ & ]( ID3D12CommandQueue *queue, const wil::com_ptr<ID3D12Fence1> &fence, std::atomic<uint64_t> &lastValue )
+    {
+        if ( queue == nullptr || !fence )
+        {
+            return;
+        }
+        const uint64_t fenceValue = ++lastValue;
+        if ( SUCCEEDED( queue->Signal( fence.get( ), fenceValue ) ) )
+        {
+            markers->push_back( { fence, fenceValue } );
+        }
+    };
+    signal( context->GraphicsCommandQueue.get( ), context->GraphicsCommandQueueFence, context->GraphicsCommandQueueFenceValue );
+    signal( context->ComputeCommandQueue.get( ), context->ComputeCommandQueueFence, context->ComputeCommandQueueFenceValue );
+    signal( context->CopyCommandQueue.get( ), context->CopyCommandQueueFence, context->CopyCommandQueueFenceValue );
+    {
+        std::lock_guard lock( context->CommandQueuesMutex );
+        for ( DX12CommandQueue *queue : context->CommandQueues )
+        {
+            if ( const uint64_t fenceValue = queue->SignalFence( ); fenceValue != 0 )
+            {
+                Marker marker;
+                marker.Fence = queue->GetFence( );
+                marker.Value = fenceValue;
+                markers->push_back( std::move( marker ) );
+            }
+        }
+    }
+
+    return [ markers, context ]
+    {
+        if ( context->IsDeviceLost )
+        {
+            return true;
+        }
+        for ( const Marker &marker : *markers )
+        {
+            if ( marker.Fence->GetCompletedValue( ) < marker.Value )
+            {
+                return false;
+            }
+        }
+        return true;
+    };
 }
 
 ICommandQueue *DX12LogicalDevice::CreateCommandQueue( const DenOfIz_CommandQueueDesc &desc )

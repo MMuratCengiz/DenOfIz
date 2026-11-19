@@ -29,6 +29,6 @@ extern "C"
         {
             return;
         }
-        delete LOCAL_ROOT_SIG_IMPL( localRootSignature );
+        DenOfIz::DeferredDestroyQueue::Destroy( LOCAL_ROOT_SIG_IMPL( localRootSignature ) );
     }
 }

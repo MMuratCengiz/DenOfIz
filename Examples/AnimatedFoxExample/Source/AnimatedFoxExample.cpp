@@ -39,25 +39,6 @@ void AnimatedFoxExample::Init( )
     m_camera->SetPosition( XMVECTOR{ 0.0f, 50.0f, -200.0f, 1.0f } );
     m_camera->SetFront( XMVECTOR{ 0.0f, 0.0f, 1.0f, 0.0f } );
 
-    DenOfIz_TextureDesc depthTextureDesc{ };
-    depthTextureDesc.Format                = DENOFIZ_FORMAT_D32_FLOAT;
-    depthTextureDesc.Width                 = m_pixelWidth;
-    depthTextureDesc.Height                = m_pixelHeight;
-    depthTextureDesc.Depth                 = 1;
-    depthTextureDesc.ArraySize             = 1;
-    depthTextureDesc.MipLevels             = 1;
-    depthTextureDesc.Usage                 = DENOFIZ_TEXTURE_USAGE_RENDER_ATTACHMENT_BIT;
-    depthTextureDesc.ClearDepthStencilHint = { 1.0f, 0.0f };
-
-    for ( int i = 0; i < 3; ++i )
-    {
-        const std::string debugName  = "DepthTexture" + std::to_string( i );
-        depthTextureDesc.DebugName   = DENOFIZ_STRING( debugName.c_str( ) );
-        DenOfIz_Texture depthTexture = DENOFIZ_NULL_HANDLE;
-        DenOfIz_LogicalDevice_CreateTexture( m_logicalDevice, &depthTextureDesc, &depthTexture );
-        m_depthTextures.push_back( depthTexture );
-        DenOfIz_ResourceTracking_TrackTexture( m_resourceTracking, depthTexture, DENOFIZ_QUEUE_TYPE_GRAPHICS );
-    }
 }
 
 AnimatedFoxExample::~AnimatedFoxExample( )
@@ -82,10 +63,6 @@ AnimatedFoxExample::~AnimatedFoxExample( )
 
     m_gltfLoader.reset( );
 
-    for ( auto &depthTexture : m_depthTextures )
-    {
-        DenOfIz_TextureResource_Destroy( depthTexture );
-    }
 
     DenOfIz_Buffer_Destroy( m_vertexBuffer );
     DenOfIz_Buffer_Destroy( m_indexBuffer );
@@ -98,7 +75,7 @@ AnimatedFoxExample::~AnimatedFoxExample( )
 
     DenOfIz_Buffer_UnmapMemory( m_materialBuffer );
     DenOfIz_Buffer_Destroy( m_materialBuffer );
-    DenOfIz_TextureResource_Destroy( m_texture );
+    DenOfIz_Texture_Destroy( m_texture );
     DenOfIz_Sampler_Destroy( m_defaultSampler );
     DenOfIz_Pipeline_Destroy( m_skinnedMeshPipeline );
     DenOfIz_RootSignature_Destroy( m_skinnedMeshRootSignature );
@@ -541,12 +518,8 @@ void AnimatedFoxExample::Render( const uint32_t frameIndex, DenOfIz_CommandList 
 {
     DenOfIz_CommandList_Begin( commandList );
 
-    uint32_t imageIndex = 0;
-    DenOfIz_FrameSync_AcquireNextImage( m_frameSync, &imageIndex );
-
-    DenOfIz_Texture renderTarget = DENOFIZ_NULL_HANDLE;
-    DenOfIz_SwapChain_GetRenderTarget( m_swapChain, imageIndex, &renderTarget );
-    DenOfIz_Texture depthTarget = m_depthTextures[ frameIndex ];
+    DenOfIz_Texture renderTarget = m_frame.BackBuffer;
+    DenOfIz_Texture depthTarget = m_frame.DepthBuffer;
 
     DenOfIz_TransitionTextureDesc transitions[ 2 ] = { };
     transitions[ 0 ].Texture                       = renderTarget;

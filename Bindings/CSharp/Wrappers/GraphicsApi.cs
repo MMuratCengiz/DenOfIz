@@ -38,7 +38,12 @@ namespace DenOfIz
         public LogicalDevice CreateAndLoadOptimalLogicalDevice(in LogicalDeviceDesc desc)
         {
             ThrowIfDisposed();
-            return new LogicalDevice(Methods.DenOfIz_GraphicsApi_CreateAndLoadOptimalLogicalDevice(Handle, in desc), ownsHandle: true);
+            var device = Methods.DenOfIz_GraphicsApi_CreateAndLoadOptimalLogicalDevice(Handle, in desc);
+            if (device == 0)
+            {
+                throw new InvalidOperationException("No graphics device could be created, see the DenOfIz log.");
+            }
+            return new LogicalDevice(device, ownsHandle: true);
         }
 
         public StringView ActiveAPI()

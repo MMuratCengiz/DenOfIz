@@ -114,6 +114,8 @@ namespace DenOfIz
         bool                                              m_animateGeometry     = true;
 
         void CreateRenderTargets( );
+        void UpdateRayTracingBindGroup( int i );
+        void OnResize( uint32_t width, uint32_t height ) override;
         void CreateResources( );
         void CreateAccelerationStructures( );
         void CreateRayTracingPipeline( );

@@ -189,7 +189,7 @@ extern "C"
         DenOfIz_CopyBufferToTextureDesc copyDesc{ };
         copyDesc.DstTexture = desc->Texture;
         copyDesc.SrcBuffer  = stagingBuffer;
-        DenOfIz_TextureResource_GetFormat( desc->Texture, &copyDesc.Format );
+        DenOfIz_Texture_GetFormat( desc->Texture, &copyDesc.Format );
         copyDesc.MipLevel   = 0;
         copyDesc.ArrayLayer = 0;
         copyDesc.RowPitch   = atlasWidth * DENOFIZ_FONT_ASSET_NUM_CHANNELS;

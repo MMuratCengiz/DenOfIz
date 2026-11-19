@@ -36,6 +36,7 @@ VulkanCommandQueue::VulkanCommandQueue( VulkanContext *context, const DenOfIz_Co
     {
         spdlog::critical( "Failed to create queue" );
     }
+    m_context->RegisterSubmitQueue( m_queue );
 }
 
 VulkanCommandQueue::~VulkanCommandQueue( )
@@ -46,7 +47,11 @@ VulkanCommandQueue::~VulkanCommandQueue( )
 
 void VulkanCommandQueue::WaitIdle( )
 {
-    vkQueueWaitIdle( m_queue );
+    if ( m_queue == VK_NULL_HANDLE || m_context->IsDeviceLost )
+    {
+        return;
+    }
+    m_context->CheckDeviceLost( vkQueueWaitIdle( m_queue ), "vkQueueWaitIdle" );
 }
 
 void VulkanCommandQueue::ExecuteCommandLists( const DenOfIz_ExecuteCommandListsDesc &executeCommandListsDesc )
@@ -56,19 +61,22 @@ void VulkanCommandQueue::ExecuteCommandLists( const DenOfIz_ExecuteCommandListsD
     std::vector<uint64_t>             timelineWaitValues;
     uint32_t                          numBinaryWaitSemaphores = 0;
 
-    ISwapChain *targetSwapChain = nullptr;
-    for ( uint32_t i = 0; i < executeCommandListsDesc.CommandLists.NumElements; ++i )
+    std::vector<ISwapChain *> activeSwapChains;
+    m_context->AutoSync->CollectActiveSwapChains( activeSwapChains );
+    for ( ISwapChain *swapChain : activeSwapChains )
     {
-        ISwapChain *swapChain = nullptr;
-        if ( m_context->AutoSync->NeedsSwapChainSync( swapChain ) )
+        auto *vulkanSwapChain = dynamic_cast<VulkanSwapChain *>( swapChain );
+        if ( vulkanSwapChain == nullptr || vulkanSwapChain->GetQueue( ) != m_queue )
         {
-            const auto *vulkanSwapChain = dynamic_cast<VulkanSwapChain *>( swapChain );
-            waitSemaphores.push_back( vulkanSwapChain->GetCurrentAcquireSemaphore( ) );
+            continue;
+        }
+        m_context->AutoSync->ClearSwapChainSync( swapChain );
+        if ( const VkSemaphore acquireSemaphore = vulkanSwapChain->ConsumeAcquireSemaphore( ); acquireSemaphore != VK_NULL_HANDLE )
+        {
+            waitSemaphores.push_back( acquireSemaphore );
             waitStages.push_back( VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT );
             timelineWaitValues.push_back( 0 );
             numBinaryWaitSemaphores++;
-            targetSwapChain = swapChain;
-            break;
         }
     }
 
@@ -90,16 +98,6 @@ void VulkanCommandQueue::ExecuteCommandLists( const DenOfIz_ExecuteCommandListsD
         vulkanSemaphore->Notify( );
         signalSemaphores.push_back( vulkanSemaphore->GetSemaphore( ) );
         timelineSignalValues.push_back( vulkanSemaphore->GetTimelineValue( ) );
-    }
-
-    if ( targetSwapChain )
-    {
-        auto             *vulkanSwapChain         = dynamic_cast<VulkanSwapChain *>( targetSwapChain );
-        const VkSemaphore renderCompleteSemaphore = vulkanSwapChain->GetCurrentRenderCompleteSemaphore( );
-        signalSemaphores.push_back( renderCompleteSemaphore );
-        timelineSignalValues.push_back( 0 );
-        numBinarySignalSemaphores++;
-        vulkanSwapChain->SetLastUsedRenderCompleteSemaphore( renderCompleteSemaphore );
     }
 
     std::vector<VkCommandBuffer> commandBuffers;
@@ -141,11 +139,16 @@ void VulkanCommandQueue::ExecuteCommandLists( const DenOfIz_ExecuteCommandListsD
         fence = vulkanFence->GetFence( );
     }
 
-    VK_CHECK_RESULT( vkQueueSubmit( m_queue, 1, &submitInfo, fence ) );
-    for ( uint32_t i = 0; i < executeCommandListsDesc.CommandLists.NumElements; ++i )
+    if ( m_context->IsDeviceLost )
     {
-        m_context->AutoSync->ClearCommandListSync( );
+        return;
     }
+    const VkResult result = vkQueueSubmit( m_queue, 1, &submitInfo, fence );
+    if ( m_context->CheckDeviceLost( result, "vkQueueSubmit" ) )
+    {
+        return;
+    }
+    VK_CHECK_RESULT( result );
 }
 
 uint32_t VulkanCommandQueue::GetQueueFamilyIndex( ) const

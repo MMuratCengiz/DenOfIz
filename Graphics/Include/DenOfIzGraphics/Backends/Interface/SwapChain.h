@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "CommonData.h"
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include "DenOfIzGraphics/Handle.h"
+#include "DenOfIzGraphics/Result.h"
 #include "Texture.h"
 
 #ifdef __cplusplus
@@ -32,9 +33,7 @@ extern "C"
     /**
      * @brief Swap chain handle for presenting rendered frames to a window surface.
      *
-     * A swap chain manages a collection of back buffers used for double or triple buffering.
-     * It synchronizes frame presentation with the display's refresh rate and handles the
-     * buffer rotation for smooth rendering.
+     * The swap chain always has the pixel size of its window: it recreates itself when the window changes, there is no resize call.
      *
      * @par Backend implementations
      * - DirectX 12: IDXGISwapChain4
@@ -42,26 +41,16 @@ extern "C"
      * - Metal: CAMetalLayer + MTKView
      * - WebGPU: WGPUSurface
      *
-     * @par Typical usage
-     * 1. Create swap chain via DenOfIz_LogicalDevice_CreateSwapChain()
-     * 2. Each frame: acquire image, render to it, present
-     * 3. Handle resize events by calling DenOfIz_SwapChain_Resize()
-     * 4. Use DenOfIz_SwapChain_GetRenderTarget() to get textures for rendering
-     *
      * @par Example: Frame rendering loop
      * @code
-     * uint32_t imageIndex;
-     * DenOfIz_SwapChain_AcquireNextImage(swapChain, &imageIndex);
-     *
-     * DenOfIz_Texture renderTarget;
-     * DenOfIz_SwapChain_GetRenderTarget(swapChain, imageIndex, &renderTarget);
-     *
-     * // ... render to renderTarget ...
-     *
-     * DenOfIz_PresentResult result = DenOfIz_SwapChain_Present(swapChain, imageIndex);
-     * if (result == DENOFIZ_PRESENT_RESULT_SUBOPTIMAL) {
-     *     DenOfIz_SwapChain_Resize(swapChain, newWidth, newHeight);
+     * DenOfIz_Texture backBuffer;
+     * if (DenOfIz_SwapChain_AcquireNextImage(swapChain, &backBuffer) != DENOFIZ_SUCCESS) {
+     *     return; // skip the frame
      * }
+     *
+     * // ... render to backBuffer, submit ...
+     *
+     * DenOfIz_SwapChain_Present(swapChain);
      * @endcode
      *
      * @see DenOfIz_LogicalDevice_CreateSwapChain
@@ -70,16 +59,14 @@ extern "C"
     DENOFIZ_DEFINE_HANDLE( DenOfIz_SwapChain )
 
     /**
-     * @brief Result codes returned by DenOfIz_SwapChain_Present().
+     * @brief How presented frames are synchronized with the display.
      */
     typedef enum
     {
-        DENOFIZ_PRESENT_RESULT_ERROR       = -1, /**< Presentation failed due to an error. */
-        DENOFIZ_PRESENT_RESULT_SUCCESS     = 0,  /**< Presentation succeeded. */
-        DENOFIZ_PRESENT_RESULT_TIMEOUT     = 1,  /**< Presentation timed out waiting for GPU. */
-        DENOFIZ_PRESENT_RESULT_DEVICE_LOST = 2,  /**< GPU device was lost; swap chain must be recreated. */
-        DENOFIZ_PRESENT_RESULT_SUBOPTIMAL  = 3   /**< Swap chain is out of date (e.g., window resized); call Resize(). */
-    } DenOfIz_PresentResult;
+        DENOFIZ_PRESENT_MODE_FIFO      = 0, /**< VSync, no tearing. Always supported. */
+        DENOFIZ_PRESENT_MODE_MAILBOX   = 1, /**< No tearing, newest frame replaces a queued one. Falls back to FIFO. */
+        DENOFIZ_PRESENT_MODE_IMMEDIATE = 2  /**< No VSync, may tear. Falls back to MAILBOX, then FIFO. */
+    } DenOfIz_PresentMode;
 
     /**
      * @brief Color space for swap chain output.
@@ -103,138 +90,68 @@ extern "C"
     } DenOfIz_Viewport;
 
     /**
-     * @brief Descriptor for creating a swap chain.
+     * @brief Descriptor of a swap chain.
      *
      * @see DenOfIz_LogicalDevice_CreateSwapChain
+     * @see DenOfIz_SwapChain_GetDesc
      */
     typedef struct
     {
         DenOfIz_GraphicsWindowHandle WindowHandle;      /**< Handle to the window surface. Required. */
-        uint32_t                     Width;             /**< Initial width in pixels. Must be > 0. */
-        uint32_t                     Height;            /**< Initial height in pixels. Must be > 0. */
+        uint32_t                     Width;             /**< Current width in pixels. Set by the swap chain, ignored on creation. */
+        uint32_t                     Height;            /**< Current height in pixels. Set by the swap chain, ignored on creation. */
         uint32_t                     NumBuffers;        /**< Number of back buffers (2 for double, 3 for triple buffering). */
         DenOfIz_Format               BackBufferFormat;  /**< Format of back buffer textures (e.g., DENOFIZ_FORMAT_B8G8R8A8_UNORM). */
-        DenOfIz_Format               DepthBufferFormat; /**< Format for depth buffer, or DENOFIZ_FORMAT_UNDEFINED for none. */
+        DenOfIz_Format               DepthBufferFormat; /**< Format of the swap chain depth buffer, or DENOFIZ_FORMAT_UNDEFINED for none. */
         DenOfIz_CommandQueue         CommandQueue;      /**< Queue used for presentation. Must support presentation. */
         uint32_t                     ImageUsages;       /**< Additional DenOfIz_ResourceUsageFlags for back buffers. */
-        bool                         AllowTearing;      /**< Enable variable refresh rate (VRR/FreeSync/G-Sync). */
+        DenOfIz_PresentMode          PresentMode;       /**< Synchronization with the display. */
         bool                         EnableHDR;         /**< Enable HDR output if supported by display. */
         DenOfIz_ColorSpace           ColorSpace;        /**< Color space for output. */
-        DenOfIz_MSAASampleCount      SampleCount;       /**< MSAA sample count (DENOFIZ_MSAA_SAMPLE_COUNT_1 for no MSAA). */
     } DenOfIz_SwapChainDesc;
 
     /**
      * @brief Returns the preferred back buffer format for this swap chain.
-     *
-     * @param swapChain Valid swap chain handle.
-     * @param[out] outFormat Receives the preferred format.
-     *
-     * @par Valid Usage
-     * - @p swapChain must be a valid handle created by DenOfIz_LogicalDevice_CreateSwapChain()
-     * - @p outFormat must not be NULL
      */
     DZ_API void DenOfIz_SwapChain_GetPreferredFormat( DenOfIz_SwapChain swapChain, DenOfIz_Format *outFormat );
 
     /**
-     * @brief Acquires the next available back buffer image for rendering.
+     * @brief Acquires the back buffer to render this frame to.
      *
-     * Call this at the start of each frame before rendering. The returned index identifies
-     * which back buffer to render to and must be passed to DenOfIz_SwapChain_Present().
+     * Resizes the swap chain first when its size no longer matches the window. Must be called on the thread that owns the window.
      *
-     * @param swapChain Valid swap chain handle.
-     * @param[out] outImageIndex Receives the index of the acquired image (0 to NumBuffers-1).
-     *
-     * @par Valid Usage
-     * - @p swapChain must be a valid handle
-     * - @p outImageIndex must not be NULL
-     * - Previous frame's work on the acquired buffer should be complete (use fences/semaphores)
-     *
-     * @see DenOfIz_SwapChain_Present
+     * @param[out] outBackBuffer Receives the back buffer. Owned by the swap chain and only valid until DenOfIz_SwapChain_Present().
+     * @return DENOFIZ_SUCCESS when a back buffer was acquired. On any other value @p outBackBuffer is DENOFIZ_NULL_HANDLE and the frame must be
+     * skipped (window minimized or occluded, device lost).
      */
-    DZ_API void DenOfIz_SwapChain_AcquireNextImage( DenOfIz_SwapChain swapChain, uint32_t *outImageIndex );
+    DZ_API DenOfIz_Result DenOfIz_SwapChain_AcquireNextImage( DenOfIz_SwapChain swapChain, DenOfIz_Texture *outBackBuffer );
 
     /**
-     * @brief Presents the rendered image to the display.
+     * @brief Presents the acquired back buffer. The back buffer must have been transitioned to DENOFIZ_RESOURCE_USAGE_PRESENT_BIT.
      *
-     * Call this after submitting rendering commands for the frame. On Vulkan, this operation
-     * uses internal semaphores to synchronize with the GPU.
-     *
-     * @param swapChain Valid swap chain handle.
-     * @param imageIndex Index of the image to present (from AcquireNextImage).
-     * @return Result code indicating success or type of failure.
-     * @retval DENOFIZ_PRESENT_RESULT_SUCCESS Presentation succeeded.
-     * @retval DENOFIZ_PRESENT_RESULT_SUBOPTIMAL Swap chain is out of date; call Resize().
-     * @retval DENOFIZ_PRESENT_RESULT_DEVICE_LOST GPU device lost; recreate swap chain.
-     * @retval DENOFIZ_PRESENT_RESULT_TIMEOUT Presentation timed out.
-     * @retval DENOFIZ_PRESENT_RESULT_ERROR Presentation failed.
-     *
-     * @par Valid Usage
-     * - @p swapChain must be a valid handle
-     * - @p imageIndex must be a value returned by DenOfIz_SwapChain_AcquireNextImage()
-     * - Rendering commands for @p imageIndex must have been submitted to the GPU
+     * @return DENOFIZ_SUCCESS, DENOFIZ_NOT_READY when no back buffer was acquired, or DENOFIZ_ERROR_DEVICE_LOST.
      */
-    DZ_API DenOfIz_PresentResult DenOfIz_SwapChain_Present( DenOfIz_SwapChain swapChain, uint32_t imageIndex );
+    DZ_API DenOfIz_Result DenOfIz_SwapChain_Present( DenOfIz_SwapChain swapChain );
 
     /**
-     * @brief Resizes the swap chain back buffers.
+     * @brief Returns the depth buffer of the swap chain, DENOFIZ_NULL_HANDLE when DepthBufferFormat is DENOFIZ_FORMAT_UNDEFINED.
      *
-     * Call this when the window size changes or when Present() returns SUBOPTIMAL.
-     * All command lists referencing the old back buffers must have completed execution
-     * before calling this function.
-     *
-     * @param swapChain Valid swap chain handle.
-     * @param width New width in pixels. Must be > 0.
-     * @param height New height in pixels. Must be > 0.
-     *
-     * @par Valid Usage
-     * - @p swapChain must be a valid handle
-     * - GPU must be idle or all references to back buffers must be released
-     * - @p width and @p height must be > 0
-     *
-     * @note After resize, render targets from GetRenderTarget() are invalidated and must be re-acquired.
-     * @note Ensure you wait until device is until before resizing, gracefully manage PRESENT as it might return errors during resize.
+     * Owned by the swap chain and replaced when the swap chain is resized: query it every frame.
      */
-    DZ_API void DenOfIz_SwapChain_Resize( DenOfIz_SwapChain swapChain, uint32_t width, uint32_t height );
+    DZ_API void DenOfIz_SwapChain_GetDepthBuffer( DenOfIz_SwapChain swapChain, DenOfIz_Texture *outDepthBuffer );
 
     /**
-     * @brief Returns the texture resource for a swap chain back buffer.
-     *
-     * The returned texture can be used as a render target. The handle is owned by the
-     * swap chain and must not be destroyed by the caller.
-     *
-     * @param swapChain Valid swap chain handle.
-     * @param image Index of the back buffer (0 to NumBuffers-1).
-     * @param[out] outRenderTarget Receives the texture handle.
-     *
-     * @par Valid Usage
-     * - @p swapChain must be a valid handle
-     * - @p image must be < NumBuffers specified in DenOfIz_SwapChainDesc
-     * - @p outRenderTarget must not be NULL
-     *
-     * @warning Do not call DenOfIz_TextureResource_Destroy() on the returned handle.
+     * @brief Returns the current description of the swap chain, including its current size.
      */
-    DZ_API void DenOfIz_SwapChain_GetRenderTarget( DenOfIz_SwapChain swapChain, uint32_t image, DenOfIz_Texture *outRenderTarget );
+    DZ_API void DenOfIz_SwapChain_GetDesc( DenOfIz_SwapChain swapChain, DenOfIz_SwapChainDesc *outDesc );
 
     /**
-     * @brief Returns the current viewport matching the swap chain dimensions.
-     *
-     * @param swapChain Valid swap chain handle.
-     * @param[out] outViewport Receives pointer to the viewport. Valid until next Resize().
-     *
-     * @par Valid Usage
-     * - @p swapChain must be a valid handle
-     * - @p outViewport must not be NULL
+     * @brief Returns the viewport covering the whole swap chain. Valid until the swap chain is resized.
      */
     DZ_API void DenOfIz_SwapChain_GetViewport( DenOfIz_SwapChain swapChain, const DenOfIz_Viewport **outViewport );
 
     /**
-     * @brief Destroys the swap chain and releases all resources.
-     *
-     * @param swapChain Swap chain handle to destroy. May be DENOFIZ_NULL_HANDLE.
-     *
-     * @par Valid Usage
-     * - All command lists referencing the swap chain's back buffers must have completed
-     * - After this call, @p swapChain is invalid and must not be used
+     * @brief Destroys the swap chain. May be DENOFIZ_NULL_HANDLE.
      */
     DZ_API void DenOfIz_SwapChain_Destroy( DenOfIz_SwapChain swapChain );
 

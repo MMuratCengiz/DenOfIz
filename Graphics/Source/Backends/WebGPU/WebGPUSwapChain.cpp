@@ -203,11 +203,11 @@ void WebGPUSwapChain::ConfigureSwapChain( )
     config.alphaMode                = WGPUCompositeAlphaMode_Auto;
     config.width                    = m_desc.Width;
     config.height                   = m_desc.Height;
-    if ( m_desc.AllowTearing )
+    if ( m_desc.PresentMode == DENOFIZ_PRESENT_MODE_IMMEDIATE )
     {
         config.presentMode = WGPUPresentMode_Immediate;
     }
-    else if ( m_desc.NumBuffers >= 3 )
+    else if ( m_desc.PresentMode == DENOFIZ_PRESENT_MODE_MAILBOX )
     {
         config.presentMode = WGPUPresentMode_Mailbox;
     }
@@ -238,7 +238,6 @@ void WebGPUSwapChain::ConfigureSwapChain( )
     }
 #endif
 
-    m_renderTargets.clear( );
     m_renderTargets.resize( m_desc.NumBuffers );
 }
 
@@ -309,14 +308,32 @@ DenOfIz_Format WebGPUSwapChain::GetPreferredFormat( )
 #endif
 }
 
-uint32_t WebGPUSwapChain::AcquireNextImage( )
+DenOfIz_Result WebGPUSwapChain::AcquireNextImage( uint32_t &outImageIndex )
 {
+    outImageIndex = 0;
 #if DZ_WEBGPU_USE_DAWN_API
     if ( m_surfaceTextureAcquired && m_currentSurfaceTexture.texture )
     {
-        wgpuTextureRelease( m_currentSurfaceTexture.texture );
-        m_surfaceTextureAcquired = false;
+        outImageIndex = m_currentImageIndex;
+        return DENOFIZ_SUCCESS;
     }
+#endif
+
+    DenOfIz_GraphicsWindowSurface windowSurface{ };
+    DenOfIz_GraphicsWindowHandle_GetSurface( m_desc.WindowHandle, &windowSurface );
+    if ( windowSurface.Width == 0 || windowSurface.Height == 0 )
+    {
+        return DENOFIZ_NOT_READY;
+    }
+    if ( windowSurface.Width != m_desc.Width || windowSurface.Height != m_desc.Height )
+    {
+        if ( const DenOfIz_Result resizeResult = Resize( windowSurface.Width, windowSurface.Height ); resizeResult != DENOFIZ_SUCCESS )
+        {
+            return resizeResult;
+        }
+    }
+
+#if DZ_WEBGPU_USE_DAWN_API
 
     m_currentSurfaceTexture = { };
     wgpuSurfaceGetCurrentTexture( m_surface, &m_currentSurfaceTexture );
@@ -324,9 +341,13 @@ uint32_t WebGPUSwapChain::AcquireNextImage( )
     if ( m_currentSurfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal &&
          m_currentSurfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal )
     {
-        spdlog::error( "WebGPU: Failed to acquire surface texture: status = {}", static_cast<int>( m_currentSurfaceTexture.status ) );
+        if ( m_currentSurfaceTexture.texture )
+        {
+            wgpuTextureRelease( m_currentSurfaceTexture.texture );
+            m_currentSurfaceTexture = { };
+        }
         m_surfaceTextureAcquired = false;
-        return UINT32_MAX;
+        return DENOFIZ_ERROR_OUT_OF_DATE;
     }
 
     m_surfaceTextureAcquired = true;
@@ -334,27 +355,28 @@ uint32_t WebGPUSwapChain::AcquireNextImage( )
     if ( !m_swapChain )
     {
         spdlog::error( "WebGPU: Swap chain not initialized" );
-        return UINT32_MAX;
+        return DENOFIZ_ERROR_OUT_OF_DATE;
     }
 
     m_currentTextureView = wgpuSwapChainGetCurrentTextureView( m_swapChain );
     if ( !m_currentTextureView )
     {
         spdlog::error( "WebGPU: Failed to get current texture view from swap chain" );
-        return UINT32_MAX;
+        return DENOFIZ_ERROR_OUT_OF_DATE;
     }
 #endif
 
     m_currentImageIndex = ( m_currentImageIndex + 1 ) % m_desc.NumBuffers;
-    return m_currentImageIndex;
+    outImageIndex       = m_currentImageIndex;
+    return DENOFIZ_SUCCESS;
 }
 
-DenOfIz_PresentResult WebGPUSwapChain::Present( uint32_t imageIndex )
+DenOfIz_Result WebGPUSwapChain::Present( )
 {
 #if DZ_WEBGPU_USE_DAWN_API
     if ( !m_surface )
     {
-        return DENOFIZ_PRESENT_RESULT_DEVICE_LOST;
+        return DENOFIZ_ERROR_DEVICE_LOST;
     }
 
 #ifndef __EMSCRIPTEN__
@@ -369,18 +391,25 @@ DenOfIz_PresentResult WebGPUSwapChain::Present( uint32_t imageIndex )
 #else
     if ( !m_swapChain )
     {
-        return DENOFIZ_PRESENT_RESULT_DEVICE_LOST;
+        return DENOFIZ_ERROR_DEVICE_LOST;
     }
 #endif
 
-    return DENOFIZ_PRESENT_RESULT_SUCCESS;
+    return DENOFIZ_SUCCESS;
 }
 
-void WebGPUSwapChain::Resize( const uint32_t width, const uint32_t height )
+DenOfIz_Result WebGPUSwapChain::Resize( uint32_t width, uint32_t height )
 {
     if ( width == 0 || height == 0 )
     {
-        return;
+        DenOfIz_GraphicsWindowSurface windowSurface{ };
+        DenOfIz_GraphicsWindowHandle_GetSurface( m_desc.WindowHandle, &windowSurface );
+        width  = windowSurface.Width;
+        height = windowSurface.Height;
+    }
+    if ( width == 0 || height == 0 )
+    {
+        return DENOFIZ_NOT_READY;
     }
 
 #if DZ_WEBGPU_USE_DAWN_API
@@ -401,6 +430,17 @@ void WebGPUSwapChain::Resize( const uint32_t width, const uint32_t height )
 
     ConfigureSwapChain( );
     CreateDepthStencil( );
+    return DENOFIZ_SUCCESS;
+}
+
+ITexture *WebGPUSwapChain::GetDepthBuffer( )
+{
+    return m_depthStencil.get( );
+}
+
+const DenOfIz_SwapChainDesc &WebGPUSwapChain::GetDesc( )
+{
+    return m_desc;
 }
 
 ITexture *WebGPUSwapChain::GetRenderTarget( const uint32_t image )
@@ -414,7 +454,8 @@ ITexture *WebGPUSwapChain::GetRenderTarget( const uint32_t image )
 #if DZ_WEBGPU_USE_DAWN_API
     if ( !m_surfaceTextureAcquired )
     {
-        AcquireNextImage( );
+        uint32_t acquiredImage = 0;
+        AcquireNextImage( acquiredImage );
     }
 
     if ( !m_currentSurfaceTexture.texture )
@@ -454,6 +495,7 @@ ITexture *WebGPUSwapChain::GetRenderTarget( const uint32_t image )
     }
     else
     {
+        m_renderTargets[ image ]->SetExtent( desc.Width, desc.Height );
         m_renderTargets[ image ]->UpdateExternalTexture( m_currentSurfaceTexture.texture );
     }
 #else
@@ -463,6 +505,7 @@ ITexture *WebGPUSwapChain::GetRenderTarget( const uint32_t image )
     }
     else
     {
+        m_renderTargets[ image ]->SetExtent( desc.Width, desc.Height );
         m_renderTargets[ image ]->UpdateExternalTextureView( m_currentTextureView );
     }
 #endif

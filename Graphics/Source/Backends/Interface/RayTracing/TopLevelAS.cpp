@@ -47,6 +47,6 @@ extern "C"
         {
             return;
         }
-        delete TLAS_IMPL( topLevelAS );
+        DenOfIz::DeferredDestroyQueue::Destroy( TLAS_IMPL( topLevelAS ) );
     }
 }

@@ -65,27 +65,27 @@ MaterialData::~MaterialData( )
     }
     if ( DENOFIZ_HANDLE_IS_VALID( m_albedoTexture ) )
     {
-        DenOfIz_TextureResource_Destroy( m_albedoTexture );
+        DenOfIz_Texture_Destroy( m_albedoTexture );
     }
     if ( DENOFIZ_HANDLE_IS_VALID( m_normalTexture ) )
     {
-        DenOfIz_TextureResource_Destroy( m_normalTexture );
+        DenOfIz_Texture_Destroy( m_normalTexture );
     }
     if ( DENOFIZ_HANDLE_IS_VALID( m_heightTexture ) )
     {
-        DenOfIz_TextureResource_Destroy( m_heightTexture );
+        DenOfIz_Texture_Destroy( m_heightTexture );
     }
     if ( DENOFIZ_HANDLE_IS_VALID( m_metallicTexture ) )
     {
-        DenOfIz_TextureResource_Destroy( m_metallicTexture );
+        DenOfIz_Texture_Destroy( m_metallicTexture );
     }
     if ( DENOFIZ_HANDLE_IS_VALID( m_roughnessTexture ) )
     {
-        DenOfIz_TextureResource_Destroy( m_roughnessTexture );
+        DenOfIz_Texture_Destroy( m_roughnessTexture );
     }
     if ( DENOFIZ_HANDLE_IS_VALID( m_aoTexture ) )
     {
-        DenOfIz_TextureResource_Destroy( m_aoTexture );
+        DenOfIz_Texture_Destroy( m_aoTexture );
     }
 }
 

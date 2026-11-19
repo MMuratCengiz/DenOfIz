@@ -20,11 +20,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <vector>
 #include "DenOfIzGraphics/Backends/Interface/BindGroupLayout.h"
+#include "../Common/DeferredDestroyQueue.h"
 
 namespace DenOfIz
 {
 
-    class IBindGroupLayout
+    class IBindGroupLayout : public IDeviceObject
     {
     protected:
         DenOfIz_BindGroupLayoutDesc      m_storedDesc;

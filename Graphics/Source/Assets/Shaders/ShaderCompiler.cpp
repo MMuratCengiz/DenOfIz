@@ -36,7 +36,69 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "dxcapi.h"
 
+#if defined( __linux__ ) || defined( __APPLE__ )
+#include <csignal>
+#include <iterator>
+#include <mutex>
+#endif
+
 using namespace DenOfIz;
+
+#if defined( __linux__ ) || defined( __APPLE__ )
+namespace
+{
+    // The LLVM inside DXC installs its own handlers for these signals on the first compile (llvm::sys::RemoveFileOnSignal) and never removes them
+    class DxcSignalHandlerScope
+    {
+        static constexpr int s_signals[] = { SIGHUP, SIGINT, SIGPIPE, SIGTERM, SIGUSR1, SIGUSR2, SIGILL, SIGTRAP, SIGABRT, SIGFPE, SIGBUS, SIGSEGV, SIGQUIT,
+#ifdef SIGSYS
+                                             SIGSYS,
+#endif
+#ifdef SIGXCPU
+                                             SIGXCPU,
+#endif
+#ifdef SIGXFSZ
+                                             SIGXFSZ,
+#endif
+#ifdef SIGEMT
+                                             SIGEMT,
+#endif
+        };
+
+        static inline std::mutex       s_mutex;
+        static inline uint32_t         s_activeScopes = 0;
+        static inline struct sigaction s_saved[ std::size( s_signals ) ]{ };
+
+    public:
+        DxcSignalHandlerScope( )
+        {
+            std::lock_guard lock( s_mutex );
+            if ( s_activeScopes++ == 0 )
+            {
+                for ( size_t i = 0; i < std::size( s_signals ); ++i )
+                {
+                    sigaction( s_signals[ i ], nullptr, &s_saved[ i ] );
+                }
+            }
+        }
+
+        ~DxcSignalHandlerScope( )
+        {
+            std::lock_guard lock( s_mutex );
+            if ( --s_activeScopes == 0 )
+            {
+                for ( size_t i = 0; i < std::size( s_signals ); ++i )
+                {
+                    sigaction( s_signals[ i ], &s_saved[ i ], nullptr );
+                }
+            }
+        }
+
+        DxcSignalHandlerScope( const DxcSignalHandlerScope & )            = delete;
+        DxcSignalHandlerScope &operator=( const DxcSignalHandlerScope & ) = delete;
+    };
+} // namespace
+#endif
 
 namespace DenOfIz
 {
@@ -433,7 +495,12 @@ DenOfIz_CompileResult ShaderCompiler::CompileHLSL( const DenOfIz_CompileDesc &co
 
     IDxcResult         *dxcResult{ nullptr };
     IDxcIncludeHandler *includeHandler = customIncludeHandler ? customIncludeHandler : m_dxcIncludeHandler;
-    result = m_dxcCompiler->Compile( &buffer, arguments.data( ), static_cast<uint32_t>( arguments.size( ) ), includeHandler, IID_PPV_ARGS( &dxcResult ) );
+    {
+#if defined( __linux__ ) || defined( __APPLE__ )
+        DxcSignalHandlerScope signalHandlerScope;
+#endif
+        result = m_dxcCompiler->Compile( &buffer, arguments.data( ), static_cast<uint32_t>( arguments.size( ) ), includeHandler, IID_PPV_ARGS( &dxcResult ) );
+    }
 
     if ( SUCCEEDED( result ) )
     {

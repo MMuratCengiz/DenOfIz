@@ -177,6 +177,14 @@ void DZIndex::CreateTranslationUnit( const char *header )
     }
     arguments.push_back( "-I" );
     arguments.push_back( includeRoot.c_str( ) );
+#ifdef DENOFIZ_BINDINGS_CLANG_RESOURCE_DIR
+    const std::string resourceDir = DENOFIZ_BINDINGS_CLANG_RESOURCE_DIR;
+    if ( !resourceDir.empty( ) )
+    {
+        arguments.push_back( "-resource-dir" );
+        arguments.push_back( resourceDir.c_str( ) );
+    }
+#endif
 
     const CXTranslationUnit unit = clang_parseTranslationUnit( m_index, headerPath.c_str( ), arguments.data( ), static_cast<int>( arguments.size( ) ), nullptr, 0,
                                                                CXTranslationUnit_DetailedPreprocessingRecord );

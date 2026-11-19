@@ -17,9 +17,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
+#include "DenOfIzExamples/IExample.h"
+
 #include "DenOfIzExamples/Assets/SphereAsset.h"
 #include "DenOfIzExamples/DefaultRenderPipeline.h"
-#include "DenOfIzExamples/IExample.h"
 #include "DenOfIzExamples/QuadPipeline.h"
 
 namespace DenOfIz
@@ -46,6 +47,8 @@ namespace DenOfIz
         void                     Update( ) override;
         void                     Render( uint32_t frameIndex, DenOfIz_CommandList commandList ) override;
         void                     Quit( ) override;
+        void                     OnResize( uint32_t width, uint32_t height ) override;
+        void                     CreateDeferredRenderTargets( );
         struct ExampleWindowDesc WindowDesc( ) override
         {
             auto windowDesc  = DenOfIz::ExampleWindowDesc( );

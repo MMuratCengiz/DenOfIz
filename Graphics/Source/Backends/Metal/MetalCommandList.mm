@@ -45,8 +45,8 @@ void MetalCommandList::Begin( )
     {
         m_commandBuffer = [m_context->CommandQueue commandBuffer];
         m_pipeline = nullptr;
-        m_queuedBindGroups.clear( );
-        m_queuedRootConstants.clear( );
+        m_boundGroups.clear( );
+        m_boundRootConstants.clear( );
         switch ( m_desc.QueueType )
         {
         case DENOFIZ_QUEUE_TYPE_COPY:
@@ -64,7 +64,7 @@ void MetalCommandList::Begin( )
 
         m_currentBufferOffset = 0;
         m_argumentBuffer->Reset( );
-        m_queuedBindGroups.clear( );
+        m_boundArgumentSegment = 0;
         m_shaderLayout = nullptr;
         m_computeTlasBound = false;
         m_renderTlasBound = false;
@@ -276,16 +276,37 @@ void MetalCommandList::BindResourceGroup( IBindGroup *bindGroup )
 {
     DZ_NOT_NULL( bindGroup );
     MetalBindGroup *metalBindGroup = static_cast<MetalBindGroup *>( bindGroup );
-    m_queuedBindGroups.push_back( metalBindGroup );
+
+    const uint32_t registerSpace = metalBindGroup->RegisterSpace( );
+    for ( const MetalBindGroup *&bound : m_boundGroups )
+    {
+        if ( bound->RegisterSpace( ) == registerSpace )
+        {
+            bound = metalBindGroup;
+            return;
+        }
+    }
+    m_boundGroups.push_back( metalBindGroup );
 }
 
 void MetalCommandList::SetRootConstants( const uint32_t binding, const DenOfIz_ByteArray &data )
 {
-    QueuedRootConstant rootConstant;
-    rootConstant.Binding = binding;
-    rootConstant.Data    = data.Elements;
-    rootConstant.Size    = static_cast<uint32_t>( data.NumElements );
-    m_queuedRootConstants.push_back( rootConstant );
+    if ( data.Elements == nullptr || data.NumElements == 0 )
+    {
+        return;
+    }
+    const auto *bytes = static_cast<const uint8_t *>( data.Elements );
+    for ( BoundRootConstant &bound : m_boundRootConstants )
+    {
+        if ( bound.Binding == binding )
+        {
+            bound.Data.assign( bytes, bytes + data.NumElements );
+            return;
+        }
+    }
+    BoundRootConstant &bound = m_boundRootConstants.emplace_back( );
+    bound.Binding            = binding;
+    bound.Data.assign( bytes, bytes + data.NumElements );
 }
 
 void MetalCommandList::BindCommandResources( )
@@ -302,25 +323,26 @@ void MetalCommandList::BindCommandResources( )
         m_currentBufferOffset = m_argumentBuffer->Reserve( m_shaderLayout->NumBytes( ) ).second;
     }
 
-    for ( auto &bindGroup : m_queuedBindGroups )
+    for ( const MetalBindGroup *bindGroup : m_boundGroups )
     {
         ProcessBindGroup( bindGroup );
     }
 
-    for ( const auto &queued : m_queuedRootConstants )
+    for ( const BoundRootConstant &bound : m_boundRootConstants )
     {
-        const MetalRootConstantLayout *rootConstant = m_shaderLayout->RootConstant( DENOFIZ_ROOT_CONSTANT_REGISTER_SPACE, queued.Binding );
+        const MetalRootConstantLayout *rootConstant = m_shaderLayout->RootConstant( DENOFIZ_ROOT_CONSTANT_REGISTER_SPACE, bound.Binding );
         if ( rootConstant == nullptr )
         {
             continue;
         }
-        if ( queued.Size > rootConstant->NumBytes )
+        const uint32_t numBytes = static_cast<uint32_t>( bound.Data.size( ) );
+        if ( numBytes > rootConstant->NumBytes )
         {
-            spdlog::error( "Root constant data for binding {} is {} bytes but the shader expects at most {} bytes. Data truncated.", queued.Binding, queued.Size,
+            spdlog::error( "Root constant data for binding {} is {} bytes but the shader expects at most {} bytes. Data truncated.", bound.Binding, numBytes,
                            rootConstant->NumBytes );
         }
-        m_argumentBuffer->EncodeRootConstant( m_currentBufferOffset + rootConstant->Offset, std::min( queued.Size, rootConstant->NumBytes ),
-                                              static_cast<const Byte *>( queued.Data ) );
+        m_argumentBuffer->EncodeRootConstant( m_currentBufferOffset + rootConstant->Offset, std::min( numBytes, rootConstant->NumBytes ),
+                                              static_cast<const Byte *>( bound.Data.data( ) ) );
     }
 
     BindTopLevelArgumentBuffer( );
@@ -799,6 +821,14 @@ void MetalCommandList::BindTopLevelArgumentBuffer( )
 {
     id<MTLBuffer> buffer = m_argumentBuffer->Buffer( );
     uint64_t      offset = m_currentBufferOffset;
+
+    if ( m_argumentBuffer->Segment( ) != m_boundArgumentSegment )
+    {
+        m_boundArgumentSegment = m_argumentBuffer->Segment( );
+        m_computeTlasBound     = false;
+        m_renderTlasBound      = false;
+        m_meshTlasBound        = false;
+    }
 
     if ( m_activeEncoderType == MetalEncoderType::Compute )
     {

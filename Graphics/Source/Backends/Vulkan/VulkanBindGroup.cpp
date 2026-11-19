@@ -38,7 +38,11 @@ VulkanBindGroup::VulkanBindGroup( VulkanContext *context, const DenOfIz_BindGrou
         setAllocateInfo.descriptorSetCount = 1;
         setAllocateInfo.pSetLayouts        = &layout;
 
-        m_context->DescriptorPoolManager->AllocateDescriptorSets( setAllocateInfo, &m_descriptorSet );
+        m_descriptorPool = m_context->DescriptorPoolManager->AllocateDescriptorSets( setAllocateInfo, &m_descriptorSet );
+        if ( m_descriptorPool == VK_NULL_HANDLE )
+        {
+            m_descriptorSet = VK_NULL_HANDLE;
+        }
     }
 }
 
@@ -235,6 +239,7 @@ VkWriteDescriptorSet &VulkanBindGroup::CreateWriteDescriptor( const DenOfIz_Reso
 
 VulkanBindGroup::~VulkanBindGroup( )
 {
+    m_context->DescriptorPoolManager->FreeDescriptorSet( m_descriptorPool, m_descriptorSet );
     m_storage.Clear( );
 }
 

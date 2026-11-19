@@ -29,6 +29,6 @@ extern "C"
         {
             return;
         }
-        delete PIPELINE_IMPL( pipeline );
+        DenOfIz::DeferredDestroyQueue::Destroy( PIPELINE_IMPL( pipeline ) );
     }
 }

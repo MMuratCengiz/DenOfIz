@@ -88,7 +88,13 @@ VulkanTexture::VulkanTexture( VulkanContext *context, const DenOfIz_TextureDesc 
     }
     allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-    VK_CHECK_RESULT( vmaCreateImage( context->Vma, &imageCreateInfo, &allocationCreateInfo, &m_image, &m_allocation, nullptr ) );
+    if ( const VkResult result = vmaCreateImage( context->Vma, &imageCreateInfo, &allocationCreateInfo, &m_image, &m_allocation, nullptr ); result != VK_SUCCESS )
+    {
+        spdlog::error( "[Vulkan] Failed to create a {}x{} texture: {}", m_width, m_height, static_cast<int>( result ) );
+        m_image      = VK_NULL_HANDLE;
+        m_allocation = VK_NULL_HANDLE;
+        return;
+    }
     CreateImageView( );
 
     // This is not super efficient, but vulkan is the only api that doesn't support initial layouts. So this is a simple adaptation.
@@ -183,10 +189,25 @@ VulkanTexture::VulkanTexture( VkImage const &image, VkImageView const &imageView
     m_isExternal = true;
 }
 
+void VulkanTexture::UpdateExternal( const VkImage &image, const VkImageView &imageView, const DenOfIz_TextureDesc &desc )
+{
+    m_image      = image;
+    m_imageViews = { imageView };
+    m_layout     = VK_IMAGE_LAYOUT_UNDEFINED;
+    m_width      = desc.Width;
+    m_height     = desc.Height;
+    m_desc.Width  = desc.Width;
+    m_desc.Height = desc.Height;
+}
+
 // Todo transition all mip levels
 void VulkanTexture::TransitionToInitialLayout( ) const
 {
     const VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    if ( m_context->IsDeviceLost )
+    {
+        return;
+    }
 
     VkCommandBufferAllocateInfo bufferAllocateInfo{ };
     bufferAllocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -245,6 +266,11 @@ void VulkanTexture::TransitionToInitialLayout( ) const
     submitInfo.pCommandBuffers    = &commandBuffer;
 
     result = vkQueueSubmit( m_context->Queues.at( VulkanQueueType::Graphics ), 1, &submitInfo, nullptr );
+    if ( m_context->CheckDeviceLost( result, "vkQueueSubmit" ) )
+    {
+        vkFreeCommandBuffers( m_context->LogicalDevice, m_context->GraphicsQueueCommandPool, 1, &commandBuffer );
+        return;
+    }
     if ( result != VK_SUCCESS )
     {
         spdlog::error( "[VulkanTexture] Failed to submit initial layout transition" );
@@ -253,7 +279,7 @@ void VulkanTexture::TransitionToInitialLayout( ) const
     }
 
     result = vkQueueWaitIdle( m_context->Queues.at( VulkanQueueType::Graphics ) );
-    if ( result != VK_SUCCESS )
+    if ( !m_context->CheckDeviceLost( result, "vkQueueWaitIdle" ) && result != VK_SUCCESS )
     {
         spdlog::error( "[VulkanTexture] Failed to wait for initial layout transition" );
     }

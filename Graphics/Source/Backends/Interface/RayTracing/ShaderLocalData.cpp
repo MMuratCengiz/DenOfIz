@@ -115,6 +115,6 @@ extern "C"
         {
             return;
         }
-        delete SHADER_LOCAL_DATA_IMPL( localData );
+        DenOfIz::DeferredDestroyQueue::Destroy( SHADER_LOCAL_DATA_IMPL( localData ) );
     }
 }

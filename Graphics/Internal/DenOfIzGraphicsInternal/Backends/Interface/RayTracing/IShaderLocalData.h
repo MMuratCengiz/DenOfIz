@@ -19,13 +19,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Backends/Interface/RayTracing/ShaderLocalData.h"
+#include "../../Common/DeferredDestroyQueue.h"
 #include "DenOfIzGraphicsInternal/Backends/Interface/IBuffer.h"
 #include "DenOfIzGraphicsInternal/Backends/Interface/ITexture.h"
 
 namespace DenOfIz
 {
 
-    class IShaderLocalData
+    class IShaderLocalData : public IDeviceObject
     {
     public:
         virtual void Begin( ) = 0;

@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 extern "C"
 {
 
-    void DenOfIz_TextureResource_GetFormat( DenOfIz_Texture texture, DenOfIz_Format *outFormat )
+    void DenOfIz_Texture_GetFormat( DenOfIz_Texture texture, DenOfIz_Format *outFormat )
     {
         if ( !DENOFIZ_HANDLE_IS_VALID( texture ) || outFormat == NULL )
         {
@@ -33,13 +33,22 @@ extern "C"
         *outFormat = TEXTURE_IMPL( texture )->GetFormat( );
     }
 
-    void DenOfIz_TextureResource_Destroy( DenOfIz_Texture texture )
+    void DenOfIz_Texture_GetDesc( DenOfIz_Texture texture, DenOfIz_TextureDesc *outDesc )
+    {
+        if ( !DENOFIZ_HANDLE_IS_VALID( texture ) || outDesc == NULL )
+        {
+            return;
+        }
+        *outDesc = TEXTURE_IMPL( texture )->GetDesc( );
+    }
+
+    void DenOfIz_Texture_Destroy( DenOfIz_Texture texture )
     {
         if ( !DENOFIZ_HANDLE_IS_VALID( texture ) )
         {
             return;
         }
-        delete TEXTURE_IMPL( texture );
+        DenOfIz::DeferredDestroyQueue::Destroy( TEXTURE_IMPL( texture ) );
     }
 
     void DenOfIz_Sampler_Destroy( DenOfIz_Sampler sampler )
@@ -48,6 +57,6 @@ extern "C"
         {
             return;
         }
-        delete SAMPLER_IMPL( sampler );
+        DenOfIz::DeferredDestroyQueue::Destroy( SAMPLER_IMPL( sampler ) );
     }
 }

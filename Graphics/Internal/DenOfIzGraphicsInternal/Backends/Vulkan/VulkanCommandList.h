@@ -36,18 +36,32 @@ namespace DenOfIz
         VkCommandBuffer                      m_commandBuffer{ };
         VkViewport                           m_viewport{ };
         VkRect2D                             m_scissorRect{ };
+        VkRect2D m_requestedScissor{ };
+        VkRect2D m_renderArea{ };
+        bool     m_insideRendering       = false;
+        bool     m_warnedAttachmentSizes = false;
         bool                                 m_viewportDirty = true;
         bool                                 m_scissorDirty  = true;
-        std::vector<const VulkanBindGroup *> m_queuedBindGroups;
-        struct QueuedRootConstant
+        struct BoundGroup
         {
-            uint32_t Binding;
-            void    *Data;
-            uint32_t Size;
+            uint32_t               RegisterSpace;
+            const VulkanBindGroup *Group;
+            bool                   Dirty;
         };
-        std::vector<QueuedRootConstant> m_queuedRootConstants;
+        struct BoundRootConstant
+        {
+            uint32_t             Binding;
+            std::vector<uint8_t> Data;
+            bool                 Dirty;
+        };
+        std::vector<BoundGroup>        m_boundGroups;
+        std::vector<BoundRootConstant> m_boundRootConstants;
+        VkPipelineLayout               m_boundLayout    = VK_NULL_HANDLE;
+        VkPipelineBindPoint            m_boundBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         const VkCommandPool             m_commandPool;
         DenOfIz_QueueType               m_queueType;
+
+        void ApplyScissor( );
 
     public:
         VulkanCommandList( VulkanContext *context, DenOfIz_CommandListDesc desc, VkCommandPool commandPool );
@@ -93,7 +107,7 @@ namespace DenOfIz
         VkCommandBuffer        &GetCommandBuffer( );
 
     private:
-        void ProcessBindGroups( ) const;
+        void ProcessBindGroups( );
     };
 
 } // namespace DenOfIz

@@ -45,7 +45,7 @@ extern "C"
         {
             return;
         }
-        delete BIND_GROUP_LAYOUT_IMPL( bindGroupLayout );
+        DenOfIz::DeferredDestroyQueue::Destroy( BIND_GROUP_LAYOUT_IMPL( bindGroupLayout ) );
     }
 
     const DenOfIz_BindGroupLayoutDesc *DenOfIz_BindGroupLayout_GetDesc( DenOfIz_BindGroupLayout bindGroupLayout )

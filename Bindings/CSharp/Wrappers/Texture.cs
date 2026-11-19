@@ -21,6 +21,20 @@ namespace DenOfIz
             Handle = 0;
         }
 
+        public Format GetFormat()
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Texture_GetFormat(Handle, out var outFormat);
+            return outFormat;
+        }
+
+        public TextureDesc GetDesc()
+        {
+            ThrowIfDisposed();
+            Methods.DenOfIz_Texture_GetDesc(Handle, out var outDesc);
+            return outDesc;
+        }
+
         public void Dispose()
         {
             if (Handle == 0)
@@ -30,7 +44,7 @@ namespace DenOfIz
 
             if (_ownsHandle)
             {
-                Methods.DenOfIz_TextureResource_Destroy(Handle);
+                Methods.DenOfIz_Texture_Destroy(Handle);
             }
 
             Handle = 0;

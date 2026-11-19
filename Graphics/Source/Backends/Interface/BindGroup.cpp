@@ -177,6 +177,6 @@ extern "C"
         {
             return;
         }
-        delete BIND_GROUP_IMPL( bindGroup );
+        DenOfIz::DeferredDestroyQueue::Destroy( BIND_GROUP_IMPL( bindGroup ) );
     }
 }

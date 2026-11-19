@@ -46,8 +46,9 @@ void DX12CommandList::Begin( )
 {
     DX_CHECK_RESULT( m_commandAllocator->Reset( ) );
     DX_CHECK_RESULT( m_commandList->Reset( m_commandAllocator.get( ), nullptr ) );
-    m_queuedBindGroups.clear( );
-    m_queuedRootConstants.clear( );
+    m_boundGroups.clear( );
+    m_boundRootConstants.clear( );
+    m_heapsBound = false;
 
     m_currentRootSignature = nullptr;
     m_currentPipeline      = nullptr;
@@ -261,16 +262,44 @@ void DX12CommandList::BindResourceGroup( IBindGroup *bindGroup )
     DZ_NOT_NULL( bindGroup );
 
     const DX12BindGroup *dx12BindGroup = dynamic_cast<DX12BindGroup *>( bindGroup );
-    m_queuedBindGroups.push_back( dx12BindGroup );
+    DZ_NOT_NULL( dx12BindGroup );
+
+    const uint32_t registerSpace = dx12BindGroup->RegisterSpace( );
+    for ( BoundGroup &bound : m_boundGroups )
+    {
+        if ( bound.RegisterSpace == registerSpace )
+        {
+            bound.Group = dx12BindGroup;
+            bound.Dirty = true;
+            return;
+        }
+    }
+    BoundGroup &bound   = m_boundGroups.emplace_back( );
+    bound.RegisterSpace = registerSpace;
+    bound.Group         = dx12BindGroup;
+    bound.Dirty         = true;
 }
 
 void DX12CommandList::SetRootConstants( const uint32_t binding, const DenOfIz_ByteArray &data )
 {
-    DX12RootConstant rootConstant;
-    rootConstant.Binding  = binding;
-    rootConstant.Data     = data.Elements;
-    rootConstant.NumBytes = static_cast<uint32_t>( data.NumElements );
-    m_queuedRootConstants.push_back( rootConstant );
+    if ( data.Elements == nullptr || data.NumElements == 0 )
+    {
+        return;
+    }
+    const auto *bytes = static_cast<const uint8_t *>( data.Elements );
+    for ( BoundRootConstant &bound : m_boundRootConstants )
+    {
+        if ( bound.Binding == binding )
+        {
+            bound.Data.assign( bytes, bytes + data.NumElements );
+            bound.Dirty = true;
+            return;
+        }
+    }
+    BoundRootConstant &bound = m_boundRootConstants.emplace_back( );
+    bound.Binding            = binding;
+    bound.Data.assign( bytes, bytes + data.NumElements );
+    bound.Dirty = true;
 }
 
 void DX12CommandList::ProcessBindGroups( )
@@ -286,29 +315,55 @@ void DX12CommandList::ProcessBindGroups( )
         return;
     }
 
-    m_heaps.clear( );
-
-    ID3D12DescriptorHeap *cbvSrvUavHeap = m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetActiveHeap( );
-    ID3D12DescriptorHeap *samplerHeap   = m_context->ShaderVisibleSamplerDescriptorHeap->GetActiveHeap( );
-
-    if ( cbvSrvUavHeap )
+    if ( !m_heapsBound )
     {
-        m_heaps.push_back( cbvSrvUavHeap );
-    }
-    if ( samplerHeap )
-    {
-        m_heaps.push_back( samplerHeap );
+        m_heapsBound = true;
+        m_heaps.clear( );
+
+        ID3D12DescriptorHeap *cbvSrvUavHeap = m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetActiveHeap( );
+        ID3D12DescriptorHeap *samplerHeap   = m_context->ShaderVisibleSamplerDescriptorHeap->GetActiveHeap( );
+
+        if ( cbvSrvUavHeap )
+        {
+            m_heaps.push_back( cbvSrvUavHeap );
+        }
+        if ( samplerHeap )
+        {
+            m_heaps.push_back( samplerHeap );
+        }
+
+        if ( !m_heaps.empty( ) )
+        {
+            m_commandList->SetDescriptorHeaps( static_cast<UINT>( m_heaps.size( ) ), m_heaps.data( ) );
+        }
     }
 
-    if ( !m_heaps.empty( ) )
-    {
-        m_commandList->SetDescriptorHeaps( static_cast<UINT>( m_heaps.size( ) ), m_heaps.data( ) );
-    }
-
+    const DenOfIz_BindPoint bindPoint            = m_currentPipeline->GetBindPoint( );
+    const bool              isCompute            = bindPoint == DENOFIZ_BIND_POINT_COMPUTE || bindPoint == DENOFIZ_BIND_POINT_RAYTRACING;
+    const bool              rootSignatureChanged = rootSignature->Instance( ) != nullptr && ( rootSignature->Instance( ) != m_currentRootSignature || isCompute != m_currentRootSignatureIsCompute );
     SetRootSignature( rootSignature->Instance( ) );
-
-    for ( const auto &dx12BindGroup : m_queuedBindGroups )
+    if ( rootSignatureChanged )
     {
+        for ( BoundGroup &bound : m_boundGroups )
+        {
+            bound.Dirty = true;
+        }
+        for ( BoundRootConstant &bound : m_boundRootConstants )
+        {
+            bound.Dirty = true;
+        }
+    }
+
+    for ( BoundGroup &bound : m_boundGroups )
+    {
+        const DX12BindGroup *dx12BindGroup = bound.Group;
+        if ( !bound.Dirty && bound.Version == dx12BindGroup->Version( ) )
+        {
+            continue;
+        }
+        bound.Dirty   = false;
+        bound.Version = dx12BindGroup->Version( );
+
         uint32_t index = 0;
         if ( dx12BindGroup->CbvSrvUavCount( ) > 0 )
         {
@@ -326,8 +381,18 @@ void DX12CommandList::ProcessBindGroups( )
         }
     }
 
-    for ( const auto &rootConstant : m_queuedRootConstants )
+    for ( BoundRootConstant &bound : m_boundRootConstants )
     {
+        if ( !bound.Dirty )
+        {
+            continue;
+        }
+        bound.Dirty = false;
+
+        DX12RootConstant rootConstant;
+        rootConstant.Binding  = bound.Binding;
+        rootConstant.Data     = bound.Data.data( );
+        rootConstant.NumBytes = static_cast<uint32_t>( bound.Data.size( ) );
         SetRootConstants( rootConstant );
     }
 }
@@ -684,10 +749,13 @@ void DX12CommandList::DispatchRays( const DenOfIz_DispatchRaysDesc &dispatchRays
 void DX12CommandList::SetRootSignature( ID3D12RootSignature *rootSignature )
 {
     DZ_RETURN_IF( rootSignature == nullptr );
-    DZ_RETURN_IF( rootSignature == m_currentRootSignature );
+    const DenOfIz_BindPoint bindPoint = m_currentPipeline->GetBindPoint( );
+    const bool              isCompute = bindPoint == DENOFIZ_BIND_POINT_COMPUTE || bindPoint == DENOFIZ_BIND_POINT_RAYTRACING;
+    DZ_RETURN_IF( rootSignature == m_currentRootSignature && isCompute == m_currentRootSignatureIsCompute );
 
-    m_currentRootSignature = rootSignature;
-    switch ( m_currentPipeline->GetBindPoint( ) )
+    m_currentRootSignature          = rootSignature;
+    m_currentRootSignatureIsCompute = isCompute;
+    switch ( bindPoint )
     {
     case DENOFIZ_BIND_POINT_GRAPHICS:
     case DENOFIZ_BIND_POINT_MESH:

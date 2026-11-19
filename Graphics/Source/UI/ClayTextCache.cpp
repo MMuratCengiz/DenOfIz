@@ -51,7 +51,7 @@ ClayTextCache::~ClayTextCache( )
     {
         if ( DENOFIZ_HANDLE_IS_VALID( pair.second.Atlas ) )
         {
-            DenOfIz_TextureResource_Destroy( pair.second.Atlas );
+            DenOfIz_Texture_Destroy( pair.second.Atlas );
         }
     }
 }
@@ -81,7 +81,7 @@ void ClayTextCache::RemoveFont( const uint16_t fontId )
         }
         if ( DENOFIZ_HANDLE_IS_VALID( it->second.Atlas ) )
         {
-            DenOfIz_TextureResource_Destroy( it->second.Atlas );
+            DenOfIz_Texture_Destroy( it->second.Atlas );
         }
         m_fonts.erase( it );
     }
@@ -266,7 +266,7 @@ void ClayTextCache::InitializeFontAtlas( ClayTextFontData *fontData )
         DenOfIz_ResourceTracking_TransitionTexture( resourceTracking, commandList, fontData->Atlas, DENOFIZ_RESOURCE_USAGE_COPY_DST_BIT, DENOFIZ_QUEUE_TYPE_GRAPHICS );
 
         DenOfIz_Format format;
-        DenOfIz_TextureResource_GetFormat( fontData->Atlas, &format );
+        DenOfIz_Texture_GetFormat( fontData->Atlas, &format );
 
         DenOfIz_CopyBufferToTextureDesc copyDesc{ };
         copyDesc.SrcBuffer  = stagingBuffer;

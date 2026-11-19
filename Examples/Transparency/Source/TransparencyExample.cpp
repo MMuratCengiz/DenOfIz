@@ -36,10 +36,6 @@ TransparencyExample::~TransparencyExample( )
     delete m_opaquePipeline;
     delete m_transparentPipeline;
 
-    if ( DENOFIZ_HANDLE_IS_VALID( m_depthBuffer ) )
-    {
-        DenOfIz_TextureResource_Destroy( m_depthBuffer );
-    }
 }
 
 void TransparencyExample::Init( )
@@ -60,18 +56,6 @@ void TransparencyExample::Init( )
         DenOfIz_BatchResourceCopy_Destroy( batchResourceCopy );
     }
 
-    DenOfIz_TextureDesc depthDesc{ };
-    depthDesc.Width     = m_pixelWidth;
-    depthDesc.Height    = m_pixelHeight;
-    depthDesc.Depth     = 1;
-    depthDesc.ArraySize = 1;
-    depthDesc.MipLevels = 1;
-    depthDesc.Format    = DENOFIZ_FORMAT_D32_FLOAT;
-    depthDesc.Usage     = DENOFIZ_TEXTURE_USAGE_RENDER_ATTACHMENT_BIT;
-    depthDesc.HeapType  = DENOFIZ_HEAP_TYPE_GPU;
-    depthDesc.DebugName = DENOFIZ_STRING( "DepthBuffer" );
-    DenOfIz_LogicalDevice_CreateTexture( m_logicalDevice, &depthDesc, &m_depthBuffer );
-    DenOfIz_ResourceTracking_TrackTexture( m_resourceTracking, m_depthBuffer, DENOFIZ_QUEUE_TYPE_GRAPHICS );
 
     m_opaquePipeline      = new ColoredSpherePipeline( m_graphicsApi, m_logicalDevice, false, 2 );
     m_transparentPipeline = new ColoredSpherePipeline( m_graphicsApi, m_logicalDevice, true, 1 );
@@ -107,16 +91,13 @@ void TransparencyExample::Render( const uint32_t frameIndex, DenOfIz_CommandList
 {
     DenOfIz_CommandList_Begin( commandList );
 
-    uint32_t imageIndex = 0;
-    DenOfIz_FrameSync_AcquireNextImage( m_frameSync, &imageIndex );
-    DenOfIz_Texture renderTarget = DENOFIZ_NULL_HANDLE;
-    DenOfIz_SwapChain_GetRenderTarget( m_swapChain, imageIndex, &renderTarget );
+    DenOfIz_Texture renderTarget = m_frame.BackBuffer;
 
     DenOfIz_TransitionTextureDesc textureTransitions[ 2 ]{ };
     textureTransitions[ 0 ].Texture   = renderTarget;
     textureTransitions[ 0 ].NewUsage  = DENOFIZ_RESOURCE_USAGE_RENDER_TARGET_BIT;
     textureTransitions[ 0 ].QueueType = DENOFIZ_QUEUE_TYPE_GRAPHICS;
-    textureTransitions[ 1 ].Texture   = m_depthBuffer;
+    textureTransitions[ 1 ].Texture   = m_frame.DepthBuffer;
     textureTransitions[ 1 ].NewUsage  = DENOFIZ_RESOURCE_USAGE_DEPTH_WRITE_BIT;
     textureTransitions[ 1 ].QueueType = DENOFIZ_QUEUE_TYPE_GRAPHICS;
 
@@ -131,7 +112,7 @@ void TransparencyExample::Render( const uint32_t frameIndex, DenOfIz_CommandList
     renderingAttachmentDesc.ClearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 
     DenOfIz_RenderingAttachmentDesc depthAttachmentDesc{ };
-    depthAttachmentDesc.Resource          = m_depthBuffer;
+    depthAttachmentDesc.Resource          = m_frame.DepthBuffer;
     depthAttachmentDesc.LoadOp            = DENOFIZ_LOAD_OP_CLEAR;
     depthAttachmentDesc.ClearDepthStencil = { 1.0f, 0.0f };
 

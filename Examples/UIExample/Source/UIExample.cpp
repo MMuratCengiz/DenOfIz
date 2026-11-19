@@ -44,6 +44,7 @@ void UIExample::Init( )
     clayDesc.MaxNumElements                 = 8192;
     clayDesc.MaxNumTextMeasureCacheElements = 16384;
     clayDesc.MaxNumFonts                    = 16;
+    clayDesc.Window                         = m_window;
 
     m_clay = DenOfIz_Clay_Create( &clayDesc );
     DenOfIz_Clay_SetViewportSize( m_clay, static_cast<float>( m_pixelWidth ), static_cast<float>( m_pixelHeight ) );
@@ -82,7 +83,10 @@ void UIExample::Update( )
     }
 
     uint32_t frameIndex = 0;
-    DenOfIz_FrameSync_NextFrame( m_frameSync, &frameIndex );
+    if ( !BeginFrame( frameIndex ) )
+    {
+        return;
+    }
     if ( m_spinningCubeWidget )
     {
         m_spinningCubeWidget->RenderToTexture( frameIndex );
@@ -103,8 +107,7 @@ void UIExample::Update( )
     DenOfIz_SemaphoreArray additionalSemaphores{ };
     additionalSemaphores.Elements    = semaphores.data( );
     additionalSemaphores.NumElements = static_cast<uint32_t>( semaphores.size( ) );
-    DenOfIz_FrameSync_ExecuteCommandList( m_frameSync, frameIndex, &additionalSemaphores );
-    Present( frameIndex );
+    EndFrame( &additionalSemaphores );
 }
 
 void UIExample::CreateUI( const uint32_t frameIndex )
@@ -299,6 +302,7 @@ void UIExample::CreateTextField( )
 
 void UIExample::Render( const uint32_t frameIndex, DenOfIz_CommandList commandList )
 {
+    DenOfIz_Clay_SetViewportSize( m_clay, static_cast<float>( m_pixelWidth ), static_cast<float>( m_pixelHeight ) );
     DenOfIz_Clay_BeginLayout( m_clay );
     CreateUI( frameIndex );
 
@@ -308,10 +312,7 @@ void UIExample::Render( const uint32_t frameIndex, DenOfIz_CommandList commandLi
 
     DenOfIz_CommandList_Begin( commandList );
 
-    uint32_t imageIndex = 0;
-    DenOfIz_FrameSync_AcquireNextImage( m_frameSync, &imageIndex );
-    DenOfIz_Texture renderTarget = DENOFIZ_NULL_HANDLE;
-    DenOfIz_SwapChain_GetRenderTarget( m_swapChain, imageIndex, &renderTarget );
+    DenOfIz_Texture renderTarget = m_frame.BackBuffer;
 
     DenOfIz_ResourceTracking_TransitionTexture( m_resourceTracking, commandList, uiResult.Texture, DENOFIZ_RESOURCE_USAGE_COPY_SRC_BIT, DENOFIZ_QUEUE_TYPE_GRAPHICS );
     DenOfIz_ResourceTracking_TransitionTexture( m_resourceTracking, commandList, renderTarget, DENOFIZ_RESOURCE_USAGE_COPY_DST_BIT, DENOFIZ_QUEUE_TYPE_GRAPHICS );
@@ -411,11 +412,6 @@ void UIExample::HandleEvent( DenOfIz_Event &event )
             m_cursorIndex += static_cast<uint32_t>( inputLen );
             m_cursorBlinkTimer = 0.0f;
         }
-    }
-
-    if ( event.Type == DENOFIZ_EVENT_TYPE_WINDOW_EVENT && event.Window.Event == DENOFIZ_WINDOW_EVENT_TYPE_SIZE_CHANGED )
-    {
-        DenOfIz_Clay_SetViewportSize( m_clay, static_cast<float>( event.Window.Data1 ), static_cast<float>( event.Window.Data2 ) );
     }
 
     DenOfIz_Clay_HandleEvent( m_clay, &event );

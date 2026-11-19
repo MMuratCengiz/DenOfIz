@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <mutex>
 #include <string>
+#include <vector>
 #include "MetalContext.h"
 
 namespace DenOfIz
@@ -51,17 +52,22 @@ namespace DenOfIz
         }
     };
 
+    //! Bump allocator for the top level argument buffers of the draws of one command list. It grows in segments: when the current buffer is
+    //! full the next one is used, and one is added when there is none. Offsets are relative to the current segment, Buffer( ) is the current
+    //! segment. Earlier segments are not touched again until Reset( ), draws that were already encoded keep reading from them.
     class MetalArgumentBuffer
     {
-        MetalContext *m_context;
-        id<MTLBuffer> m_buffer;
-        uint64_t      m_currentOffset = 0;
+        MetalContext              *m_context;
+        std::vector<id<MTLBuffer>> m_segments;
+        size_t                     m_segment       = 0;
+        uint64_t                   m_currentOffset = 0;
         uint64_t      m_nextOffset    = 0;
         uint64_t      m_capacity;
         Byte         *m_contents;
         std::mutex    m_reserveMutex;
 
     public:
+        //! @param capacity size of one segment
         MetalArgumentBuffer( MetalContext *context, size_t capacity );
         void                        EncodeRootConstant( uint64_t offset, uint32_t numRootConstantBytes, const Byte *data ) const;
         void                        EncodeAddress( uint64_t offset, uint64_t address ) const;
@@ -70,5 +76,11 @@ namespace DenOfIz
         void                        Reset( );
         [[nodiscard]] uint64_t             Offset( ) const;
         [[nodiscard]] const id<MTLBuffer> &Buffer( ) const;
+        //! Index of the current segment. A buffer bound to an encoder has to be bound again when this changes.
+        [[nodiscard]] size_t Segment( ) const;
+
+    private:
+        bool AddSegment( );
+        bool NextSegment( );
     };
 } // namespace DenOfIz

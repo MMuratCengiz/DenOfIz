@@ -25,6 +25,7 @@ set(DENOFIZ_BACKENDS_INTERFACE_SOURCES
         Source/Backends/Common/ShaderProgram.cpp
         Source/Backends/Common/GraphicsWindowHandle.cpp
         Source/Backends/Common/InternalAutoSync.cpp
+        Source/Backends/Common/DeferredDestroyQueue.cpp
         Source/Backends/GraphicsApi.cpp
 )
 

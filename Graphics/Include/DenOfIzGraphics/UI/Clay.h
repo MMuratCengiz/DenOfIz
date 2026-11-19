@@ -32,7 +32,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  * points and automatically converted to physical pixels based on DPI scale.
  * This is handled transparently - you do not need to manually scale values.
  *
- * - SetDpiScale() is called automatically on creation using primary display DPI
+ * - Points are scaled by the display scale of DenOfIz_ClayDesc::Window (the primary display when no window is given)
+ * - SetDisplayScale() overrides the scale, ResetDisplayScale() returns to following the window
  * - MeasureText() returns pixel dimensions matching actual rendered output
  * - GetElementBoundingBox() returns pixel coordinates for screen positioning
  * - Texture elements are NOT DPI-scaled (rendered at native resolution)
@@ -80,6 +81,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Backends/Interface/LogicalDevice.h"
 #include "DenOfIzGraphics/Handle.h"
 #include "DenOfIzGraphics/Input/Event.h"
+#include "DenOfIzGraphics/Input/Window.h"
 #include "DenOfIzGraphics/Support/ResourceTracking.h"
 #include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 #include "DenOfIzGraphics/Utilities/InteropMath.h"
@@ -452,6 +454,7 @@ extern "C"
         uint32_t                 Height;
         uint32_t                 MaxNumElements;
         uint32_t                 MaxNumTextMeasureCacheElements;
+        DenOfIz_Window           Window; /**< Optional. The window the UI is shown in, its display scale is followed. */
     } DenOfIz_ClayDesc;
 
     typedef struct DenOfIz_ClayRenderResult
@@ -483,7 +486,8 @@ extern "C"
 
     DZ_API void DenOfIz_Clay_SetViewportSize( DenOfIz_Clay clay, float width, float height );
     DZ_API void DenOfIz_Clay_GetViewportSize( DenOfIz_Clay clay, DenOfIz_ClayDimensions *outSize );
-    DZ_API void DenOfIz_Clay_SetDpiScale( DenOfIz_Clay clay, float dpiScale );
+    DZ_API void DenOfIz_Clay_SetDisplayScale( DenOfIz_Clay clay, float displayScale );
+    DZ_API void DenOfIz_Clay_ResetDisplayScale( DenOfIz_Clay clay );
     DZ_API void DenOfIz_Clay_SetPointerState( DenOfIz_Clay clay, DenOfIz_Float2 position, DenOfIz_ClayPointerState state );
     DZ_API void DenOfIz_Clay_UpdateScrollContainers( DenOfIz_Clay clay, bool enableDragScrolling, DenOfIz_Float2 scrollDelta, float deltaTime );
     DZ_API void DenOfIz_Clay_SetDebugModeEnabled( DenOfIz_Clay clay, bool enabled );
@@ -528,7 +532,7 @@ extern "C"
     DZ_API float    DenOfIz_Clay_GetCursorOffsetAtIndex( DenOfIz_Clay clay, DenOfIz_StringView text, uint32_t charIndex, uint16_t fontId, uint16_t fontSize );
     DZ_API uint32_t DenOfIz_Clay_GetCharIndexAtOffset( DenOfIz_Clay clay, DenOfIz_StringView text, float pixelOffset, uint16_t fontId, uint16_t fontSize );
 
-    DZ_API float DenOfIz_Clay_GetDpiScale( DenOfIz_Clay clay );
+    DZ_API float DenOfIz_Clay_GetDisplayScale( DenOfIz_Clay clay );
     DZ_API float DenOfIz_Clay_PointsToPixels( DenOfIz_Clay clay, float points );
     DZ_API float DenOfIz_Clay_PixelsToPoints( DenOfIz_Clay clay, float pixels );
 

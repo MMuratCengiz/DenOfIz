@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <mutex>
 #include <memory>
 #include <vector>
 #include "VulkanInclude.h"
@@ -41,6 +42,7 @@ namespace DenOfIz
         };
 
         VkDevice                                           m_device;
+        std::mutex                                         m_mutex;
         std::vector<std::unique_ptr<VulkanDescriptorPool>> m_pools;
         std::unique_ptr<VulkanDescriptorPool>              m_currentPool;
         uint32_t                                           m_maxSets = 65536;
@@ -50,6 +52,9 @@ namespace DenOfIz
         ~VulkanDescriptorPoolManager( ) = default;
 
         /// <param name="allocateInfo">Pool parameter is filled in automatically </param>
-        void AllocateDescriptorSets( const VkDescriptorSetAllocateInfo &allocateInfo, VkDescriptorSet *sets );
+        /// <returns>The pool the sets were allocated from, it is needed to free them. VK_NULL_HANDLE when the allocation failed.</returns>
+        VkDescriptorPool AllocateDescriptorSets( const VkDescriptorSetAllocateInfo &allocateInfo, VkDescriptorSet *sets );
+        /// Returns a set to its pool. A pool that is no longer allocated from is destroyed when its last set is freed.
+        void FreeDescriptorSet( VkDescriptorPool pool, VkDescriptorSet set );
     };
 } // namespace DenOfIz

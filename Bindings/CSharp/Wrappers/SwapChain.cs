@@ -9,7 +9,7 @@ namespace DenOfIz
     {
         internal ulong Handle { get; private set; }
         private readonly bool _ownsHandle;
-        private Texture?[]? _renderTargets;
+        private Texture?[]? _textures;
 
         public static implicit operator ulong(SwapChain wrapper) => wrapper?.Handle ?? 0;
 
@@ -26,55 +26,32 @@ namespace DenOfIz
             return outFormat;
         }
 
-        public uint AcquireNextImage()
+        public Result AcquireNextImage(out Texture? backBuffer)
         {
             ThrowIfDisposed();
-            Methods.DenOfIz_SwapChain_AcquireNextImage(Handle, out var outImageIndex);
-            return outImageIndex;
+            var result = Methods.DenOfIz_SwapChain_AcquireNextImage(Handle, out var outBackBuffer);
+            backBuffer = result == Result.Success ? WrapTexture(outBackBuffer) : null;
+            return result;
         }
 
-        public PresentResult Present(uint imageIndex)
+        public Result Present()
         {
             ThrowIfDisposed();
-            return Methods.DenOfIz_SwapChain_Present(Handle, imageIndex);
+            return Methods.DenOfIz_SwapChain_Present(Handle);
         }
 
-        public void Resize(uint width, uint height)
+        public Texture? GetDepthBuffer()
         {
             ThrowIfDisposed();
-
-            if (_renderTargets != null)
-            {
-                foreach (var rt in _renderTargets)
-                {
-                    rt?.Invalidate();
-                }
-                _renderTargets = null;
-            }
-
-            Methods.DenOfIz_SwapChain_Resize(Handle, width, height);
+            Methods.DenOfIz_SwapChain_GetDepthBuffer(Handle, out var outDepthBuffer);
+            return outDepthBuffer == 0 ? null : WrapTexture(outDepthBuffer);
         }
 
-        public Texture GetRenderTarget(uint image)
+        public SwapChainDesc GetDesc()
         {
             ThrowIfDisposed();
-
-            _renderTargets ??= new Texture?[8];
-
-            if (image < _renderTargets.Length && _renderTargets[image] != null)
-            {
-                return _renderTargets[image]!;
-            }
-
-            Methods.DenOfIz_SwapChain_GetRenderTarget(Handle, image, out var outRenderTarget);
-            var texture = new Texture(outRenderTarget, ownsHandle: false);
-
-            if (image < _renderTargets.Length)
-            {
-                _renderTargets[image] = texture;
-            }
-
-            return texture;
+            Methods.DenOfIz_SwapChain_GetDesc(Handle, out var outDesc);
+            return outDesc;
         }
 
         public Viewport GetViewport()
@@ -84,6 +61,28 @@ namespace DenOfIz
             return Marshal.PtrToStructure<Viewport>(outViewport);
         }
 
+        internal Texture WrapTexture(ulong handle)
+        {
+            _textures ??= new Texture?[8];
+            var free = -1;
+            for (var i = 0; i < _textures.Length; i++)
+            {
+                var texture = _textures[i];
+                if (texture == null)
+                {
+                    free = free < 0 ? i : free;
+                }
+                else if (texture.Handle == handle)
+                {
+                    return texture;
+                }
+            }
+
+            var wrapper = new Texture(handle, ownsHandle: false);
+            _textures[free < 0 ? 0 : free] = wrapper;
+            return wrapper;
+        }
+
         public void Dispose()
         {
             if (Handle == 0)
@@ -91,13 +90,13 @@ namespace DenOfIz
                 return;
             }
 
-            if (_renderTargets != null)
+            if (_textures != null)
             {
-                foreach (var rt in _renderTargets)
+                foreach (var texture in _textures)
                 {
-                    rt?.Invalidate();
+                    texture?.Invalidate();
                 }
-                _renderTargets = null;
+                _textures = null;
             }
 
             if (_ownsHandle)

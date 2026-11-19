@@ -37,7 +37,7 @@ extern "C"
     {
         uint32_t            ID;
         DenOfIz_DisplaySize Size;
-        float               DpiScale;
+        float               DisplayScale;
         bool                IsPrimary;
     } DenOfIz_Display;
 

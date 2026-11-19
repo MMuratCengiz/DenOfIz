@@ -740,8 +740,8 @@ void DenOfIz::ImGuiBackend_Destroy( ImGuiBackend *backend )
         free( backend->PerTextureBindGroups );
     }
 
-    DenOfIz_TextureResource_Destroy( backend->FontTexture );
-    DenOfIz_TextureResource_Destroy( backend->NullTexture );
+    DenOfIz_Texture_Destroy( backend->FontTexture );
+    DenOfIz_Texture_Destroy( backend->NullTexture );
     free( backend->Textures );
 
     DenOfIz_Sampler_Destroy( backend->Sampler );

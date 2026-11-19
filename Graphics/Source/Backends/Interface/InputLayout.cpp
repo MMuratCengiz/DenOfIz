@@ -29,6 +29,6 @@ extern "C"
         {
             return;
         }
-        delete INPUT_LAYOUT_IMPL( inputLayout );
+        DenOfIz::DeferredDestroyQueue::Destroy( INPUT_LAYOUT_IMPL( inputLayout ) );
     }
 }

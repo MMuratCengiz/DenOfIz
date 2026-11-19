@@ -11,6 +11,7 @@ namespace DenOfIz
         private readonly bool _ownsHandle;
         private Fence?[]? _frameFences;
         private CommandList?[]? _commandLists;
+        private Texture?[]? _textures;
 
         public static implicit operator ulong(FrameSync wrapper) => wrapper?.Handle ?? 0;
 
@@ -27,11 +28,61 @@ namespace DenOfIz
             _ownsHandle = ownsHandle;
         }
 
-        public uint NextFrame()
+        public Texture? BackBuffer { get; private set; }
+        public Texture? DepthBuffer { get; private set; }
+        public CommandList? CommandList { get; private set; }
+
+        public Result BeginFrame(out Frame frame)
         {
             ThrowIfDisposed();
-            Methods.DenOfIz_FrameSync_NextFrame(Handle, out var outFrameIndex);
-            return outFrameIndex;
+            var result = Methods.DenOfIz_FrameSync_BeginFrame(Handle, out frame);
+            if (result != Result.Success)
+            {
+                BackBuffer = null;
+                DepthBuffer = null;
+                CommandList = null;
+                return result;
+            }
+
+            BackBuffer = WrapTexture(frame.BackBuffer);
+            DepthBuffer = frame.DepthBuffer == 0 ? null : WrapTexture(frame.DepthBuffer);
+            CommandList = GetCommandList(frame.Index);
+            return result;
+        }
+
+        public Result EndFrame()
+        {
+            ThrowIfDisposed();
+            var noSemaphores = new SemaphoreArray();
+            return Methods.DenOfIz_FrameSync_EndFrame(Handle, in noSemaphores);
+        }
+
+        public Result EndFrame(in SemaphoreArray waitSemaphores)
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_FrameSync_EndFrame(Handle, in waitSemaphores);
+        }
+
+        private Texture WrapTexture(ulong handle)
+        {
+            _textures ??= new Texture?[8];
+            var free = -1;
+            for (var i = 0; i < _textures.Length; i++)
+            {
+                var texture = _textures[i];
+                if (texture == null)
+                {
+                    free = free < 0 ? i : free;
+                }
+                else if (texture.Handle == handle)
+                {
+                    return texture;
+                }
+            }
+
+            var wrapper = new Texture(handle, ownsHandle: false);
+            _textures[free < 0 ? 0 : free] = wrapper;
+            return wrapper;
         }
 
         public Fence GetFrameFence(uint frame)
@@ -76,32 +127,6 @@ namespace DenOfIz
             }
 
             return commandList;
-        }
-
-        public void ExecuteCommandList(uint frame, in SemaphoreArray additionalSemaphores)
-        {
-            ThrowIfDisposed();
-            Methods.DenOfIz_FrameSync_ExecuteCommandList(Handle, frame, in additionalSemaphores);
-        }
-
-        public void ExecuteCommandListWithSemaphores(uint frame, in SemaphoreArray waitSemaphores, in SemaphoreArray signalSemaphores)
-        {
-            ThrowIfDisposed();
-            Methods.DenOfIz_FrameSync_ExecuteCommandListWithSemaphores(Handle, frame, in waitSemaphores, in signalSemaphores);
-        }
-
-        public uint AcquireNextImage()
-        {
-            ThrowIfDisposed();
-            Methods.DenOfIz_FrameSync_AcquireNextImage(Handle, out var outImageIndex);
-            return outImageIndex;
-        }
-
-        public PresentResult Present(uint imageIndex)
-        {
-            ThrowIfDisposed();
-            Methods.DenOfIz_FrameSync_Present(Handle, imageIndex, out var outResult);
-            return outResult;
         }
 
         public void WaitIdle()

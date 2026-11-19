@@ -36,25 +36,29 @@ namespace DenOfIz
         id<CAMetalDrawable>                        m_drawable;
         id<MTLCommandBuffer>                       m_presentCommandBuffer;
         SDL_MetalView                              m_metalView = nullptr;
-        NSView                                    *m_view;
-        CAMetalLayer                              *m_metalLayer;
+        NSView                                    *m_view       = nil;
+        CAMetalLayer                              *m_metalLayer = nil;
         uint32_t                                   m_currentFrame = 0;
         std::vector<std::unique_ptr<MetalTexture>> m_renderTargets;
-        DenOfIz_Viewport                           m_viewport;
+        std::unique_ptr<MetalTexture>              m_depthBuffer;
+        DenOfIz_Viewport                           m_viewport{ };
 
     public:
         MetalSwapChain( MetalContext *context, const DenOfIz_SwapChainDesc &desc );
         ~MetalSwapChain( ) override;
 
-        uint32_t                AcquireNextImage( ) override;
+        DenOfIz_Result          AcquireNextImage( uint32_t &outImageIndex ) override;
         DenOfIz_Format          GetPreferredFormat( ) override;
         ITexture               *GetRenderTarget( uint32_t image ) override;
+        ITexture               *GetDepthBuffer( ) override;
         const DenOfIz_Viewport &GetViewport( ) override;
-        void                    Resize( uint32_t width, uint32_t height ) override;
-        DenOfIz_PresentResult   Present( uint32_t imageIndex ) override;
+        const DenOfIz_SwapChainDesc &GetDesc( ) override;
+        DenOfIz_Result          Resize( uint32_t width, uint32_t height ) override;
+        DenOfIz_Result          Present( ) override;
 
     private:
         void CreateMetalView( );
+        void UpdateContentsScale( );
     };
 
 } // namespace DenOfIz
