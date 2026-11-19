@@ -98,8 +98,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y software-properties-common wget
-          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-          sudo add-apt-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main"
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/keyrings/apt.llvm.org.asc > /dev/null
+          echo "deb [signed-by=/etc/apt/keyrings/apt.llvm.org.asc] http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main" | sudo tee /etc/apt/sources.list.d/llvm-17.list > /dev/null
           sudo apt-get update
           sudo apt-get install -y clang-17 clang++-17 lld-17
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-17 100
