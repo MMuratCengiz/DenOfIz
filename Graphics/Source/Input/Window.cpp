@@ -31,6 +31,28 @@ static const char *DENOFIZ_WINDOW_DATA_KEY = "denofiz";
 
 namespace
 {
+#ifdef BUILD_VK
+    bool IsVulkanSurfaceAvailable_Internal( )
+    {
+        if ( SDL_WasInit( SDL_INIT_VIDEO ) == 0 && !SDL_InitSubSystem( SDL_INIT_VIDEO ) )
+        {
+            return false;
+        }
+        if ( !SDL_Vulkan_LoadLibrary( nullptr ) )
+        {
+            return false;
+        }
+        SDL_Vulkan_UnloadLibrary( );
+        return true;
+    }
+
+    bool IsVulkanSurfaceAvailable( )
+    {
+        static const bool available = IsVulkanSurfaceAvailable_Internal( );
+        return available;
+    }
+#endif
+
     uint32_t ToSDLWindowFlags( const DenOfIz_WindowFlags &flags )
     {
         uint32_t sdlFlags = SDL_WINDOW_HIGH_PIXEL_DENSITY;
@@ -95,7 +117,10 @@ namespace
             sdlFlags |= SDL_WINDOW_POPUP_MENU;
         }
 #ifdef BUILD_VK
-        sdlFlags |= SDL_WINDOW_VULKAN;
+        if ( IsVulkanSurfaceAvailable( ) )
+        {
+            sdlFlags |= SDL_WINDOW_VULKAN;
+        }
 #endif
         return sdlFlags;
     }

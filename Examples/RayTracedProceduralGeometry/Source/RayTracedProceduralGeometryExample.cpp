@@ -112,7 +112,6 @@ void RayTracedProceduralGeometryExample::Init( )
 
 void RayTracedProceduralGeometryExample::ModifyApiPreferences( DenOfIz_APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = DENOFIZ_API_PREFERENCE_WINDOWS_VULKAN;
 }
 
 void RayTracedProceduralGeometryExample::BuildProceduralGeometryAABBs( )

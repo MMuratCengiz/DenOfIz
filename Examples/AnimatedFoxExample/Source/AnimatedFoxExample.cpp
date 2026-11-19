@@ -93,7 +93,6 @@ AnimatedFoxExample::~AnimatedFoxExample( )
 
 void AnimatedFoxExample::ModifyApiPreferences( DenOfIz_APIPreference &apiPreference )
 {
-    apiPreference.Windows = DENOFIZ_API_PREFERENCE_WINDOWS_VULKAN;
 }
 
 void AnimatedFoxExample::LoadFoxAssets( )

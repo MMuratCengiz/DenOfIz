@@ -37,7 +37,6 @@ void ImGuiExample::Init( )
 
 void ImGuiExample::ModifyApiPreferences( DenOfIz_APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = DENOFIZ_API_PREFERENCE_WINDOWS_WEBGPU_NATIVE;
     // defaultApiPreference.OSX = DENOFIZ_API_PREFERENCE_OSX_WEBGPU_NATIVE;
 }
 

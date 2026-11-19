@@ -102,7 +102,6 @@ void RayTracedTriangleExample::Init( )
 
 void RayTracedTriangleExample::ModifyApiPreferences( DenOfIz_APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = DENOFIZ_API_PREFERENCE_WINDOWS_VULKAN;
 }
 
 void RayTracedTriangleExample::Update( )

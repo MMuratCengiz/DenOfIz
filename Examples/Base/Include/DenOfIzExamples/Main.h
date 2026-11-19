@@ -29,5 +29,5 @@ namespace DenOfIz
     int main( )                                                                                                                                                                    \
     {                                                                                                                                                                              \
         ExampleType *example = new ExampleType( );                                                                                                                                 \
-        DenOfIz::Main( example );                                                                                                                                                  \
+        return DenOfIz::Main( example );                                                                                                                                           \
     }

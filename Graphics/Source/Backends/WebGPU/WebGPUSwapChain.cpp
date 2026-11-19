@@ -466,7 +466,8 @@ ITexture *WebGPUSwapChain::GetRenderTarget( const uint32_t image )
 #else
     if ( !m_currentTextureView )
     {
-        AcquireNextImage( );
+        uint32_t acquiredImage = 0;
+        AcquireNextImage( acquiredImage );
     }
 
     if ( !m_currentTextureView )

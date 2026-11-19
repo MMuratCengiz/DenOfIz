@@ -47,7 +47,6 @@ void RayTracedSceneExample::Init( )
 
 void RayTracedSceneExample::ModifyApiPreferences( DenOfIz_APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = DENOFIZ_API_PREFERENCE_WINDOWS_VULKAN;
 }
 
 void RayTracedSceneExample::Update( )
