@@ -129,6 +129,7 @@ namespace DenOfIz
         };
         std::vector<DrawBatch> m_drawBatches;
         uint32_t               m_currentBatchTextureIndex = 0;
+        uint32_t               m_recordingFrameIndex      = 0;
         uint32_t               m_totalVertexCount         = 0;
         uint32_t               m_totalIndexCount          = 0;
 

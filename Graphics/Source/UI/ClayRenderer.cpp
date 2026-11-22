@@ -269,7 +269,7 @@ void ClayRenderer::CreatePipeline( )
 void ClayRenderer::CreateBuffers( )
 {
     DenOfIz_BufferDesc vertexBufferDesc{};
-    vertexBufferDesc.NumBytes  = m_desc.MaxVertices * sizeof( UIVertex );
+    vertexBufferDesc.NumBytes  = static_cast<uint64_t>( m_desc.NumFrames ) * m_desc.MaxVertices * sizeof( UIVertex );
     vertexBufferDesc.Usage     = DENOFIZ_BUFFER_USAGE_VERTEX_BIT;
     vertexBufferDesc.HeapType  = DENOFIZ_HEAP_TYPE_CPU_GPU;
     vertexBufferDesc.DebugName = DENOFIZ_STRING( "UI Vertex Buffer" );
@@ -277,7 +277,7 @@ void ClayRenderer::CreateBuffers( )
     DenOfIz_Buffer_MapMemory( m_vertexBuffer, (void **)&m_vertexBufferData );
 
     DenOfIz_BufferDesc indexBufferDesc{};
-    indexBufferDesc.NumBytes  = m_desc.MaxIndices * sizeof( uint32_t );
+    indexBufferDesc.NumBytes  = static_cast<uint64_t>( m_desc.NumFrames ) * m_desc.MaxIndices * sizeof( uint32_t );
     indexBufferDesc.Usage     = DENOFIZ_BUFFER_USAGE_INDEX_BIT;
     indexBufferDesc.HeapType  = DENOFIZ_HEAP_TYPE_CPU_GPU;
     indexBufferDesc.DebugName = DENOFIZ_STRING( "UI Index Buffer" );
@@ -522,6 +522,7 @@ void ClayRenderer::RenderToCommandList( Clay_RenderCommandArray commands, const 
 
     m_drawBatches.clear( );
     m_overlayColorStack.clear( );
+    m_recordingFrameIndex      = frameIndex;
     m_totalVertexCount         = 0;
     m_totalIndexCount          = 0;
     m_currentDepth             = 0.9f;
@@ -608,6 +609,7 @@ void ClayRenderer::RenderInternal( Clay_RenderCommandArray commands, uint32_t fr
 
     m_drawBatches.clear( );
     m_overlayColorStack.clear( );
+    m_recordingFrameIndex      = frameIndex;
     m_totalVertexCount         = 0;
     m_totalIndexCount          = 0;
     m_currentDepth             = 0.9f;
@@ -1250,17 +1252,20 @@ void ClayRenderer::FlushCurrentBatch( )
         return;
     }
 
-    memcpy( m_vertexBufferData + alignedVertexOffset * sizeof( UIVertex ), m_batchedVertices.data( ), vertexDataSize );
+    const uint32_t frameVertexOffset = m_recordingFrameIndex * m_desc.MaxVertices + alignedVertexOffset;
+    const uint32_t frameIndexOffset  = m_recordingFrameIndex * m_desc.MaxIndices + alignedIndexOffset;
 
-    const auto indexDst = reinterpret_cast<uint32_t *>( m_indexBufferData + alignedIndexOffset * sizeof( uint32_t ) );
+    memcpy( m_vertexBufferData + frameVertexOffset * sizeof( UIVertex ), m_batchedVertices.data( ), vertexDataSize );
+
+    const auto indexDst = reinterpret_cast<uint32_t *>( m_indexBufferData + frameIndexOffset * sizeof( uint32_t ) );
     for ( uint32_t i = 0; i < m_batchedIndices.size( ); ++i )
     {
         indexDst[ i ] = m_batchedIndices[ i ]; // Don't add vertex offset here, use baseVertex instead
     }
 
     DrawBatch batch;
-    batch.VertexOffset = alignedVertexOffset;
-    batch.IndexOffset  = alignedIndexOffset;
+    batch.VertexOffset = frameVertexOffset;
+    batch.IndexOffset  = frameIndexOffset;
     batch.IndexCount   = m_batchedIndices.size( );
     batch.TextureIndex = m_currentBatchTextureIndex;
 
