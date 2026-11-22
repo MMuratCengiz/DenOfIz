@@ -179,6 +179,11 @@ void ClayTextCache::GetAllFontTextures( std::vector<DenOfIz_Texture> &outTexture
 void ClayTextCache::UpdateFrame( const uint32_t currentFrame ) const
 {
     m_currentFrame = currentFrame;
+    constexpr uint32_t cleanupInterval = 120;
+    if ( currentFrame % cleanupInterval == 0 )
+    {
+        m_textVertexCache.Cleanup( currentFrame, cleanupInterval );
+    }
 }
 
 void ClayTextCache::ClearCaches( ) const

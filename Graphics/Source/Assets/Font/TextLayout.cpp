@@ -105,9 +105,9 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
     hb_buffer_set_script( buffer, static_cast<hb_script_t>( HB_TAG( scriptTag.X, scriptTag.Y, scriptTag.Z, scriptTag.W ) ) );
     hb_buffer_set_language( buffer, hb_language_from_string( "en", -1 ) );
 
-    const char *text_ptr = utf8Text.c_str( );
-    const int   text_len = utf8Text.length( );
-    hb_buffer_add_utf8( buffer, text_ptr, text_len, 0, text_len );
+    const auto *text_ptr = reinterpret_cast<const uint32_t *>( utf32Text.data( ) );
+    const int   text_len = static_cast<int>( utf32Text.length( ) );
+    hb_buffer_add_utf32( buffer, text_ptr, text_len, 0, text_len );
 
     constexpr hb_feature_t features[] = { { HB_TAG( 'k', 'e', 'r', 'n' ), 1, 0, UINT_MAX }, { HB_TAG( 'l', 'i', 'g', 'a' ), 0, 0, UINT_MAX } };
 
