@@ -1,7 +1,9 @@
 // DenOfIz: vendored from https://github.com/nicbarker/clay main @ e6cc36941ab2af5d81107617039d6f527a1c660b (2026-05-20).
-// DenOfIz: carries 2 marked patches tagged with "DenOfIz patch":
+// DenOfIz: carries 4 marked patches tagged with "DenOfIz patch":
 // DenOfIz:   1. reset transition state when an element re-declares mid-exit (Clay__ConfigureOpenElementPtr)
 // DenOfIz:   2. a re-appearing element with no enter state starts idle at its target (Clay_EndLayout)
+// DenOfIz:   3. scramble the text hash before the font id is added (Clay__HashStringContentsWithConfig)
+// DenOfIz:   4. clamp the scroll position against this frame's content (Clay__CalculateFinalLayout)
 // VERSION: 0.14
 
 /*
@@ -1608,6 +1610,15 @@ uint32_t Clay__HashStringContentsWithConfig(Clay_String *text, Clay_TextElementC
         hash = Clay__HashData((const uint8_t *)text->chars, text->length) % UINT32_MAX;
     }
 
+    // DenOfIz patch: scramble the text hash before the config is added. Clay__HashData is close to linear for a short
+    // string, so without this a small difference between two strings is cancelled by a small difference between two
+    // font ids and both share one measurement: "short 3" in font 2 and "short 2" in font 4 had the same id.
+    hash ^= hash >> 16;
+    hash *= 0x85ebca6bu;
+    hash ^= hash >> 13;
+    hash *= 0xc2b2ae35u;
+    hash ^= hash >> 16;
+
     hash += config->fontId;
     hash += (hash << 10);
     hash ^= (hash >> 6);
@@ -3140,6 +3151,26 @@ void Clay__CalculateFinalLayout(float deltaTime, bool useStoredBoundingBoxes, bo
 
             if (scrollContainerData) {
                 scrollContainerData->contentSize = CLAY__INIT(Clay_Dimensions) {contentSizeCurrent.width + (float)(layoutConfig->padding.left + layoutConfig->padding.right), contentSizeCurrent.height + (float)(layoutConfig->padding.top + layoutConfig->padding.bottom) };
+                // DenOfIz patch: pull a scroll position that lies past the end of this frame's content back to the end
+                // before the children are placed. Clay_UpdateScrollContainers clamps against the content of the
+                // previous frame, so without this a container whose content shrank is drawn over-scrolled for one
+                // frame, and a caller cannot scroll to the end of content that it added in this frame.
+                // The children's offset is clamped on its own, and only when it is past the end as well. A container
+                // that clips without scrolling keeps its offset, although the mouse wheel still changes its stored
+                // position, and a position set after the element was declared cannot move the children off screen.
+                if (!context->externalScrollHandlingEnabled) {
+                    float endX = -CLAY__MAX(scrollContainerData->contentSize.width - currentElement->dimensions.width, 0);
+                    float endY = -CLAY__MAX(scrollContainerData->contentSize.height - currentElement->dimensions.height, 0);
+                    if (currentElement->config.clip.horizontal && scrollContainerData->scrollPosition.x < endX) {
+                        scrollOffset.x = CLAY__MAX(scrollOffset.x, endX);
+                        scrollContainerData->scrollPosition.x = endX;
+                    }
+                    if (currentElement->config.clip.vertical && scrollContainerData->scrollPosition.y < endY) {
+                        scrollOffset.y = CLAY__MAX(scrollOffset.y, endY);
+                        scrollContainerData->scrollPosition.y = endY;
+                    }
+                    currentElement->config.clip.childOffset = scrollOffset;
+                }
             }
 
             // Add children to the DFS buffer
