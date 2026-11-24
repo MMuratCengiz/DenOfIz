@@ -32,7 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Input/Clipboard.h"
 #include "DenOfIzGraphics/Support/FrameSync.h"
 #include "DenOfIzGraphics/Support/ResourceTracking.h"
-#include "DenOfIzGraphics/UI/Clay.h"
+#include "DenOfIzGraphics/UI/UI.h"
 #include "DenOfIzGraphics/Utilities/Engine.h"
 #include "DenOfIzGraphics/Utilities/FrameDebugRenderer.h"
 #include "DenOfIzGraphics/Utilities/StepTimer.h"

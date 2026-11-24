@@ -196,7 +196,7 @@ float4 main(PSInput input) : SV_TARGET
     return texColor * input.Color;
 })";
 
-// UI (Clay) shaders
+// UI shaders
 static auto UIVertexShaderSource = R"(
 struct VSInput
 {
@@ -240,6 +240,13 @@ struct PSInput
     uint TextureIndex : TEXINDEX;
 };
 
+struct UIState
+{
+    float4 A;
+    float4 B;
+    float4 C;
+};
+
 Texture2D Textures[128] : register(t0, space0);
 SamplerState LinearSampler : register(s0, space0);
 
@@ -249,6 +256,8 @@ cbuffer UIUniforms : register(b0, space1)
     float4 ScreenSize; // xy: screen dimensions, zw: unused
     float4 FontParams; // x: atlas width, y: atlas height, z: pixel range, w: first non-font texture index
 };
+
+StructuredBuffer<UIState> States : register(t0, space1);
 
 // MSDF rendering helper function to calculate median of 3 values
 float median(float r, float g, float b)
@@ -263,42 +272,81 @@ float screenPxRange(float2 texCoord, float pxRange, float2 textureSize)
     return max(0.5 * dot(unitRange, screenTexSize), 1.0);
 }
 
+float msdfOpacity(float4 mtsdf, float2 texCoord, float2 textureSize)
+{
+    float sd = median(mtsdf.r, mtsdf.g, mtsdf.b);
+    float screenPxRangeValue = max(screenPxRange(texCoord, FontParams.z, textureSize), 1.0);
+    float pxDist = screenPxRangeValue * clamp(sd - 0.5, mtsdf.a - 0.52, mtsdf.a - 0.48);
+    return clamp(pxDist + 0.5, 0.0, 1.0);
+}
+
+float clipDistance(float2 p, float4 rect, float4 radius)
+{
+    float d = max(max(rect.x - p.x, p.x - rect.z), max(rect.y - p.y, p.y - rect.w));
+    float2 c = rect.xy + radius.x;
+    if (radius.x > 0.0 && p.x < c.x && p.y < c.y)
+    {
+        d = max(d, length(p - c) - radius.x);
+    }
+    c = float2(rect.z - radius.y, rect.y + radius.y);
+    if (radius.y > 0.0 && p.x > c.x && p.y < c.y)
+    {
+        d = max(d, length(p - c) - radius.y);
+    }
+    c = rect.zw - radius.z;
+    if (radius.z > 0.0 && p.x > c.x && p.y > c.y)
+    {
+        d = max(d, length(p - c) - radius.z);
+    }
+    c = float2(rect.x + radius.w, rect.w - radius.w);
+    if (radius.w > 0.0 && p.x < c.x && p.y > c.y)
+    {
+        d = max(d, length(p - c) - radius.w);
+    }
+    return d;
+}
+
+float4 applyState(float4 color, uint state, float2 position)
+{
+    UIState s = States[state];
+    color.rgb = color.rgb * s.A.w + s.A.xyz;
+    uint count = min((uint)s.B.y, 4u);
+    float coverage = s.B.x;
+    for (uint i = 0; i < count; ++i)
+    {
+        UIState clip = States[(uint)s.C[i]];
+        coverage *= saturate(0.5 - clipDistance(position, clip.A, clip.B));
+    }
+    color.a *= coverage;
+    return color;
+}
+
 float4 main(PSInput input) : SV_TARGET
 {
-    // TextureIndex 0 means solid color (no texture)
-    if (input.TextureIndex == 0)
+    uint slot = input.TextureIndex & 127u;
+    uint state = input.TextureIndex >> 7;
+    float4 color = input.Color;
+    if (slot != 0)
     {
-        return input.Color;
-    }
-
-    float4 texColor = Textures[input.TextureIndex].Sample(LinearSampler, input.TexCoord);
-
-    // Textures with index < FontParams.w are font textures (MTSDF)
-    // Textures with index >= FontParams.w are regular image textures
-    if (input.TextureIndex > 0 && input.TextureIndex < (uint)FontParams.w)
-    {
-        float4 mtsdf = texColor;
-        float3 msdf = mtsdf.rgb;
-        float sd = median(msdf.r, msdf.g, msdf.b);
-
-        float2 textureSize = FontParams.xy;
-        float pxRange = FontParams.z;
-
-        float screenPxRangeValue = max(screenPxRange(input.TexCoord, pxRange, textureSize), 1.0);
-        float pxDist = screenPxRangeValue * clamp(sd - 0.5, mtsdf.a - 0.52, mtsdf.a - 0.48);
-        float opacity = clamp(pxDist + 0.5, 0.0, 1.0);
-
-        float4 finalColor = float4(input.Color.rgb, input.Color.a * opacity);
-        if (finalColor.a < 0.1f) {
-            discard;
+        Texture2D source = Textures[NonUniformResourceIndex(slot)];
+        float4 texColor = source.Sample(LinearSampler, input.TexCoord);
+        if (slot < (uint)FontParams.w)
+        {
+            uint atlasWidth;
+            uint atlasHeight;
+            source.GetDimensions(atlasWidth, atlasHeight);
+            color = float4(input.Color.rgb, input.Color.a * msdfOpacity(texColor, input.TexCoord, float2(atlasWidth, atlasHeight)));
         }
-        return finalColor;
+        else
+        {
+            color = texColor * input.Color;
+        }
     }
-    else
+    if (state != 0)
     {
-        // Regular image texture
-        return texColor * input.Color;
+        color = applyState(color, state, input.Position.xy);
     }
+    return color;
 }
 )";
 
@@ -311,6 +359,13 @@ struct PSInput
     uint TextureIndex : TEXINDEX;
 };
 
+struct UIState
+{
+    float4 A;
+    float4 B;
+    float4 C;
+};
+
 Texture2D Texture : register(t0, space0);
 SamplerState LinearSampler : register(s0, space0);
 
@@ -320,6 +375,8 @@ cbuffer UIUniforms : register(b0, space1)
     float4 ScreenSize; // xy: screen dimensions, zw: unused
     float4 FontParams; // x: atlas width, y: atlas height, z: pixel range, w: first non-font texture index
 };
+
+StructuredBuffer<UIState> States : register(t0, space1);
 
 // MSDF rendering helper function to calculate median of 3 values
 float median(float r, float g, float b)
@@ -334,41 +391,80 @@ float screenPxRange(float2 texCoord, float pxRange, float2 textureSize)
     return max(0.5 * dot(unitRange, screenTexSize), 1.0);
 }
 
+float msdfOpacity(float4 mtsdf, float2 texCoord, float2 textureSize)
+{
+    float sd = median(mtsdf.r, mtsdf.g, mtsdf.b);
+    float screenPxRangeValue = max(screenPxRange(texCoord, FontParams.z, textureSize), 1.0);
+    float pxDist = screenPxRangeValue * clamp(sd - 0.5, mtsdf.a - 0.52, mtsdf.a - 0.48);
+    return clamp(pxDist + 0.5, 0.0, 1.0);
+}
+
+float clipDistance(float2 p, float4 rect, float4 radius)
+{
+    float d = max(max(rect.x - p.x, p.x - rect.z), max(rect.y - p.y, p.y - rect.w));
+    float2 c = rect.xy + radius.x;
+    if (radius.x > 0.0 && p.x < c.x && p.y < c.y)
+    {
+        d = max(d, length(p - c) - radius.x);
+    }
+    c = float2(rect.z - radius.y, rect.y + radius.y);
+    if (radius.y > 0.0 && p.x > c.x && p.y < c.y)
+    {
+        d = max(d, length(p - c) - radius.y);
+    }
+    c = rect.zw - radius.z;
+    if (radius.z > 0.0 && p.x > c.x && p.y > c.y)
+    {
+        d = max(d, length(p - c) - radius.z);
+    }
+    c = float2(rect.x + radius.w, rect.w - radius.w);
+    if (radius.w > 0.0 && p.x < c.x && p.y > c.y)
+    {
+        d = max(d, length(p - c) - radius.w);
+    }
+    return d;
+}
+
+float4 applyState(float4 color, uint state, float2 position)
+{
+    UIState s = States[state];
+    color.rgb = color.rgb * s.A.w + s.A.xyz;
+    uint count = min((uint)s.B.y, 4u);
+    float coverage = s.B.x;
+    for (uint i = 0; i < count; ++i)
+    {
+        UIState clip = States[(uint)s.C[i]];
+        coverage *= saturate(0.5 - clipDistance(position, clip.A, clip.B));
+    }
+    color.a *= coverage;
+    return color;
+}
+
 float4 main(PSInput input) : SV_TARGET
 {
-    // TextureIndex 0 means solid color (no texture)
-    if (input.TextureIndex == 0)
+    uint kind = input.TextureIndex & 127u;
+    uint state = input.TextureIndex >> 7;
+    float4 color = input.Color;
+    if (kind != 0)
     {
-        return input.Color;
-    }
-
-    float4 texColor = Texture.Sample(LinearSampler, input.TexCoord);
-
-    // TextureIndex 1 = font texture (MTSDF), TextureIndex 2 = regular image
-    if (input.TextureIndex == 1)
-    {
-        float4 mtsdf = texColor;
-        float3 msdf = mtsdf.rgb;
-        float sd = median(msdf.r, msdf.g, msdf.b);
-
-        float2 textureSize = FontParams.xy;
-        float pxRange = FontParams.z;
-
-        float screenPxRangeValue = max(screenPxRange(input.TexCoord, pxRange, textureSize), 1.0);
-        float pxDist = screenPxRangeValue * clamp(sd - 0.5, mtsdf.a - 0.52, mtsdf.a - 0.48);
-        float opacity = clamp(pxDist + 0.5, 0.0, 1.0);
-
-        float4 finalColor = float4(input.Color.rgb, input.Color.a * opacity);
-        if (finalColor.a < 0.1f) {
-            discard;
+        float4 texColor = Texture.Sample(LinearSampler, input.TexCoord);
+        if (kind == 1)
+        {
+            uint atlasWidth;
+            uint atlasHeight;
+            Texture.GetDimensions(atlasWidth, atlasHeight);
+            color = float4(input.Color.rgb, input.Color.a * msdfOpacity(texColor, input.TexCoord, float2(atlasWidth, atlasHeight)));
         }
-        return finalColor;
+        else
+        {
+            color = texColor * input.Color;
+        }
     }
-    else
+    if (state != 0)
     {
-        // Regular image texture
-        return texColor * input.Color;
+        color = applyState(color, state, input.Position.xy);
     }
+    return color;
 }
 )";
 
@@ -1124,7 +1220,7 @@ int main( int argc, char *argv[] )
         }
 
         std::cout << "\n=== SETUP COMPLETE ===" << std::endl;
-        std::cout << "UI (Clay) shaders have been embedded!" << std::endl;
+        std::cout << "UI shaders have been embedded!" << std::endl;
         std::cout << "Don't forget to rebuild your project!" << std::endl;
         return 0;
     }
@@ -1139,7 +1235,7 @@ int main( int argc, char *argv[] )
         std::cout << "\n=== Generating ImGui Shaders ===" << std::endl;
         success = success && GenerateImGuiShaders( repoRoot );
 
-        std::cout << "\n=== Generating UI (Clay) Shaders ===" << std::endl;
+        std::cout << "\n=== Generating UI Shaders ===" << std::endl;
         success = success && GenerateUIShaders( repoRoot );
 
         if ( !success )

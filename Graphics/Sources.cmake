@@ -130,13 +130,13 @@ if (NOT TARGET_PLATFORM_WEB)
 endif ()
 
 set(DENOFIZ_UI_SOURCES
-        Source/UI/ClayContext.cpp
-        Source/UI/Clay.cpp
-        Source/UI/ClayRenderer.cpp
-        Source/UI/ClayTextCache.cpp
-        Source/UI/UIShapes.cpp
-        Source/UI/UIShapeCache.cpp
-        Source/UI/UITextVertexCache.cpp
+        Source/UI/UI.cpp
+        Source/UI/UICommands.cpp
+        Source/UI/UIContext.cpp
+        Source/UI/UIGeometry.cpp
+        Source/UI/UIInput.cpp
+        Source/UI/UIRenderer.cpp
+        Source/UI/UIText.cpp
 )
 
 set(DENOFIZ_UTILITIES_SOURCES

@@ -111,7 +111,6 @@ install(EXPORT DenOfIzGraphicsTargets
 
 target_include_directories(DenOfIzGraphics
         PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/clay>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/Tiny>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/include>
         $<BUILD_INTERFACE:${OZZ_ANIMATION_INCLUDE_DIR}>
@@ -133,6 +132,7 @@ target_link_libraries(DenOfIzGraphics PRIVATE
         SDL3::SDL3
         Freetype::Freetype
         harfbuzz::harfbuzz
+        yoga::yogacore
         msdfgen::msdfgen-core
         msdfgen::msdfgen-ext
         miniz::miniz

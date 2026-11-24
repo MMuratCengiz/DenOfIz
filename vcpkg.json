@@ -23,6 +23,7 @@
     "directxmath",
     "freetype",
     "harfbuzz",
+    "yoga",
     {
       "name": "msdfgen",
       "features": [

@@ -48,4 +48,4 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Import/ShaderImporter.h"
 #include "DenOfIzGraphics/Assets/Import/TextureImporter.h"
 
-#include "DenOfIzGraphics/UI/Clay.h"
+#include "DenOfIzGraphics/UI/UI.h"
