@@ -2,20 +2,10 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
+#include <algorithm>
 #import "DenOfIzGraphicsInternal/Backends/Metal/MetalCommandList.h"
 #import "DenOfIzGraphicsInternal/Backends/Metal/MetalBuffer.h"
 #import "DenOfIzGraphicsInternal/Backends/Metal/MetalQueryPool.h"
@@ -66,9 +56,8 @@ void MetalCommandList::Begin( )
         m_argumentBuffer->Reset( );
         m_boundArgumentSegment = 0;
         m_shaderLayout = nullptr;
-        m_computeTlasBound = false;
-        m_renderTlasBound = false;
-        m_meshTlasBound = false;
+        m_argumentsInUse = false;
+        ResetEncoderBindings( );
     }
 }
 
@@ -144,9 +133,8 @@ void MetalCommandList::BeginRendering( const DenOfIz_RenderingDesc &renderingDes
             passDesc.stencilAttachment.clearStencil   = attachment.ClearDepthStencil.Y;
         }
 
-        m_renderTlasBound = false;
-        m_meshTlasBound   = false;
         m_renderEncoder = [m_commandBuffer renderCommandEncoderWithDescriptor:passDesc];
+        ResetEncoderBindings( );
         if ( m_waitForQueueFence )
         {
             [m_renderEncoder waitForFence:m_queueFence beforeStages:MTLRenderStageVertex];
@@ -173,33 +161,49 @@ void MetalCommandList::BindPipeline( IPipeline *pipeline )
     {
         DZ_NOT_NULL( pipeline );
         auto *newPipeline = static_cast<MetalPipeline *>( pipeline );
-        if ( m_pipeline == newPipeline )
+        if ( m_pipeline != newPipeline )
         {
-            return;
+            m_pipeline      = newPipeline;
+            m_bindingsDirty = true;
         }
-    
-        m_pipeline = newPipeline;
-        @autoreleasepool
+        switch ( m_pipeline->DenOfIz_BindPoint( ) )
         {
-            switch ( m_pipeline->DenOfIz_BindPoint( ) )
-            {
-            case DENOFIZ_BIND_POINT_RAYTRACING:
-            case DENOFIZ_BIND_POINT_COMPUTE:
-                SwitchEncoder( MetalEncoderType::Compute );
-                [m_computeEncoder setComputePipelineState:m_pipeline->ComputePipelineState( )];
-                break;
-            case DENOFIZ_BIND_POINT_GRAPHICS:
-            case DENOFIZ_BIND_POINT_MESH:
-                SwitchEncoder( MetalEncoderType::Render );
-                [m_renderEncoder setRenderPipelineState:m_pipeline->GraphicsPipelineState( )];
-                [m_renderEncoder setDepthStencilState:m_pipeline->DepthStencilState( )];
-                [m_renderEncoder setCullMode:m_pipeline->CullMode( )];
-                [m_renderEncoder setTriangleFillMode:m_pipeline->FillMode( )];
-                [m_renderEncoder setFrontFacingWinding:m_pipeline->FrontFaceWinding( )];
-                [m_renderEncoder setDepthBias:m_pipeline->DepthBias( ) slopeScale:m_pipeline->DepthBiasSlopeScale( ) clamp:m_pipeline->DepthBiasClamp( )];
-                break;
-            }
+        case DENOFIZ_BIND_POINT_RAYTRACING:
+        case DENOFIZ_BIND_POINT_COMPUTE:
+            SwitchEncoder( MetalEncoderType::Compute );
+            break;
+        case DENOFIZ_BIND_POINT_GRAPHICS:
+        case DENOFIZ_BIND_POINT_MESH:
+            SwitchEncoder( MetalEncoderType::Render );
+            break;
         }
+        ApplyPipeline( );
+    }
+}
+
+// Also called before every draw and dispatch, so a pipeline bound in an earlier pass carries over to the next encoder like on DX12 and Vulkan.
+void MetalCommandList::ApplyPipeline( )
+{
+    if ( m_pipeline == nullptr || m_encoderPipeline == m_pipeline )
+    {
+        return;
+    }
+    m_encoderPipeline = m_pipeline;
+    switch ( m_pipeline->DenOfIz_BindPoint( ) )
+    {
+    case DENOFIZ_BIND_POINT_RAYTRACING:
+    case DENOFIZ_BIND_POINT_COMPUTE:
+        [m_computeEncoder setComputePipelineState:m_pipeline->ComputePipelineState( )];
+        break;
+    case DENOFIZ_BIND_POINT_GRAPHICS:
+    case DENOFIZ_BIND_POINT_MESH:
+        [m_renderEncoder setRenderPipelineState:m_pipeline->GraphicsPipelineState( )];
+        [m_renderEncoder setDepthStencilState:m_pipeline->DepthStencilState( )];
+        [m_renderEncoder setCullMode:m_pipeline->CullMode( )];
+        [m_renderEncoder setTriangleFillMode:m_pipeline->FillMode( )];
+        [m_renderEncoder setFrontFacingWinding:m_pipeline->FrontFaceWinding( )];
+        [m_renderEncoder setDepthBias:m_pipeline->DepthBias( ) slopeScale:m_pipeline->DepthBiasSlopeScale( ) clamp:m_pipeline->DepthBiasClamp( )];
+        break;
     }
 }
 
@@ -278,15 +282,20 @@ void MetalCommandList::BindResourceGroup( IBindGroup *bindGroup )
     MetalBindGroup *metalBindGroup = static_cast<MetalBindGroup *>( bindGroup );
 
     const uint32_t registerSpace = metalBindGroup->RegisterSpace( );
-    for ( const MetalBindGroup *&bound : m_boundGroups )
+    for ( BoundGroup &bound : m_boundGroups )
     {
-        if ( bound->RegisterSpace( ) == registerSpace )
+        if ( bound.Group->RegisterSpace( ) == registerSpace )
         {
-            bound = metalBindGroup;
+            if ( bound.Group != metalBindGroup )
+            {
+                bound           = BoundGroup{ metalBindGroup, metalBindGroup->Version( ) };
+                m_bindingsDirty = true;
+            }
             return;
         }
     }
-    m_boundGroups.push_back( metalBindGroup );
+    m_boundGroups.push_back( BoundGroup{ metalBindGroup, metalBindGroup->Version( ) } );
+    m_bindingsDirty = true;
 }
 
 void MetalCommandList::SetRootConstants( const uint32_t binding, const DenOfIz_ByteArray &data )
@@ -296,6 +305,7 @@ void MetalCommandList::SetRootConstants( const uint32_t binding, const DenOfIz_B
         return;
     }
     const auto *bytes = static_cast<const uint8_t *>( data.Elements );
+    m_bindingsDirty   = true;
     for ( BoundRootConstant &bound : m_boundRootConstants )
     {
         if ( bound.Binding == binding )
@@ -315,17 +325,36 @@ void MetalCommandList::BindCommandResources( )
     {
         return;
     }
+    ApplyPipeline( );
 
     const MetalShaderLayout &shaderLayout = m_pipeline->ShaderLayout( );
+    bool                     dirty        = m_bindingsDirty || m_shaderLayout != &shaderLayout;
+    for ( const BoundGroup &bound : m_boundGroups )
+    {
+        dirty = dirty || bound.Version != bound.Group->Version( );
+    }
+    if ( !dirty )
+    {
+        return;
+    }
+
+    // Commands recorded before read the current slice, so changes go into a copy of it.
     if ( m_shaderLayout != &shaderLayout )
     {
         m_shaderLayout        = &shaderLayout;
         m_currentBufferOffset = m_argumentBuffer->Reserve( m_shaderLayout->NumBytes( ) ).second;
     }
-
-    for ( const MetalBindGroup *bindGroup : m_boundGroups )
+    else if ( m_argumentsInUse )
     {
-        ProcessBindGroup( bindGroup );
+        m_currentBufferOffset = m_argumentBuffer->Duplicate( m_shaderLayout->NumBytes( ) ).second;
+    }
+    m_argumentsInUse = true;
+    m_bindingsDirty  = false;
+
+    for ( BoundGroup &bound : m_boundGroups )
+    {
+        ProcessBindGroup( bound.Group );
+        bound.Version = bound.Group->Version( );
     }
 
     for ( const BoundRootConstant &bound : m_boundRootConstants )
@@ -366,17 +395,36 @@ void MetalCommandList::ProcessBindGroup( const MetalBindGroup *metalBindGroup )
     for ( const auto &rootParameter : tables->RootParameters )
     {
         m_argumentBuffer->EncodeAddress( m_currentBufferOffset + rootParameter.OffsetBytes, rootParameter.Buffer.gpuAddress );
-        BatchResource( rootParameter.Buffer );
     }
-
-    if ( tables->CbvSrvUavTable && spaceLayout->CbvSrvUavTableOffset != UINT32_MAX )
+    const bool cbvSrvUavTable = tables->CbvSrvUavTable && spaceLayout->CbvSrvUavTableOffset != UINT32_MAX;
+    const bool samplerTable   = tables->SamplerTable && spaceLayout->SamplerTableOffset != UINT32_MAX;
+    if ( cbvSrvUavTable )
     {
         m_argumentBuffer->EncodeAddress( m_currentBufferOffset + spaceLayout->CbvSrvUavTableOffset, tables->CbvSrvUavTable->Buffer( ).gpuAddress );
-        BatchResource( tables->CbvSrvUavTable->Buffer( ) );
     }
-    if ( tables->SamplerTable && spaceLayout->SamplerTableOffset != UINT32_MAX )
+    if ( samplerTable )
     {
         m_argumentBuffer->EncodeAddress( m_currentBufferOffset + spaceLayout->SamplerTableOffset, tables->SamplerTable->Buffer( ).gpuAddress );
+    }
+
+    // useResource lasts until the encoder ends.
+    const uint32_t version  = metalBindGroup->Version( );
+    const auto     resident = [ & ]( const ResidentGroup &r ) { return r.Group == metalBindGroup && r.Version == version && r.Tables == tables; };
+    if ( std::any_of( m_residentGroups.begin( ), m_residentGroups.end( ), resident ) )
+    {
+        return;
+    }
+    m_residentGroups.push_back( ResidentGroup{ metalBindGroup, version, tables } );
+    for ( const auto &rootParameter : tables->RootParameters )
+    {
+        BatchResource( rootParameter.Buffer );
+    }
+    if ( cbvSrvUavTable )
+    {
+        BatchResource( tables->CbvSrvUavTable->Buffer( ) );
+    }
+    if ( samplerTable )
+    {
         BatchResource( tables->SamplerTable->Buffer( ) );
     }
 
@@ -415,7 +463,6 @@ void MetalCommandList::DrawIndexed( uint32_t indexCount, uint32_t instanceCount,
         uint64_t totalByteOffset = m_indexBufferOffset + (firstIndex * indexSize);
 
         IRRuntimeDrawIndexedPrimitives( m_renderEncoder, m_pipeline->PrimitiveType( ), indexCount, m_indexType, m_indexBuffer, totalByteOffset, instanceCount, vertexOffset, firstInstance );
-        TopLevelArgumentBufferNextOffset( );
     }
 }
 
@@ -430,7 +477,6 @@ void MetalCommandList::Draw( uint32_t vertexCount, uint32_t instanceCount, uint3
         SwitchEncoder( MetalEncoderType::Render );
         BindCommandResources( );
         IRRuntimeDrawPrimitives( m_renderEncoder, m_pipeline->PrimitiveType( ), firstVertex, vertexCount, instanceCount );
-        TopLevelArgumentBufferNextOffset( );
     }
 }
 
@@ -447,7 +493,6 @@ void MetalCommandList::Dispatch( uint32_t groupCountX, uint32_t groupCountY, uin
         MTLSize threadGroupsPerGrid = MTLSizeMake( groupCountX, groupCountY, groupCountZ );
         MTLSize threadsPerThreadgroup = m_pipeline->ComputeThreadsPerThreadgroup();
         [m_computeEncoder dispatchThreadgroups:threadGroupsPerGrid threadsPerThreadgroup:threadsPerThreadgroup];
-        TopLevelArgumentBufferNextOffset( );
     }
 }
 
@@ -465,7 +510,6 @@ void MetalCommandList::DispatchMesh( const uint32_t groupCountX, const uint32_t 
         MTLSize objectThreads = m_pipeline->ObjectThreadsPerThreadgroup();
         MTLSize meshThreads = m_pipeline->MeshThreadsPerThreadgroup();
         [m_renderEncoder drawMeshThreadgroups:meshGroupsPerGrid threadsPerObjectThreadgroup:objectThreads threadsPerMeshThreadgroup:meshThreads];
-        TopLevelArgumentBufferNextOffset( );
     }
 }
 
@@ -625,7 +669,6 @@ void MetalCommandList::CopyBufferToTexture( const DenOfIz_CopyBufferToTextureDes
         const uint32_t numRows         = std::max( 1U, ( height + ( blockSize - 1 ) ) / blockSize );
         const uint32_t alignedRowPitch = Utilities::Align( rowPitch, m_context->SelectedDeviceInfo.Constants.BufferTextureRowAlignment );
 
-        // TODO Calculate RowPitch and NumRows automatically if possible
         [m_blitEncoder copyFromBuffer:srcBuffer->Instance( )
                          sourceOffset:copyBufferToTexture.SrcOffset
                     sourceBytesPerRow:alignedRowPitch
@@ -646,7 +689,6 @@ void MetalCommandList::CopyTextureToBuffer( const DenOfIz_CopyTextureToBufferDes
         MetalBuffer  *dstBuffer  = dynamic_cast<MetalBuffer *>( DENOFIZ_FROM_HANDLE( DenOfIz::IBuffer, copyTextureToBuffer.DstBuffer ) );
         DZ_NOT_NULL( srcTexture );
         DZ_NOT_NULL( dstBuffer );
-        // TODO Calculate RowPitch and NumRows automatically if possible
         SwitchEncoder( MetalEncoderType::Blit );
 
         [m_blitEncoder copyFromTexture:srcTexture->Instance( )
@@ -813,7 +855,6 @@ void MetalCommandList::DispatchRays( const DenOfIz_DispatchRaysDesc &dispatchRay
         MTLSize threadGroupSize = MTLSizeMake( 8, 8, 1 );
         MTLSize gridSize = MTLSizeMake( dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth );
         [m_computeEncoder dispatchThreads:gridSize threadsPerThreadgroup:threadGroupSize];
-        TopLevelArgumentBufferNextOffset( );
     }
 }
 
@@ -896,9 +937,14 @@ void MetalCommandList::BindTopLevelArgumentBuffer( )
     }
 }
 
-void MetalCommandList::TopLevelArgumentBufferNextOffset( )
+void MetalCommandList::ResetEncoderBindings( )
 {
-    m_currentBufferOffset = m_argumentBuffer->Duplicate( m_shaderLayout ? m_shaderLayout->NumBytes( ) : 0 ).second;
+    m_encoderPipeline = nullptr;
+    m_residentGroups.clear( );
+    m_bindingsDirty    = true;
+    m_computeTlasBound = false;
+    m_renderTlasBound  = false;
+    m_meshTlasBound    = false;
 }
 
 void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType, bool crossQueueBarrier )
@@ -953,6 +999,7 @@ void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType, boo
         }
 
         m_activeEncoderType = encoderType;
+        ResetEncoderBindings( );
         switch ( encoderType )
         {
         case MetalEncoderType::Blit:
@@ -1023,7 +1070,7 @@ void MetalCommandList::BatchResource( const id<MTLResource> &resource, MTLResour
         m_batchedResources.push_back( { resource, usage, stages } );
     }
 }
-//
+
 void MetalCommandList::FlushBatchedResources( )
 {
     if ( m_batchedResources.empty( ) )
@@ -1033,54 +1080,37 @@ void MetalCommandList::FlushBatchedResources( )
 
     @autoreleasepool
     {
-        switch ( m_activeEncoderType )
+        // One useResources call per usage, and per set of stages on a render encoder.
+        const bool render  = m_activeEncoderType == MetalEncoderType::Render;
+        const auto keyOf   = [ render ]( const BatchedResource &r ) { return static_cast<uint64_t>( r.Usage ) << 32 | ( render ? static_cast<uint64_t>( r.Stages ) : 0 ); };
+        std::sort( m_batchedResources.begin( ), m_batchedResources.end( ), [ &keyOf ]( const BatchedResource &a, const BatchedResource &b ) { return keyOf( a ) < keyOf( b ); } );
+        for ( size_t first = 0; first < m_batchedResources.size( ); )
         {
-        case MetalEncoderType::Render:
-        {
-            std::unordered_map<uint64_t, std::vector<id<MTLResource>>> groupedResources;
-            for ( const auto &batched : m_batchedResources )
+            const BatchedResource &head = m_batchedResources[ first ];
+            m_usedResources.clear( );
+            size_t last = first;
+            for ( ; last < m_batchedResources.size( ) && keyOf( m_batchedResources[ last ] ) == keyOf( head ); ++last )
             {
-                uint64_t key = ( static_cast<uint64_t>( batched.Usage ) << 32 ) | static_cast<uint64_t>( batched.Stages );
-                groupedResources[ key ].push_back( batched.Resource );
+                m_usedResources.push_back( m_batchedResources[ last ].Resource );
             }
-            for ( const auto &group : groupedResources )
+            switch ( m_activeEncoderType )
             {
-                MTLResourceUsage  usage  = static_cast<MTLResourceUsage>( group.first >> 32 );
-                MTLRenderStages   stages = static_cast<MTLRenderStages>( group.first & 0xFFFFFFFF );
-                [m_renderEncoder useResources:group.second.data( ) count:group.second.size( ) usage:usage stages:stages];
+            case MetalEncoderType::Render:
+                [m_renderEncoder useResources:m_usedResources.data( ) count:m_usedResources.size( ) usage:head.Usage stages:head.Stages];
+                break;
+            case MetalEncoderType::Compute:
+                [m_computeEncoder useResources:m_usedResources.data( ) count:m_usedResources.size( ) usage:head.Usage];
+                break;
+            case MetalEncoderType::AccelerationStructure:
+                [m_accelerationStructureEncoder useResources:m_usedResources.data( ) count:m_usedResources.size( ) usage:head.Usage];
+                break;
+            case MetalEncoderType::Blit:
+            case MetalEncoderType::None:
+                break;
             }
-            break;
+            first = last;
         }
-        case MetalEncoderType::Compute:
-        {
-            std::unordered_map<MTLResourceUsage, std::vector<id<MTLResource>>> groupedResources;
-            for ( const auto &batched : m_batchedResources )
-            {
-                groupedResources[ batched.Usage ].push_back( batched.Resource );
-            }
-            for ( const auto &group : groupedResources )
-            {
-                [m_computeEncoder useResources:group.second.data( ) count:group.second.size( ) usage:group.first];
-            }
-            break;
-        }
-        case MetalEncoderType::AccelerationStructure:
-        {
-            std::unordered_map<MTLResourceUsage, std::vector<id<MTLResource>>> groupedResources;
-            for ( const auto &batched : m_batchedResources )
-            {
-                groupedResources[ batched.Usage ].push_back( batched.Resource );
-            }
-            for ( const auto &group : groupedResources )
-            {
-                [m_accelerationStructureEncoder useResources:group.second.data( ) count:group.second.size( ) usage:group.first];
-            }
-            break;
-        }
-        case MetalEncoderType::Blit:
-        case MetalEncoderType::None:
-            break;
-        }
+        m_usedResources.clear( );
     }
 
     m_batchedResources.clear( );

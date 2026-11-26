@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanLogicalDevice.h"
@@ -112,16 +101,15 @@ const std::vector<const char*> VulkanLogicalDevice::g_debugInstanceExtensions =
 const std::vector<const char *> VulkanLogicalDevice::g_requiredDeviceExtensions =
 {
     VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-    // Maintenance Extensions
     VK_KHR_MAINTENANCE1_EXTENSION_NAME,
     VK_KHR_MAINTENANCE2_EXTENSION_NAME,
     VK_KHR_MAINTENANCE3_EXTENSION_NAME,
-    // Dynamic Rendering, required we do not support render passes currently.
+    // Required, render passes are not supported.
     VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
     VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
     VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
     VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
-    // Used to pass DenOfIz_Viewport and Scissor count.
+    // Viewport and scissor counts are dynamic state.
     VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
 #if __APPLE_CC__
     "VK_KHR_portability_subset"
@@ -131,9 +119,8 @@ const std::vector<const char *> VulkanLogicalDevice::g_requiredDeviceExtensions 
 const std::vector<const char *> VulkanLogicalDevice::g_optionalDeviceExtensions =
 {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    // Descriptor indexing for bindless textures
+    // Bindless textures
     VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
-    // Ray Tracing
     VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
     VK_KHR_RAY_QUERY_EXTENSION_NAME,
     VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
@@ -211,7 +198,6 @@ void VulkanLogicalDevice::CreateDevice( const DenOfIz_LogicalDeviceDesc &desc )
     }
 }
 
-/// <summary> Iterates through the requested extensions and checks appends them into result if found. </summary>
 void CollectExtensions( const std::vector<VkExtensionProperties> &availableExtensions, const std::vector<const char *> &requestedExtensions,
                         std::unordered_set<const char *> &result, const bool failOnMissing )
 {
@@ -355,7 +341,6 @@ void VulkanLogicalDevice::CreateDeviceInfo( const VkPhysicalDevice &physicalDevi
     m_deviceNameStorage.emplace_back( deviceProperties.deviceName );
     deviceInfo.Name = DENOFIZ_STRING( m_deviceNameStorage.back( ).c_str( ) );
 
-    // Todo actually read these from somewhere:
     deviceInfo.Properties.IsDedicated = deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
     for ( VkExtensionProperties extension : extensions )
     {
@@ -402,8 +387,6 @@ void VulkanLogicalDevice::CreateDeviceInfo( const VkPhysicalDevice &physicalDevi
     deviceInfo.Capabilities.Tearing           = true;
     deviceInfo.Capabilities.MultiDrawIndirect = deviceFeatures.multiDrawIndirect;
     deviceInfo.Capabilities.QueryStatistics   = deviceFeatures.pipelineStatisticsQuery;
-    deviceInfo.Capabilities.SrvArray          = true;
-    deviceInfo.Capabilities.Bindless          = true;
 
     deviceInfo.Constants.StorageBufferAlignment    = deviceProperties.limits.minStorageBufferOffsetAlignment;
     deviceInfo.Constants.ConstantBufferAlignment   = deviceProperties.limits.minUniformBufferOffsetAlignment;

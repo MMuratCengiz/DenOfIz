@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -38,13 +27,7 @@ typedef enum DenOfIz_GltfExportResultCode
     DENOFIZ_GLTF_EXPORT_RESOURCE_UNAVAILABLE
 } DenOfIz_GltfExportResultCode;
 
-/**
- * @brief GLTF Export configuration.
- *
- * Output Specification:
- *   - Always outputs conformant GLTF/GLB (right-handed, Y-up, column-major)
- *   - No coordinate system conversion options - use GltfLoader for RH->LH conversion on load
- */
+// Always writes conformant right-handed, Y-up glTF; GltfLoader converts to left-handed on load.
 typedef struct DenOfIz_GltfExportDesc
 {
     DenOfIz_StringView SourceFilePath;

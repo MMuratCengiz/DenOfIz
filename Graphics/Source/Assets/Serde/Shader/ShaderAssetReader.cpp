@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
@@ -27,6 +16,8 @@ namespace DenOfIz
     class ShaderAssetReader
     {
     public:
+        static constexpr uint32_t ShaderAssetLatestVersion = 2;
+
         DenOfIz_BinaryReader m_reader;
         DenOfIz_ShaderAsset  m_shaderAsset       = DENOFIZ_NULL_HANDLE;
         bool                 m_assetRead         = false;
@@ -71,6 +62,11 @@ DenOfIz_ShaderAsset ShaderAssetReader::Read( )
     m_shaderAsset       = DenOfIz_ShaderAsset_Create( );
     m_streamStartOffset = DenOfIz_BinaryReader_Position( m_reader );
     ReadHeader( );
+    if ( DenOfIz_ShaderAsset_Version( m_shaderAsset ) != ShaderAssetLatestVersion )
+    {
+        spdlog::error( "ShaderAsset version {} is not supported, recompile the shader", DenOfIz_ShaderAsset_Version( m_shaderAsset ) );
+        return m_shaderAsset;
+    }
 
     const uint32_t numStages = DenOfIz_BinaryReader_ReadUInt32( m_reader );
     DenOfIz_ShaderAsset_ReserveStages( m_shaderAsset, numStages );
@@ -95,9 +91,6 @@ DenOfIz_ShaderAsset ShaderAssetReader::Read( )
 
         const uint64_t spirvSize = DenOfIz_BinaryReader_ReadUInt64( m_reader );
         stage->SPIRV             = DenOfIz_BinaryReader_ReadBytes( m_reader, spirvSize );
-
-        const uint64_t wgslSize = DenOfIz_BinaryReader_ReadUInt64( m_reader );
-        stage->WGSL             = DenOfIz_BinaryReader_ReadBytes( m_reader, wgslSize );
 
         const uint64_t reflectionSize = DenOfIz_BinaryReader_ReadUInt64( m_reader );
         stage->Reflection             = DenOfIz_BinaryReader_ReadBytes( m_reader, reflectionSize );
@@ -151,7 +144,7 @@ DenOfIz_ShaderAsset ShaderAssetReader::Read( )
 
 void ShaderAssetReader::ReadHeader( ) const
 {
-    uint64_t           magic    = DenOfIz_BinaryReader_ReadUInt64( m_reader );
+    DenOfIz_BinaryReader_ReadUInt64( m_reader ); // Magic
     uint32_t           version  = DenOfIz_BinaryReader_ReadUInt32( m_reader );
     uint64_t           numBytes = DenOfIz_BinaryReader_ReadUInt64( m_reader );
     DenOfIz_StringView pathStr  = DenOfIz_BinaryReader_ReadString( m_reader );
@@ -255,7 +248,7 @@ void ShaderAssetReader::ReadBinding( DenOfIz_BindingDesc &binding ) const
     binding.Descriptor = DenOfIz_BinaryReader_ReadUInt32( m_reader );
     binding.Stages     = DenOfIz_BinaryReader_ReadUInt32( m_reader );
     binding.ArraySize  = DenOfIz_BinaryReader_ReadUInt32( m_reader );
-    binding.IsBindless = ReadByte( m_reader ) == 1;
+    binding.IsBindless = DenOfIz_BinaryReader_ReadByte( m_reader ) == 1;
 }
 
 void ShaderAssetReader::ReadLocalResourceBinding( DenOfIz_LocalResourceBindingDesc &binding ) const

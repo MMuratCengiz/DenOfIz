@@ -18,6 +18,9 @@ if (BINDINGS_CLANG_EXECUTABLE)
 	endif ()
 endif ()
 target_link_libraries(DenOfIzBindingGenerator PRIVATE ${LIBCLANG_LIB} DenOfIzGraphics spdlog::spdlog)
+if (APPLE)
+	set_target_properties(DenOfIzBindingGenerator PROPERTIES BUILD_RPATH "${CMAKE_BINARY_DIR}")
+endif ()
 
 file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" DENOFIZ_BINDINGS_REPO_PATH)
 target_compile_definitions(DenOfIzBindingGenerator PRIVATE DENOFIZ_BINDINGS_REPOSITORY_ROOT=\"${DENOFIZ_BINDINGS_REPO_PATH}\")
@@ -66,8 +69,7 @@ if (WIN32)
 	list(APPEND BINDINGS_NATIVE_FILES
 			"$<TARGET_FILE_DIR:DenOfIzGraphics>/dxcompiler.dll"
 			"$<TARGET_FILE_DIR:DenOfIzGraphics>/dxil.dll"
-			"$<TARGET_FILE_DIR:DenOfIzGraphics>/WinPixEventRuntime.dll"
-			"$<TARGET_FILE_DIR:DenOfIzGraphics>/wgpu_native.dll")
+			"$<TARGET_FILE_DIR:DenOfIzGraphics>/WinPixEventRuntime.dll")
 	if (NOT CPU_ARCHITECTURE STREQUAL "arm64")
 		list(APPEND BINDINGS_NATIVE_FILES
 				"$<TARGET_FILE_DIR:DenOfIzGraphics>/metalirconverter.dll")
@@ -81,15 +83,13 @@ elseif (APPLE)
 	set(BINDINGS_BINARY_SUBDIR "lib")
 	list(APPEND BINDINGS_NATIVE_FILES
 			"$<TARGET_FILE_DIR:DenOfIzGraphics>/libdxcompiler.dylib"
-			"$<TARGET_FILE_DIR:DenOfIzGraphics>/libmetalirconverter.dylib"
-			"$<TARGET_FILE_DIR:DenOfIzGraphics>/libwgpu_native.dylib")
+			"$<TARGET_FILE_DIR:DenOfIzGraphics>/libmetalirconverter.dylib")
 else ()
 	set(BINDINGS_PLATFORM_SEGMENT "linux")
 	set(BINDINGS_BINARY_SUBDIR "lib")
 	list(APPEND BINDINGS_NATIVE_FILES
 			"$<TARGET_FILE_DIR:DenOfIzGraphics>/libdxcompiler.so"
-			"$<TARGET_FILE_DIR:DenOfIzGraphics>/libdxil.so"
-			"$<TARGET_FILE_DIR:DenOfIzGraphics>/libwgpu_native.so")
+			"$<TARGET_FILE_DIR:DenOfIzGraphics>/libdxil.so")
 endif ()
 
 list(REMOVE_DUPLICATES BINDINGS_NATIVE_FILES)

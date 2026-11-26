@@ -1,11 +1,5 @@
 include(${PROJECT_SOURCE_DIR}/cmake/include_definitions.cmake)
 
-if (BUILD_SHARED_LIBS)
-    set(LIB_TYPE SHARED)
-else ()
-    set(LIB_TYPE STATIC)
-endif ()
-
 function(copy_to_binary_target RootSource Dir FileSelect Target)
     file(GLOB_RECURSE FilesInDir "${RootSource}/${Dir}/${FileSelect}")
     string(LENGTH "${RootSource}/${Dir}/" PathLen)
@@ -14,13 +8,8 @@ function(copy_to_binary_target RootSource Dir FileSelect Target)
         get_filename_component(FileParentDir ${File} DIRECTORY)
         set(FileParentDir "${FileParentDir}/")
 
-        string(LENGTH "${File}" FilePathLen)
         string(LENGTH "${FileParentDir}" DirPathLen)
-
-        math(EXPR FileTrimmedLen "${FilePathLen}-${PathLen}")
         math(EXPR DirTrimmedLen "${DirPathLen}-${PathLen}")
-
-        string(SUBSTRING ${File} ${PathLen} ${FileTrimmedLen} FileStripped)
         string(SUBSTRING ${FileParentDir} ${PathLen} ${DirTrimmedLen} DirStripped)
 
         set(BINARY_DIR "${PROJECT_BINARY_DIR}")
@@ -29,30 +18,8 @@ function(copy_to_binary_target RootSource Dir FileSelect Target)
         endif ()
         file(MAKE_DIRECTORY "${BINARY_DIR}/${Dir}")
         file(MAKE_DIRECTORY "${BINARY_DIR}/${Dir}/${DirStripped}")
-        message("Configuring file: ${File} ${BINARY_DIR}/${Dir}/${DirStripped} COPYONLY")
         configure_file(${File} ${BINARY_DIR}/${Dir}/${DirStripped} COPYONLY)
     endforeach ()
-endfunction()
-
-function(copy_to_binary RootSource Dir FileSelect)
-    copy_to_binary_target(${RootSource} ${Dir} ${FileSelect} ${PROJECT_NAME})
-endfunction()
-
-function(INSTALL_TARGET target)
-    install(TARGETS ${target}
-            EXPORT ${target}-export
-            RUNTIME DESTINATION bin
-            LIBRARY DESTINATION lib
-            ARCHIVE DESTINATION lib
-    )
-
-    install(EXPORT ${target}-export
-            FILE ${target}Targets.cmake
-            NAMESPACE DenOfIz::
-            DESTINATION share/cmake/${target}
-    )
-
-    install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Include/ DESTINATION Include)
 endfunction()
 
 function(SET_TARGET_DEFAULT_PROPERTIES target)
@@ -100,29 +67,6 @@ function(APPLE_APP target)
         set_property(TARGET ${target} APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
     endif ()
 endfunction()
-function(WEB_APP target)
-    if (EMSCRIPTEN)
-        set_target_properties(${target} PROPERTIES SUFFIX ".html")
-        if (EMSCRIPTEN_VERSION VERSION_GREATER_EQUAL "4.0.10")
-            set(EM_WEBGPU_FLAG "--use-port=emdawnwebgpu")
-        else()
-            set(EM_WEBGPU_FLAG "-sUSE_WEBGPU=1")
-        endif()
-        set(EM_LINK_FLAGS "-s ${EM_WEBGPU_FLAG} -s ASYNCIFY=1 -s ALLOW_MEMORY_GROWTH=1 -s TOTAL_MEMORY=536870912 -s USE_SDL=2 -s USE_FREETYPE=1 -s USE_HARFBUZZ=1")
-        set(BUILD_ASSETS_PATH "${CMAKE_BINARY_DIR}/DenOfIz/${CMAKE_BUILD_TYPE}_Emscripten/Assets")
-        if(NOT EXISTS "${BUILD_ASSETS_PATH}")
-            set(BUILD_ASSETS_PATH "${CMAKE_BINARY_DIR}/Assets")
-        endif()
-        if(EXISTS "${BUILD_ASSETS_PATH}")
-            set(EM_LINK_FLAGS "${EM_LINK_FLAGS} --preload-file ${BUILD_ASSETS_PATH}@Assets")
-        else()
-            if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../Assets")
-                set(EM_LINK_FLAGS "${EM_LINK_FLAGS} --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/../Assets@Assets")
-            endif()
-        endif()
-        set_target_properties(${target} PROPERTIES LINK_FLAGS "${EM_LINK_FLAGS}")
-    endif()
-endfunction()
 function(APPLE_LIB target)
     if (APPLE)
         target_compile_options(${target} PRIVATE
@@ -154,7 +98,6 @@ endfunction()
 function(DENOFIZ_APP target)
     set_target_default_properties(${target})
     apple_app(${target})
-    web_app(${target})
     if(COMMAND denofiz_setup_target)
         denofiz_setup_target(${target})
     endif()

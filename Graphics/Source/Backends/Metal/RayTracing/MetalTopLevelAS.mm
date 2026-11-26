@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #import "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalBottomLevelAS.h"
@@ -69,8 +58,7 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const DenOfIz_TopLevelA
         m_contributionsToHitGroupIndices.emplace_back( instanceDesc.ContributionToHitGroupIndex );
     }
 
-    // Acceleration Structure Configuration
-    m_descriptor                                    = [MTLInstanceAccelerationStructureDescriptor descriptor];
+    m_descriptor                                   = [MTLInstanceAccelerationStructureDescriptor descriptor];
     m_descriptor.instancedAccelerationStructures    = m_blasList;
     m_descriptor.instanceDescriptorBuffer           = m_instanceBuffer;
     m_descriptor.instanceCount                      = desc.Instances.NumElements;

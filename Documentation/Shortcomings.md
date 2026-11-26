@@ -1,13 +1,27 @@
 # Shortcomings
 
+## Local Root Signatures
 
-# Local Root Signature
+Local root signatures only exist for ray tracing. A stage lists its local bindings in `DenOfIz_RayTracingShaderDesc::LocalBindings`, they are reflected into
+`DenOfIz_ShaderReflectDesc::LocalRootSignatures`, created as a `DenOfIz_LocalRootSignature` and filled per shader record through `DenOfIz_ShaderLocalData`.
 
-In  general local root signatures are not really supported. They are only intended to be used with the RayTracing API.
-The concept of a LocalRootSignature from DirectX12 is exposed via ILocalRootSignature.
+On Metal every shader of a program is compiled against one local root signature made of the local bindings of all its shaders, so a binding can't be local to a single
+shader. Root level buffers (space 30) can't be local on Metal, use a local constant buffer instead.
 
-# Metal 
+## Metal
 
-1 In Metal RayTracing, local root signature is tied to the source code. It is not possible to specify a binding
-local to a specific shader. This is a limitation of Metal RayTracing API. If you need to do this, you will have to
-split the shader into multiple shaders and use a different local root signature for each shader.
+- macOS on arm64 only.
+- `DenOfIz_CommandList_PipelineBarrier` is a no-op.
+- A bind group keeps only the bindings of its latest update, bind everything the shaders use in every update.
+- No pipeline statistics queries, occlusion queries only work inside a rendering pass.
+- No blend logic ops.
+- Intersection shaders need `DenOfIz_RayTracingShaderDesc::HitGroupType`.
+
+## DirectX 12
+
+- Bindless sampler arrays are not implemented.
+- Debug markers are only recorded in debug builds with PIX (the `pix` vcpkg feature).
+
+## Shader Conversion
+
+Metal libraries are only produced on Windows x64 and macOS, Linux and Windows arm64 builds have no Metal Shader Converter.

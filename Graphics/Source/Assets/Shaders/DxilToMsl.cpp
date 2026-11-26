@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphicsInternal/Assets/Shaders/DxilToMsl.h"
@@ -79,7 +68,6 @@ private:
     void             DxcCheckResult( HRESULT hr ) const;
 };
 
-// Todo perhaps share this with main reflection code
 void DxilToMsl::Impl::IterateBoundResources( DenOfIz_CompiledShaderStage *shader, ReflectionCallback &callback )
 {
     IDxcUtils *dxcUtils = nullptr;
@@ -175,8 +163,6 @@ void DxilToMsl::Impl::DumpRootSignature( const MetalRootSignatureBuilder &builde
     }
 }
 
-// For metal, we need to produce a root signature to compile a correct metal lib
-// We also keep track of how the root parameter layout looks like so
 DxilToMsl::Impl::~Impl( )
 {
     if ( m_shaderReflection )
@@ -194,7 +180,6 @@ DxilToMsl::Impl::~Impl( )
 
 void DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
 {
-    // Check for empty input
     if ( desc.Shaders.NumElements == 0 || desc.DXILShaders.NumElements == 0 )
     {
         spdlog::error( "Empty input" );
@@ -219,7 +204,7 @@ void DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
     // same layout from DenOfIz_ShaderProgram_Reflect through MetalRootSignatureBuilder, so both sides must feed the builder identical bindings.
     std::vector<MetalRootSignatureBinding>    globalBindings;
     std::vector<MetalRootSignatureBinding>    localBindings;
-    std::vector<D3D12_SHADER_INPUT_BIND_DESC> processedInputs; // Handle duplicate inputs
+    std::vector<D3D12_SHADER_INPUT_BIND_DESC> processedInputs; // Stages share resources, each binding is added once
 
     for ( uint32_t shaderIndex = 0; shaderIndex < dxilShaders.NumElements; ++shaderIndex )
     {
@@ -443,7 +428,7 @@ DenOfIz_ByteArray DxilToMsl::Impl::Compile( const DenOfIz_CompileDesc &compileDe
         }
     }
 
-    // Note: metalLibByteCode ownership is transferred to DenOfIz_ByteArray
+    // metalLibByteCode is owned by the returned DenOfIz_ByteArray.
 
     IRMetalLibBinaryDestroy( metalLib );
     IRObjectDestroy( irDxil );
@@ -471,7 +456,6 @@ DxilToMsl::Impl::Impl( )
 #endif
 }
 
-// Public interface implementations
 DxilToMsl::DxilToMsl( ) : m_pImpl( std::make_unique<Impl>( ) )
 {
 }

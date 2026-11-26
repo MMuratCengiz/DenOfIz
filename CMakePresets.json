@@ -8,8 +8,7 @@
       "binaryDir": "build/DenOfIz/${presetName}",
       "cacheVariables": {
         "BUILD_SHARED_LIBS": "OFF",
-        "CMAKE_TOOLCHAIN_FILE": "vcpkg/scripts/buildsystems/vcpkg.cmake",
-        "BUILD_WEBGPU_NATIVE": "ON"
+        "CMAKE_TOOLCHAIN_FILE": "vcpkg/scripts/buildsystems/vcpkg.cmake"
       }
     },
     {
@@ -299,12 +298,10 @@
       "name": "Install_Base",
       "hidden": true,
       "inherits": "Base",
-      "installDir": "install/${presetName}",
       "cacheVariables": {
         "BUILD_TESTS": "OFF",
         "BUILD_EXAMPLES": "OFF",
         "CMAKE_BUILD_TYPE": "Release",
-        "DZ_INSTALL": "ON",
         "BUILD_BINDINGS": "ON"
       }
     },
@@ -389,62 +386,6 @@
       "cacheVariables": {
         "BUILD_SHARED_LIBS": "ON",
         "VCPKG_TARGET_TRIPLET": "arm64-linux"
-      }
-    },
-    {
-      "name": "Emscripten_Base",
-      "hidden": true,
-      "inherits": "Base",
-      "generator": "Ninja",
-      "cacheVariables": {
-        "VCPKG_TARGET_TRIPLET": "wasm32-emscripten",
-        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
-        "BUILD_SHARED_LIBS": "OFF",
-        "BUILD_TESTS": "OFF",
-        "BUILD_TOOLS": "OFF",
-        "BUILD_WEBGPU_NATIVE": "OFF"
-      },
-      "environment": {
-        "VCPKG_ENV_PASSTHROUGH_UNTRACKED": "EMSCRIPTEN_ROOT;EMSDK;PATH"
-      }
-    },
-    {
-      "name": "Emscripten_Common_Flags",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_CXX_FLAGS": "-O3"
-      }
-    },
-    {
-      "name": "Debug_Emscripten",
-      "inherits": "Emscripten_Base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "VCPKG_MANIFEST_FEATURES": "examples",
-        "BUILD_EXAMPLES": "ON"
-      }
-    },
-    {
-      "name": "Release_Emscripten",
-      "inherits": [
-        "Emscripten_Base",
-        "Emscripten_Common_Flags"
-      ],
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "VCPKG_MANIFEST_FEATURES": "examples",
-        "BUILD_EXAMPLES": "ON"
-      }
-    },
-    {
-      "name": "Install_Emscripten",
-      "inherits": [
-        "Emscripten_Base",
-        "Install_Base",
-        "Emscripten_Common_Flags"
-      ],
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
       }
     }
   ],
@@ -572,25 +513,6 @@
         "install"
       ],
       "configuration": "Release"
-    },
-    {
-      "name": "Install_Emscripten",
-      "configurePreset": "Install_Emscripten",
-      "displayName": "Install Emscripten",
-      "targets": [
-        "install"
-      ],
-      "configuration": "Release"
-    },
-    {
-      "name": "Debug_Emscripten",
-      "configurePreset": "Debug_Emscripten",
-      "displayName": "Build Debug Emscripten"
-    },
-    {
-      "name": "Release_Emscripten",
-      "configurePreset": "Release_Emscripten",
-      "displayName": "Build Release Emscripten"
     }
   ]
 }

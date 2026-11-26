@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12LogicalDevice.h"
@@ -164,8 +153,6 @@ void DX12LogicalDevice::CreateDeviceInfo( IDXGIAdapter1 &adapter, DenOfIz_Physic
     physicalDevice.Capabilities.MultiDrawIndirect = true;
     physicalDevice.Capabilities.QueryStatistics   = true;
     physicalDevice.Capabilities.HDR               = true;
-    physicalDevice.Capabilities.SrvArray          = true;
-    physicalDevice.Capabilities.Bindless          = true;
 }
 
 void DX12LogicalDevice::LoadPhysicalDevice( const DenOfIz_PhysicalDevice &device )
@@ -183,12 +170,10 @@ void DX12LogicalDevice::LoadPhysicalDevice( const DenOfIz_PhysicalDevice &device
             break;
         }
     }
-    // Create the DX12 API device object.
     wil::com_ptr<ID3D12Device> dxDevice;
     DX_CHECK_RESULT( D3D12CreateDevice( m_context->Adapter.get( ), m_minFeatureLevel, IID_PPV_ARGS( dxDevice.put( ) ) ) );
     m_context->D3DDevice = dxDevice.query<ID3D12Device9>( );
 
-    // Confirm the device supports Shader Model 6.3 or better.
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { D3D_SHADER_MODEL_6_3 };
     if ( FAILED( m_context->D3DDevice->CheckFeatureSupport( D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof( shaderModel ) ) ) ||
          shaderModel.HighestShaderModel < D3D_SHADER_MODEL_6_3 )

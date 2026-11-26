@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -41,7 +30,7 @@ extern "C"
     DZ_API DenOfIz_BinaryReader DenOfIz_BinaryReader_CreateFromData( DenOfIz_ByteArrayView data, const DenOfIz_BinaryReaderDesc *desc );
     DZ_API void                 DenOfIz_BinaryReader_Destroy( DenOfIz_BinaryReader reader );
 
-    DZ_API int                ReadByte( DenOfIz_BinaryReader reader );
+    DZ_API int                DenOfIz_BinaryReader_ReadByte( DenOfIz_BinaryReader reader );
     DZ_API int                DenOfIz_BinaryReader_Read( DenOfIz_BinaryReader reader, DenOfIz_ByteArray buffer, uint32_t offset, uint32_t count );
     DZ_API DenOfIz_ByteArray  DenOfIz_BinaryReader_ReadAllBytes( DenOfIz_BinaryReader reader );
     DZ_API DenOfIz_ByteArray  DenOfIz_BinaryReader_ReadBytes( DenOfIz_BinaryReader reader, uint32_t count );

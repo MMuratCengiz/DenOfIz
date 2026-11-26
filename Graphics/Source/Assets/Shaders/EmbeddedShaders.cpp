@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphicsInternal/Assets/Shaders/EmbeddedShaders.h"
@@ -29,10 +18,8 @@ using namespace DenOfIz;
 
 extern const uint8_t g_TextRendererShadersCompressed[];
 extern const size_t  g_TextRendererShadersCompressedSize;
-extern const uint8_t g_UIArrayShadersCompressed[];
-extern const size_t  g_UIArrayShadersCompressedSize;
-extern const uint8_t g_UISingleShadersCompressed[];
-extern const size_t  g_UISingleShadersCompressedSize;
+extern const uint8_t g_UIShadersCompressed[];
+extern const size_t  g_UIShadersCompressedSize;
 
 std::unordered_map<std::string, EmbeddedShaders::ShaderData> &EmbeddedShaders::GetShaderRegistry( )
 {
@@ -40,8 +27,7 @@ std::unordered_map<std::string, EmbeddedShaders::ShaderData> &EmbeddedShaders::G
     {
         std::unordered_map<std::string, ShaderData> registry;
         registry[ "TextRenderer" ] = ShaderData{ g_TextRendererShadersCompressed, g_TextRendererShadersCompressedSize };
-        registry[ "UIArray" ]      = ShaderData{ g_UIArrayShadersCompressed, g_UIArrayShadersCompressedSize };
-        registry[ "UISingle" ]     = ShaderData{ g_UISingleShadersCompressed, g_UISingleShadersCompressedSize };
+        registry[ "UI" ]           = ShaderData{ g_UIShadersCompressed, g_UIShadersCompressedSize };
         return registry;
     }( );
     return shaderRegistry;
@@ -171,16 +157,10 @@ DenOfIz_ShaderProgram EmbeddedShaders::GetTextRendererShaderProgram( )
     return GetEmbeddedShaderProgram( "TextRenderer" );
 }
 
-DenOfIz_ShaderProgram EmbeddedShaders::GetUIArrayShaderProgram( )
+DenOfIz_ShaderProgram EmbeddedShaders::GetUIShaderProgram( )
 {
-    return GetEmbeddedShaderProgram( "UIArray" );
-}
-
-DenOfIz_ShaderProgram EmbeddedShaders::GetUISingleShaderProgram( )
-{
-    return GetEmbeddedShaderProgram( "UISingle" );
+    return GetEmbeddedShaderProgram( "UI" );
 }
 
 #include "DenOfIzGraphicsInternal/Assets/Shaders/Embedded/TextRendererShadersCompressed.inl"
-#include "DenOfIzGraphicsInternal/Assets/Shaders/Embedded/UIArrayShadersCompressed.inl"
-#include "DenOfIzGraphicsInternal/Assets/Shaders/Embedded/UISingleShadersCompressed.inl"
+#include "DenOfIzGraphicsInternal/Assets/Shaders/Embedded/UIShadersCompressed.inl"

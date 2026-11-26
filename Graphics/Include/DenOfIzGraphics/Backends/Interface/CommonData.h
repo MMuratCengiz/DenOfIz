@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #ifndef COMMONDATA_H
@@ -135,7 +124,7 @@ typedef enum DenOfIz_ViewMask
 
 typedef enum DenOfIz_MSAASampleCount
 {
-    DENOFIZ_MSAA_SAMPLE_COUNT_0,
+    DENOFIZ_MSAA_SAMPLE_COUNT_0, /**< Same as 1, no multisampling. */
     DENOFIZ_MSAA_SAMPLE_COUNT_1,
     DENOFIZ_MSAA_SAMPLE_COUNT_2,
     DENOFIZ_MSAA_SAMPLE_COUNT_4,
@@ -145,12 +134,13 @@ typedef enum DenOfIz_MSAASampleCount
     DENOFIZ_MSAA_SAMPLE_COUNT_64,
 } DenOfIz_MSAASampleCount;
 
+/** Every heap type except GPU is CPU visible and can be mapped. */
 typedef enum DenOfIz_HeapType
 {
-    DENOFIZ_HEAP_TYPE_GPU,
-    DENOFIZ_HEAP_TYPE_CPU,
-    DENOFIZ_HEAP_TYPE_CPU_GPU,
-    DENOFIZ_HEAP_TYPE_GPU_CPU
+    DENOFIZ_HEAP_TYPE_GPU,     /**< Device local. Filled by copies from a staging buffer, e.g. DenOfIz_BatchResourceCopy. */
+    DENOFIZ_HEAP_TYPE_CPU,     /**< Staging memory, an upload heap on DX12. */
+    DENOFIZ_HEAP_TYPE_CPU_GPU, /**< Written by the CPU, read by the GPU: uploads and per frame constants. */
+    DENOFIZ_HEAP_TYPE_GPU_CPU  /**< Written by the GPU, read by the CPU: readback. */
 } DenOfIz_HeapType;
 
 typedef enum DenOfIz_TextureAspect
@@ -435,8 +425,6 @@ typedef struct DenOfIz_PhysicalDeviceCapabilities
     bool TiledResources;
     bool MultiDrawIndirect;
     bool QueryStatistics;
-    bool SrvArray;
-    bool Bindless;
     bool ShaderOutputLayer;
 } DenOfIz_PhysicalDeviceCapabilities;
 

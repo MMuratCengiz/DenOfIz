@@ -13,4 +13,3 @@ target_link_libraries(DenOfIzExamples-SimpleTriangle
         DenOfIzExamples-Base
 )
 denofiz_app(DenOfIzExamples-SimpleTriangle)
-denofiz_setup_target(DenOfIzExamples-SimpleTriangle)

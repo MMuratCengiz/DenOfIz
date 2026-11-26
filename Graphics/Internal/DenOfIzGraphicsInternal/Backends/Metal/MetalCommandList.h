@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -53,7 +42,23 @@ namespace DenOfIz
         bool                                       m_waitForQueueFence = false;
         id<MTLFence>                               m_queueFence;
         MetalEncoderType                           m_activeEncoderType = MetalEncoderType::None;
-        std::vector<const MetalBindGroup *> m_boundGroups;
+        struct BoundGroup
+        {
+            const MetalBindGroup *Group;
+            uint32_t              Version; // Of the group when it was last encoded into the top level argument buffer.
+        };
+        std::vector<BoundGroup> m_boundGroups;
+        // Groups whose resources were made resident in the current encoder.
+        struct ResidentGroup
+        {
+            const MetalBindGroup       *Group;
+            uint32_t                    Version;
+            const MetalBindGroupTables *Tables;
+        };
+        std::vector<ResidentGroup> m_residentGroups;
+        // The top level argument buffer is only encoded again when a binding changed, and into a new slice once a command read the current one.
+        bool m_bindingsDirty  = true;
+        bool m_argumentsInUse = false;
         struct BoundRootConstant
         {
             uint32_t             Binding;
@@ -61,7 +66,6 @@ namespace DenOfIz
         };
         std::vector<BoundRootConstant> m_boundRootConstants;
 
-        // States:
         id<MTLBuffer>                        m_indexBuffer;
         MTLIndexType                         m_indexType;
         uint64_t                             m_currentBufferOffset = 0;
@@ -70,10 +74,10 @@ namespace DenOfIz
         size_t                               m_boundArgumentSegment = 0;
         const MetalShaderLayout             *m_shaderLayout = nullptr;
         MetalPipeline                       *m_pipeline;
+        const MetalPipeline                 *m_encoderPipeline  = nullptr; // Whose state the current encoder has, encoders start without any.
         bool                                 m_computeTlasBound = false;
         bool                                 m_meshTlasBound    = false;
         bool                                 m_renderTlasBound  = false;
-        // --
 
     public:
         MetalCommandList( MetalContext *context, id<MTLCommandQueue> queue, DenOfIz_CommandListDesc desc );
@@ -128,16 +132,18 @@ namespace DenOfIz
         };
 
         std::vector<BatchedResource> m_batchedResources;
+        std::vector<id<MTLResource>> m_usedResources;
 
         void BindCommandResources( );
         void ProcessBindGroup( const MetalBindGroup *metalBindGroup );
         void BindTopLevelArgumentBuffer( );
-        void TopLevelArgumentBufferNextOffset( );
+        void ApplyPipeline( );
+        void ResetEncoderBindings( );
         void UseResource( const id<MTLResource> &resource, MTLResourceUsage usage = MTLResourceUsageRead, MTLRenderStages stages = MTLRenderStageVertex | MTLRenderStageFragment );
         void BatchResource( const id<MTLResource> &resource, MTLResourceUsage usage = MTLResourceUsageRead,
                             MTLRenderStages stages = MTLRenderStageVertex | MTLRenderStageFragment );
         void FlushBatchedResources( );
-        // This is used because Vulkan+DX12 both support more operations in their graphics command list, so seamless transition is provided here
+        // Vulkan and DX12 graphics command lists also record compute and copy work, Metal needs an encoder per kind of work.
         void SwitchEncoder( MetalEncoderType encoderType, bool crossQueueBarrier = false );
     };
 

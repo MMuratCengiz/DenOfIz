@@ -49,9 +49,6 @@ set(DENOFIZ_ASSETS_STREAM_SOURCES
 )
 
 set(DENOFIZ_ASSETS_SERDE_SOURCES
-        Source/Assets/Serde/Font/FontAsset.cpp
-        Source/Assets/Serde/Font/FontAssetReader.cpp
-        Source/Assets/Serde/Font/FontAssetWriter.cpp
         Source/Assets/Serde/Shader/ShaderAsset.cpp
         Source/Assets/Serde/Shader/ShaderAssetReader.cpp
         Source/Assets/Serde/Shader/ShaderAssetWriter.cpp
@@ -68,33 +65,36 @@ set(DENOFIZ_ASSETS_IMPORT_SOURCES
         Source/Assets/Import/ShaderImporter.cpp
         Source/Assets/Import/TextureImporter.cpp
         Source/Assets/Import/AssetPathUtilities.cpp
-        Source/Assets/Import/FontImporter.cpp
 )
 
 set(DENOFIZ_ASSETS_FONT_SOURCES
+        Source/Assets/Font/ColourGlyphRaster.cpp
+        Source/Assets/Font/ColourGlyphStore.cpp
+        Source/Assets/Font/Emoji.cpp
         Source/Assets/Font/Font.cpp
-        Source/Assets/Font/FontLibrary.cpp
+        Source/Assets/Font/GlyphBuffers.cpp
+        Source/Assets/Font/SlugGlyphStore.cpp
+        Source/Assets/Font/SystemFonts.cpp
         Source/Assets/Font/TextRenderer.cpp
-        Source/Assets/Font/TextBatch.cpp
-        Source/Assets/Font/TextLayout.cpp
-        Source/Assets/Font/TextLayoutCache.cpp
-        Source/Assets/Font/EmbeddedFonts.cpp
+        Source/Assets/Font/TextShaper.cpp
 )
+
+if (TARGET_PLATFORM_MACOS)
+    list(APPEND DENOFIZ_ASSETS_FONT_SOURCES Source/Assets/Font/SystemFonts_Apple.cpp)
+elseif (TARGET_PLATFORM_WINDOWS)
+    list(APPEND DENOFIZ_ASSETS_FONT_SOURCES Source/Assets/Font/SystemFonts_Windows.cpp)
+elseif (TARGET_PLATFORM_LINUX)
+    list(APPEND DENOFIZ_ASSETS_FONT_SOURCES Source/Assets/Font/SystemFonts_Linux.cpp)
+endif ()
 
 set(DENOFIZ_ASSETS_SHADERS_SOURCES
         Source/Assets/FileSystem/FileIO.cpp
         Source/Assets/Shaders/EmbeddedShaders.cpp
+        Source/Assets/Shaders/ShaderCompiler.cpp
+        Source/Assets/Shaders/DxcEnumConverter.cpp
+        Source/Assets/Shaders/ReflectionDebugOutput.cpp
+        Source/Assets/Shaders/ShaderReflectionHelper.cpp
 )
-
-if (NOT TARGET_PLATFORM_WEB)
-    list(APPEND DENOFIZ_ASSETS_SHADERS_SOURCES
-            Source/Assets/Shaders/ShaderCompiler.cpp
-            Source/Assets/Shaders/DxcEnumConverter.cpp
-            Source/Assets/Shaders/ReflectionDebugOutput.cpp
-            Source/Assets/Shaders/ShaderReflectionHelper.cpp
-            Source/Assets/Shaders/SPIRVToWGSL.cpp
-    )
-endif ()
 
 if (APPLE OR (WIN32 AND NOT CPU_ARCHITECTURE STREQUAL "arm64"))
     list(APPEND DENOFIZ_ASSETS_SHADERS_SOURCES Source/Assets/Shaders/DxilToMsl.cpp)
@@ -119,15 +119,10 @@ set(DENOFIZ_INPUT_SOURCES
         Source/Input/InputSystem.cpp
         Source/Input/Window.cpp
         Source/Input/Display.cpp
+        Source/Input/AudioMixer.cpp
+        Source/Input/AudioSource.cpp
+        Source/Input/AudioTrack.cpp
 )
-
-if (NOT TARGET_PLATFORM_WEB)
-    list(APPEND DENOFIZ_INPUT_SOURCES
-            Source/Input/AudioMixer.cpp
-            Source/Input/AudioSource.cpp
-            Source/Input/AudioTrack.cpp
-    )
-endif ()
 
 set(DENOFIZ_UI_SOURCES
         Source/UI/UI.cpp
@@ -235,27 +230,6 @@ set(DENOFIZ_GRAPHICS_METAL_SOURCES
         Source/Backends/Metal/MetalQueryPool.mm
 )
 
-set(DENOFIZ_GRAPHICS_WEBGPU_SOURCES
-        Source/Backends/WebGPU/WebGPUEnumConverter.cpp
-        Source/Backends/WebGPU/WebGPULogicalDevice.cpp
-        Source/Backends/WebGPU/WebGPUBuffer.cpp
-        Source/Backends/WebGPU/WebGPUTexture.cpp
-        Source/Backends/WebGPU/WebGPUSwapChain.cpp
-        Source/Backends/WebGPU/WebGPUFence.cpp
-        Source/Backends/WebGPU/WebGPUSemaphore.cpp
-        Source/Backends/WebGPU/WebGPUShadowState.cpp
-        Source/Backends/WebGPU/WebGPUCommandQueue.cpp
-        Source/Backends/WebGPU/WebGPUCommandListPool.cpp
-        Source/Backends/WebGPU/WebGPUInputLayout.cpp
-        Source/Backends/WebGPU/WebGPUCommandList.cpp
-        Source/Backends/WebGPU/WebGPUPipeline.cpp
-        Source/Backends/WebGPU/WebGPUPipelineCache.cpp
-        Source/Backends/WebGPU/WebGPURootSignature.cpp
-        Source/Backends/WebGPU/WebGPUBindGroup.cpp
-        Source/Backends/WebGPU/WebGPUBindGroupLayout.cpp
-        Source/Backends/WebGPU/WebGPUQueryPool.cpp
-)
-
 set(DENOFIZ_GRAPHICS_BACKEND_SOURCES ${DENOFIZ_BACKENDS_INTERFACE_SOURCES})
 
 if (TARGET_PLATFORM_MACOS)
@@ -264,17 +238,9 @@ elseif (TARGET_PLATFORM_WINDOWS)
     list(APPEND DENOFIZ_GRAPHICS_BACKEND_SOURCES Source/Utilities/OS_Windows.cpp)
 elseif (TARGET_PLATFORM_LINUX)
     list(APPEND DENOFIZ_GRAPHICS_BACKEND_SOURCES Source/Utilities/OS_Linux.cpp)
-elseif (TARGET_PLATFORM_WEB)
-    list(APPEND DENOFIZ_GRAPHICS_BACKEND_SOURCES Source/Utilities/OS_Web.cpp)
 endif ()
 
-if (NOT TARGET_PLAFORM_WEB AND BUILD_WEBGPU_NATIVE)
-    list(APPEND DENOFIZ_GRAPHICS_BACKEND_SOURCES ${DENOFIZ_GRAPHICS_WEBGPU_SOURCES})
-endif ()
-
-if (TARGET_PLATFORM_WEB)
-    list(APPEND DENOFIZ_GRAPHICS_BACKEND_SOURCES ${DENOFIZ_GRAPHICS_WEBGPU_SOURCES})
-elseif (TARGET_PLATFORM_WINDOWS)
+if (TARGET_PLATFORM_WINDOWS)
     list(APPEND DENOFIZ_GRAPHICS_BACKEND_SOURCES
             ${DENOFIZ_GRAPHICS_VULKAN_SOURCES}
             ${DENOFIZ_GRAPHICS_DIRECTX12_SOURCES}

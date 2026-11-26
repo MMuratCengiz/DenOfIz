@@ -30,15 +30,7 @@
 //
 //*********************************************************************************
 
-//**********************************************************************************************
-//
-// SignedDistanceFieldLibrary.h
-//
-// A list of useful distance function to simple primitives, and an example on how to 
-// do some interesting boolean operations, repetition and displacement.
-// More info here: http://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
-//
-//**********************************************************************************************
+// Ref: http://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
 
 #ifndef SIGNEDDISTANCEPRIMITIVES_H
 #define SIGNEDDISTANCEPRIMITIVES_H
@@ -46,10 +38,7 @@
 
 #include "RaytracingShaderHelper.hlsli"
 
-//------------------------------------------------------------------
 float GetDistanceFromSignedDistancePrimitive(in float3 position, in SignedDistancePrimitive::Enum sdPrimitive);
-
-//------------------------------------------------------------------
 
 // Subtract: Obj1 - Obj2
 float opS(float d1, float d2)
@@ -69,7 +58,6 @@ float opI(float d1, float d2)
     return max(d1, d2);
 }
 
-// Repetitions
 float3 opRep(float3 p, float3 c)
 {
     return fmod(p, c) - 0.5 * c;
@@ -83,28 +71,25 @@ float smin(float a, float b, float k)
     return lerp(b, a, h) - k * h*(1.0 - h);
 }
 
-
-// Polynomial smooth min/union (k = 0.1)
+// Polynomial smooth max/intersection (k = 0.1)
 float smax(float a, float b, float k)
 {
     float h = clamp(0.5 + 0.5*(b - a) / k, 0.0, 1.0);
     return lerp(a, b, h) + k * h*(1.0 - h);
 }
 
-// Smooth blend as union 
+// Smooth blend as union
 float opBlendU(float d1, float d2)
 {
     return smin(d1, d2, 0.1);
 }
 
-// Smooth blend as intersect 
+// Smooth blend as intersect
 float opBlendI(float d1, float d2)
 {
     return smax(d1, d2, 0.1);
 }
 
-
-// Twist
 float3 opTwist(float3 p)
 {
     float c = cos(3.0 * p.y);
@@ -112,9 +97,6 @@ float3 opTwist(float3 p)
     float2x2 m = float2x2(c, -s, s, c);
     return float3(mul(m, p.xz), p.y);
 }
-
-
-//------------------------------------------------------------------
 
 float sdPlane(float3 p)
 {
@@ -233,7 +215,7 @@ float sdOctahedron(float3 p, float3 h)
 // h = { sin a, cos a, height of a pyramid}
 // a = pyramid's inner angle between its side plane and a ground plane.
 // Pyramid position - sitting on a ground plane.
-float sdPyramid(float3 p, float3 h) // h = { sin a, cos a, height }
+float sdPyramid(float3 p, float3 h)
 {
     float octa = sdOctahedron(p, h);
 
@@ -282,7 +264,6 @@ float3 sdCalculateNormal(in float3 pos, in SignedDistancePrimitive::Enum sdPrimi
         e.xxx * GetDistanceFromSignedDistancePrimitive(pos + e.xxx, sdPrimitive));
 }
 
-// Test ray against a signed distance primitive.
 // Ref: https://www.scratchapixel.com/lessons/advanced-rendering/rendering-distance-fields/basic-sphere-tracer
 bool RaySignedDistancePrimitiveTest(in Ray ray, in SignedDistancePrimitive::Enum sdPrimitive, out float thit, out ProceduralPrimitiveAttributes attr, in float stepScale = 1.0f)
 {
@@ -297,7 +278,6 @@ bool RaySignedDistancePrimitiveTest(in Ray ray, in SignedDistancePrimitive::Enum
         float3 position = ray.origin + t * ray.direction;
         float distance = GetDistanceFromSignedDistancePrimitive(position, sdPrimitive);
 
-        // Has the ray intersected the primitive? 
         if (distance <= threshold * t)
         {
             float3 hitSurfaceNormal = sdCalculateNormal(position, sdPrimitive);
@@ -309,9 +289,9 @@ bool RaySignedDistancePrimitiveTest(in Ray ray, in SignedDistancePrimitive::Enum
             }
         }
 
-        // Since distance is the minimum distance to the primitive, 
+        // Since distance is the minimum distance to the primitive,
         // we can safely jump by that amount without intersecting the primitive.
-        // We allow for scaling of steps per primitive type due to any pre-applied 
+        // We allow for scaling of steps per primitive type due to any pre-applied
         // transformations that don't preserve true distances.
         t += stepScale * distance;
     }

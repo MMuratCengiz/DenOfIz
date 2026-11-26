@@ -2,58 +2,42 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
 
-#include "DenOfIzGraphics/Assets/Font/Font.h"
-
-#include <ft2build.h>
-#include FT_FREETYPE_H
 #include <harfbuzz/hb.h>
-#include <harfbuzz/hb-ft.h>
-#include <mutex>
-#include <ranges>
-#include <unordered_map>
+#include "DenOfIzGraphics/Assets/Font/Font.h"
 
 namespace DenOfIz
 {
     class Font
     {
+        hb_blob_t          *m_blob;
+        hb_face_t          *m_face;
+        hb_font_t          *m_font;
+        uint32_t            m_id;
+        uint32_t            m_upem;
+        bool                m_colour;
+        DenOfIz_FontMetrics m_metrics{};
+
     public:
-        FT_Library m_ftLibrary{ };
-        FT_Face    m_baseFace{ };
-        FT_Int32   m_loadFlags{ FT_LOAD_DEFAULT };
-
-        mutable std::unordered_map<uint32_t, FT_Face>     m_sizedFaces;
-        mutable std::unordered_map<uint32_t, hb_font_t *> m_hbFonts;
-        mutable std::unordered_map<uint32_t, uint32_t>    m_glyphIndexToCodePoint;
-        mutable std::mutex                                m_mutex;
-        mutable bool                                      m_glyphMapInitialized{ false };
-
-        DenOfIz_FontDesc                                m_desc;
-        std::unordered_map<uint32_t, DenOfIz_FontGlyph> m_glyphs;
-
-        Font( FT_Library ftLibrary, const DenOfIz_FontDesc &desc );
+        Font( hb_blob_t *blob, uint32_t faceIndex );
         ~Font( );
+        Font( const Font & )            = delete;
+        Font &operator=( const Font & ) = delete;
 
-        FT_Face                                       GetFTFace( ) const;
-        hb_font_t                                    *GetHBFont( uint32_t fontSize ) const;
-        const std::unordered_map<uint32_t, uint32_t> &GetGlyphIndexMap( ) const;
-        DenOfIz_FontAsset                             Asset( ) const;
-        DenOfIz_FontGlyph                            *GetGlyph( uint32_t codePoint );
+        bool                       IsValid( ) const;
+        uint32_t                   Id( ) const;
+        uint32_t                   Upem( ) const;
+        hb_font_t                 *HbFont( ) const;
+        const DenOfIz_FontMetrics &Metrics( ) const;
+        bool                       IsColour( ) const;
+        bool                       HasCodePoint( uint32_t codePoint ) const;
+        bool                       Covers( const char *text, uint32_t length ) const;
+
+        static Font *Default( );
     };
 } // namespace DenOfIz
 

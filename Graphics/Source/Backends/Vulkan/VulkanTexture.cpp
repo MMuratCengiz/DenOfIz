@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanTexture.h"
@@ -97,8 +86,7 @@ VulkanTexture::VulkanTexture( VulkanContext *context, const DenOfIz_TextureDesc 
     }
     CreateImageView( );
 
-    // This is not super efficient, but vulkan is the only api that doesn't support initial layouts. So this is a simple adaptation.
-    // Performance implications can be considered in the future after benchmarking.
+    // Vulkan is the only API without an initial layout at creation, so the image is transitioned with a blocking submit.
     TransitionToInitialLayout( );
 }
 
@@ -148,18 +136,11 @@ void VulkanTexture::CreateImageView( )
     viewCreateInfo.components.a                    = VK_COMPONENT_SWIZZLE_IDENTITY;
     viewCreateInfo.subresourceRange.aspectMask     = DenOfIz_VulkanEnumConverter_GetImageAspectFromFormat( m_desc.Format );
     viewCreateInfo.subresourceRange.baseMipLevel   = 0;
-    viewCreateInfo.subresourceRange.levelCount     = 1; // desc.MipLevels; Mip levels are created individually
+    viewCreateInfo.subresourceRange.levelCount     = 1; // One view per mip level
     viewCreateInfo.subresourceRange.baseArrayLayer = 0;
     viewCreateInfo.subresourceRange.layerCount     = m_desc.ArraySize;
 
     m_aspect = DenOfIz_VulkanEnumConverter_GetImageAspectFromFormat( m_desc.Format );
-
-    /* TODO. Support array layers:
-    for ( uint32_t i = 0; i < m_desc.ArraySize; ++i )
-    {
-        viewCreateInfo.subresourceRange.baseArrayLayer = i;
-    }
-    */
 
     m_imageViews.resize( m_desc.MipLevels );
     for ( uint32_t j = 0; j < m_desc.MipLevels; ++j )
@@ -200,7 +181,6 @@ void VulkanTexture::UpdateExternal( const VkImage &image, const VkImageView &ima
     m_desc.Height = desc.Height;
 }
 
-// Todo transition all mip levels
 void VulkanTexture::TransitionToInitialLayout( ) const
 {
     const VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL;

@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphics/Input/Window.h"
@@ -262,8 +251,21 @@ Window::Window( const DenOfIz_WindowDesc &desc ) : m_properties( desc )
         x = SDL_WINDOWPOS_CENTERED;
         y = SDL_WINDOWPOS_CENTERED;
     }
+    else if ( m_properties.Position == DENOFIZ_WINDOW_POSITION_UNDEFINED )
+    {
+        x = SDL_WINDOWPOS_UNDEFINED;
+        y = SDL_WINDOWPOS_UNDEFINED;
+    }
 
-    m_sdlWindow = SDL_CreateWindow( m_title.c_str( ), m_properties.Width, m_properties.Height, flags );
+    const SDL_PropertiesID props = SDL_CreateProperties( );
+    SDL_SetStringProperty( props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, m_title.c_str( ) );
+    SDL_SetNumberProperty( props, SDL_PROP_WINDOW_CREATE_X_NUMBER, x );
+    SDL_SetNumberProperty( props, SDL_PROP_WINDOW_CREATE_Y_NUMBER, y );
+    SDL_SetNumberProperty( props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, m_properties.Width );
+    SDL_SetNumberProperty( props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, m_properties.Height );
+    SDL_SetNumberProperty( props, SDL_PROP_WINDOW_CREATE_FLAGS_NUMBER, flags );
+    m_sdlWindow = SDL_CreateWindowWithProperties( props );
+    SDL_DestroyProperties( props );
     if ( !m_sdlWindow )
     {
         spdlog::critical( "Unable to create SDL window: {}", SDL_GetError( ) );

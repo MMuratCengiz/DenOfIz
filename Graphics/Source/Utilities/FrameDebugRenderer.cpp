@@ -2,29 +2,14 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphics/Utilities/FrameDebugRenderer.h"
 #include "DenOfIzGraphics/Utilities/StepTimer.h"
-#include "DenOfIzGraphicsInternal/Assets/Font/EmbeddedFonts.h"
-#include "DenOfIzGraphicsInternal/Assets/Font/Font.h"
-#include "DenOfIzGraphicsInternal/Assets/Font/FontLibrary.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 #include <deque>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -46,10 +31,8 @@ namespace DenOfIz
     public:
         DenOfIz_FrameDebugRendererDesc Desc;
 
-        std::unique_ptr<FontLibrary> FontLibraryPtr;
-        Font                        *FontPtr      = nullptr;
-        DenOfIz_TextRenderer         TextRenderer = DENOFIZ_NULL_HANDLE;
-        DenOfIz_Float4x4             ProjectionMatrix{ };
+        DenOfIz_TextRenderer TextRenderer = DENOFIZ_NULL_HANDLE;
+        DenOfIz_Float4x4     ProjectionMatrix{ };
 
         DenOfIz_StepTimer  Time        = DENOFIZ_NULL_HANDLE;
         double             Fps         = 0.0;
@@ -115,16 +98,6 @@ FrameDebugRenderer::FrameDebugRenderer( const DenOfIz_FrameDebugRendererDesc &de
     FrameTimes.resize( MaxFrameTimeSamples, 0.0 );
     Time = DenOfIz_StepTimer_Create( );
 
-    if ( !DENOFIZ_HANDLE_IS_VALID( Desc.FontAsset ) )
-    {
-        Desc.FontAsset = EmbeddedFonts::GetJetbrainsMono( );
-    }
-
-    FontLibraryPtr = std::make_unique<FontLibrary>( );
-    DenOfIz_FontDesc fontDesc{ };
-    fontDesc.FontAsset = Desc.FontAsset;
-    FontPtr            = FontLibraryPtr->LoadFont( fontDesc );
-
     if ( Desc.GraphicsApi != DENOFIZ_NULL_HANDLE )
     {
         DenOfIz_StringView activeApi;
@@ -138,13 +111,11 @@ FrameDebugRenderer::FrameDebugRenderer( const DenOfIz_FrameDebugRendererDesc &de
     FontSize              = Desc.FontSize;
 
     DenOfIz_TextRendererDesc textRendererDesc{ };
-    textRendererDesc.LogicalDevice      = Desc.LogicalDevice;
-    textRendererDesc.InitialAtlasWidth  = DenOfIz_FontAsset_AtlasWidth( Desc.FontAsset );
-    textRendererDesc.InitialAtlasHeight = DenOfIz_FontAsset_AtlasHeight( Desc.FontAsset );
-    textRendererDesc.Width              = Desc.Width;
-    textRendererDesc.Height             = Desc.Height;
-    TextRenderer                        = DenOfIz_TextRenderer_Create( &textRendererDesc );
-    DenOfIz_TextRenderer_AddFont( TextRenderer, DENOFIZ_TO_HANDLE( FontPtr ), 0 );
+    textRendererDesc.LogicalDevice = Desc.LogicalDevice;
+    textRendererDesc.Width         = Desc.Width;
+    textRendererDesc.Height        = Desc.Height;
+    textRendererDesc.Font          = Desc.Font;
+    TextRenderer                   = DenOfIz_TextRenderer_Create( &textRendererDesc );
     SetViewport( DenOfIz_Viewport{ 0.0f, 0.0f, static_cast<float>( Desc.Width ), static_cast<float>( Desc.Height ) } );
 }
 
@@ -190,7 +161,7 @@ void FrameDebugRenderer::Render( DenOfIz_CommandList commandList )
     DenOfIz_TextRenderer_BeginBatch( TextRenderer );
 
     constexpr float margin = 10.0f;
-    float           yPos   = 40.0f;
+    float           yPos   = margin;
     char            buffer[ 256 ];
 
     std::vector<std::string>    lines;
@@ -226,7 +197,7 @@ void FrameDebugRenderer::Render( DenOfIz_CommandList commandList )
 
     float                  maxTextWidth = 0.0f;
     DenOfIz_TextRenderDesc measureParams{ };
-    measureParams.FontSize  = FontSize;
+    measureParams.FontSize  = static_cast<float>( FontSize );
     measureParams.Direction = Desc.Direction;
 
     float maxHeight = 0.0f;
@@ -246,7 +217,7 @@ void FrameDebugRenderer::Render( DenOfIz_CommandList commandList )
         textParams.X         = rightMargin;
         textParams.Y         = yPos;
         textParams.Color     = colors[ i ];
-        textParams.FontSize  = FontSize;
+        textParams.FontSize  = static_cast<float>( FontSize );
         textParams.Direction = Desc.Direction;
         DenOfIz_TextRenderer_AddText( TextRenderer, &textParams );
         yPos += maxHeight * 1.2f;

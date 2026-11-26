@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphics/UI/UI.h"
@@ -33,17 +22,18 @@ namespace DenOfIz
 {
     class UI
     {
-        DenOfIz_Window                          m_window   = DENOFIZ_NULL_HANDLE;
-        uint32_t                                m_windowId = 0;
-        bool                                    m_followWindowScale = true;
-        bool                                    m_commandsPending   = false;
-        std::vector<std::pair<uint16_t, Font *>> m_pendingFonts;
+        DenOfIz_Window                                          m_window            = DENOFIZ_NULL_HANDLE;
+        uint32_t                                                m_windowId          = 0;
+        bool                                                    m_followWindowScale = true;
+        bool                                                    m_commandsPending   = false;
+        std::vector<std::pair<uint16_t, Font *>>                m_pendingFonts;
+        std::vector<std::pair<uint16_t, std::vector<uint16_t>>> m_pendingFallbacks;
 
     public:
         UIContext                   Context;
         std::unique_ptr<UIRenderer> Renderer;
 
-        explicit UI( const DenOfIz_UIDesc &desc ) : Context( desc.LogicalDevice )
+        explicit UI( const DenOfIz_UIDesc &desc )
         {
             UIRendererDesc rendererDesc{ };
             rendererDesc.LogicalDevice      = desc.LogicalDevice;
@@ -149,13 +139,28 @@ namespace DenOfIz
             ApplyFont( fontId, font );
         }
 
+        void QueueFallbacks( const uint16_t fontId, std::vector<uint16_t> fallbacks )
+        {
+            if ( m_commandsPending )
+            {
+                m_pendingFallbacks.emplace_back( fontId, std::move( fallbacks ) );
+                return;
+            }
+            ApplyFallbacks( fontId, fallbacks );
+        }
+
         void BeginFrame( const float deltaTime )
         {
             for ( const auto &[ fontId, font ] : m_pendingFonts )
             {
                 ApplyFont( fontId, font );
             }
+            for ( const auto &[ fontId, fallbacks ] : m_pendingFallbacks )
+            {
+                ApplyFallbacks( fontId, fallbacks );
+            }
             m_pendingFonts.clear( );
+            m_pendingFallbacks.clear( );
             Context.BeginFrame( deltaTime );
         }
 
@@ -196,6 +201,12 @@ namespace DenOfIz
             {
                 Context.Text( ).RemoveFont( fontId );
             }
+            Context.FontsChanged( );
+        }
+
+        void ApplyFallbacks( const uint16_t fontId, const std::vector<uint16_t> &fallbacks )
+        {
+            Context.Text( ).SetFallbacks( fontId, fallbacks );
             Context.FontsChanged( );
         }
     };
@@ -349,6 +360,16 @@ extern "C"
     void DenOfIz_UI_RemoveFont( const DenOfIz_UI ui, const uint16_t fontId )
     {
         UI_IMPL( ui )->QueueFont( fontId, nullptr );
+    }
+
+    void DenOfIz_UI_SetFontFallbacks( const DenOfIz_UI ui, const uint16_t fontId, const DenOfIz_UInt16Array *fallbackIds )
+    {
+        std::vector<uint16_t> fallbacks;
+        if ( fallbackIds != nullptr && fallbackIds->Elements != nullptr )
+        {
+            fallbacks.assign( fallbackIds->Elements, fallbackIds->Elements + fallbackIds->NumElements );
+        }
+        UI_IMPL( ui )->QueueFallbacks( fontId, std::move( fallbacks ) );
     }
 
     void DenOfIz_UI_BeginFrame( const DenOfIz_UI ui, const float deltaTime )

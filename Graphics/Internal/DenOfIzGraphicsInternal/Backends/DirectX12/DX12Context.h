@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -49,13 +38,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     while ( false )
 #endif
 
-/*
- *
- * D3D12 Memory Allocator has 2 warnings that clutter output, not sure if important
- * When building a shared library the following warnings are generated:
- * warning C4251: 'D3D12MA::IUnknownImpl::m_RefCount': 'std::atomic<unsigned int>' needs to have dll-interface to be used by clients of 'D3D12MA::IUnknownImpl'
- * warning C4251: 'D3D12MA::Allocation::m_PackedData': 'D3D12MA::Allocation::PackedData' needs to have dll-interface to be used by clients of 'D3D12MA::Allocation'
- */
+// D3D12MA members trigger C4251 (needs dll-interface) when building a shared library.
 #pragma warning( push )
 #pragma warning( disable : 4251 )
 #include <D3D12MemAlloc.h>

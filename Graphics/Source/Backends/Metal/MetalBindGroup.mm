@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphicsInternal/Backends/Metal/MetalBindGroup.h"
@@ -205,6 +194,7 @@ void MetalBindGroup::EndUpdate( )
             EncodeTables( *tables );
         }
     }
+    ++m_version;
 }
 
 const MetalBindGroupTables *MetalBindGroup::TablesFor( const MetalSpaceLayout &spaceLayout ) const
@@ -395,4 +385,9 @@ DenOfIz_ResourceBindingSlot MetalBindGroup::GetSlot( uint32_t binding, const Den
 uint32_t MetalBindGroup::RegisterSpace( ) const
 {
     return m_bindGroupLayout->RegisterSpace( );
+}
+
+uint32_t MetalBindGroup::Version( ) const
+{
+    return m_version;
 }

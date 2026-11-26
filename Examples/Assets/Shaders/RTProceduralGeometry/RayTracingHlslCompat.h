@@ -12,14 +12,6 @@
 #ifndef RAYTRACINGHLSLCOMPAT_H
 #define RAYTRACINGHLSLCOMPAT_H
 
-//**********************************************************************************************
-//
-// RaytracingHLSLCompat.h
-//
-// A header with shared definitions for C++ and HLSL source files.
-//
-//**********************************************************************************************
-
 #ifdef HLSL
 #include "HlslCompat.h"
 #define ALIGN16_FIELD
@@ -37,7 +29,6 @@ typedef uint16_t Index;
 #define ALIGN64_STRUCT __declspec( align( 64 ) )
 #endif
 
-// Number of metaballs to use within an AABB.
 #define N_METABALLS 3 // = {3, 5}
 
 // Limitting calculations only to metaballs a ray intersects can speed up raytracing
@@ -83,7 +74,7 @@ struct SceneConstantBuffer
     XMVECTOR lightAmbientColor;
     XMVECTOR lightDiffuseColor;
     float    reflectance;
-    float    elapsedTime; // Elapsed application time.
+    float    elapsedTime;
 };
 
 // Attributes per primitive type.
@@ -101,11 +92,10 @@ struct PrimitiveConstantBuffer
     float _pad2;
 };
 
-// Attributes per primitive instance.
 struct PrimitiveInstanceConstantBuffer
 {
     UINT instanceIndex;
-    UINT primitiveType; // Procedural primitive type
+    UINT primitiveType;
     UINT _pad0;
     UINT _pad1;
 };
@@ -116,11 +106,10 @@ struct LocalData
     PrimitiveInstanceConstantBuffer aabbCB;
 };
 
-// Dynamic attributes per primitive instance.
 struct PrimitiveInstancePerFrameBuffer
 {
-    XMMATRIX localSpaceToBottomLevelAS; // Matrix from local primitive space to bottom-level object space.
-    XMMATRIX bottomLevelASToLocalSpace; // Matrix from bottom-level object space to local primitive space.
+    XMMATRIX localSpaceToBottomLevelAS;
+    XMMATRIX bottomLevelASToLocalSpace;
 };
 
 struct Vertex
@@ -129,7 +118,6 @@ struct Vertex
     XMFLOAT4 normal;
 };
 
-// Ray types traced in this sample.
 namespace RayType
 {
     enum Enum
@@ -142,7 +130,7 @@ namespace RayType
 
 namespace TraceRayParameters
 {
-    static const UINT InstanceMask = ~0; // Everything is visible.
+    static const UINT InstanceMask = ~0;
     namespace HitGroup
     {
         static const UINT Offset[ RayType::Count ] = {

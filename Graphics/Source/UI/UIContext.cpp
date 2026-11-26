@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphicsInternal/UI/UIContext.h"
@@ -557,7 +546,7 @@ void UIFrame::Clear( )
     RoundClips.clear( );
 }
 
-UIContext::UIContext( const DenOfIz_LogicalDevice device ) : m_text( device )
+UIContext::UIContext( )
 {
     m_config = YGConfigNew( );
     YGConfigSetPointScaleFactor( m_config, 0.0f );
@@ -867,7 +856,7 @@ uint32_t UIContext::AddText( const DenOfIz_StringView &text, const DenOfIz_UITex
     UINode &node  = m_frame->Nodes[ index ];
     node.Data     = static_cast<uint32_t>( m_frame->Texts.size( ) );
     node.Captures = true;
-    m_frame->Texts.push_back( UITextNode{ desc, offset, length, UIText::Hash( text.Chars, length ) } );
+    m_frame->Texts.push_back( UITextNode{ desc, offset, length } );
     return id;
 }
 
@@ -950,22 +939,24 @@ void UIContext::ResolveTexts( )
         const char         *chars  = m_frame->TextArena.data( ) + text.Offset;
         const UITextParams  params = UITextParams::From( text.Desc );
         const UIShapedRun  *run    = state.Run;
-        const bool cached = run != nullptr && state.TextEpoch == m_text.Epoch( ) && run->Hash == text.Hash && run->Text.size( ) == text.Length &&
-                            run->FontId == m_text.ResolveFontId( params.FontId ) && ( text.Length == 0 || std::memcmp( run->Text.data( ), chars, text.Length ) == 0 );
+        // Unchanged text is recognised by comparing it with the run it was shaped into, only new text is hashed to look its run up.
+        const bool cached = run != nullptr && state.TextEpoch == m_text.Epoch( ) && run->Text.size( ) == text.Length && run->FontId == m_text.ResolveFontId( params.FontId ) &&
+                            ( text.Length == 0 || std::memcmp( run->Text.data( ), chars, text.Length ) == 0 );
+        const uint64_t hash = cached ? run->Hash : UIText::Hash( chars, text.Length );
         if ( cached )
         {
             run->LastUsedFrame = m_text.Frame( );
         }
         else
         {
-            run = m_text.Shape( text.Desc.FontId, chars, text.Length, text.Hash );
+            run = m_text.Shape( text.Desc.FontId, chars, text.Length, hash );
         }
-        const bool changed = run != state.Run || !( params == state.TextParams ) || state.TextHash != text.Hash || state.TextLength != text.Length;
+        const bool changed = run != state.Run || !( params == state.TextParams ) || state.TextHash != hash || state.TextLength != text.Length;
         if ( changed || state.TextEpoch != m_text.Epoch( ) )
         {
             state.Run        = run;
             state.TextParams = params;
-            state.TextHash   = text.Hash;
+            state.TextHash   = hash;
             state.TextLength = text.Length;
             state.Layout     = nullptr;
             state.TextEpoch  = m_text.Epoch( );
@@ -1886,7 +1877,7 @@ bool UIContext::ProcessScrollRequests( )
             const uint32_t      line   = layout.LineOfOffset( request.ByteOffset );
             const auto          align  = m_frame->Texts[ node.Data ].Desc.Align;
             const float         caretX = layout.AlignOffset( line, node.Size.X, align ) + layout.CaretX( line, request.ByteOffset );
-            rect = DenOfIz_UIRect{ rect.X + caretX - 2.0f, rect.Y + static_cast<float>( line ) * layout.LineHeight, 4.0f, layout.LineHeight };
+            rect = DenOfIz_UIRect{ rect.X + caretX - 2.0f, rect.Y + layout.Lines[ line ].Top, 4.0f, layout.Lines[ line ].Height };
         }
 
         for ( uint32_t p = node.Parent; p != UINode::Invalid; p = nodes[ p ].Parent )
@@ -2106,7 +2097,7 @@ bool UIContext::GetTextCaretRect( const uint32_t textId, const uint32_t byteOffs
     const auto          align  = m_last->Texts[ node->Data ].Desc.Align;
     const uint32_t      line   = layout.LineOfOffset( byteOffset );
     const float         x      = layout.AlignOffset( line, node->LayoutRect.Width, align ) + layout.CaretX( line, byteOffset );
-    *out = DenOfIz_UIRect{ node->Rect.X + x * node->Scale, node->Rect.Y + static_cast<float>( line ) * layout.LineHeight * node->Scale, 0.0f, layout.LineHeight * node->Scale };
+    *out = DenOfIz_UIRect{ node->Rect.X + x * node->Scale, node->Rect.Y + layout.Lines[ line ].Top * node->Scale, 0.0f, layout.Lines[ line ].Height * node->Scale };
     return true;
 }
 
@@ -2145,7 +2136,6 @@ bool UIContext::GetTextLine( const uint32_t textId, const uint32_t lineIndex, De
     const float             x      = layout.AlignOffset( lineIndex, node->LayoutRect.Width, m_last->Texts[ node->Data ].Desc.Align );
     out->StartOffset               = line.ByteStart;
     out->EndOffset                 = line.ByteEnd;
-    out->Rect = DenOfIz_UIRect{ node->Rect.X + x * node->Scale, node->Rect.Y + static_cast<float>( lineIndex ) * layout.LineHeight * node->Scale, line.Width * node->Scale,
-                                layout.LineHeight * node->Scale };
+    out->Rect = DenOfIz_UIRect{ node->Rect.X + x * node->Scale, node->Rect.Y + line.Top * node->Scale, line.Width * node->Scale, line.Height * node->Scale };
     return true;
 }

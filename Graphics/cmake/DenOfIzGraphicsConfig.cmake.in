@@ -7,19 +7,12 @@ else()
     set(DENOFIZ_RUNTIME_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_LIBDIR@")
 endif()
 
-get_target_property(DENOFIZ_COMPILE_DEFS DenOfIz::DenOfIzGraphics INTERFACE_COMPILE_DEFINITIONS)
-if("BUILD_WEBGPU_NATIVE" IN_LIST DENOFIZ_COMPILE_DEFS)
-    set(DENOFIZ_HAS_WEBGPU_NATIVE TRUE)
-else()
-    set(DENOFIZ_HAS_WEBGPU_NATIVE FALSE)
-endif()
-
 if (WIN32)
     set_property(TARGET DenOfIz::DenOfIzGraphics APPEND PROPERTY
-        INTERFACE_LINK_LIBRARIES dxgi d3d12 dxcompiler
+        INTERFACE_LINK_LIBRARIES dxgi d3d12 dwrite dxcompiler
     )
     set_property(TARGET DenOfIz::DenOfIzGraphics APPEND PROPERTY
-        INTERFACE_COMPILE_DEFINITIONS BUILD_DX12 BUILD_VK TVG_STATIC
+        INTERFACE_COMPILE_DEFINITIONS BUILD_DX12 BUILD_VK
     )
     
     get_target_property(_target_type DenOfIz::DenOfIzGraphics TYPE)
@@ -41,13 +34,14 @@ elseif (APPLE)
     set_property(TARGET DenOfIz::DenOfIzGraphics APPEND PROPERTY
         INTERFACE_LINK_LIBRARIES 
         "-framework Cocoa"
+        "-framework CoreFoundation"
+        "-framework CoreText"
         "-framework Foundation"
         "-framework Metal"
-        "-framework MetalKit"
         dxcompiler
     )
     set_property(TARGET DenOfIz::DenOfIzGraphics APPEND PROPERTY
-        INTERFACE_COMPILE_DEFINITIONS BUILD_METAL TVG_STATIC
+        INTERFACE_COMPILE_DEFINITIONS BUILD_METAL
     )
     set_property(TARGET DenOfIz::DenOfIzGraphics APPEND PROPERTY
         INTERFACE_COMPILE_OPTIONS
@@ -57,10 +51,10 @@ elseif (APPLE)
     )
 elseif (LINUX)
     set_property(TARGET DenOfIz::DenOfIzGraphics APPEND PROPERTY
-        INTERFACE_LINK_LIBRARIES dxcompiler
+        INTERFACE_LINK_LIBRARIES dxcompiler ${CMAKE_DL_LIBS}
     )
     set_property(TARGET DenOfIz::DenOfIzGraphics APPEND PROPERTY
-        INTERFACE_COMPILE_DEFINITIONS BUILD_VK TVG_STATIC
+        INTERFACE_COMPILE_DEFINITIONS BUILD_VK
     )
 endif()
 
@@ -80,27 +74,18 @@ function(denofiz_copy_runtime_dependencies target)
             "${DENOFIZ_RUNTIME_DIR}/dxil.dll"
             "${DENOFIZ_RUNTIME_DIR}/metalirconverter.dll"
         )
-        if(DENOFIZ_HAS_WEBGPU_NATIVE)
-            list(APPEND RUNTIME_DEPS "${DENOFIZ_RUNTIME_DIR}/wgpu_native.dll")
-        endif()
     elseif(APPLE)
         set(RUNTIME_DEPS
             "${DENOFIZ_RUNTIME_DIR}/libDenOfIzGraphics.dylib"
             "${DENOFIZ_RUNTIME_DIR}/libdxcompiler.dylib"
             "${DENOFIZ_RUNTIME_DIR}/libmetalirconverter.dylib"
         )
-        if(DENOFIZ_HAS_WEBGPU_NATIVE)
-            list(APPEND RUNTIME_DEPS "${DENOFIZ_RUNTIME_DIR}/libwgpu_native.dylib")
-        endif()
     elseif(LINUX)
         set(RUNTIME_DEPS
             "${DENOFIZ_RUNTIME_DIR}/libDenOfIzGraphics.so"
             "${DENOFIZ_RUNTIME_DIR}/libdxcompiler.so"
             "${DENOFIZ_RUNTIME_DIR}/libdxil.so"
         )
-        if(DENOFIZ_HAS_WEBGPU_NATIVE)
-            list(APPEND RUNTIME_DEPS "${DENOFIZ_RUNTIME_DIR}/libwgpu_native.so")
-        endif()
     endif()
     foreach(dep ${RUNTIME_DEPS})
         if(EXISTS ${dep})

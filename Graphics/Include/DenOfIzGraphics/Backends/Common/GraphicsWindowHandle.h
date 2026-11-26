@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -28,9 +17,7 @@ extern "C"
 {
 #endif
 
-    /**
-     * @brief Pointer to a native window intended to be used as bring your own window manager structure, although currently it is tied directly to SDL3
-     */
+    /** Refers to an SDL3 window, see CreateFromSDLWindowId. Destroying the handle leaves the window alone. */
     DENOFIZ_DEFINE_HANDLE( DenOfIz_GraphicsWindowHandle )
 
     typedef enum
@@ -40,6 +27,7 @@ extern "C"
         DENOFIZ_FULLSCREEN_MODE_EXCLUSIVE  = 2
     } DenOfIz_FullScreenMode;
 
+    /** Window size in pixels, zero when there is no window. */
     typedef struct
     {
         uint32_t Width;

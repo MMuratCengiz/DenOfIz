@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -32,49 +21,27 @@ namespace DenOfIz
 {
     struct EmitterStreamFormattingDesc
     {
-        // Line ending indicator (e.g., ";" for C++, "" for Python)
         std::string LineEndIndicator = ";";
 
-        // Include format
-        // C++:  "#include <{}>"
         std::string IncludeFormat;
-
-        // Include format variant (language-specific alternative)
-        // C++:  "#include \"{}\""
         std::string IncludeFormatVariant;
 
-        // Assignment format: {} = {}; (left, right)
-        // C++/C#:  "{} = {}";
         std::string AssignmentFormat = "{} = {}";
 
-        // Namespace formats
-        // C++:  "namespace {} {"
-        // C#:   "namespace {} {"
-        // Rust: "mod {} {"
         std::string NamespaceOpenFormat;
         std::string NamespaceCloseFormat = "}} // namespace";
 
-        // Class/Struct formats (single argument: name)
-        // C++:  "class {} {"
         std::string ClassOpenFormat;
         std::string ClassCloseFormat = "};";
 
-        // Function declaration format (arguments: return_type, function_name, parameters)
-        // C++:  "{} {}({});"
+        // Placeholders: return type, name, parameters.
         std::string FunctionDeclFormat;
-
-        // Function definition opening (arguments: return_type, function_name, parameters)
-        // C++:  "{} {}({})"
         std::string FunctionDefOpenFormat;
 
-        // Block comment format
         std::string BlockCommentOpenFormat  = "/*";
         std::string BlockCommentLineFormat  = " * {}";
         std::string BlockCommentCloseFormat = " */";
 
-        // Inline comment format
-        // C++:  "// {}"
-        // Lua:  "-- {}"
         std::string InlineCommentFormat = "// {}";
     };
 

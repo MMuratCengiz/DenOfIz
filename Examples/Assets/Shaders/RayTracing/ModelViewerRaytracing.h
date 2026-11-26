@@ -37,7 +37,6 @@ inline void GenerateCameraRay( uint2 index, out float3 origin, out float3 direct
     // Invert Y for DirectX-style coordinates
     screenPos.y = -screenPos.y;
 
-    // Unproject into a ray
     float4 world = mul( float4( screenPos, 0, 1 ), projectionToWorld );
     world.xyz /= world.w;
 

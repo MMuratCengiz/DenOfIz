@@ -2,24 +2,14 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include "DenOfIzGraphics/UI/UI.h"
 
@@ -27,23 +17,47 @@ namespace DenOfIz
 {
     class UITextLayout;
 
+    // Structured buffer elements shared with the UI shaders. Every member sits at its std430 alignment and the size is a multiple of 16, so the
+    // DX layout the shaders are compiled with is also valid Vulkan std430 without scalar block layout.
     struct UIVertex
     {
+        DenOfIz_Float4 Color;
         DenOfIz_Float3 Position;
+        uint32_t       TextureIndex;
         DenOfIz_Float2 TexCoord;
+        uint32_t       Glyph;
+        uint32_t       Padding;
+    };
+    static_assert( sizeof( UIVertex ) == 48 && offsetof( UIVertex, Position ) == 16 && offsetof( UIVertex, TextureIndex ) == 28 && offsetof( UIVertex, TexCoord ) == 32 &&
+                   offsetof( UIVertex, Glyph ) == 40 );
+
+    // A rectangle the vertex shader expands into four vertices, drawn by the indices UIQuadIndexBit | quad * 4 + corner with the corners clockwise from
+    // the top left. Shapes are drawn by indices of their UIVertex. Rect and UV are (left, top, right, bottom).
+    struct UIQuad
+    {
+        DenOfIz_Float4 Rect;
+        DenOfIz_Float4 UV;
         DenOfIz_Float4 Color;
         uint32_t       TextureIndex;
+        uint32_t       Glyph;
+        uint32_t       Padding[ 2 ];
     };
+    static_assert( sizeof( UIQuad ) == 64 && offsetof( UIQuad, UV ) == 16 && offsetof( UIQuad, Color ) == 32 && offsetof( UIQuad, TextureIndex ) == 48 &&
+                   offsetof( UIQuad, Glyph ) == 52 );
+
+    // Below 2^24, the largest index value Vulkan guarantees without fullDrawIndexUint32.
+    constexpr uint32_t UIQuadIndexBit = 1u << 23;
+    constexpr uint32_t UIMaxQuads     = UIQuadIndexBit / 4;
 
     namespace UITextureSlots
     {
-        constexpr uint32_t Solid      = 0;
-        constexpr uint32_t FirstFont  = 1;
-        constexpr uint32_t MaxFonts   = 16;
-        constexpr uint32_t FirstImage = FirstFont + MaxFonts;
-        constexpr uint32_t Count      = 128;
-        constexpr uint32_t Bits       = 7;
-        constexpr uint32_t Mask       = ( 1u << Bits ) - 1u;
+        constexpr uint32_t Solid       = 0;
+        constexpr uint32_t Glyph       = 1;
+        constexpr uint32_t ColourGlyph = 2;
+        constexpr uint32_t FirstImage  = 3;
+        constexpr uint32_t Count       = 128;
+        constexpr uint32_t Bits        = 7;
+        constexpr uint32_t Mask        = ( 1u << Bits ) - 1u;
     } // namespace UITextureSlots
 
     struct UIStateRecord
@@ -52,6 +66,7 @@ namespace DenOfIz
         DenOfIz_Float4 B;
         DenOfIz_Float4 C;
     };
+    static_assert( sizeof( UIStateRecord ) == 48 && offsetof( UIStateRecord, B ) == 16 && offsetof( UIStateRecord, C ) == 32 );
 
     constexpr uint32_t UIMaxRoundedClips = DENOFIZ_UI_MAX_ROUNDED_CLIPS;
     constexpr float    UIUnbounded       = 1.0e7f;

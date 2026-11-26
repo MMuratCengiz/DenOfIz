@@ -1,206 +1,77 @@
 # Compiling Shaders in DenOfIz
 
-DenOfIz uses a unified shader compilation system that translates HLSL shaders to the appropriate format for the target graphics API: DirectX 12 (DXIL), Vulkan (SPIRV), or Metal (MSL). This document explains the shader compilation process and cross-platform considerations.
+Shaders are written in HLSL for every backend and compiled with Microsoft's DirectX Shader Compiler (DXC): DXIL for DirectX 12, SPIR-V for Vulkan. Metal libraries are converted
+from the DXIL with Apple's Metal Shader Converter, using the root signature the reflection describes.
 
-## Shader Compilation Overview
+## Shader Programs
 
-DenOfIz uses Microsoft's DirectX Shader Compiler (DXC) for all shader compilation, even when targeting non-DirectX APIs. This approach allows developers to write shaders once in HLSL and automatically compile them for any supported platform.
-
-### Basic Shader Compilation
-
-```cpp
-// Create shader compiler
-ShaderCompiler compiler;
-
-// Set up compile descriptor
-CompileDesc compileDesc;
-compileDesc.Path = "Assets/Shaders/MyShader.hlsl";
-compileDesc.Stage = DENOFIZ_SHADER_STAGE_PIXEL_BIT;
-compileDesc.EntryPoint = "main";
-compileDesc.TargetIL = TargetIL::DXIL;  // Or SPIRV for Vulkan, MSL for Metal
-
-// Compile the shader
-CompileResult result = compiler.CompileHLSL(compileDesc);
-```
-
-## Cross-Platform Shader Considerations
-
-### Common Features for All Platforms
-
-- HLSL version 2021 is used for all platforms
-- Row-major matrix layout (`-Zpr` flag) is used by default
-- Debug information is included in debug builds
-- Resource binding spaces are used to organize resources
-
-### DirectX 12 (DXIL)
-
-DirectX 12 is the most straightforward target since HLSL was designed for it:
-
-```hlsl
-// Standard HLSL for DirectX 12
-ConstantBuffer<PerFrameData> frameData : register(b0, space0);
-Texture2D<float4> colorTexture : register(t0, space0);
-SamplerState linearSampler : register(s0, space0);
-```
-
-### Vulkan (SPIRV)
-
-Vulkan requires some special annotations and considerations:
-
-1. **Push Constants**: Vulkan push constants require the `[[vk::push_constant]]` attribute and must be in register space 31:
-
-```hlsl
-// Push constant definition for Vulkan
-struct PushConstants {
-    float4 color;
-    float2 scale;
-    float2 offset;
-};
-
-[[vk::push_constant]] ConstantBuffer<PushConstants> pushConstants : register(b0, space31);
-```
-
-2. **Single Push Constant Block**: Vulkan only allows a single push constant block, so all push constant data must be organized in a properly aligned struct.
-
-3. **Register Shifting**: DenOfIz applies register shifting for Vulkan to avoid binding conflicts. In the ShaderCompiler, you can see:
+A `DenOfIz_ShaderProgram` holds the stages of one pipeline, compiled and reflected together. Creating one compiles every stage to DXIL and SPIR-V, and to Metal on Windows x64 and
+macOS builds:
 
 ```cpp
-// From ShaderCompiler.cpp
-// Vulkan requires unique binding for each descriptor
-// Docs suggest shifting the binding to avoid conflicts.
-static const std::wstring VkShiftCbvWs = std::to_wstring(VkShiftCbv);
-static const std::wstring VkShiftSrvWs = std::to_wstring(VkShiftSrv);
-static const std::wstring VkShiftUavWs = std::to_wstring(VkShiftUav);
-static const std::wstring VkShiftSamplerWs = std::to_wstring(VkShiftSampler);
+DenOfIz_StringView defines[] = { DENOFIZ_STRING( "USE_NORMAL_MAPPING" ), DENOFIZ_STRING( "MAX_LIGHTS=4" ) };
+
+DenOfIz_ShaderStageDesc stages[ 2 ]{ };
+stages[ 0 ].Stage      = DENOFIZ_SHADER_STAGE_VERTEX_BIT;
+stages[ 0 ].Path       = DENOFIZ_STRING( "Assets/Shaders/FullscreenQuad.vs.hlsl" );
+stages[ 0 ].EntryPoint = DENOFIZ_STRING( "main" );
+stages[ 1 ].Stage      = DENOFIZ_SHADER_STAGE_PIXEL_BIT;
+stages[ 1 ].Data       = DenOfIz_InteropUtilities_StringToBytes( pixelShaderSource ); // Source in memory instead of Path
+stages[ 1 ].EntryPoint = DENOFIZ_STRING( "PSMain" );
+stages[ 1 ].Defines    = { defines, 2 };
+
+DenOfIz_ShaderProgramDesc programDesc{ };
+programDesc.ShaderStages.Elements    = stages;
+programDesc.ShaderStages.NumElements = 2;
+DenOfIz_ShaderProgram program        = DenOfIz_ShaderProgram_Create( &programDesc );
+
+DenOfIz_ShaderReflectDesc reflectDesc{ };
+DenOfIz_ShaderProgram_Reflect( program, &reflectDesc );
 ```
 
-4. **Extensions**: The compiler automatically adds necessary extensions for ray tracing in Vulkan:
+The reflection gives the input layout, bind group layouts, root constants, ray tracing local root signatures and thread group sizes, see [Resource Binding](ResourceBinding.md).
+`DenOfIz_ShaderProgramDesc::IncludeHandler` resolves `#include`s from memory: create it with `DenOfIz_ShaderIncludeHandler_Create` and add files with
+`DenOfIz_ShaderIncludeHandler_AddFile`.
+
+## Compiler Settings
+
+- Shader model 6.6, ray tracing stages are compiled as libraries exporting only their entry point
+- HLSL 2021 (`-HV 2021`), row major matrices (`-Zpr`), `-all_resources_bound`
+- Debug builds embed debug information in DXIL (`-Zi`)
+- SPIR-V targets Vulkan 1.1, and Vulkan 1.3 with the ray tracing and ray query extensions for ray tracing, mesh and hull stages
+- SPIR-V uses the DirectX memory layout (`-fvk-use-dx-layout`) and `SV_Position.w` convention (`-fvk-use-dx-position-w`)
+- Registers are shifted per type for Vulkan, see [Vulkan Register Shifts](ResourceBinding.md#vulkan-register-shifts)
+- Shader programs pass `-fvk-support-nonzero-base-instance`: `SV_InstanceID` starts at 0 whatever the first instance of the draw is, as on DirectX 12
+
+## Vulkan and Metal Notes
+
+- Root constants need `[[vk::push_constant]]` and register space 31, one block per shader:
+  ```hlsl
+  [[vk::push_constant]] ConstantBuffer<PushConstants> pushConstants : register(b0, space31);
+  ```
+- Metal compiles every stage of a program against one root signature built from the program's reflection, so the program, not a single shader, is the unit that is converted.
+- Intersection shaders need `DenOfIz_RayTracingShaderDesc::HitGroupType` on Metal.
+
+## Compiling Directly
+
+`DenOfIz_ShaderCompiler` compiles one stage to DXIL or SPIR-V without a program. It cannot produce Metal, which needs the whole program:
 
 ```cpp
-arguments.push_back(L"-fspv-extension=SPV_KHR_ray_tracing");
-arguments.push_back(L"-fspv-extension=SPV_KHR_ray_query");
+DenOfIz_ShaderCompiler compiler = DenOfIz_ShaderCompiler_Create( );
+
+DenOfIz_CompileDesc compileDesc{ };
+compileDesc.Path       = DENOFIZ_STRING( "Assets/Shaders/MyShader.ps.hlsl" );
+compileDesc.Stage      = DENOFIZ_SHADER_STAGE_PIXEL_BIT;
+compileDesc.EntryPoint = DENOFIZ_STRING( "main" );
+compileDesc.TargetIL   = DENOFIZ_TARGET_IL_SPIRV;
+
+DenOfIz_CompileResult result{ };
+DenOfIz_ShaderCompiler_CompileHLSL( compiler, &compileDesc, &result ); // result.Code, result.Reflection
+DenOfIz_ShaderCompiler_Destroy( compiler );
 ```
 
-5. Important: SV_InstanceId will always be 0 for the first instance regardless of StartInstanceLocation, this is to match DirectX12 behavior:
+## Precompiled Shaders
 
-```cpp
-arguments.push_back( L"-fvk-support-nonzero-base-instance" );
-```
-
-### Metal (MSL)
-
-Metal has the most significant differences in its resource binding model:
-
-1. **Reflection Required**: Metal relies heavily on reflection data to map HLSL bindings to Metal argument buffers:
-
-```cpp
-// From ShaderCompiler.cpp
-if (compileDesc.TargetIL == TargetIL::MSL)
-{
-    LOG(FATAL) << "MSL requires a root signature to provide an accurate metallib with the context of all shaders. "
-               << "Using shader reflection create an IRRootSignature and pass it to the DxilToMsl class.";
-    return {};
-}
-```
-
-2. **DxilToMsl Conversion**: For Metal, use the DxilToMsl converter which uses reflection to properly bind resources:
-
-```cpp
-// Configure MSL conversion
-DxilToMslDesc dxilToMslDesc;
-dxilToMslDesc.Shaders = shaderStageDescs;
-dxilToMslDesc.DXILShaders = compiledDxilShaders;
-
-// Convert DXIL to MSL
-DxilToMsl converter;
-DenOfIz_ByteArrayArray mslData = converter.Convert(dxilToMslDesc);
-```
-
-3. **Explicit Binding Order**: Metal binds resources in a strict order within argument buffers, requiring careful organization of resources.
-
-## Shader Program Creation and Reflection
-
-For proper cross-platform compatibility, always use shader reflection to create root signatures:
-
-```cpp
-// Create shader program
-ShaderProgram* program = graphicsApi->CreateShaderProgram(shaders);
-
-// Get reflection data
-ShaderReflectDesc reflectDesc = program->Reflect();
-
-// Create root signature using reflection data
-IRootSignature* rootSignature = device->CreateRootSignature(reflectDesc.RootSignature);
-```
-
-Reflection is particularly important for Metal, which requires detailed knowledge of the shader resource layout to translate HLSL bindings to Metal's argument buffer system.
-
-## Best Practices for Cross-Platform Shader Development
-
-1. **Always Use Reflection**: Let the shader reflection system handle binding information across platforms.
-
-2. **Use Register Spaces Consistently**:
-    - Space 0: Standard descriptor tables
-    - Space 2: Root-level buffers (DirectX 12 optimization)
-    - Space 31: Push constants
-
-3. **Use Push Constants for Small, Frequently Updated Data**:
-   ```hlsl
-   [[vk::push_constant]] ConstantBuffer<PushConstants> pushConstants : register(b0, space31);
-   ```
-
-4. **Keep Push Constant Structs Compact**:
-    - Keep push constant data small and aligned
-    - Remember Vulkan only allows one push constant block
-
-5. **Test on All Target Platforms**:
-    - Some shader features might compile but behave differently across APIs
-    - Use API-specific validation layers and debugging tools
-
-6. **Avoid API-Specific Features When Possible**:
-    - Use DenOfIz abstractions rather than platform-specific code
-    - If needed, use `#ifdef` directives for platform-specific code
-
-## Debugging Shaders
-
-DenOfIz includes debugging support for shaders:
-
-1. **Debug Information**: Debug builds include shader debug information
-2. **Reflection Debugging**: Use the ReflectionDebugOutput class to inspect shader bindings:
-
-```cpp
-// Debug root parameters
-ReflectionDebugOutput::DumpIRRootParameters(rootParameters, "Root Signature");
-```
-
-3. **Error Handling**: The shader compiler provides detailed error messages when compilation fails
-
-## Advanced: Shader Variants and Dynamic Compilation
-
-For advanced usage, you may want to compile shader variants at runtime:
-
-```cpp
-// Create shader with defines
-CompileDesc compileDesc;
-compileDesc.Path = "Assets/Shaders/MyShader.hlsl";
-compileDesc.Stage = DENOFIZ_SHADER_STAGE_PIXEL_BIT;
-compileDesc.EntryPoint = "main";
-
-// Add preprocessor defines
-InteropStringArray defines;
-// Note: You'll need to allocate and populate the array
-// Example assumes helper functions for array management
-defines.NumElements = 2;
-defines.Elements = new InteropString[2];
-defines.Elements[0] = InteropString("USE_NORMAL_MAPPING");
-defines.Elements[1] = InteropString("MAX_LIGHTS=4");
-compileDesc.Defines = &defines;
-
-// Compile with the defines
-CompileResult result = compiler.CompileHLSL(compileDesc);
-```
-
-## Conclusion
-
-DenOfIz's shader compilation system abstracts away most of the complexity of targeting multiple graphics APIs, but understanding the underlying differences is important for
-effective cross-platform development. Always use shader reflection, follow the register space conventions, and test on all target platforms to ensure compatibility.
+To skip compilation at run time, `DenOfIz_ShaderImporter_Import` compiles a `DenOfIz_ShaderProgramDesc` into a shader asset file in `TargetDirectory`. Load it with
+`DenOfIz_BinaryReader_CreateFromFile`, `DenOfIz_ShaderAssetReader_Create` and `DenOfIz_ShaderProgram_CreateFromAsset`. Produce assets meant for Metal on Windows x64 or macOS,
+other builds have no Metal Shader Converter.

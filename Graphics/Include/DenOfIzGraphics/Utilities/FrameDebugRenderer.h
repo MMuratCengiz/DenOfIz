@@ -2,25 +2,13 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
 
 #include "DenOfIzGraphics/Assets/Font/Font.h"
 #include "DenOfIzGraphics/Assets/Font/TextRenderer.h"
-#include "DenOfIzGraphics/Assets/Serde/Font/FontAsset.h"
 #include "DenOfIzGraphics/Backends/GraphicsApi.h"
 #include "DenOfIzGraphics/Backends/Interface/CommandList.h"
 #include "DenOfIzGraphics/Backends/Interface/LogicalDevice.h"
@@ -42,10 +30,10 @@ extern "C"
         DenOfIz_LogicalDevice LogicalDevice;
         uint32_t              Width;
         uint32_t              Height;
-        DenOfIz_FontAsset     FontAsset;
-        DenOfIz_Float4        TextColor;
+        DenOfIz_Font          Font;      /**< Optional, the default font when null. Borrowed: keep it alive while the renderer exists. */
+        DenOfIz_Float4        TextColor; /**< Zero is white. */
         float                 RefreshRate;
-        uint32_t              FontSize;
+        uint32_t              FontSize; /**< Zero is 16. */
         DenOfIz_TextDirection Direction;
         bool                  Enabled;
     } DenOfIz_FrameDebugRendererDesc;

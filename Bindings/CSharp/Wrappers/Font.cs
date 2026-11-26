@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
 using DenOfIz.Native;
 
 namespace DenOfIz
@@ -11,27 +10,51 @@ namespace DenOfIz
 
         public static implicit operator ulong(Font wrapper) => wrapper?.Handle ?? 0;
 
+        public Font(in FontDesc desc)
+        {
+            Handle = Methods.DenOfIz_Font_Create(in desc);
+            _ownsHandle = true;
+        }
+
         internal Font(ulong handle, bool ownsHandle = false)
         {
             Handle = handle;
             _ownsHandle = ownsHandle;
         }
 
-        public FontAsset Asset()
+        public static unsafe Font Create(ReadOnlySpan<byte> data, uint faceIndex = 0)
         {
-            ThrowIfDisposed();
-            return new FontAsset(Methods.DenOfIz_Font_Asset(Handle), ownsHandle: false);
+            fixed (byte* ptr = data)
+            {
+                var desc = new FontDesc
+                {
+                    Data = new ByteArrayView { Elements = (IntPtr)ptr, NumElements = (ulong)data.Length },
+                    FaceIndex = faceIndex
+                };
+                return new Font(in desc);
+            }
         }
 
-        public FontGlyph GetGlyph(uint codePoint)
+        public static Font CreateFromPath(StringView path, uint faceIndex = 0)
         {
-            ThrowIfDisposed();
-            return Marshal.PtrToStructure<FontGlyph>(Methods.DenOfIz_Font_GetGlyph(Handle, codePoint));
+            return new Font(Methods.DenOfIz_Font_CreateFromPath(path, faceIndex), ownsHandle: true);
         }
 
-        public static float MsdfPixelRange()
+        public static Font GetDefault()
         {
-            return Methods.DenOfIz_Font_MsdfPixelRange();
+            return new Font(Methods.DenOfIz_Font_GetDefault(), ownsHandle: false);
+        }
+
+        public FontMetrics GetMetrics()
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Font_GetMetrics(Handle);
+        }
+
+        public bool HasCodePoint(uint codePoint)
+        {
+            ThrowIfDisposed();
+            return Methods.DenOfIz_Font_HasCodePoint(Handle, codePoint);
         }
 
         public void Dispose()
@@ -39,6 +62,11 @@ namespace DenOfIz
             if (Handle == 0)
             {
                 return;
+            }
+
+            if (_ownsHandle)
+            {
+                Methods.DenOfIz_Font_Destroy(Handle);
             }
 
             Handle = 0;

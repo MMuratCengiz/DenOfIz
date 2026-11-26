@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphics/Backends/Interface/CommonData.h"
@@ -83,7 +72,7 @@ uint32_t DenOfIz_Format_NumBytes( const DenOfIz_Format format )
     case DENOFIZ_FORMAT_R8_SINT:
     case DENOFIZ_FORMAT_R8_TYPELESS:
         return 1;
-        // Recheck what the below are and what the expected sizes are.
+        // Block compressed formats: bytes per 4x4 block.
     case DENOFIZ_FORMAT_BC1_UNORM:
     case DENOFIZ_FORMAT_BC1_UNORM_SRGB:
         return 8;

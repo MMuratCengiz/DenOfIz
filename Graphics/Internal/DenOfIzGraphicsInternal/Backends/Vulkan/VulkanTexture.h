@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -44,13 +33,13 @@ namespace DenOfIz
         VkImageAspectFlags       m_aspect{ };
         VmaAllocation            m_allocation{ };
         uint32_t                 m_mipLevels{ };
-        // Mutable because this value is already changed elsewhere, NotifyLayoutChange is simply letting state tracker know.
+        // Mutable: the layout is changed by recorded barriers, NotifyLayoutChange only lets the state tracker know.
         mutable VkImageLayout m_layout{ };
 
     public:
         VulkanTexture( VulkanContext *context, const DenOfIz_TextureDesc &desc );
 
-        // Use as render target
+        // Swap chain images
         VulkanTexture( const VkImage &image, const VkImageView &imageView, const VkFormat format, const VkImageAspectFlags imageAspect, const DenOfIz_TextureDesc &desc );
         void NotifyLayoutChange( const VkImageLayout newLayout ) const;
         void UpdateExternal( const VkImage &image, const VkImageView &imageView, const DenOfIz_TextureDesc &desc );

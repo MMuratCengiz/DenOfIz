@@ -38,14 +38,6 @@ namespace DenOfIz
                     return;
                 }
 
-#if NET6_0_OR_GREATER
-                if ( OperatingSystem.IsBrowser() )
-                {
-                    isInitialised = true;
-                    return;
-                }
-#endif
-
                 NativeLibrary.SetDllImportResolver( typeof( DenOfIzRuntime ).Assembly, ResolveLibrary );
 
                 IReadOnlyList<string> candidates;
@@ -221,13 +213,6 @@ namespace DenOfIz
 
         private static (string nugetRid, string devPlatform, string devBinaryFolder, string primaryLibrary) DeterminePlatform()
         {
-#if NET6_0_OR_GREATER
-            if ( OperatingSystem.IsBrowser() )
-            {
-                return ( "browser-wasm", "wasm", "", "__Internal" );
-            }
-#endif
-
             if ( RuntimeInformation.IsOSPlatform( OSPlatform.Windows ) )
             {
                 Architecture architecture = RuntimeInformation.ProcessArchitecture;

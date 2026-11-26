@@ -9,14 +9,6 @@
 //
 //*********************************************************
 
-//**********************************************************************************************
-//
-// ProceduralPrimitivesLibrary.hlsli
-//
-// An interface to call per geometry intersection tests based on as primitive type.
-//
-//**********************************************************************************************
-
 #ifndef PROCEDURALPRIMITIVESLIBRARY_H
 #define PROCEDURALPRIMITIVESLIBRARY_H
 
@@ -27,7 +19,6 @@
 #include "SignedDistancePrimitives.hlsli"
 #include "SignedDistanceFractals.hlsli"
 
-// Analytic geometry intersection test.
 // AABB local space dimensions: <-1,1>.
 bool RayAnalyticGeometryIntersectionTest(in Ray ray, in AnalyticPrimitive::Enum analyticPrimitive, out float thit, out ProceduralPrimitiveAttributes attr)
 {
@@ -45,7 +36,6 @@ bool RayAnalyticGeometryIntersectionTest(in Ray ray, in AnalyticPrimitive::Enum 
     }
 }
 
-// Analytic geometry intersection test.
 // AABB local space dimensions: <-1,1>.
 bool RayVolumetricGeometryIntersectionTest(in Ray ray, in VolumetricPrimitive::Enum volumetricPrimitive, out float thit, out ProceduralPrimitiveAttributes attr, in float elapsedTime)
 {
@@ -89,8 +79,7 @@ float GetDistanceFromSignedDistancePrimitive(in float3 position, in SignedDistan
                    sdBox(position + float3(1, 1, 1), float3(2, 2, 2)));
     
     case SignedDistancePrimitive::FractalPyramid: 
-         // Let pyramid have a base at y == -1 of AABB => position + float3(0,1,0) 
-         // Pyramid: 63.435 degrees at base, height 2
+         // Base at y == -1 of the AABB, 63.435 degrees at the base, height 2.
          return sdFractalPyramid(position + float3(0, 1, 0), float3(0.894, 0.447, 2.0), 2.0f);
     
     default: return 0;

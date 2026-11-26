@@ -10,7 +10,7 @@ namespace DenOfIz
     {
         private const int StackTextBytes = 1024;
 
-        /// <summary>Rounded clips evaluated per pixel, see DENOFIZ_UI_MAX_ROUNDED_CLIPS.</summary>
+        // Must match DENOFIZ_UI_MAX_ROUNDED_CLIPS.
         public const int MaxRoundedClips = 4;
 
         internal ulong Handle { get; private set; }
@@ -138,6 +138,16 @@ namespace DenOfIz
         {
             ThrowIfDisposed();
             Methods.DenOfIz_UI_RemoveFont(Handle, fontId);
+        }
+
+        public unsafe void SetFontFallbacks(ushort fontId, ReadOnlySpan<ushort> fallbackIds)
+        {
+            ThrowIfDisposed();
+            fixed (ushort* elements = fallbackIds)
+            {
+                var array = new UInt16Array { Elements = (IntPtr)elements, NumElements = (ulong)fallbackIds.Length };
+                Methods.DenOfIz_UI_SetFontFallbacks(Handle, fontId, in array);
+            }
         }
 
         public void BeginFrame(float deltaTime)

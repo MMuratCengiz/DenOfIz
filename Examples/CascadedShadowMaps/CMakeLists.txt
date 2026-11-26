@@ -13,4 +13,3 @@ target_link_libraries(DenOfIzExamples-CascadedShadowMaps
         DenOfIzExamples-Base
 )
 denofiz_app(DenOfIzExamples-CascadedShadowMaps)
-denofiz_setup_target(DenOfIzExamples-CascadedShadowMaps)

@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphicsInternal/Backends/Metal/MetalTexture.h"
@@ -54,7 +43,6 @@ MetalTexture::MetalTexture( MetalContext *context, const DenOfIz_TextureDesc &de
     textureDesc.pixelFormat      = DenOfIz_MetalEnumConverter_ConvertFormat( m_desc.Format );
     textureDesc.textureType      = m_textureType;
 
-    // TODO validate:
     switch ( m_desc.HeapType )
     {
     case DENOFIZ_HEAP_TYPE_GPU:
@@ -86,8 +74,7 @@ MetalTexture::MetalTexture( MetalContext *context, const DenOfIz_TextureDesc &de
         textureDesc.usage |= MTLTextureUsageRenderTarget;
     }
 
-    // Create the texture resource
-    m_texture       = [m_context->Device newTextureWithDescriptor:textureDesc];
+    m_texture      = [m_context->Device newTextureWithDescriptor:textureDesc];
     m_textureUsage  = textureDesc.usage;
     @autoreleasepool
     {
@@ -226,10 +213,6 @@ id<MTLTexture> MetalTexture::MipView( uint32_t mipLevel )
 
 MetalTexture::~MetalTexture( )
 {
-    for ( id<MTLTexture> mipView : m_mipViews )
-    {
-        mipView = nil;
-    }
     m_mipViews.clear( );
 }
 const id<MTLTexture> &MetalTexture::Instance( ) const

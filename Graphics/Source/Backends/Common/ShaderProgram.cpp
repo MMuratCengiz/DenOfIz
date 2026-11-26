@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphics/Backends/Common/ShaderProgram.h"
@@ -27,12 +16,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include "DenOfIzGraphicsInternal/Utilities/StringStore.h"
 
-#ifndef DZ_DXC_NOT_SUPPORTED
 #include "DenOfIzGraphics/Assets/Shaders/ShaderCompiler.h"
 #include "DenOfIzGraphicsInternal/Assets/Shaders/DxcEnumConverter.h"
 #include "DenOfIzGraphicsInternal/Assets/Shaders/DxilToMsl.h"
 #include "DenOfIzGraphicsInternal/Assets/Shaders/ReflectionDebugOutput.h"
-#include "DenOfIzGraphicsInternal/Assets/Shaders/SPIRVToWGSL.h"
 #include "DenOfIzGraphicsInternal/Assets/Shaders/ShaderReflectionHelper.h"
 
 #ifdef _WIN32
@@ -44,7 +31,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 #include "dxcapi.h"
-#endif
 
 using namespace DenOfIz;
 
@@ -58,7 +44,6 @@ namespace DenOfIz
         std::vector<DenOfIz_RootConstantBindingDesc>         RootConstants;
     };
 
-#ifndef DZ_DXC_NOT_SUPPORTED
 #define DXC_CHECK_RESULT( result )                                                                                                                                                 \
     do                                                                                                                                                                             \
     {                                                                                                                                                                              \
@@ -80,15 +65,11 @@ namespace DenOfIz
         ID3D12FunctionReflection                      *FunctionReflection;
         int                                            ShaderIndex;
     };
-#endif
 
     class ShaderProgram
     {
     public:
-        // Member variables
-#ifndef DZ_DXC_NOT_SUPPORTED
         DenOfIz_ShaderCompiler m_compiler = DENOFIZ_NULL_HANDLE;
-#endif
         std::vector<std::unique_ptr<DenOfIz_CompiledShaderStage>>  m_compiledShaders;
         std::vector<DenOfIz_CompiledShaderStage *>                 m_compiledShaderPtrs;
         std::vector<DenOfIz_ShaderStageDesc>                       m_shaderDescs; // Index matched with m_compiledShaders
@@ -129,13 +110,11 @@ namespace DenOfIz
         void ProcessBindlessArrays( );
         void FinalizeBindGroupLayouts( );
 
-#ifndef DZ_DXC_NOT_SUPPORTED
         void InitInputLayout( ID3D12ShaderReflection *shaderReflection, DenOfIz_InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc );
         void ReflectShader( ReflectionState &state );
         void ReflectLibrary( ReflectionState &state );
         void ProcessInputBindingDesc( ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex );
         bool UpdateBoundResourceStage( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc );
-#endif
     };
 
 } // namespace DenOfIz
@@ -143,9 +122,7 @@ namespace DenOfIz
 ShaderProgram::ShaderProgram( const DenOfIz_ShaderProgramDesc &desc ) : m_reflectDesc( { } ), m_desc( { } )
 {
     DeepCopyDesc( desc );
-#ifndef DZ_DXC_NOT_SUPPORTED
     m_compiler = DenOfIz_ShaderCompiler_Create( );
-#endif
     Compile( );
     CreateReflectionData( );
 }
@@ -262,7 +239,6 @@ ShaderProgram::ShaderProgram( DenOfIz_ShaderAssetReader reader ) : m_reflectDesc
         compiledShaderStage->DXIL                           = stageAsset->DXIL;
         compiledShaderStage->MSL                            = stageAsset->MSL;
         compiledShaderStage->SPIRV                          = stageAsset->SPIRV;
-        compiledShaderStage->WGSL                           = stageAsset->WGSL;
         compiledShaderStage->Reflection                     = stageAsset->Reflection;
         m_compiledShaders.emplace_back( std::unique_ptr<DenOfIz_CompiledShaderStage>( compiledShaderStage ) );
         m_compiledShaderPtrs.push_back( compiledShaderStage );
@@ -282,9 +258,7 @@ ShaderProgram::~ShaderProgram( )
             free( data.Elements );
         }
     }
-#ifndef DZ_DXC_NOT_SUPPORTED
     DenOfIz_ShaderCompiler_Destroy( m_compiler );
-#endif
     if ( DENOFIZ_HANDLE_IS_VALID( m_shaderAsset ) )
     {
         DenOfIz_ShaderAsset_Destroy( m_shaderAsset );
@@ -309,21 +283,15 @@ DenOfIz_ShaderProgramDesc &ShaderProgram::Desc( )
     return m_desc;
 }
 
-/**
- * \brief Compiles the shaders targeting MSL/DXIL/SPIR-V. MSL is double compiled, first time to DXIL and reflect and provide a root signature to the second compilation.
- */
+// MSL is converted from the DXIL, whose reflection provides the root signature the conversion needs.
 void ShaderProgram::Compile( )
 {
-#ifdef DZ_DXC_NOT_SUPPORTED
-    spdlog::error( "ShaderProgram: Runtime shader compilation is not supported when DXC is disabled. Use pre-compiled shader assets instead." );
-    return;
-#else
     std::vector<DenOfIz_CompiledShaderStage *> dxilShaders;
 
     for ( uint32_t i = 0; i < m_desc.ShaderStages.NumElements; ++i )
     {
         const auto &stage = m_desc.ShaderStages.Elements[ i ];
-        // Validate Shader
+
         if ( stage.Path.NumChars == 0 && stage.Data.NumElements == 0 )
         {
             spdlog::error( "Either stage.Path or stage.Data must be set for stage {} ", i );
@@ -364,7 +332,6 @@ void ShaderProgram::Compile( )
         compiledShader->DXIL       = dxil;
         compiledShader->SPIRV      = spirv;
         compiledShader->MSL        = { }; // Set below
-        compiledShader->WGSL       = { }; // Set below
 
         m_shaderDescs.push_back( stage );
     }
@@ -405,68 +372,10 @@ void ShaderProgram::Compile( )
 #else
     spdlog::warn( "MSL compilation is not supported on this platform" );
 #endif
-
-    std::vector<DenOfIz_CompiledShaderStage> wgslSpirvShaders( m_compiledShaders.size( ) );
-    std::vector<DenOfIz_ByteArray>           wgslSpirvData( m_compiledShaders.size( ) );
-
-    for ( uint32_t i = 0; i < m_desc.ShaderStages.NumElements; ++i )
-    {
-        const auto         &stage              = m_desc.ShaderStages.Elements[ i ];
-        DenOfIz_CompileDesc compileDesc        = { };
-        compileDesc.Path                       = stage.Path;
-        compileDesc.CodePage                   = stage.CodePage;
-        compileDesc.Data                       = stage.Data;
-        compileDesc.Defines                    = stage.Defines;
-        compileDesc.EntryPoint                 = stage.EntryPoint;
-        compileDesc.Stage                      = stage.Stage;
-        compileDesc.TargetIL                   = DENOFIZ_TARGET_IL_SPIRV;
-        compileDesc.SupportNonZeroBaseInstance = false;
-        compileDesc.IncludeHandler             = m_desc.IncludeHandler;
-
-        DenOfIz_CompileResult spirvCompilation{ };
-        DenOfIz_ShaderCompiler_CompileHLSL( m_compiler, &compileDesc, &spirvCompilation );
-        wgslSpirvData[ i ] = spirvCompilation.Code;
-        m_dataToClean.push_back( spirvCompilation.Code );
-
-        wgslSpirvShaders[ i ].Stage      = stage.Stage;
-        wgslSpirvShaders[ i ].EntryPoint = stage.EntryPoint;
-        wgslSpirvShaders[ i ].SPIRV      = wgslSpirvData[ i ];
-    }
-
-    std::vector<DenOfIz_CompiledShaderStage *> wgslSpirvShaderPtrs( wgslSpirvShaders.size( ) );
-    for ( uint32_t i = 0; i < wgslSpirvShaders.size( ); ++i )
-    {
-        wgslSpirvShaderPtrs[ i ] = &wgslSpirvShaders[ i ];
-    }
-
-    SPIRVToWGSLDesc spirvToWgslDesc{ };
-    spirvToWgslDesc.Shaders                  = m_desc.ShaderStages;
-    spirvToWgslDesc.SPIRVShaders.NumElements = wgslSpirvShaderPtrs.size( );
-    spirvToWgslDesc.SPIRVShaders.Elements    = wgslSpirvShaderPtrs.data( );
-
-    std::vector<DenOfIz_ByteArray> wgslShaders( m_compiledShaders.size( ) );
-    DenOfIz_ByteArrayArray         wgslShadersArray{ };
-    wgslShadersArray.NumElements   = wgslShaders.size( );
-    wgslShadersArray.Elements      = wgslShaders.data( );
-    spirvToWgslDesc.OutWGSLShaders = &wgslShadersArray;
-
-    const SPIRVToWGSL spirvToWgsl{ };
-    spirvToWgsl.Convert( spirvToWgslDesc );
-
-    for ( uint32_t i = 0; i < wgslShaders.size( ); ++i )
-    {
-        m_compiledShaders[ i ]->WGSL = wgslShaders[ i ];
-        m_dataToClean.push_back( wgslShaders[ i ] );
-    }
-#endif // DZ_DXC_NOT_SUPPORTED
 }
 
 void ShaderProgram::CreateReflectionData( )
 {
-#ifdef DZ_DXC_NOT_SUPPORTED
-    spdlog::info( "ShaderProgram: Using pre-compiled reflection data from shader asset" );
-    return;
-#else
     IDxcUtils    *dxcUtils = nullptr;
     const HRESULT hr       = DxcCreateInstance( CLSID_DxcUtils, IID_PPV_ARGS( &dxcUtils ) );
     if ( FAILED( hr ) )
@@ -563,10 +472,8 @@ void ShaderProgram::CreateReflectionData( )
     m_reflectDesc.LocalRootSignatures.Elements    = m_localRootSignatures.data( );
     m_reflectDesc.ThreadGroups.NumElements        = m_threadGroupInfos.size( );
     m_reflectDesc.ThreadGroups.Elements           = m_threadGroupInfos.data( );
-#endif // DZ_DXC_NOT_SUPPORTED
 }
 
-#ifndef DZ_DXC_NOT_SUPPORTED
 DenOfIz_Format MaskToFormat( const D3D_REGISTER_COMPONENT_TYPE componentType, const uint32_t mask )
 {
     switch ( componentType )
@@ -613,8 +520,7 @@ DenOfIz_Format MaskToFormat( const D3D_REGISTER_COMPONENT_TYPE componentType, co
         default:
             return DENOFIZ_FORMAT_UNDEFINED;
         }
-#ifdef D3D_READY // Removed because they used to work with Directx Headers, however the dependency is now removed depending on DXC version which is a bit behind and doesn't have
-                 // these values
+#ifdef D3D_READY // The DXC version used lacks these component types, they came from the DirectX headers
     case D3D_REGISTER_COMPONENT_UINT16:
         switch ( mask )
         {
@@ -691,8 +597,8 @@ void ShaderProgram::ReflectLibrary( ReflectionState &state )
         D3D12_FUNCTION_DESC       functionDesc{ };
         DXC_CHECK_RESULT( functionReflection->GetDesc( &functionDesc ) );
 
-        { // Only process the matching function
-            // Check if the name is not mangled to start with
+        {
+            // Only the entry point's function, its name may be mangled.
             std::string_view mangledName( functionDesc.Name );
             const bool       isMangled = mangledName.starts_with( "\01?" ) || mangledName.starts_with( "\x1?" );
             std::string      entryPoint( state.CompiledShader->EntryPoint.Chars, state.CompiledShader->EntryPoint.NumChars );
@@ -724,8 +630,7 @@ void ShaderProgram::ProcessInputBindingDesc( ReflectionState &state, const D3D12
     {
         return;
     }
-    const bool                        isLocal     = ShaderReflectionHelper::IsBindingLocalTo( state.ShaderDesc->RayTracing, shaderInputBindDesc );
-    const DenOfIz_ResourceBindingType bindingType = DxcEnumConverter::ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
+    const bool isLocal = ShaderReflectionHelper::IsBindingLocalTo( state.ShaderDesc->RayTracing, shaderInputBindDesc );
     if ( shaderInputBindDesc.Space == DENOFIZ_ROOT_CONSTANT_REGISTER_SPACE && !isLocal )
     {
         DenOfIz_RootConstantBindingDesc &rootConstantBinding = m_bindGroupLayoutState.RootConstants.emplace_back( DenOfIz_RootConstantBindingDesc{ } );
@@ -750,13 +655,12 @@ void ShaderProgram::ProcessInputBindingDesc( ReflectionState &state, const D3D12
         }
     }
 
-    // Skip creating regular resource binding for bindless arrays as they're handled separately
+    // Bindless arrays are bound separately.
     if ( isBindlessArray )
     {
         return;
     }
 
-    // If this register space is configured to be a LocalRootSignature, then populate the corresponding Bindings.
     if ( isLocal )
     {
         DenOfIz_LocalResourceBindingDesc &localBindingDesc = state.LocalResourceBindings->emplace_back( );
@@ -870,7 +774,6 @@ void ShaderProgram::InitInputLayout( ID3D12ShaderReflection *shaderReflection, D
     }
 }
 
-#endif // DZ_DXC_NOT_SUPPORTED
 
 void ShaderProgram::ProcessBindlessArrays( )
 {

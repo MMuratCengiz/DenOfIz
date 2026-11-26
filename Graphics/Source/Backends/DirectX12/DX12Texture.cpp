@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12Texture.h"
@@ -149,8 +138,7 @@ DX12Texture::~DX12Texture( )
                 m_context->DsvDescriptorHeap->FreeDescriptors( handle, 1 );
             }
         }
-        // DX12Texture is a unique use case, since it can also be initialized by SwapChain which owns its own resource
-        // Therefore manual memory management is required in this specific use case.
+        // Released by hand rather than by com_ptr because swap chain textures wrap a resource the swap chain owns.
         m_allocation->Release( );
         m_resource->Release( );
     }

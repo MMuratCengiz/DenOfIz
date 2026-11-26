@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
@@ -26,10 +15,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vector>
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
-
-#ifdef EMSCRIPTEN
-#include <emscripten.h>
-#endif
 
 namespace DenOfIz
 {
@@ -122,12 +107,10 @@ BatchResourceCopy::BatchResourceCopy( const DenOfIz_BatchResourceCopyDesc &desc 
 
 BatchResourceCopy::~BatchResourceCopy( )
 {
-#ifndef EMSCRIPTEN
     if ( m_cleanResourcesFuture.valid( ) )
     {
         m_cleanResourcesFuture.wait( );
     }
-#endif
 
     for ( auto &resource : m_resourcesToClean )
     {
@@ -477,17 +460,7 @@ void BatchResourceCopy::Submit( DenOfIz_Semaphore notify )
     desc.CommandLists.Elements        = &m_copyCommandList;
     desc.CommandLists.NumElements     = 1;
     DenOfIz_CommandQueue_ExecuteCommandLists( m_copyQueue, &desc );
-#ifdef EMSCRIPTEN
-    emscripten_async_call(
-        []( void *userData )
-        {
-            auto *batch = static_cast<BatchResourceCopy *>( userData );
-            batch->CleanResources( );
-        },
-        this, 100 );
-#else
     m_cleanResourcesFuture = std::async( std::launch::async, [ this ] { CleanResources( ); } );
-#endif
 
     if ( m_issueBarriers )
     {

@@ -74,7 +74,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-release
-          path: install/Install_Windows
+          path: install/DenOfIz/Install_Windows
 
   build-linux:
     needs: read-version
@@ -107,7 +107,6 @@ jobs:
           sudo update-alternatives --install /usr/bin/lld lld /usr/bin/lld-17 100
           sudo apt-get install -y ninja-build build-essential
           sudo apt-get install -y libglu1-mesa-dev freeglut3-dev libvulkan-dev libsdl2-dev
-          sudo apt-get install -y libfreetype-dev libharfbuzz-dev
           sudo apt-get install -y libltdl-dev libtool autoconf automake autoconf-archive
           sudo apt-get install -y libwayland-dev libxkbcommon-dev libegl1-mesa-dev
           sudo apt-get install -y libibus-1.0-dev libxtst-dev
@@ -134,7 +133,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-release
-          path: install/Install_Linux
+          path: install/DenOfIz/Install_Linux
 
   build-macos:
     needs: read-version
@@ -157,7 +156,6 @@ jobs:
       - name: Install dependencies
         run: |
           brew install ninja
-          brew install freetype harfbuzz
           brew install sdl2
           brew install autoconf automake autoconf-archive
 
@@ -181,54 +179,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-release
-          path: install/Install_OSX
-
-  build-emscripten:
-    needs: read-version
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
-
-      - name: Export GitHub Actions cache environment variables
-        uses: actions/github-script@v7
-        with:
-          script: |
-            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build build-essential
-
-      - uses: lukka/get-cmake@latest
-
-      - name: Setup Emscripten
-        uses: mymindstorm/setup-emsdk@v14
-        with:
-          version: 'latest'
-
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          doNotCache: false
-
-      - name: Configure & Build
-        uses: lukka/run-cmake@v10
-        with:
-          configurePreset: 'Install_Emscripten'
-          buildPreset: 'Install_Emscripten'
-
-      - name: Upload Emscripten Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: emscripten-release
-          path: install/Install_Emscripten
+          path: install/DenOfIz/Install_OSX
 
   create-release:
-    needs: [read-version, build-windows, build-linux, build-macos, build-emscripten]
+    needs: [read-version, build-windows, build-linux, build-macos]
     runs-on: ubuntu-latest
     steps:
       - name: Download Windows Artifacts
@@ -248,12 +202,6 @@ jobs:
         with:
           name: macos-release
           path: release/macos
-
-      - name: Download Emscripten Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: emscripten-release
-          path: release/emscripten
 
       - name: Create Release Archive
         run: |

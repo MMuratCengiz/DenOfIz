@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphics/Support/RingBuffer.h"
@@ -45,7 +34,6 @@ namespace DenOfIz
         size_t                 m_numEntries;
         size_t                 m_alignedNumBytes;
         size_t                 m_totalNumBytes;
-        size_t                 m_maxChunkNumBytes;
         bool                   m_isStructuredBuffer{ };
         bool                   m_memoryMapped{ };
 
@@ -64,8 +52,7 @@ namespace DenOfIz
         size_t        GetChunkIndexForEntry( size_t entryIndex ) const;
     };
 
-    RingBuffer::RingBuffer( const DenOfIz_RingBufferDesc *desc ) :
-        m_dataNumBytes( desc->DataNumBytes ), m_numEntries( desc->NumEntries ), m_maxChunkNumBytes( desc->MaxChunkNumBytes )
+    RingBuffer::RingBuffer( const DenOfIz_RingBufferDesc *desc ) : m_dataNumBytes( desc->DataNumBytes ), m_numEntries( desc->NumEntries )
     {
         if ( desc->LogicalDevice == DENOFIZ_NULL_HANDLE )
         {

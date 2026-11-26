@@ -2,42 +2,52 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
 
-#include "DenOfIzGraphics/Assets/Serde/Font/FontAsset.h"
 #include "DenOfIzGraphics/Handle.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
+    // A TrueType or OpenType face, immutable once created. DenOfIz_TextRenderer and DenOfIz_UI borrow fonts: the caller destroys a font, and
+    // only once nothing has it registered.
     DENOFIZ_DEFINE_HANDLE( DenOfIz_Font )
 
+    // Data is copied. FaceIndex selects a face of a font collection.
     typedef struct DenOfIz_FontDesc
     {
-        DenOfIz_FontAsset FontAsset;
+        DenOfIz_ByteArrayView Data;
+        uint32_t              FaceIndex;
     } DenOfIz_FontDesc;
 
-#define DENOFIZ_FONT_MSDF_PIXEL_RANGE 6.0f
+    // In ems, multiply by the font size. Descent and UnderlinePos are distances below the baseline.
+    typedef struct DenOfIz_FontMetrics
+    {
+        float Ascent;
+        float Descent;
+        float LineGap;
+        float LineHeight;
+        float UnderlinePos;
+        float UnderlineThickness;
+        float CapHeight;
+    } DenOfIz_FontMetrics;
 
-    DZ_API DenOfIz_FontAsset  DenOfIz_Font_Asset( DenOfIz_Font font );
-    DZ_API DenOfIz_FontGlyph *DenOfIz_Font_GetGlyph( DenOfIz_Font font, uint32_t codePoint );
-    DZ_API float              DenOfIz_Font_MsdfPixelRange( );
+    // NULL when the data holds no face at FaceIndex.
+    DZ_API DenOfIz_Font DenOfIz_Font_Create( const DenOfIz_FontDesc *desc );
+    // A relative path is resolved against DenOfIz_FSConfig's asset path.
+    DZ_API DenOfIz_Font DenOfIz_Font_CreateFromPath( DenOfIz_StringView path, uint32_t faceIndex );
+    // Does nothing for the default font.
+    DZ_API void DenOfIz_Font_Destroy( DenOfIz_Font font );
+    // The built in font, shared and alive until the process exits.
+    DZ_API DenOfIz_Font        DenOfIz_Font_GetDefault( );
+    DZ_API DenOfIz_FontMetrics DenOfIz_Font_GetMetrics( DenOfIz_Font font );
+    DZ_API bool                DenOfIz_Font_HasCodePoint( DenOfIz_Font font, uint32_t codePoint );
 
 #ifdef __cplusplus
 }

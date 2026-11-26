@@ -9,10 +9,10 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>
     <projectUrl>https://github.com/MartinJespersen/DenOfIz</projectUrl>
-    <description>Cross-platform graphics abstraction library with C# bindings for native platforms. Supports DirectX12, Vulkan, Metal, and WebGPU backends on Windows, Linux, and macOS. For Blazor WebAssembly, use DenOfIzGraphics.Blazor instead.</description>
+    <description>Cross-platform graphics abstraction library with C# bindings for native platforms. Supports DirectX12, Vulkan, and Metal backends on Windows, Linux, and macOS.</description>
     <releaseNotes>See https://github.com/MartinJespersen/DenOfIz/releases for release notes.</releaseNotes>
     <copyright>Copyright Den Of Iz</copyright>
-    <tags>graphics DirectX12 Vulkan Metal WebGPU rendering 3D game-development</tags>
+    <tags>graphics DirectX12 Vulkan Metal rendering 3D game-development</tags>
     <repository type="git" url="https://github.com/MartinJespersen/DenOfIz.git" />
     <readme>README.md</readme>
     <dependencies>

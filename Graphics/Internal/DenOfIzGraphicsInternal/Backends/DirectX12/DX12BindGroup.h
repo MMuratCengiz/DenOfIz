@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -56,7 +45,7 @@ namespace DenOfIz
     public:
         DX12BindGroup( DX12Context *context, const DenOfIz_BindGroupDesc &desc );
         ~DX12BindGroup( ) override;
-        // Properties: --
+
         [[nodiscard]] DescriptorHandle                       CbvSrvUavHandle( ) const;
         [[nodiscard]] DescriptorHandle                       SamplerHandle( ) const;
         [[nodiscard]] uint32_t                               Version( ) const;
@@ -65,7 +54,7 @@ namespace DenOfIz
         [[nodiscard]] DX12BindGroupLayout                   *BindGroupLayout( ) const;
         [[nodiscard]] const std::vector<DX12RootDescriptor> &RootDescriptors( ) const;
         [[nodiscard]] uint32_t                               RegisterSpace( ) const;
-        // --
+
         IBindGroup *BeginUpdate( ) override;
         IBindGroup *Cbv( const uint32_t binding, IBuffer *resource ) override;
         IBindGroup *Cbv( const uint32_t binding, IBuffer *resource, size_t offset ) override;

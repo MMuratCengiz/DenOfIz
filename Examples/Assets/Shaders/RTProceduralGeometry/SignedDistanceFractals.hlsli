@@ -9,23 +9,12 @@
 //
 //*********************************************************
 
-//**********************************************************************************************
-//
-// SignedDistanceFractals.hlsli
-//
-// Set of signed distance fractal tests.
-//
-//**********************************************************************************************
-
 #ifndef SIGNEDDISTANCEFRACTALS_H
 #define SIGNEDDISTANCEFRACTALS_H
 
 #include "RaytracingShaderHelper.hlsli"
 #include "SignedDistancePrimitives.hlsli"
 
-//------------------------------------------------------------------
-
-// Returns a signed distance to a recursive pyramid fractal.
 // h = { sin a, cos a, height of a pyramid}.
 // a = pyramid's inner angle between its side plane and a ground plane.
 // Pyramid position - sitting on a ground plane.

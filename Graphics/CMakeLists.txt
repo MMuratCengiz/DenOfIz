@@ -1,11 +1,7 @@
-option(DZ_INSTALL "Enable install" ON)
-
 include("${PROJECT_SOURCE_DIR}/cmake/common.cmake")
 
 include(Packages.cmake)
 include(Sources.cmake)
-
-copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 
 add_library(DenOfIzGraphics ${DENOFIZ_GRAPHICS_SOURCES})
 
@@ -39,11 +35,6 @@ install(TARGETS DenOfIzGraphics
 )
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Include/
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        FILES_MATCHING
-        PATTERN "*.h"
-)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Api/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         FILES_MATCHING
         PATTERN "*.h"
@@ -97,12 +88,6 @@ install(FILES
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/DenOfIzGraphics
 )
 
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/Fonts
-        DESTINATION share/DenOfIz
-        FILES_MATCHING PATTERN "*.dzfont"
-        PATTERN "README.md"
-)
-
 install(EXPORT DenOfIzGraphicsTargets
         FILE DenOfIzGraphicsTargets.cmake
         NAMESPACE DenOfIz::
@@ -114,14 +99,9 @@ target_include_directories(DenOfIzGraphics
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/Tiny>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/include>
         $<BUILD_INTERFACE:${OZZ_ANIMATION_INCLUDE_DIR}>
-        $<BUILD_INTERFACE:${MSDF_ATLAS_GEN_INCLUDE_DIR}>
 )
 
 target_include_default_directories(DenOfIzGraphics)
-target_include_directories(DenOfIzGraphics PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Api/Include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-)
 target_include_directories(DenOfIzGraphics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Internal)
 target_include_directories(DenOfIzGraphics PRIVATE ${Stb_INCLUDE_DIR})
 target_include_directories(DenOfIzGraphics PRIVATE ${CGLTF_INCLUDE_DIRS})
@@ -130,29 +110,19 @@ target_link_libraries(DenOfIzGraphics PRIVATE
         spdlog::spdlog
         Microsoft::DirectXMath
         SDL3::SDL3
-        Freetype::Freetype
         harfbuzz::harfbuzz
+        SheenBidi::SheenBidi
+        libunibreak::libunibreak
         yoga::yogacore
-        msdfgen::msdfgen-core
-        msdfgen::msdfgen-ext
         miniz::miniz
         $<BUILD_INTERFACE:ozz_animation>
         $<BUILD_INTERFACE:ozz_geometry>
-        $<BUILD_INTERFACE:ozz_animation_offline>
-        $<BUILD_INTERFACE:msdf-atlas-gen::msdf-atlas-gen>
-        $<$<NOT:$<BOOL:${TARGET_PLATFORM_WEB}>>:msdfgen::msdfgen>
-        $<$<NOT:$<BOOL:${TARGET_PLATFORM_WEB}>>:msdfgen::msdfgen-full>)
+        $<BUILD_INTERFACE:ozz_animation_offline>)
 
 if (BUILD_SHARED_LIBS)
     target_compile_definitions(DenOfIzGraphics PRIVATE DZ_GRAPHICS_EXPORTS)
-    target_compile_definitions(DenOfIzGraphics PRIVATE GLOG_EXPORT)
     target_compile_definitions(DenOfIzGraphics INTERFACE DZ_GRAPHICS_IMPORTS)
-    target_compile_definitions(DenOfIzGraphics PRIVATE BUILD_SHARED_LIBS)
-    if (NOT DZ_INSTALL)
-        target_compile_definitions(DenOfIzGraphics PRIVATE STB_IMPLEMENTATION)
-    endif ()
 else ()
-    target_compile_definitions(DenOfIzGraphics PUBLIC GLOG_NO_EXPORT)
     target_link_libraries(DenOfIzGraphics
             PRIVATE
             SDL3::SDL3-static
@@ -182,9 +152,6 @@ if (TARGET_PLATFORM_WINDOWS)
                 "${CMAKE_BINARY_DIR}/metalirconverter.dll"
                 COPYONLY
         )
-
-        add_library(metalirconverter STATIC IMPORTED)
-        set_target_properties(metalirconverter PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/lib/win/${CPU_ARCHITECTURE}/metalirconverter.lib")
     else ()
         target_compile_definitions(DenOfIzGraphics PRIVATE DZ_NO_METAL_SHADER_CONVERTER)
     endif ()
@@ -198,6 +165,7 @@ if (TARGET_PLATFORM_WINDOWS)
             PRIVATE
             dxgi
             d3d12
+            dwrite
             dxcompiler
             $<$<TARGET_EXISTS:WIL::WIL>:WIL::WIL>
             Microsoft::DirectX-Headers
@@ -212,18 +180,6 @@ if (TARGET_PLATFORM_WINDOWS)
         )
     endif ()
 
-    if (TARGET Microsoft::DirectX12-Agility)
-        target_link_libraries(DenOfIzGraphics
-                PRIVATE
-                Microsoft::DirectX12-Agility
-        )
-        file(MAKE_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/D3D12")
-        add_custom_command(TARGET DenOfIzGraphics POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:Microsoft::DirectX12-Core,IMPORTED_LOCATION_RELEASE> $<TARGET_FILE_DIR:DenOfIzGraphics>/D3D12
-                COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:Microsoft::DirectX12-Layers,IMPORTED_LOCATION_DEBUG> $<TARGET_FILE_DIR:DenOfIzGraphics>/D3D12
-                COMMAND_EXPAND_LISTS
-        )
-    endif ()
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_DX12)
 endif ()
 if (TARGET_PLATFORM_MACOS)
@@ -260,9 +216,10 @@ if (TARGET_PLATFORM_MACOS)
     target_link_libraries(DenOfIzGraphics
             PRIVATE ${metal_irconverter_LIBRARIES}
             PRIVATE "-framework Cocoa"
+            PRIVATE "-framework CoreFoundation"
+            PRIVATE "-framework CoreText"
             PRIVATE "-framework Foundation"
             PRIVATE "-framework Metal"
-            PRIVATE "-framework MetalKit"
             PRIVATE dxcompiler
     )
 
@@ -306,6 +263,7 @@ if (TARGET_PLATFORM_LINUX)
     target_link_libraries(DenOfIzGraphics
             PRIVATE
             dxcompiler
+            ${CMAKE_DL_LIBS}
             # Microsoft::DirectX-Headers # Can't use this because it conflicts with Dxc
     )
 
@@ -329,117 +287,19 @@ if (TARGET_PLATFORM_WINDOWS OR TARGET_PLATFORM_LINUX)
             GPUOpen::VulkanMemoryAllocator)
 endif ()
 
-if (BUILD_WEBGPU_NATIVE)
-    include(FetchContent)
-    FetchContent_Declare(
-            webgpu
-            GIT_REPOSITORY https://github.com/eliemichel/WebGPU-distribution
-            GIT_TAG wgpu-v24.0.0.2
-    )
-    FetchContent_MakeAvailable(webgpu)
-    FetchContent_Declare(
-            sdl3webgpu
-            GIT_REPOSITORY https://github.com/eliemichel/sdl3webgpu
-            GIT_TAG main
-    )
-    FetchContent_MakeAvailable(sdl3webgpu)
-    target_link_libraries(DenOfIzGraphics PRIVATE
-            $<BUILD_INTERFACE:webgpu>
-            $<BUILD_INTERFACE:sdl3webgpu>
-    )
-    target_copy_webgpu_binaries(DenOfIzGraphics)
-    if (DEFINED WEBGPU_RUNTIME_LIB)
-        if (TARGET_PLATFORM_WINDOWS)
-            install(FILES ${WEBGPU_RUNTIME_LIB}
-                    DESTINATION ${CMAKE_INSTALL_BINDIR}
-            )
-        else ()
-            install(FILES ${WEBGPU_RUNTIME_LIB}
-                    DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            )
-        endif ()
-        set_target_properties(DenOfIzGraphics PROPERTIES WEBGPU_RUNTIME_LIB "${WEBGPU_RUNTIME_LIB}")
-    endif ()
-    target_compile_definitions(DenOfIzGraphics PUBLIC
-            BUILD_WEBGPU
-            BUILD_WEBGPU_NATIVE
-    )
-endif ()
-
-if (NOT TARGET_PLATFORM_WEB)
-    include(FetchContent)
-    set(BUILD_SHARED_LIBS_TEMP_MIXER ${BUILD_SHARED_LIBS})
-    set(BUILD_SHARED_LIBS OFF)
-    FetchContent_Declare(
-            SDL3_mixer
-            GIT_REPOSITORY https://github.com/libsdl-org/SDL_mixer.git
-            GIT_TAG prerelease-3.1.2
-    )
-    FetchContent_MakeAvailable(SDL3_mixer)
-    set(BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS_TEMP_MIXER})
-    target_link_libraries(DenOfIzGraphics PRIVATE $<BUILD_INTERFACE:SDL3_mixer::SDL3_mixer>)
-endif ()
-
-if (TARGET_PLATFORM_WEB)
-    if (EMSCRIPTEN_VERSION VERSION_GREATER_EQUAL "4.0.10")
-        target_compile_options(DenOfIzGraphics PUBLIC
-                "SHELL:--use-port=emdawnwebgpu"
-        )
-        target_link_options(DenOfIzGraphics PUBLIC
-                "SHELL:--use-port=emdawnwebgpu"
-                "SHELL:-sASYNCIFY=1"
-                "SHELL:-sALLOW_MEMORY_GROWTH=1"
-        )
-    elseif (EMSCRIPTEN_VERSION VERSION_GREATER_EQUAL "3.1.56")
-        target_compile_options(DenOfIzGraphics PUBLIC
-                "SHELL:-sUSE_WEBGPU=1"
-        )
-        target_link_options(DenOfIzGraphics PUBLIC
-                "SHELL:-sUSE_WEBGPU=1"
-                "SHELL:-sASYNCIFY=1"
-                "SHELL:-sALLOW_MEMORY_GROWTH=1"
-        )
-    else ()
-        message(FATAL_ERROR "Unsupported emscripten version, use Emscripten 3.1.56+")
-    endif ()
-    target_compile_definitions(DenOfIzGraphics PUBLIC
-            _XM_NO_INTRINSICS_ # DirectxMath
-            DZ_DXC_NOT_SUPPORTED
-            BUILD_WEBGPU
-    )
-
-    set(WASM_COMBINED_OBJ "${CMAKE_BINARY_DIR}/combined.o")
-    set(VCPKG_LIB_DIR "${CMAKE_BINARY_DIR}/vcpkg_installed/wasm32-emscripten/lib")
-
-    add_custom_command(TARGET DenOfIzGraphics POST_BUILD
-        COMMAND ${CMAKE_C_COMPILER} -r -o "${WASM_COMBINED_OBJ}"
-            -Wl,--whole-archive
-            $<TARGET_FILE:DenOfIzGraphics>
-            $<TARGET_FILE:spdlog::spdlog>
-            $<TARGET_FILE:fmt::fmt>
-            $<TARGET_FILE:SDL3::SDL3>
-            "${VCPKG_LIB_DIR}/libfreetype.a"
-            "${VCPKG_LIB_DIR}/libharfbuzz.a"
-            "${VCPKG_LIB_DIR}/libpng.a"
-            "${VCPKG_LIB_DIR}/libbz2.a"
-            "${VCPKG_LIB_DIR}/libbrotlicommon.a"
-            "${VCPKG_LIB_DIR}/libbrotlidec.a"
-            "${VCPKG_LIB_DIR}/libbrotlienc.a"
-            "${VCPKG_LIB_DIR}/libmsdfgen-core.a"
-            "${VCPKG_LIB_DIR}/libmsdfgen-ext.a"
-            "${VCPKG_LIB_DIR}/libminiz.a"
-            $<TARGET_FILE:ozz_animation>
-            $<TARGET_FILE:ozz_animation_offline>
-            $<TARGET_FILE:ozz_geometry>
-            $<TARGET_FILE:ozz_base>
-            $<TARGET_FILE:msdf-atlas-gen::msdf-atlas-gen>
-            -Wl,--no-whole-archive
-        COMMAND ${CMAKE_COMMAND} -E remove $<TARGET_FILE:DenOfIzGraphics>
-        COMMAND ${CMAKE_AR} rcs $<TARGET_FILE:DenOfIzGraphics> "${WASM_COMBINED_OBJ}"
-        COMMAND ${CMAKE_COMMAND} -E remove "${WASM_COMBINED_OBJ}"
-        COMMENT "Bundling all dependencies into libDenOfIzGraphics.a"
-    )
-endif ()
+include(FetchContent)
+set(BUILD_SHARED_LIBS_TEMP_MIXER ${BUILD_SHARED_LIBS})
+set(BUILD_SHARED_LIBS OFF)
+FetchContent_Declare(
+        SDL3_mixer
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL_mixer.git
+        GIT_TAG prerelease-3.1.2
+)
+FetchContent_MakeAvailable(SDL3_mixer)
+# SDL_mixer's cmake_dependent_option writes the temporary OFF into the cache, where an automatic reconfigure would pick it up.
+set(BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS_TEMP_MIXER} CACHE BOOL "Build shared libraries" FORCE)
+set(BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS_TEMP_MIXER})
+target_link_libraries(DenOfIzGraphics PRIVATE $<BUILD_INTERFACE:SDL3_mixer::SDL3_mixer>)
 
 set_target_default_properties(DenOfIzGraphics)
 

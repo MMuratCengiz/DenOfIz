@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -29,11 +18,9 @@ extern "C"
 #endif
 
     /**
-     * @brief A collection of shaders that will be compiled and run at the same time, you can compile shaders one by one using ShaderCompiler, however most backends require root
-     * signature for the whole pipeline, therefore, it is a good idea to compile them together.
-     *
-     * ShaderProgram also provides the ability to reflect the compiled shader code, you can use DenOfIz_ShaderProgramDesc to peek into the shader, or create
-     * RootSignature/InputLayout objects.
+     * The shader stages of one pipeline, compiled and reflected together: the reflection gives the input layout, bind group layouts, root
+     * constants and local root signatures of the whole pipeline. Create copies the desc. Arrays and descs returned by the getters are owned
+     * by the program and valid until it is destroyed.
      */
     DENOFIZ_DEFINE_HANDLE( DenOfIz_ShaderProgram )
 

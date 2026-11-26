@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 #pragma once
 
@@ -61,14 +50,12 @@ namespace DenOfIz
             DirectX::XMFLOAT4   CameraPos;
         };
 
-        // Geometry
         DenOfIz_Buffer                  m_vertexBuffer = DENOFIZ_NULL_HANDLE;
         DenOfIz_Buffer                  m_indexBuffer  = DENOFIZ_NULL_HANDLE;
         std::array<ObjectInfo, NUM_OBJECTS> m_objects{ };
         uint32_t                        m_totalVertices = 0;
         uint32_t                        m_totalIndices  = 0;
 
-        // Shadow pass resources
         DenOfIz_Texture        m_shadowMapArray      = DENOFIZ_NULL_HANDLE;
         DenOfIz_ShaderProgram  m_shadowShaderProgram = DENOFIZ_NULL_HANDLE;
         DenOfIz_InputLayout    m_shadowInputLayout   = DENOFIZ_NULL_HANDLE;
@@ -79,7 +66,6 @@ namespace DenOfIz
         std::vector<DenOfIz_BindGroupLayout> m_shadowBindGroupLayouts;
         ShadowCB              *m_shadowCBData = nullptr;
 
-        // Main pass resources
         DenOfIz_ShaderProgram  m_mainShaderProgram   = DENOFIZ_NULL_HANDLE;
         DenOfIz_InputLayout    m_mainInputLayout     = DENOFIZ_NULL_HANDLE;
         DenOfIz_RootSignature  m_mainRootSignature   = DENOFIZ_NULL_HANDLE;
@@ -90,10 +76,8 @@ namespace DenOfIz
         std::vector<DenOfIz_BindGroupLayout> m_mainBindGroupLayouts;
         SceneCB               *m_sceneCBData = nullptr;
 
-        // Model matrices (stored here for use as push constants in Render)
         std::array<DirectX::XMFLOAT4X4, NUM_OBJECTS> m_models{ };
 
-        // Cascade data
         std::array<float, NUM_CASCADES + 1> m_cascadeSplits{ };
 
         void CreateGeometry( );

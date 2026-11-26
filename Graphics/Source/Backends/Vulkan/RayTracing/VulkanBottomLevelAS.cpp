@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanBottomLevelAS.h"
@@ -95,7 +84,6 @@ VulkanBottomLevelAS::VulkanBottomLevelAS( VulkanContext *context, const DenOfIz_
     scratchBufferDesc.NumBytes           = sizeInfo.buildScratchSize;
     m_scratchBuffer                      = std::make_unique<VulkanBuffer>( m_context, scratchBufferDesc );
 
-    // Create the actual acceleration structure
     VkAccelerationStructureCreateInfoKHR accelCreateInfo = { };
     accelCreateInfo.sType                                = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
     accelCreateInfo.buffer                               = m_asBuffer->Instance( );
@@ -142,7 +130,6 @@ void VulkanBottomLevelAS::InitializeTriangles( const DenOfIz_ASGeometryTriangleD
         triangles.indexType               = triangle.IndexType == DENOFIZ_INDEX_TYPE_UINT16 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
     }
 
-    // Validation
     const static std::unordered_set allowedFormats = { DENOFIZ_FORMAT_R32G32_FLOAT,       DENOFIZ_FORMAT_R32G32B32_FLOAT, DENOFIZ_FORMAT_R16G16_FLOAT,
                                                        DENOFIZ_FORMAT_R16G16B16A16_FLOAT, DENOFIZ_FORMAT_R16G16_SNORM,    DENOFIZ_FORMAT_R16G16B16A16_SNORM };
     if ( !allowedFormats.contains( triangle.VertexFormat ) )

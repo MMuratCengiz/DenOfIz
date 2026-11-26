@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "EmbeddedImGuiShaders.h"
@@ -28,10 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-extern const uint8_t g_ImGuiArrayShadersCompressed[];
-extern const size_t  g_ImGuiArrayShadersCompressedSize;
-extern const uint8_t g_ImGuiSingleShadersCompressed[];
-extern const size_t  g_ImGuiSingleShadersCompressedSize;
+extern const uint8_t g_ImGuiShadersCompressed[];
+extern const size_t  g_ImGuiShadersCompressedSize;
 
 namespace
 {
@@ -66,7 +53,7 @@ namespace
     }
 } // namespace
 
-DenOfIz_ShaderProgram EmbeddedImGuiShaders::GetImGuiArrayShaderProgram( )
+DenOfIz_ShaderProgram EmbeddedImGuiShaders::GetImGuiShaderProgram( )
 {
     static DenOfIz_ShaderProgram cachedProgram = DENOFIZ_NULL_HANDLE;
     static std::mutex            cacheMutex;
@@ -77,24 +64,8 @@ DenOfIz_ShaderProgram EmbeddedImGuiShaders::GetImGuiArrayShaderProgram( )
         return cachedProgram;
     }
 
-    cachedProgram = LoadShaderFromCompressed( g_ImGuiArrayShadersCompressed, g_ImGuiArrayShadersCompressedSize );
+    cachedProgram = LoadShaderFromCompressed( g_ImGuiShadersCompressed, g_ImGuiShadersCompressedSize );
     return cachedProgram;
 }
 
-DenOfIz_ShaderProgram EmbeddedImGuiShaders::GetImGuiSingleShaderProgram( )
-{
-    static DenOfIz_ShaderProgram cachedProgram = DENOFIZ_NULL_HANDLE;
-    static std::mutex            cacheMutex;
-
-    std::lock_guard lock( cacheMutex );
-    if ( DENOFIZ_HANDLE_IS_VALID( cachedProgram ) )
-    {
-        return cachedProgram;
-    }
-
-    cachedProgram = LoadShaderFromCompressed( g_ImGuiSingleShadersCompressed, g_ImGuiSingleShadersCompressedSize );
-    return cachedProgram;
-}
-
-#include "Embedded/ImGuiArrayShadersCompressed.inl"
-#include "Embedded/ImGuiSingleShadersCompressed.inl"
+#include "Embedded/ImGuiShadersCompressed.inl"

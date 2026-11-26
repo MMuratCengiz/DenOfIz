@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 #include "DenOfIzExamples/TransparencyExample.h"
 #include <DirectXMath.h>
@@ -48,9 +37,9 @@ void TransparencyExample::Init( )
         DenOfIz_BatchResourceCopy_Create( &batchDesc, &batchResourceCopy );
         DenOfIz_BatchResourceCopy_Begin( batchResourceCopy );
 
-        m_spheres.push_back( new ColoredSphereAsset( m_logicalDevice, batchResourceCopy, XMFLOAT4( 0.9f, 0.2f, 0.2f, 1.0f ) ) ); // Red
-        m_spheres.push_back( new ColoredSphereAsset( m_logicalDevice, batchResourceCopy, XMFLOAT4( 0.2f, 0.2f, 0.9f, 1.0f ) ) ); // Blue
-        m_spheres.push_back( new ColoredSphereAsset( m_logicalDevice, batchResourceCopy, XMFLOAT4( 0.6f, 0.8f, 1.0f, 0.5f ) ) ); // Light blue glass
+        m_spheres.push_back( new ColoredSphereAsset( m_logicalDevice, batchResourceCopy, XMFLOAT4( 0.9f, 0.2f, 0.2f, 1.0f ) ) );
+        m_spheres.push_back( new ColoredSphereAsset( m_logicalDevice, batchResourceCopy, XMFLOAT4( 0.2f, 0.2f, 0.9f, 1.0f ) ) );
+        m_spheres.push_back( new ColoredSphereAsset( m_logicalDevice, batchResourceCopy, XMFLOAT4( 0.6f, 0.8f, 1.0f, 0.5f ) ) );
 
         DenOfIz_BatchResourceCopy_Submit( batchResourceCopy, DENOFIZ_NULL_HANDLE );
         DenOfIz_BatchResourceCopy_Destroy( batchResourceCopy );
@@ -154,8 +143,6 @@ void TransparencyExample::Render( const uint32_t frameIndex, DenOfIz_CommandList
 
 void TransparencyExample::ModifyApiPreferences( DenOfIz_APIPreference &defaultApiPreference )
 {
-    // defaultApiPreference.Windows = DENOFIZ_API_PREFERENCE_WINDOWS_VULKAN;
-    // defaultApiPreference.OSX = DENOFIZ_API_PREFERENCE_OSX_WEBGPU_NATIVE;
 }
 
 void TransparencyExample::Update( )

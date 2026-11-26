@@ -48,8 +48,6 @@ void MyRaygenShader()
         0.0f);
     if (IsInsideViewport(origin.xy, g_rayGenCB.stencil))
     {
-        // Trace the ray.
-        // Set the ray's extents.
         RayDesc ray;
         ray.Origin = origin;
         ray.Direction = rayDir;
@@ -60,7 +58,6 @@ void MyRaygenShader()
         RayPayload payload = { float4(0, 0, 0, 0) };
         TraceRay(Scene, RAY_FLAG_NONE, 255, 0, 1, 0, ray, payload);
 
-        // Write the raytraced color to the output texture.
         RenderTarget[DispatchRaysIndex().xy] = payload.color;
     }
     else

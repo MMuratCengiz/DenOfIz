@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 #include "DenOfIzExamples/RayTracedProceduralGeometryExample.h"
 
@@ -139,20 +128,17 @@ void RayTracedProceduralGeometryExample::BuildProceduralGeometryAABBs( )
     m_aabbs.resize( IntersectionShaderType::TotalPrimitiveCount );
     UINT offset = 0;
 
-    // Analytic primitives
     {
         m_aabbs[ offset + AnalyticPrimitive::AABB ]    = InitializeAABB( XMFLOAT3( 3, 0, 0 ), XMFLOAT3( 2, 3, 2 ) );
         m_aabbs[ offset + AnalyticPrimitive::Spheres ] = InitializeAABB( XMFLOAT3( 2.25f, 0, 0.75f ), XMFLOAT3( 3, 3, 3 ) );
         offset += AnalyticPrimitive::Count;
     }
 
-    // Volumetric primitives
     {
         m_aabbs[ offset + VolumetricPrimitive::MetaBalls ] = InitializeAABB( XMFLOAT3( 0, 0, 0 ), XMFLOAT3( 3, 3, 3 ) );
         offset += VolumetricPrimitive::Count;
     }
 
-    // Signed distance primitives
     {
         m_aabbs[ offset + SignedDistancePrimitive::MiniSpheres ]          = InitializeAABB( XMFLOAT3( 2, 0, 0 ), XMFLOAT3( 2, 2, 2 ) );
         m_aabbs[ offset + SignedDistancePrimitive::TwistedTorus ]         = InitializeAABB( XMFLOAT3( 0, 0, 1 ), XMFLOAT3( 2, 2, 2 ) );
@@ -211,20 +197,17 @@ void RayTracedProceduralGeometryExample::UpdateAABBPrimitiveAttributes( )
         };
 
         UINT offset = 0;
-        // Analytic primitives
         {
             SetTransformForAABB( offset + AnalyticPrimitive::AABB, mScale15y, mIdentity );
             SetTransformForAABB( offset + AnalyticPrimitive::Spheres, mScale15, mRotation );
             offset += AnalyticPrimitive::Count;
         }
 
-        // Volumetric primitives
         {
             SetTransformForAABB( offset + VolumetricPrimitive::MetaBalls, mScale15, mRotation );
             offset += VolumetricPrimitive::Count;
         }
 
-        // Signed distance primitives
         {
             SetTransformForAABB( offset + SignedDistancePrimitive::MiniSpheres, mIdentity, mIdentity );
             SetTransformForAABB( offset + SignedDistancePrimitive::IntersectedRoundCube, mIdentity, mIdentity );
@@ -260,20 +243,17 @@ void RayTracedProceduralGeometryExample::UpdateAABBPrimitiveAttributesForFrame( 
     };
 
     UINT offset = 0;
-    // Analytic primitives
     {
         SetTransformForAABB( offset + AnalyticPrimitive::AABB, mScale15y, mIdentity );
         SetTransformForAABB( offset + AnalyticPrimitive::Spheres, mScale15, mRotation );
         offset += AnalyticPrimitive::Count;
     }
 
-    // Volumetric primitives
     {
         SetTransformForAABB( offset + VolumetricPrimitive::MetaBalls, mScale15, mRotation );
         offset += VolumetricPrimitive::Count;
     }
 
-    // Signed distance primitives
     {
         SetTransformForAABB( offset + SignedDistancePrimitive::MiniSpheres, mIdentity, mIdentity );
         SetTransformForAABB( offset + SignedDistancePrimitive::IntersectedRoundCube, mIdentity, mIdentity );
@@ -821,20 +801,17 @@ void RayTracedProceduralGeometryExample::InitializeScene( )
     };
 
     UINT offset = 0;
-    // Analytic primitives
     {
         SetAttributes( offset + AnalyticPrimitive::AABB, red );
         SetAttributes( offset + AnalyticPrimitive::Spheres, ChromiumReflectance, 1 );
         offset += AnalyticPrimitive::Count;
     }
 
-    // Volumetric primitives
     {
         SetAttributes( offset + VolumetricPrimitive::MetaBalls, ChromiumReflectance, 1 );
         offset += VolumetricPrimitive::Count;
     }
 
-    // Signed distance primitives
     {
         SetAttributes( offset + SignedDistancePrimitive::MiniSpheres, green );
         SetAttributes( offset + SignedDistancePrimitive::IntersectedRoundCube, green );

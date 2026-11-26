@@ -54,6 +54,16 @@ namespace DenOfIz
             Methods.DenOfIz_TextRenderer_RemoveFont(Handle, fontId);
         }
 
+        public unsafe void SetFontFallbacks(ushort fontId, ReadOnlySpan<ushort> fallbackIds)
+        {
+            ThrowIfDisposed();
+            fixed (ushort* elements = fallbackIds)
+            {
+                var array = new UInt16Array { Elements = (IntPtr)elements, NumElements = (ulong)fallbackIds.Length };
+                Methods.DenOfIz_TextRenderer_SetFontFallbacks(Handle, fontId, in array);
+            }
+        }
+
         public void BeginBatch()
         {
             ThrowIfDisposed();

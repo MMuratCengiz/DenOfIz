@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzBindings/Core/Dzir.h"
@@ -366,7 +355,7 @@ bool DzirLibrary::IsHandleTypedef( const CXCursor &cursor ) const
     const CXType    canonical      = clang_getCanonicalType( underlyingType );
     const long long size           = clang_Type_getSizeOf( canonical );
 
-    // Check if the underlying type spelling is uint64_t (handles are defined as typedef uint64_t X)
+    // C API handles are declared as typedef uint64_t X.
     std::string underlyingSpelling = ToString( clang_getTypeSpelling( underlyingType ) );
 
     if ( underlyingSpelling == "uint64_t" || size == 8 )

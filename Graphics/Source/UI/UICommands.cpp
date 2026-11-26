@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include <array>
@@ -336,11 +325,10 @@ void UIContext::EmitText( const UINode &node )
     {
         return;
     }
-    const DenOfIz_UITextDesc &desc = m_frame->Texts[ node.Data ].Desc;
-    const float               s    = node.Scale;
-    const DenOfIz_UIRect     &rect = node.Rect;
-    const float               boxWidth   = node.LayoutRect.Width;
-    const float               lineHeight = layout->LineHeight;
+    const DenOfIz_UITextDesc &desc     = m_frame->Texts[ node.Data ].Desc;
+    const float               s        = node.Scale;
+    const DenOfIz_UIRect     &rect     = node.Rect;
+    const float               boxWidth = node.LayoutRect.Width;
 
     const DenOfIz_UITextSelection &selection = desc.Selection;
     if ( selection.Start != selection.End && selection.Color.A > 0 )
@@ -355,18 +343,15 @@ void UIContext::EmitText( const UINode &node )
                 continue;
             }
             const float align = layout->AlignOffset( line, boxWidth, desc.Align );
-            const float x0    = layout->CaretX( line, std::max( a, l.ByteStart ) );
-            float       x1    = layout->CaretX( line, std::min( b, l.ByteEnd ) );
-            if ( b > l.ByteEnd )
+            // Mixed directions split a logical range into several visual pieces.
+            layout->SelectionSpans( line, a, b, l.Height * 0.3f, m_selectionSpans );
+            for ( const DenOfIz_Float2 &span : m_selectionSpans )
             {
-                x1 += lineHeight * 0.3f;
+                if ( span.Y > span.X )
+                {
+                    PushFill( DenOfIz_UIRect{ rect.X + ( align + span.X ) * s, rect.Y + l.Top * s, ( span.Y - span.X ) * s, l.Height * s }, selection.Color, DenOfIz_UICorners{ } );
+                }
             }
-            if ( x1 <= x0 )
-            {
-                continue;
-            }
-            PushFill( DenOfIz_UIRect{ rect.X + ( align + x0 ) * s, rect.Y + static_cast<float>( line ) * lineHeight * s, ( x1 - x0 ) * s, lineHeight * s }, selection.Color,
-                      DenOfIz_UICorners{ } );
         }
     }
 
@@ -388,7 +373,7 @@ void UIContext::EmitText( const UINode &node )
         const float    width = ( desc.CaretWidth > 0.0f ? desc.CaretWidth : 1.5f ) * s;
         float          x     = rect.X + ( layout->AlignOffset( line, boxWidth, desc.Align ) + layout->CaretX( line, desc.Caret ) ) * s - width * 0.5f;
         x                    = std::round( x * m_pixelsPerPoint ) / m_pixelsPerPoint;
-        PushFill( DenOfIz_UIRect{ x, rect.Y + static_cast<float>( line ) * lineHeight * s, width, lineHeight * s }, desc.CaretColor, DenOfIz_UICorners{ } );
+        PushFill( DenOfIz_UIRect{ x, rect.Y + layout->Lines[ line ].Top * s, width, layout->Lines[ line ].Height * s }, desc.CaretColor, DenOfIz_UICorners{ } );
     }
 }
 

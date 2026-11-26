@@ -2,49 +2,67 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <memory>
 #include <string>
+#include <vector>
 #include "DenOfIzExamples/IExample.h"
+#include "DenOfIzGraphics/Assets/Font/Font.h"
 #include "DenOfIzGraphics/UI/UI.h"
 #include "Spinning3DCubeWidget.h"
 
 namespace DenOfIz
 {
-    /**
-     * A small app built with the immediate mode UI: flexbox layout, widgets, a text field, a dropdown, a tooltip, a modal dialog,
-     * a render target shown as an image and rounded clipping. Inactive pages stay declared with Display NONE, so they keep their
-     * scroll positions.
-     *
-     * Keys: Tab/Shift+Tab move the focus, Enter/Space activate the focused widget, F11 toggles debug outlines,
-     * Esc closes the dialog, the dropdown or the focus, then quits.
-     */
+    // Inactive pages stay declared with Display NONE so they keep their scroll positions.
     class UIExample final : public IExample
     {
         enum class Page : uint32_t
         {
             Controls,
             Text,
+            Fonts,
+            Scripts,
             Media,
             Count
         };
 
-        DenOfIz_UI                            m_ui = DENOFIZ_NULL_HANDLE;
+        struct TextEdit
+        {
+            std::string Text;
+            uint16_t    FontId    = 0;
+            uint32_t    Id        = 0;
+            uint32_t    Caret     = 0;
+            uint32_t    Anchor    = 0;
+            bool        Selecting = false;
+            bool        Reveal    = false;
+        };
+
+        // The download thread fills Bytes, Error, Size and DownloadMs, then sets Done. Everything else belongs to the UI thread.
+        struct WebFont
+        {
+            std::string          Family;
+            std::vector<uint8_t> Bytes;
+            std::string          Error;
+            size_t               Size       = 0;
+            double               DownloadMs = 0.0;
+            std::atomic<bool>    Done{ false };
+            DenOfIz_Font         Font         = DENOFIZ_NULL_HANDLE;
+            uint16_t             FontId       = 0;
+            double               CreateMs     = 0.0;
+            double               FirstFrameMs = -1.0;
+            bool                 Listed       = false;
+            bool                 Drawn        = false;
+        };
+
+        DenOfIz_UI                            m_ui        = DENOFIZ_NULL_HANDLE;
+        DenOfIz_Font                          m_interFont = DENOFIZ_NULL_HANDLE;
+        DenOfIz_Font                          m_iconFont  = DENOFIZ_NULL_HANDLE;
+        DenOfIz_Font                          m_bidiFont  = DENOFIZ_NULL_HANDLE;
         std::unique_ptr<Spinning3DCubeWidget> m_cube;
         DenOfIz_SystemCursor                  m_cursor = DENOFIZ_SYSTEM_CURSOR_DEFAULT;
         std::array<char, 256>                 m_format{ };
@@ -67,23 +85,29 @@ namespace DenOfIz
         bool        m_dialogOpen    = false;
         const char *m_dialogResult  = "none";
 
-        std::string m_text      = "Click to edit, drag to select";
-        uint32_t    m_caret     = 0;
-        uint32_t    m_anchor    = 0;
-        bool        m_selecting = false;
-        bool        m_reveal    = false;
+        TextEdit m_field{ "Click to edit, drag to select" };
+        TextEdit m_family{ "Open Sans" };
+        TextEdit m_bidi{ "Edit me: שלום means peace, سلام too (123)" };
+        bool     m_submitFamily = false;
+
+        std::vector<std::shared_ptr<WebFont>> m_webFonts;
+        std::vector<WebFont *>                m_scriptFonts;
+        std::vector<WebFont *>                m_colourFonts;
+        bool                                  m_notoChain  = false;
+        WebFont                              *m_sizeFont   = nullptr;
+        uint16_t                              m_nextFontId = 4;
+        float                                 m_sizeValue  = 0.45f;
+        double                                m_frameMs    = 0.0;
+        std::string                           m_fontsStatus;
 
         int32_t m_selectedRow = -1;
 
-        uint32_t m_tabsId        = 0;
-        uint32_t m_pagesId       = 0;
-        uint32_t m_clickId       = 0;
-        uint32_t m_qualityId     = 0;
-        uint32_t m_fieldId       = 0;
-        uint32_t m_fieldScrollId = 0;
-        uint32_t m_fieldTextId   = 0;
-        uint32_t m_listId        = 0;
-        uint32_t m_dialogId      = 0;
+        uint32_t m_tabsId    = 0;
+        uint32_t m_pagesId   = 0;
+        uint32_t m_clickId   = 0;
+        uint32_t m_qualityId = 0;
+        uint32_t m_listId    = 0;
+        uint32_t m_dialogId  = 0;
 
     public:
         ~UIExample( ) override = default;
@@ -104,8 +128,16 @@ namespace DenOfIz
         void BuildUI( uint32_t frameIndex );
         void TopBar( );
         void Sidebar( );
+        void BeginPage( Page page ) const;
         void ControlsPage( );
         void TextPage( );
+        void FontsPage( );
+        void FontCard( WebFont &font, uint32_t index );
+        void ScriptsPage( );
+        void FallbackCard( );
+        void EmojiCard( );
+        void BidiCard( );
+        void EdgeCaseCard( );
         void MediaPage( uint32_t frameIndex );
         void QualityPopup( );
         void Tooltip( ) const;
@@ -116,13 +148,19 @@ namespace DenOfIz
         bool Toggle( uint32_t id, bool &value, const char *label );
         void Slider( uint32_t id, float &value );
         void Dropdown( );
-        void TextField( );
+        void TextField( TextEdit &edit );
 
-        bool HandleKeyDown( const DenOfIz_KeyboardEventData &key, bool editing );
-        bool EditKey( const DenOfIz_KeyboardEventData &key );
-        void Insert( DenOfIz_StringView text );
-        bool DeleteSelection( );
-        void MoveCaret( uint32_t offset, bool extend );
+        WebFont &RequestFont( const std::string &family );
+        void     LoadDownloadedFont( );
+        void     FontStatus( const WebFont &font );
+        uint16_t Use( WebFont &font, Page page ) const;
+
+        TextEdit *Editing( );
+        bool      HandleKeyDown( const DenOfIz_KeyboardEventData &key, TextEdit *edit );
+        bool      EditKey( TextEdit &edit, const DenOfIz_KeyboardEventData &key );
+        void      Insert( TextEdit &edit, DenOfIz_StringView text );
+        bool      DeleteSelection( TextEdit &edit );
+        void      MoveCaret( TextEdit &edit, uint32_t offset, bool extend );
 
         uint32_t              Id( const char *name ) const;
         DenOfIz_UIInteraction Interaction( uint32_t id ) const;
@@ -130,8 +168,8 @@ namespace DenOfIz
         void                  FocusRing( DenOfIz_UIElementDesc &desc ) const;
         void                  Open( const DenOfIz_UIElementDesc &desc ) const;
         void                  Close( ) const;
-        void                  Label( DenOfIz_StringView text, float size, DenOfIz_UIColor color ) const;
-        void                  Label( const char *text, float size, DenOfIz_UIColor color ) const;
+        void                  Label( DenOfIz_StringView text, float size, DenOfIz_UIColor color, uint16_t fontId = 0 ) const;
+        void                  Label( const char *text, float size, DenOfIz_UIColor color, uint16_t fontId = 0 ) const;
         void                  BeginCard( const char *title, const char *description, float basis = 0.0f ) const;
         DenOfIz_StringView    Format( const char *format, ... );
     };

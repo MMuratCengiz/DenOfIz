@@ -4,7 +4,7 @@
 #include "DenOfIzGraphicsInternal/Backends/Common/InternalAutoSync.h"
 #import "AppKit/AppKit.h"
 #import "Metal/Metal.h"
-#import "MetalKit/MetalKit.h"
+#import "QuartzCore/CAMetalLayer.h"
 
 #import <metal_irconverter/metal_irconverter.h>
 #import <metal_irconverter_runtime/metal_irconverter_runtime.h>
@@ -44,7 +44,7 @@ namespace DenOfIz
             return status == MTLCommandBufferStatusCompleted || status == MTLCommandBufferStatusError;
         }
 
-        //! Call right after committing a command buffer.
+        // Call right after committing a command buffer.
         void TrackCommandBuffer( const id<MTLCommandBuffer> &commandBuffer )
         {
             if ( commandBuffer == nil )
@@ -56,7 +56,6 @@ namespace DenOfIz
             InFlightCommandBuffers.push_back( commandBuffer );
         }
 
-        //! The command buffers that are still executing at the time of the call.
         std::vector<id<MTLCommandBuffer>> InFlightSnapshot( )
         {
             std::lock_guard<std::mutex> lock( InFlightMutex );
@@ -64,7 +63,6 @@ namespace DenOfIz
             return InFlightCommandBuffers;
         }
 
-        //! Blocks until everything committed before the call has finished.
         void WaitIdle( )
         {
             const std::vector<id<MTLCommandBuffer>> inFlight = InFlightSnapshot( );
@@ -74,7 +72,7 @@ namespace DenOfIz
             }
         }
 
-        //! InFlightMutex must be held.
+        // InFlightMutex must be held.
         void RemoveFinishedLocked( )
         {
             std::vector<id<MTLCommandBuffer>> remaining;

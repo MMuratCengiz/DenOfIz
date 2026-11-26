@@ -2,25 +2,13 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzExamples/InteropMathConverter.h"
 
 using namespace DenOfIz;
 
-#ifndef __EMSCRIPTEN__
 DirectX::XMFLOAT4X4 InteropMathConverter::Float_4x4ToXMFLOAT4X4( const DenOfIz_Float4x4 &matrix )
 {
     DirectX::XMFLOAT4X4 result;
@@ -98,7 +86,6 @@ DirectX::XMMATRIX InteropMathConverter::Float_4X4ToXMMATRIX( const DenOfIz_Float
         );
     // clang-format on
 }
-#endif
 
 DenOfIz_Float4 InteropMathConverter::Float_4FromXMVECTOR( const DirectX::XMVECTOR &vector )
 {

@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -36,10 +25,13 @@ extern "C"
         DENOFIZ_GRAPHICS_BACKEND_UNKNOWN,
         DENOFIZ_GRAPHICS_BACKEND_DIRECTX12,
         DENOFIZ_GRAPHICS_BACKEND_VULKAN,
-        DENOFIZ_GRAPHICS_BACKEND_METAL,
-        DENOFIZ_GRAPHICS_BACKEND_WEBGPU
+        DENOFIZ_GRAPHICS_BACKEND_METAL
     } DenOfIz_GraphicsBackendType;
 
+    /**
+     * Native handles are borrowed, not retained: they stay valid while the DenOfIz object lives. Only the fields of Backend are set, the
+     * others are zero.
+     */
     typedef struct DenOfIz_NativeDeviceHandles
     {
         DenOfIz_GraphicsBackendType Backend;
@@ -78,7 +70,7 @@ extern "C"
 
         void    *VkImage;
         void    *VkImageView;
-        uint32_t VkImageLayout;
+        uint32_t VkImageLayout; /**< The layout DenOfIz last transitioned the image to. */
         uint32_t VkFormat;
         uint32_t VkImageAspect;
 
@@ -115,6 +107,11 @@ extern "C"
 
     DZ_API DenOfIz_Result DenOfIz_Texture_GetNativeHandles( DenOfIz_Texture texture, DenOfIz_NativeTextureHandles *outHandles );
 
+    /**
+     * The Import functions wrap a native texture without taking ownership: the caller keeps it alive while the DenOfIz texture exists
+     * (Metal retains it) and releases it afterwards. DenOfIz_Texture_Destroy frees the wrapper immediately. DENOFIZ_ERROR_NOT_SUPPORTED on
+     * another backend.
+     */
     DZ_API DenOfIz_Result DenOfIz_LogicalDevice_ImportExternalTextureDX12( DenOfIz_LogicalDevice device, const DenOfIz_ExternalTextureDescDX12 *desc, DenOfIz_Texture *outTexture );
 
     DZ_API DenOfIz_Result DenOfIz_LogicalDevice_ImportExternalTextureVulkan( DenOfIz_LogicalDevice device, const DenOfIz_ExternalTextureDescVulkan *desc, DenOfIz_Texture *outTexture );

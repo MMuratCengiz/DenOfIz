@@ -9,21 +9,12 @@
 //
 //*********************************************************
 
-//**********************************************************************************************
-//
-// AnalyticPrimitives.hlsli
-//
-// Set of ray vs analytic primitive intersection tests.
-//
-//**********************************************************************************************
-
 #ifndef ANALYTICPRIMITIVES_H
 #define ANALYTICPRIMITIVES_H
 
 
 #include "RaytracingShaderHelper.hlsli"
 
-// Solve a quadratic equation.
 // Ref: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection
 bool SolveQuadraticEqn(float a, float b, float c, out float x0, out float x1)
 {
@@ -42,7 +33,6 @@ bool SolveQuadraticEqn(float a, float b, float c, out float x0, out float x1)
     return true;
 }
 
-// Calculate a normal for a hit point on a sphere.
 float3 CalculateNormalForARaySphereHit(in Ray ray, in float thit, float3 center)
 {
     float3 hitPosition = ray.origin + thit * ray.direction;
@@ -63,15 +53,14 @@ bool SolveRaySphereIntersectionEquation(in Ray ray, out float tmin, out float tm
 // Test if a ray with RayFlags and segment <RayTMin(), RayTCurrent()> intersects a hollow sphere.
 bool RaySphereIntersectionTest(in Ray ray, out float thit, out float tmax, out ProceduralPrimitiveAttributes attr, in float3 center = float3(0, 0, 0), in float radius = 1)
 {
-    float t0, t1; // solutions for t if the ray intersects
+    float t0, t1;
 
     if (!SolveRaySphereIntersectionEquation(ray, t0, t1, center, radius)) return false;
     tmax = t1;
 
     if (t0 < RayTMin())
     {
-        // t0 is before RayTMin, let's use t1 instead .
-        if (t1 < RayTMin()) return false; // both t0 and t1 are before RayTMin
+        if (t1 < RayTMin()) return false;
 
         attr.normal = CalculateNormalForARaySphereHit(ray, t1, center);
         if (IsAValidHit(ray, t1, attr.normal))
@@ -103,7 +92,7 @@ bool RaySphereIntersectionTest(in Ray ray, out float thit, out float tmax, out P
 // Limitation: this test does not take RayFlags into consideration and does not calculate a surface normal.
 bool RaySolidSphereIntersectionTest(in Ray ray, out float thit, out float tmax, in float3 center = float3(0, 0, 0), in float radius = 1)
 {
-    float t0, t1; // solutions for t if the ray intersects
+    float t0, t1;
 
     if (!SolveRaySphereIntersectionEquation(ray, t0, t1, center, radius))
         return false;
@@ -128,12 +117,8 @@ bool RaySpheresIntersectionTest(in Ray ray, out float thit, out ProceduralPrimit
     float  radii[N] = { 0.6, 0.3, 0.15 };
     bool hitFound = false;
 
-    //
-    // Test for intersection against all spheres and take the closest hit.
-    //
     thit = RayTCurrent();
 
-    // test against all spheres
     for (int i = 0; i < N; i++)
     {
         float _thit;
@@ -202,7 +187,6 @@ bool RayAABBIntersectionTest(Ray ray, float3 aabb[2], out float thit, out Proced
 
         thit = tmin;
 
-        // Set a normal to the normal of a face the hit point lays on.
         float3 hitPosition = ray.origin + thit * ray.direction;
         float3 distanceToBounds[2] = {
             abs(aabb[0] - hitPosition),

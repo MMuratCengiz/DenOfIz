@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -50,7 +39,6 @@ namespace DenOfIz
         DX12LogicalDevice( );
         ~DX12LogicalDevice( ) override;
 
-        // Override methods
         void                        CreateDevice( const DenOfIz_LogicalDeviceDesc &desc = { } ) override;
         DenOfIz_PhysicalDeviceArray ListPhysicalDevices( ) override;
         void                        LoadPhysicalDevice( const DenOfIz_PhysicalDevice &device ) override;
@@ -71,7 +59,7 @@ namespace DenOfIz
         ITexture         *CreateTexture( const DenOfIz_TextureDesc &textureDesc ) override;
         ISampler         *CreateSampler( const DenOfIz_SamplerDesc &samplerDesc ) override;
         IQueryPool       *CreateQueryPool( const DenOfIz_QueryPoolDesc &desc ) override;
-        // RayTracing:
+
         ITopLevelAS         *CreateTopLevelAS( const DenOfIz_TopLevelASDesc &createDesc ) override;
         IBottomLevelAS      *CreateBottomLevelAS( const DenOfIz_BottomLevelASDesc &createDesc ) override;
         IShaderBindingTable *CreateShaderBindingTable( const DenOfIz_ShaderBindingTableDesc &createDesc ) override;
@@ -84,7 +72,7 @@ namespace DenOfIz
         {
             return m_context.get( );
         }
-        // --
+
     private:
         void CreateDeviceInfo( IDXGIAdapter1 &adapter, DenOfIz_PhysicalDevice &physicalDevice );
     };

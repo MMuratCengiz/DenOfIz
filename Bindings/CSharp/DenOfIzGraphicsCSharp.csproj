@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net8.0;net8.0-browser</TargetFrameworks>
+        <TargetFramework>net8.0</TargetFramework>
         <AssemblyName>DenOfIzGraphicsCSharp</AssemblyName>
         <RootNamespace>DenOfIz.Bindings</RootNamespace>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -8,9 +8,6 @@
         <Nullable>enable</Nullable>
         <RestoreSources>https://api.nuget.org/v3/index.json</RestoreSources>
         <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-browser'">
-        <DefineConstants>$(DefineConstants);BROWSER_WASM</DefineConstants>
     </PropertyGroup>
     <ItemGroup>
         <Compile Include="Generated\**\*.cs" />

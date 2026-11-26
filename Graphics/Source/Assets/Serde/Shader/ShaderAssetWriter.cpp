@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetWriter.h"
@@ -97,9 +86,6 @@ void ShaderAssetWriter::Write( DenOfIz_ShaderAsset shaderAsset )
 
         DenOfIz_BinaryWriter_WriteUInt64( m_writer, stage->SPIRV.NumElements );
         DenOfIz_BinaryWriter_WriteBytes( m_writer, { stage->SPIRV.Elements, stage->SPIRV.NumElements } );
-
-        DenOfIz_BinaryWriter_WriteUInt64( m_writer, stage->WGSL.NumElements );
-        DenOfIz_BinaryWriter_WriteBytes( m_writer, { stage->WGSL.Elements, stage->WGSL.NumElements } );
 
         DenOfIz_BinaryWriter_WriteUInt64( m_writer, stage->Reflection.NumElements );
         DenOfIz_BinaryWriter_WriteBytes( m_writer, { stage->Reflection.Elements, stage->Reflection.NumElements } );
@@ -310,13 +296,6 @@ DenOfIz_ShaderAsset ShaderAssetWriter::CreateFromCompiledShader( const DenOfIz_C
             memcpy( stageAsset->SPIRV.Elements, compiledStage->SPIRV.Elements, compiledStage->SPIRV.NumElements );
         }
 
-        if ( compiledStage->WGSL.NumElements > 0 )
-        {
-            stageAsset->WGSL.NumElements = compiledStage->WGSL.NumElements;
-            stageAsset->WGSL.Elements    = new Byte[ compiledStage->WGSL.NumElements ];
-            memcpy( stageAsset->WGSL.Elements, compiledStage->WGSL.Elements, compiledStage->WGSL.NumElements );
-        }
-
         if ( compiledStage->Reflection.NumElements > 0 )
         {
             stageAsset->Reflection.NumElements = compiledStage->Reflection.NumElements;
@@ -338,8 +317,7 @@ size_t ShaderAssetWriter::NumRequiredArenaBytes( const DenOfIz_CompiledShader *c
     for ( uint32_t i = 0; i < compiledShader->Stages.NumElements; ++i )
     {
         const DenOfIz_CompiledShaderStage *compiledStage = compiledShader->Stages.Elements[ i ];
-        result += compiledStage->DXIL.NumElements + compiledStage->MSL.NumElements + compiledStage->SPIRV.NumElements + compiledStage->WGSL.NumElements +
-                  compiledStage->Reflection.NumElements;
+        result += compiledStage->DXIL.NumElements + compiledStage->MSL.NumElements + compiledStage->SPIRV.NumElements + compiledStage->Reflection.NumElements;
         result += compiledStage->RayTracing.LocalBindings.NumElements * sizeof( DenOfIz_ResourceBindingSlot );
         result += sizeof( uint32_t );
     }

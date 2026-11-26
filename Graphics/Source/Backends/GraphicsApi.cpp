@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphics/Backends/GraphicsApi.h"
@@ -34,10 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifdef BUILD_METAL
 #include "DenOfIzGraphicsInternal/Backends/Metal/MetalLogicalDevice.h"
-#endif
-
-#ifdef BUILD_WEBGPU
-#include "DenOfIzGraphicsInternal/Backends/WebGPU/WebGPULogicalDevice.h"
 #endif
 
 using namespace DenOfIz;
@@ -111,45 +96,6 @@ bool DenOfIz_GraphicsApi_IsMetalPreferred( const DenOfIz_APIPreference *apiPrefe
     return false;
 }
 
-bool DenOfIz_GraphicsApi_IsWebGPUPreferred( const DenOfIz_APIPreference *apiPreference )
-{
-    if ( apiPreference->Web == DENOFIZ_API_PREFERENCE_WEB_WEBGPU )
-    {
-#ifdef EMSCRIPTEN
-        return true;
-#endif
-    }
-
-    return false;
-}
-
-bool DenOfIz_GraphicsApi_IsWebGPUNativePreferred( const DenOfIz_APIPreference *apiPreference )
-{
-    if ( apiPreference->Windows == DENOFIZ_API_PREFERENCE_WINDOWS_WEBGPU_NATIVE )
-    {
-        spdlog::warn( "WebGPU Native is still experimental, emscripten is prioritized for WebGPU" );
-#ifdef _WIN32
-        return true;
-#endif
-    }
-    if ( apiPreference->OSX == DENOFIZ_API_PREFERENCE_OSX_WEBGPU_NATIVE )
-    {
-        spdlog::warn( "WebGPU Native is still experimental, emscripten is prioritized for WebGPU" );
-#ifdef __APPLE__
-        return true;
-#endif
-    }
-    if ( apiPreference->Linux == DENOFIZ_API_PREFERENCE_LINUX_WEBGPU_NATIVE )
-    {
-        spdlog::warn( "WebGPU Native is still experimental, emscripten is prioritized for WebGPU" );
-#ifdef __linux__
-        return true;
-#endif
-    }
-
-    return false;
-}
-
 GraphicsApi::GraphicsApi( const DenOfIz_APIPreference &preference ) : m_apiPreference( preference )
 {
     std::atexit( ReportLiveObjects );
@@ -180,13 +126,6 @@ ILogicalDevice *GraphicsApi::CreateLogicalDevice( const DenOfIz_LogicalDeviceDes
     {
         spdlog::info( "Graphics API: Metal." );
         logicalDevice = new MetalLogicalDevice( );
-    }
-#endif
-#ifdef BUILD_WEBGPU
-    if ( DenOfIz_GraphicsApi_IsWebGPUPreferred( &m_apiPreference ) || DenOfIz_GraphicsApi_IsWebGPUNativePreferred( &m_apiPreference ) )
-    {
-        spdlog::info( "Graphics API: WebGPU." );
-        logicalDevice = new WebGPULogicalDevice( );
     }
 #endif
     if ( logicalDevice == nullptr )
@@ -297,12 +236,6 @@ DenOfIz_StringView GraphicsApi::ActiveAPI( ) const
     if ( DenOfIz_GraphicsApi_IsMetalPreferred( &m_apiPreference ) )
     {
         return DENOFIZ_STRING( "Metal" );
-    }
-#endif
-#ifdef BUILD_WEBGPU
-    if ( DenOfIz_GraphicsApi_IsWebGPUPreferred( &m_apiPreference ) || DenOfIz_GraphicsApi_IsWebGPUNativePreferred( &m_apiPreference ) )
-    {
-        return DENOFIZ_STRING( "WebGPU" );
     }
 #endif
     return DENOFIZ_STRING( "Unknown" );

@@ -2,23 +2,11 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "ImGuiBackend.h"
 
-#include <array>
 #include <cstring>
 #define SPDLOG_NO_EXCEPTIONS
 #define FMT_EXCEPTIONS 0
@@ -31,114 +19,9 @@ using namespace DenOfIz;
 
 namespace
 {
-    auto ImGuiVertexShaderSource = R"(
-struct VSInput
-{
-    float2 Position : POSITION;
-    float2 TexCoord : TEXCOORD0;
-    uint   Color : COLOR0;
-};
-
-struct VSOutput
-{
-    float4 Position : SV_POSITION;
-    float2 TexCoord : TEXCOORD0;
-    float4 Color : COLOR0;
-};
-
-cbuffer ImGuiUniforms : register(b0, space1)
-{
-    float4x4 Projection;
-    float4 ScreenSize;
-};
-
-VSOutput main(VSInput input)
-{
-    VSOutput output;
-    output.Position = mul(float4(input.Position, 0.0, 1.0), Projection);
-    output.TexCoord = input.TexCoord;
-    output.Color = float4(
-        ((input.Color >> 0) & 0xFF) / 255.0f,
-        ((input.Color >> 8) & 0xFF) / 255.0f,
-        ((input.Color >> 16) & 0xFF) / 255.0f,
-        ((input.Color >> 24) & 0xFF) / 255.0f
-    );
-    return output;
-})";
-
-    auto ImGuiPixelShaderSourceArray = R"(
-struct PSInput
-{
-    float4 Position : SV_POSITION;
-    float2 TexCoord : TEXCOORD0;
-    float4 Color : COLOR0;
-};
-
-cbuffer PixelConstants : register(b0, space2)
-{
-    uint TextureIndex;
-    uint Padding;
-};
-
-Texture2D Textures[128] : register(t0, space0);
-SamplerState LinearSampler : register(s0, space0);
-
-float4 main(PSInput input) : SV_TARGET
-{
-    float4 texColor = Textures[TextureIndex].Sample(LinearSampler, input.TexCoord);
-    return texColor * input.Color;
-})";
-
-    auto ImGuiPixelShaderSourceSingle = R"(
-struct PSInput
-{
-    float4 Position : SV_POSITION;
-    float2 TexCoord : TEXCOORD0;
-    float4 Color : COLOR0;
-};
-
-Texture2D Texture : register(t0, space0);
-SamplerState LinearSampler : register(s0, space0);
-
-float4 main(PSInput input) : SV_TARGET
-{
-    float4 texColor = Texture.Sample(LinearSampler, input.TexCoord);
-    return texColor * input.Color;
-})";
-
-    DenOfIz_ByteArray StringToByteArray( const char *str )
-    {
-        const size_t      len = strlen( str );
-        DenOfIz_ByteArray result{ };
-        result.Elements    = static_cast<Byte *>( malloc( len ) );
-        result.NumElements = static_cast<uint32_t>( len );
-        for ( size_t i = 0; i < len; i++ )
-        {
-            result.Elements[ i ] = static_cast<Byte>( str[ i ] );
-        }
-        return result;
-    }
-
-    void FreeByteArray( DenOfIz_ByteArray *arr )
-    {
-        if ( arr->Elements )
-        {
-            free( arr->Elements );
-            arr->Elements    = nullptr;
-            arr->NumElements = 0;
-        }
-    }
-
     void CreateShaderProgram( ImGuiBackend *backend )
     {
-        if ( backend->SupportsSrvArray )
-        {
-            backend->ShaderProgram = EmbeddedImGuiShaders::GetImGuiArrayShaderProgram( );
-        }
-        else
-        {
-            backend->ShaderProgram = EmbeddedImGuiShaders::GetImGuiSingleShaderProgram( );
-        }
+        backend->ShaderProgram = EmbeddedImGuiShaders::GetImGuiShaderProgram( );
     }
 
     void CreatePipeline( ImGuiBackend *backend )
@@ -231,94 +114,63 @@ float4 main(PSInput input) : SV_TARGET
         backend->NumFrameData = backend->Desc.NumFrames;
         backend->FrameData    = static_cast<ImGuiFrameData *>( calloc( backend->NumFrameData, sizeof( ImGuiFrameData ) ) );
 
-        if ( backend->SupportsSrvArray )
+        backend->AlignedPixelConstantsSize = ( sizeof( PixelConstants ) + 255 ) & ~255;
+
+        DenOfIz_BufferDesc pixelConstantsBufferDesc{ };
+        pixelConstantsBufferDesc.NumBytes  = backend->AlignedPixelConstantsSize * backend->Desc.MaxTextures;
+        pixelConstantsBufferDesc.Usage     = DENOFIZ_BUFFER_USAGE_UNIFORM_BIT;
+        pixelConstantsBufferDesc.HeapType  = DENOFIZ_HEAP_TYPE_CPU_GPU;
+        pixelConstantsBufferDesc.DebugName = DENOFIZ_STRING( "ImGui Pixel Constants Buffer" );
+        DenOfIz_LogicalDevice_CreateBuffer( backend->LogicalDevice, &pixelConstantsBufferDesc, &backend->PixelConstantsBuffer );
+
+        void *mappedPixelConstantsData = nullptr;
+        DenOfIz_Buffer_MapMemory( backend->PixelConstantsBuffer, &mappedPixelConstantsData );
+        backend->PixelConstantsData = static_cast<PixelConstants *>( mappedPixelConstantsData );
+
+        for ( uint32_t i = 0; i < backend->Desc.MaxTextures; ++i )
         {
-            backend->AlignedPixelConstantsSize = ( sizeof( PixelConstants ) + 255 ) & ~255;
-
-            DenOfIz_BufferDesc pixelConstantsBufferDesc{ };
-            pixelConstantsBufferDesc.NumBytes  = backend->AlignedPixelConstantsSize * backend->Desc.MaxTextures;
-            pixelConstantsBufferDesc.Usage     = DENOFIZ_BUFFER_USAGE_UNIFORM_BIT;
-            pixelConstantsBufferDesc.HeapType  = DENOFIZ_HEAP_TYPE_CPU_GPU;
-            pixelConstantsBufferDesc.DebugName = DENOFIZ_STRING( "ImGui Pixel Constants Buffer" );
-            DenOfIz_LogicalDevice_CreateBuffer( backend->LogicalDevice, &pixelConstantsBufferDesc, &backend->PixelConstantsBuffer );
-
-            void *mappedPixelConstantsData = nullptr;
-            DenOfIz_Buffer_MapMemory( backend->PixelConstantsBuffer, &mappedPixelConstantsData );
-            backend->PixelConstantsData = static_cast<PixelConstants *>( mappedPixelConstantsData );
-
-            for ( uint32_t i = 0; i < backend->Desc.MaxTextures; ++i )
-            {
-                const auto pixelConstantsData =
-                    reinterpret_cast<PixelConstants *>( reinterpret_cast<uint8_t *>( backend->PixelConstantsData ) + i * backend->AlignedPixelConstantsSize );
-                pixelConstantsData->TextureIndex = i;
-            }
-
-            for ( uint32_t i = 0; i < backend->Desc.NumFrames; ++i )
-            {
-                DenOfIz_BindGroupDesc constantsBindGroupDesc{ };
-                constantsBindGroupDesc.Layout = backend->BindGroupLayouts[ 1 ];
-                DenOfIz_LogicalDevice_CreateBindGroup( backend->LogicalDevice, &constantsBindGroupDesc, &backend->FrameData[ i ].ConstantsBindGroup );
-
-                DenOfIz_BindGroup_BeginUpdate( backend->FrameData[ i ].ConstantsBindGroup );
-
-                DenOfIz_BindBufferDesc bindUniformsDesc{ };
-                bindUniformsDesc.Resource       = backend->UniformBuffer;
-                bindUniformsDesc.ResourceOffset = i * backend->AlignedUniformSize;
-                DenOfIz_BindGroup_CbvWithDesc( backend->FrameData[ i ].ConstantsBindGroup, &bindUniformsDesc );
-
-                DenOfIz_BindGroup_EndUpdate( backend->FrameData[ i ].ConstantsBindGroup );
-
-                DenOfIz_BindGroupDesc textureBindGroupDesc{ };
-                textureBindGroupDesc.Layout = backend->BindGroupLayouts[ 0 ];
-                DenOfIz_LogicalDevice_CreateBindGroup( backend->LogicalDevice, &textureBindGroupDesc, &backend->FrameData[ i ].TextureBindGroup );
-            }
-
-            backend->NumPixelConstantsBindGroups = backend->Desc.MaxTextures;
-            backend->PixelConstantsBindGroups    = static_cast<DenOfIz_BindGroup *>( calloc( backend->NumPixelConstantsBindGroups, sizeof( DenOfIz_BindGroup ) ) );
-
-            for ( uint32_t i = 0; i < backend->Desc.MaxTextures; ++i )
-            {
-                DenOfIz_BindGroupDesc pixelConstantsBindGroupDesc{ };
-                pixelConstantsBindGroupDesc.Layout = backend->BindGroupLayouts[ 2 ];
-                DenOfIz_LogicalDevice_CreateBindGroup( backend->LogicalDevice, &pixelConstantsBindGroupDesc, &backend->PixelConstantsBindGroups[ i ] );
-
-                DenOfIz_BindGroup_BeginUpdate( backend->PixelConstantsBindGroups[ i ] );
-
-                DenOfIz_BindBufferDesc bindPixelConstantsDesc{ };
-                bindPixelConstantsDesc.Resource       = backend->PixelConstantsBuffer;
-                bindPixelConstantsDesc.ResourceOffset = i * backend->AlignedPixelConstantsSize;
-                DenOfIz_BindGroup_CbvWithDesc( backend->PixelConstantsBindGroups[ i ], &bindPixelConstantsDesc );
-
-                DenOfIz_BindGroup_EndUpdate( backend->PixelConstantsBindGroups[ i ] );
-            }
+            const auto pixelConstantsData =
+                reinterpret_cast<PixelConstants *>( reinterpret_cast<uint8_t *>( backend->PixelConstantsData ) + i * backend->AlignedPixelConstantsSize );
+            pixelConstantsData->TextureIndex = i;
         }
-        else
+
+        for ( uint32_t i = 0; i < backend->Desc.NumFrames; ++i )
         {
-            for ( uint32_t i = 0; i < backend->Desc.NumFrames; ++i )
-            {
-                DenOfIz_BindGroupDesc constantsBindGroupDesc{ };
-                constantsBindGroupDesc.Layout = backend->BindGroupLayouts[ 1 ];
-                DenOfIz_LogicalDevice_CreateBindGroup( backend->LogicalDevice, &constantsBindGroupDesc, &backend->FrameData[ i ].ConstantsBindGroup );
+            DenOfIz_BindGroupDesc constantsBindGroupDesc{ };
+            constantsBindGroupDesc.Layout = backend->BindGroupLayouts[ 1 ];
+            DenOfIz_LogicalDevice_CreateBindGroup( backend->LogicalDevice, &constantsBindGroupDesc, &backend->FrameData[ i ].ConstantsBindGroup );
 
-                DenOfIz_BindGroup_BeginUpdate( backend->FrameData[ i ].ConstantsBindGroup );
+            DenOfIz_BindGroup_BeginUpdate( backend->FrameData[ i ].ConstantsBindGroup );
 
-                DenOfIz_BindBufferDesc bindUniformsDesc{ };
-                bindUniformsDesc.Resource       = backend->UniformBuffer;
-                bindUniformsDesc.ResourceOffset = i * backend->AlignedUniformSize;
-                DenOfIz_BindGroup_CbvWithDesc( backend->FrameData[ i ].ConstantsBindGroup, &bindUniformsDesc );
+            DenOfIz_BindBufferDesc bindUniformsDesc{ };
+            bindUniformsDesc.Resource       = backend->UniformBuffer;
+            bindUniformsDesc.ResourceOffset = i * backend->AlignedUniformSize;
+            DenOfIz_BindGroup_CbvWithDesc( backend->FrameData[ i ].ConstantsBindGroup, &bindUniformsDesc );
 
-                DenOfIz_BindGroup_EndUpdate( backend->FrameData[ i ].ConstantsBindGroup );
-            }
+            DenOfIz_BindGroup_EndUpdate( backend->FrameData[ i ].ConstantsBindGroup );
 
-            backend->NumPerTextureBindGroups = backend->Desc.MaxTextures;
-            backend->PerTextureBindGroups    = static_cast<DenOfIz_BindGroup *>( calloc( backend->NumPerTextureBindGroups, sizeof( DenOfIz_BindGroup ) ) );
+            DenOfIz_BindGroupDesc textureBindGroupDesc{ };
+            textureBindGroupDesc.Layout = backend->BindGroupLayouts[ 0 ];
+            DenOfIz_LogicalDevice_CreateBindGroup( backend->LogicalDevice, &textureBindGroupDesc, &backend->FrameData[ i ].TextureBindGroup );
+        }
 
-            for ( uint32_t i = 0; i < backend->Desc.MaxTextures; ++i )
-            {
-                DenOfIz_BindGroupDesc perTextureBindGroupDesc{ };
-                perTextureBindGroupDesc.Layout = backend->BindGroupLayouts[ 0 ];
-                DenOfIz_LogicalDevice_CreateBindGroup( backend->LogicalDevice, &perTextureBindGroupDesc, &backend->PerTextureBindGroups[ i ] );
-            }
+        backend->NumPixelConstantsBindGroups = backend->Desc.MaxTextures;
+        backend->PixelConstantsBindGroups    = static_cast<DenOfIz_BindGroup *>( calloc( backend->NumPixelConstantsBindGroups, sizeof( DenOfIz_BindGroup ) ) );
+
+        for ( uint32_t i = 0; i < backend->Desc.MaxTextures; ++i )
+        {
+            DenOfIz_BindGroupDesc pixelConstantsBindGroupDesc{ };
+            pixelConstantsBindGroupDesc.Layout = backend->BindGroupLayouts[ 2 ];
+            DenOfIz_LogicalDevice_CreateBindGroup( backend->LogicalDevice, &pixelConstantsBindGroupDesc, &backend->PixelConstantsBindGroups[ i ] );
+
+            DenOfIz_BindGroup_BeginUpdate( backend->PixelConstantsBindGroups[ i ] );
+
+            DenOfIz_BindBufferDesc bindPixelConstantsDesc{ };
+            bindPixelConstantsDesc.Resource       = backend->PixelConstantsBuffer;
+            bindPixelConstantsDesc.ResourceOffset = i * backend->AlignedPixelConstantsSize;
+            DenOfIz_BindGroup_CbvWithDesc( backend->PixelConstantsBindGroups[ i ], &bindPixelConstantsDesc );
+
+            DenOfIz_BindGroup_EndUpdate( backend->PixelConstantsBindGroups[ i ] );
         }
     }
 
@@ -434,40 +286,25 @@ float4 main(PSInput input) : SV_TARGET
             return;
         }
 
-        if ( backend->SupportsSrvArray )
+        for ( uint32_t frameIndex = 0; frameIndex < backend->Desc.NumFrames; ++frameIndex )
         {
-            for ( uint32_t frameIndex = 0; frameIndex < backend->Desc.NumFrames; ++frameIndex )
-            {
-                DenOfIz_BindGroup_BeginUpdate( backend->FrameData[ frameIndex ].TextureBindGroup );
+            DenOfIz_BindGroup_BeginUpdate( backend->FrameData[ frameIndex ].TextureBindGroup );
 
-                DenOfIz_Texture *textureArray = static_cast<DenOfIz_Texture *>( malloc( backend->NumTextures * sizeof( DenOfIz_Texture ) ) );
-                for ( uint32_t i = 0; i < backend->NumTextures; ++i )
-                {
-                    textureArray[ i ] = DENOFIZ_HANDLE_IS_VALID( backend->Textures[ i ] ) ? backend->Textures[ i ] : backend->NullTexture;
-                }
-
-                DenOfIz_TextureArray textureArrayDesc{ };
-                textureArrayDesc.Elements    = textureArray;
-                textureArrayDesc.NumElements = backend->NumTextures;
-
-                DenOfIz_BindGroup_SrvArray( backend->FrameData[ frameIndex ].TextureBindGroup, 0, &textureArrayDesc );
-                DenOfIz_BindGroup_Sampler( backend->FrameData[ frameIndex ].TextureBindGroup, 0, backend->Sampler );
-                DenOfIz_BindGroup_EndUpdate( backend->FrameData[ frameIndex ].TextureBindGroup );
-
-                free( textureArray );
-            }
-        }
-        else
-        {
+            DenOfIz_Texture *textureArray = static_cast<DenOfIz_Texture *>( malloc( backend->NumTextures * sizeof( DenOfIz_Texture ) ) );
             for ( uint32_t i = 0; i < backend->NumTextures; ++i )
             {
-                DenOfIz_Texture texture = DENOFIZ_HANDLE_IS_VALID( backend->Textures[ i ] ) ? backend->Textures[ i ] : backend->NullTexture;
-
-                DenOfIz_BindGroup_BeginUpdate( backend->PerTextureBindGroups[ i ] );
-                DenOfIz_BindGroup_SrvTexture( backend->PerTextureBindGroups[ i ], 0, texture );
-                DenOfIz_BindGroup_Sampler( backend->PerTextureBindGroups[ i ], 0, backend->Sampler );
-                DenOfIz_BindGroup_EndUpdate( backend->PerTextureBindGroups[ i ] );
+                textureArray[ i ] = DENOFIZ_HANDLE_IS_VALID( backend->Textures[ i ] ) ? backend->Textures[ i ] : backend->NullTexture;
             }
+
+            DenOfIz_TextureArray textureArrayDesc{ };
+            textureArrayDesc.Elements    = textureArray;
+            textureArrayDesc.NumElements = backend->NumTextures;
+
+            DenOfIz_BindGroup_SrvArray( backend->FrameData[ frameIndex ].TextureBindGroup, 0, &textureArrayDesc );
+            DenOfIz_BindGroup_Sampler( backend->FrameData[ frameIndex ].TextureBindGroup, 0, backend->Sampler );
+            DenOfIz_BindGroup_EndUpdate( backend->FrameData[ frameIndex ].TextureBindGroup );
+
+            free( textureArray );
         }
 
         backend->TexturesDirty = false;
@@ -484,10 +321,7 @@ float4 main(PSInput input) : SV_TARGET
         uniformData->ScreenSize = { static_cast<float>( backend->Viewport.Width ), static_cast<float>( backend->Viewport.Height ), 0.0f, 0.0f };
 
         DenOfIz_CommandList_BindGroup( commandList, backend->FrameData[ frameIndex ].ConstantsBindGroup );
-        if ( backend->SupportsSrvArray )
-        {
-            DenOfIz_CommandList_BindGroup( commandList, backend->FrameData[ frameIndex ].TextureBindGroup );
-        }
+        DenOfIz_CommandList_BindGroup( commandList, backend->FrameData[ frameIndex ].TextureBindGroup );
     }
 
     void RenderImDrawList( const ImGuiBackend *backend, DenOfIz_CommandList commandList, ImDrawList *cmdList, uint32_t vertexOffset, uint32_t indexOffset )
@@ -520,19 +354,9 @@ float4 main(PSInput input) : SV_TARGET
                 const auto textureIndex = static_cast<uint32_t>( pcmd->TextureId );
                 if ( textureIndex < backend->NumTextures && DENOFIZ_HANDLE_IS_VALID( backend->Textures[ textureIndex ] ) )
                 {
-                    if ( backend->SupportsSrvArray )
+                    if ( textureIndex < backend->NumPixelConstantsBindGroups )
                     {
-                        if ( textureIndex < backend->NumPixelConstantsBindGroups )
-                        {
-                            DenOfIz_CommandList_BindGroup( commandList, backend->PixelConstantsBindGroups[ textureIndex ] );
-                        }
-                    }
-                    else
-                    {
-                        if ( textureIndex < backend->NumPerTextureBindGroups )
-                        {
-                            DenOfIz_CommandList_BindGroup( commandList, backend->PerTextureBindGroups[ textureIndex ] );
-                        }
+                        DenOfIz_CommandList_BindGroup( commandList, backend->PixelConstantsBindGroups[ textureIndex ] );
                     }
                     DenOfIz_CommandList_DrawIndexed( commandList, pcmd->ElemCount, 1, pcmd->IdxOffset + indexOffset, static_cast<int32_t>( pcmd->VtxOffset + vertexOffset ), 0 );
                 }
@@ -630,12 +454,6 @@ ImGuiBackend *DenOfIz::ImGuiBackend_Create( const ImGuiBackendDesc &desc )
         return nullptr;
     }
 
-    DenOfIz_PhysicalDevice deviceInfo{ };
-    DenOfIz_LogicalDevice_DeviceInfo( backend->LogicalDevice, &deviceInfo );
-    backend->SupportsSrvArray = deviceInfo.Capabilities.SrvArray;
-
-    spdlog::info( "ImGuiBackend: SrvArray support: {}", backend->SupportsSrvArray ? "yes" : "no" );
-
     backend->NumTextures = desc.MaxTextures;
     backend->Textures    = static_cast<DenOfIz_Texture *>( calloc( backend->NumTextures, sizeof( DenOfIz_Texture ) ) );
 
@@ -707,38 +525,21 @@ void DenOfIz::ImGuiBackend_Destroy( ImGuiBackend *backend )
     DenOfIz_Buffer_Destroy( backend->VertexBuffer );
     DenOfIz_Buffer_Destroy( backend->IndexBuffer );
     DenOfIz_Buffer_Destroy( backend->UniformBuffer );
-    if ( backend->SupportsSrvArray )
-    {
-        DenOfIz_Buffer_Destroy( backend->PixelConstantsBuffer );
-    }
+    DenOfIz_Buffer_Destroy( backend->PixelConstantsBuffer );
 
     for ( uint32_t i = 0; i < backend->NumFrameData; ++i )
     {
         DenOfIz_BindGroup_Destroy( backend->FrameData[ i ].ConstantsBindGroup );
-        if ( backend->SupportsSrvArray )
-        {
-            DenOfIz_BindGroup_Destroy( backend->FrameData[ i ].TextureBindGroup );
-        }
+        DenOfIz_BindGroup_Destroy( backend->FrameData[ i ].TextureBindGroup );
         DenOfIz_Fence_Destroy( backend->FrameData[ i ].FrameFence );
     }
     free( backend->FrameData );
 
-    if ( backend->SupportsSrvArray )
+    for ( uint32_t i = 0; i < backend->NumPixelConstantsBindGroups; ++i )
     {
-        for ( uint32_t i = 0; i < backend->NumPixelConstantsBindGroups; ++i )
-        {
-            DenOfIz_BindGroup_Destroy( backend->PixelConstantsBindGroups[ i ] );
-        }
-        free( backend->PixelConstantsBindGroups );
+        DenOfIz_BindGroup_Destroy( backend->PixelConstantsBindGroups[ i ] );
     }
-    else
-    {
-        for ( uint32_t i = 0; i < backend->NumPerTextureBindGroups; ++i )
-        {
-            DenOfIz_BindGroup_Destroy( backend->PerTextureBindGroups[ i ] );
-        }
-        free( backend->PerTextureBindGroups );
-    }
+    free( backend->PixelConstantsBindGroups );
 
     DenOfIz_Texture_Destroy( backend->FontTexture );
     DenOfIz_Texture_Destroy( backend->NullTexture );

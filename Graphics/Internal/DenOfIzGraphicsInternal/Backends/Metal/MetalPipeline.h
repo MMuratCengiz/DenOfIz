@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -54,25 +43,22 @@ namespace DenOfIz
         id<MTLRenderPipelineState>  m_graphicsPipelineState;
         id<MTLComputePipelineState> m_computePipelineState;
 
-        // Graphics specific
         MTLCullMode              m_cullMode;
         MTLPrimitiveType         m_primitiveType;
         MTLTriangleFillMode      m_fillMode;
         MTLWinding               m_frontFaceWinding;
         id<MTLDepthStencilState> m_depthStencilState;
 
-        // Depth bias settings (set per render encoder)
+        // Metal sets depth bias on the render encoder, not in the pipeline state.
         float m_depthBias;
         float m_depthBiasSlopeScale;
         float m_depthBiasClamp;
 
-        // Thread group sizes (pre-calculated from shader reflection)
-        MTLSize              m_computeThreadsPerThreadgroup; // For compute shaders
-        MTLSize              m_meshThreadsPerThreadgroup;    // For mesh shaders
-        MTLSize              m_objectThreadsPerThreadgroup;  // For task/amplification shaders
+        MTLSize              m_computeThreadsPerThreadgroup;
+        MTLSize              m_meshThreadsPerThreadgroup;
+        MTLSize              m_objectThreadsPerThreadgroup; // Task/amplification shaders
         MeshShaderUsedStages m_usedMeshShaderStages;
 
-        // Ray tracing specific
         std::unordered_map<std::string, uint64_t>       m_visibleFunctions;
         std::unordered_map<std::string, HitGroupExport> m_hitGroupExports;
         std::deque<std::string>                         m_hitGroupShaders;
@@ -103,8 +89,7 @@ namespace DenOfIz
         const MTLSize                     &ObjectThreadsPerThreadgroup( ) const;
         const MeshShaderUsedStages        &MeshShaderUsedStages( );
 
-        // Ray tracing specific:
-        const uint64_t                                &FindVisibleShaderIndexByName( const std::string &name ) const;
+        uint64_t                                       FindVisibleShaderIndexByName( const std::string &name ) const;
         const HitGroupExport                          &FindHitGroupExport( const std::string &name ) const;
         [[nodiscard]] const id<MTLVisibleFunctionTable>      &VisibleFunctionTable( ) const;
         [[nodiscard]] const id<MTLIntersectionFunctionTable> &IntersectionFunctionTable( ) const;

@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 /**
@@ -270,6 +259,8 @@ extern "C"
 
     typedef enum DenOfIz_UITextAlign
     {
+        DENOFIZ_UI_TEXT_ALIGN_START, /**< Left for left to right paragraphs, right for right to left ones. */
+        DENOFIZ_UI_TEXT_ALIGN_END,
         DENOFIZ_UI_TEXT_ALIGN_LEFT,
         DENOFIZ_UI_TEXT_ALIGN_CENTER,
         DENOFIZ_UI_TEXT_ALIGN_RIGHT
@@ -544,7 +535,7 @@ extern "C"
         uint16_t                FontId;        /**< Zero is the built in font unless replaced with AddFont. */
         float                   FontSize;      /**< Points, zero is 14. */
         float                   LetterSpacing; /**< Points added after every character. */
-        float                   LineHeight;    /**< Points, zero is the font's line height. */
+        float                   LineHeight;    /**< Points, zero sizes each line to the tallest font drawing on it, fallbacks included. */
         DenOfIz_UITextWrap      Wrap;
         DenOfIz_UITextAlign     Align;
         DenOfIz_UITextOverflow  Overflow;
@@ -586,8 +577,8 @@ extern "C"
         DenOfIz_Window           Window;           /**< Optional. Its display scale and pixel size are followed. */
         DenOfIz_Format           RenderTargetFormat;
         DenOfIz_Format           DepthFormat; /**< Optional. Format of the depth attachment of passes Render records into. Depth is never tested. */
-        uint32_t                 NumFrames;
-        uint32_t                 Width; /**< Pixels. */
+        uint32_t                 NumFrames;   /**< Frames in flight, the range of Render's frameIndex. Zero is 3. */
+        uint32_t                 Width;       /**< Pixels. */
         uint32_t                 Height;
     } DenOfIz_UIDesc;
 
@@ -632,23 +623,29 @@ extern "C"
     DZ_API float DenOfIz_UI_GetPixelsPerPoint( DenOfIz_UI ui );
     DZ_API void  DenOfIz_UI_SetDebugFlags( DenOfIz_UI ui, DenOfIz_UIDebugFlags flags );
 
-    /** Registers a font under an id, replacing any font with the same id, including the built in font 0. */
+    /**
+     * Registers a font under an id below 64, replacing any font with the same id, including the built in font 0. The UI borrows the font:
+     * keep it alive until the BeginFrame after RemoveFont or its replacement, or until the UI is destroyed.
+     */
     DZ_API void DenOfIz_UI_AddFont( DenOfIz_UI ui, uint16_t fontId, DenOfIz_Font font );
     DZ_API void DenOfIz_UI_RemoveFont( DenOfIz_UI ui, uint16_t fontId );
+    /** Font ids tried in order, without their own fallbacks, for characters the font lacks, before the system fonts. Replaces the previous list, the ids need not be registered yet. */
+    DZ_API void DenOfIz_UI_SetFontFallbacks( DenOfIz_UI ui, uint16_t fontId, const DenOfIz_UInt16Array *fallbackIds );
 
     DZ_API void DenOfIz_UI_BeginFrame( DenOfIz_UI ui, float deltaTime );
-    /** @return The id of the element, resolved when Id is zero. */
+    /** Returns the element's id, resolved when Id is zero. */
     DZ_API uint32_t DenOfIz_UI_OpenElement( DenOfIz_UI ui, const DenOfIz_UIElementDesc *desc );
     DZ_API void     DenOfIz_UI_CloseElement( DenOfIz_UI ui );
-    /** Adds a text leaf to the open element. The text is copied. @return The id of the text element. */
+    /** Adds a text leaf to the open element and returns its id. The text is copied. */
     DZ_API uint32_t DenOfIz_UI_Text( DenOfIz_UI ui, DenOfIz_StringView text, const DenOfIz_UITextDesc *desc );
     /** Lays out the declared tree and updates interaction, scrolling and transitions. */
     DZ_API void DenOfIz_UI_EndFrame( DenOfIz_UI ui );
     /** Records draws into a render pass the caller has begun on a target of RenderTargetFormat (and DepthFormat). */
     DZ_API void DenOfIz_UI_Render( DenOfIz_UI ui, uint32_t frameIndex, DenOfIz_CommandList commandList );
     /**
-     * @brief Renders into a texture owned by the UI and submits it on the UI's own queue.
-     * @param waitSemaphores Optional, semaphores of work producing textures the UI samples, e.g. render targets shown as images.
+     * Renders into a texture owned by the UI and submits it on the UI's own queue. The texture is reused, or recreated after a resize, by
+     * the next RenderToTexture with the same frameIndex. waitSemaphores is optional: semaphores of work producing textures the UI samples,
+     * e.g. render targets shown as images.
      */
     DZ_API void DenOfIz_UI_RenderToTexture( DenOfIz_UI ui, uint32_t frameIndex, const DenOfIz_SemaphoreArray *waitSemaphores, DenOfIz_UIRenderResult *outResult );
 

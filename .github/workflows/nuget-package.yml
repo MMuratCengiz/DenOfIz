@@ -133,8 +133,7 @@ jobs:
           $additionalDlls = @(
               "dxcompiler.dll",
               "dxil.dll",
-              "metalirconverter.dll",
-              "wgpu_native.dll"
+              "metalirconverter.dll"
           )
 
           foreach ($dll in $additionalDlls) {
@@ -197,7 +196,6 @@ jobs:
           sudo apt-get install -y software-properties-common wget gpg
           sudo apt-get install -y ninja-build build-essential
           sudo apt-get install -y libglu1-mesa-dev freeglut3-dev libvulkan-dev libsdl2-dev
-          sudo apt-get install -y libfreetype-dev libharfbuzz-dev
           sudo apt-get install -y libltdl-dev libtool autoconf automake autoconf-archive
           sudo apt-get install -y libwayland-dev libxkbcommon-dev libegl1-mesa-dev
           sudo apt-get install -y libibus-1.0-dev libxtst-dev
@@ -259,7 +257,7 @@ jobs:
           fi
 
           # Copy additional libraries from install dir
-          for lib in libdxcompiler.so libdxil.so libwgpu_native.so; do
+          for lib in libdxcompiler.so libdxil.so; do
               if [ -f "$INSTALL_DIR/lib/$lib" ]; then
                   cp "$INSTALL_DIR/lib/$lib" artifacts/runtimes/linux-x64/native/
                   echo "Copied $lib"
@@ -299,7 +297,6 @@ jobs:
       - name: Install dependencies
         run: |
           brew install ninja
-          brew install freetype harfbuzz
           brew install sdl2
           brew install autoconf automake autoconf-archive
           brew install llvm
@@ -364,7 +361,7 @@ jobs:
           fi
 
           # Copy additional libraries from install dir
-          for lib in libdxcompiler.dylib libmetalirconverter.dylib libwgpu_native.dylib; do
+          for lib in libdxcompiler.dylib libmetalirconverter.dylib; do
               if [ -f "$INSTALL_DIR/lib/$lib" ]; then
                   cp "$INSTALL_DIR/lib/$lib" artifacts/runtimes/osx-arm64/native/
                   echo "Copied $lib"
@@ -396,109 +393,9 @@ jobs:
           name: macos-artifacts
           path: artifacts/
 
-  build-emscripten:
-    needs: read-version
-    if: ${{ github.event.inputs.skip_builds == '' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
-
-      - name: Export GitHub Actions cache environment variables
-        uses: actions/github-script@v7
-        with:
-          script: |
-            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
-
-      - name: Set version from previous job
-        run: echo "VERSION=${{ needs.read-version.outputs.version }}" >> $GITHUB_ENV
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build build-essential
-          sudo apt-get install -y python3 python3-pip
-
-      - name: Setup Emscripten
-        uses: mymindstorm/setup-emsdk@v14
-        with:
-          version: '3.1.56'
-          actions-cache-folder: 'emsdk-cache'
-
-      - uses: lukka/get-cmake@latest
-
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          doNotCache: false
-
-      - name: Configure CMake for Emscripten
-        run: |
-          emcmake cmake -S . -B build/DenOfIz/Install_Emscripten \
-            -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DVCPKG_TARGET_TRIPLET=wasm32-emscripten \
-            -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake \
-            -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake \
-            -DBUILD_SHARED_LIBS=OFF \
-            -DBUILD_TESTS=OFF \
-            -DBUILD_TOOLS=OFF \
-            -DBUILD_EXAMPLES=OFF \
-            -DDZ_INSTALL=ON
-
-      - name: Build Emscripten Library
-        run: |
-          cmake --build build/DenOfIz/Install_Emscripten --config Release
-
-      - name: Install Emscripten Library
-        run: |
-          cmake --install build/DenOfIz/Install_Emscripten --prefix install/DenOfIz/Install_Emscripten
-
-      - name: Package artifacts
-        run: |
-          INSTALL_DIR="install/DenOfIz/Install_Emscripten"
-          BUILD_DIR="build/DenOfIz/Install_Emscripten"
-
-          mkdir -p artifacts/runtimes/browser-wasm/native
-
-          # Copy static library from install or build dir
-          if [ -f "$INSTALL_DIR/lib/libDenOfIzGraphics.a" ]; then
-              cp "$INSTALL_DIR/lib/libDenOfIzGraphics.a" artifacts/runtimes/browser-wasm/native/
-              echo "Copied libDenOfIzGraphics.a from install dir"
-          elif [ -f "$BUILD_DIR/Graphics/libDenOfIzGraphics.a" ]; then
-              cp "$BUILD_DIR/Graphics/libDenOfIzGraphics.a" artifacts/runtimes/browser-wasm/native/
-              echo "Copied libDenOfIzGraphics.a from build dir"
-          else
-              echo "ERROR: libDenOfIzGraphics.a not found!"
-              echo "Contents of install directory:"
-              find install -name "*.a" 2>/dev/null || echo "No .a files in install"
-              echo "Contents of build directory:"
-              find build -name "*.a" 2>/dev/null || echo "No .a files in build"
-              exit 1
-          fi
-
-          # Copy any JS glue files if they exist
-          for js in "$BUILD_DIR/Graphics"/*.js "$INSTALL_DIR/lib"/*.js; do
-              if [ -f "$js" ]; then
-                  cp "$js" artifacts/runtimes/browser-wasm/native/
-                  echo "Copied $(basename $js)"
-              fi
-          done
-
-          echo "Artifacts packaged:"
-          find artifacts -type f
-
-      - name: Upload Emscripten Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: emscripten-artifacts
-          path: artifacts/
-
   build-nuget:
-    needs: [read-version, build-windows, build-linux, build-macos, build-emscripten]
-    if: ${{ always() && needs.read-version.result == 'success' && (github.event.inputs.skip_builds != '' || (needs.build-windows.result == 'success' && needs.build-linux.result == 'success' && needs.build-macos.result == 'success' && needs.build-emscripten.result == 'success')) }}
+    needs: [read-version, build-windows, build-linux, build-macos]
+    if: ${{ always() && needs.read-version.result == 'success' && (github.event.inputs.skip_builds != '' || (needs.build-windows.result == 'success' && needs.build-linux.result == 'success' && needs.build-macos.result == 'success')) }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -544,10 +441,9 @@ jobs:
           gh run download $runId -n windows-artifacts -D windows-artifacts
           gh run download $runId -n linux-artifacts -D linux-artifacts
           gh run download $runId -n macos-artifacts -D macos-artifacts
-          gh run download $runId -n emscripten-artifacts -D emscripten-artifacts
 
           Write-Host "Downloaded artifacts:"
-          Get-ChildItem -Recurse windows-artifacts, linux-artifacts, macos-artifacts, emscripten-artifacts | Select-Object FullName
+          Get-ChildItem -Recurse windows-artifacts, linux-artifacts, macos-artifacts | Select-Object FullName
 
       - name: Prepare NuGet package structure
         shell: pwsh
@@ -556,11 +452,9 @@ jobs:
 
           # Create necessary directories
           New-Item -Path "$nugetDir/lib/net8.0" -ItemType Directory -Force
-          New-Item -Path "$nugetDir/lib/net8.0-browser1.0" -ItemType Directory -Force
           New-Item -Path "$nugetDir/runtimes/win-x64/native" -ItemType Directory -Force
           New-Item -Path "$nugetDir/runtimes/linux-x64/native" -ItemType Directory -Force
           New-Item -Path "$nugetDir/runtimes/osx-arm64/native" -ItemType Directory -Force
-          New-Item -Path "$nugetDir/runtimes/browser-wasm/native" -ItemType Directory -Force
 
           # Copy generated C# files from Windows artifacts
           Write-Host "Copying generated C# source files..."
@@ -585,9 +479,6 @@ jobs:
           Write-Host "Copying macOS runtime files..."
           Copy-Item macos-artifacts/runtimes/osx-arm64/native/* $nugetDir/runtimes/osx-arm64/native/
 
-          Write-Host "Copying Emscripten/WASM runtime files..."
-          Copy-Item emscripten-artifacts/runtimes/browser-wasm/native/* $nugetDir/runtimes/browser-wasm/native/
-
           Write-Host "Copying README..."
           Copy-Item README.md $nugetDir/README.md
 
@@ -608,10 +499,8 @@ jobs:
               Write-Host "Updated csproj version to ${{ env.VERSION }}"
           }
 
-          # Build the managed DLLs for both frameworks
           Push-Location Bindings/CSharp/NuGet
 
-          # Build for net8.0 (native desktop platforms)
           Write-Host "Building net8.0..."
           dotnet build ./DenOfIzGraphics.csproj -c Release -f net8.0 -o lib/net8.0
           if (!$?) {
@@ -619,17 +508,9 @@ jobs:
               exit 1
           }
 
-          # Build for net8.0-browser1.0 (Blazor WebAssembly)
-          Write-Host "Building net8.0-browser1.0..."
-          dotnet build ./DenOfIzGraphics.csproj -c Release -f net8.0-browser1.0 -o lib/net8.0-browser1.0
-          if (!$?) {
-              Write-Error "Failed to build net8.0-browser1.0 DLL"
-              exit 1
-          }
-
           Pop-Location
 
-          Write-Host "Built managed DLLs:"
+          Write-Host "Built managed DLL:"
           Get-ChildItem -Recurse Bindings/CSharp/NuGet/lib | Select-Object FullName
 
       - name: Create NuGet packages
@@ -646,15 +527,8 @@ jobs:
           $nuspec.package.metadata.version = "${{ env.VERSION }}"
           $nuspec.Save($nuspecFile)
 
-          # Update version in Blazor nuspec
-          $blazorNuspecFile = "$nugetDir/DenOfIzGraphics.Blazor.nuspec"
-          [xml]$blazorNuspec = Get-Content $blazorNuspecFile
-          $blazorNuspec.package.metadata.version = "${{ env.VERSION }}"
-          $blazorNuspec.Save($blazorNuspecFile)
-
           Push-Location $nugetDir
           nuget pack DenOfIzGraphics.nuspec -Version ${{ env.VERSION }} -OutputDirectory ../NuGet_Out
-          nuget pack DenOfIzGraphics.Blazor.nuspec -Version ${{ env.VERSION }} -OutputDirectory ../NuGet_Out
           Pop-Location
 
           Write-Host "Created NuGet packages:"
@@ -706,4 +580,3 @@ jobs:
       - name: Publish to NuGet
         run: |
           dotnet nuget push DenOfIzGraphics.${{ env.VERSION }}.nupkg --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
-          dotnet nuget push DenOfIzGraphics.Blazor.${{ env.VERSION }}.nupkg --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json

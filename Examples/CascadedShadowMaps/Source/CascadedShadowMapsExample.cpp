@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 #include "DenOfIzExamples/CascadedShadowMapsExample.h"
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
@@ -24,8 +13,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 using namespace DirectX;
-
-// ─── Shader sources ──────────────────────────────────────────────────────────
 
 static const char *ShadowVS = R"(
 struct VSInput {
@@ -499,21 +486,18 @@ void CascadedShadowMapsExample::UpdateUniforms( )
     models[ 4 ] = XMMatrixScaling( 1.0f, 2.0f, 1.0f ) * XMMatrixTranslation( 4.0f, 1.0f, 15.0f );
     models[ 5 ] = XMMatrixTranslation( -3.0f, 0.5f, 25.0f );
 
-    // Compute light VP for each cascade
     XMMATRIX lightViewProj[ NUM_CASCADES ];
     for ( uint32_t c = 0; c < NUM_CASCADES; ++c )
     {
         const float nearSplit = m_cascadeSplits[ c ];
         const float farSplit  = m_cascadeSplits[ c + 1 ];
 
-        // Get frustum corners in world space for this cascade slice
         XMVECTOR frustumCorners[ 8 ];
-        // NDC corners: near plane z=0, far plane z=1 (LH)
+
         const float ndcNear = 0.0f;
         const float ndcFar  = 1.0f;
 
-        // Map cascade split distances to NDC Z
-        // For perspective projection: z_ndc = (far * (z - near)) / (z * (far - near))
+        // Perspective depth: z_ndc = (far * (z - near)) / (z * (far - near))
         float ndcNearSlice, ndcFarSlice;
         {
             const float n = CAMERA_NEAR;
@@ -538,7 +522,6 @@ void CascadedShadowMapsExample::UpdateUniforms( )
             }
         }
 
-        // Compute bounding sphere center
         XMVECTOR center = XMVectorZero( );
         for ( uint32_t i = 0; i < 8; ++i )
         {
@@ -546,7 +529,6 @@ void CascadedShadowMapsExample::UpdateUniforms( )
         }
         center = XMVectorScale( center, 1.0f / 8.0f );
 
-        // Compute bounding sphere radius
         float radius = 0.0f;
         for ( uint32_t i = 0; i < 8; ++i )
         {
@@ -556,13 +538,12 @@ void CascadedShadowMapsExample::UpdateUniforms( )
         // Round up to reduce shadow shimmer
         radius = std::ceil( radius * 16.0f ) / 16.0f;
 
-        // Snap to texel grid to reduce shadow shimmer
         const XMVECTOR lightUp   = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f );
         const XMVECTOR lightEye  = XMVectorSubtract( center, XMVectorScale( lightDir, radius ) );
         const XMMATRIX lightView = XMMatrixLookAtLH( lightEye, center, lightUp );
         XMMATRIX       lightProj = XMMatrixOrthographicLH( radius * 2.0f, radius * 2.0f, 0.0f, radius * 2.0f );
 
-        // Snap to shadow map texels
+        // Snap to shadow map texels to reduce shadow shimmer
         const XMMATRIX shadowMatrix = lightView * lightProj;
         XMVECTOR       origin       = XMVector4Transform( XMVectorSet( 0.0f, 0.0f, 0.0f, 1.0f ), shadowMatrix );
         origin                      = XMVectorScale( origin, SHADOW_MAP_SIZE / 2.0f );
@@ -577,19 +558,16 @@ void CascadedShadowMapsExample::UpdateUniforms( )
         lightViewProj[ c ] = lightView * lightProj;
     }
 
-    // Store model matrices for use as push constants
     for ( uint32_t i = 0; i < NUM_OBJECTS; ++i )
     {
         XMStoreFloat4x4( &m_models[ i ], models[ i ] );
     }
 
-    // Fill shadow CB
     for ( uint32_t c = 0; c < NUM_CASCADES; ++c )
     {
         XMStoreFloat4x4( &m_shadowCBData->LightViewProj[ c ], lightViewProj[ c ] );
     }
 
-    // Fill scene CB
     XMStoreFloat4x4( &m_sceneCBData->ViewProj, viewProj );
     for ( uint32_t c = 0; c < NUM_CASCADES; ++c )
     {
@@ -727,7 +705,6 @@ void CascadedShadowMapsExample::Render( const uint32_t frameIndex, DenOfIz_Comma
 
 void CascadedShadowMapsExample::ModifyApiPreferences( DenOfIz_APIPreference &defaultApiPreference )
 {
-    // defaultApiPreference.Windows = DENOFIZ_API_PREFERENCE_WINDOWS_VULKAN;
 }
 
 void CascadedShadowMapsExample::Update( )

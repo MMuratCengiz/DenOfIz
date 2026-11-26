@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICUL   AR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphicsInternal/Backends/Metal/MetalEnumConverter.h"
@@ -114,7 +103,6 @@ void MetalPipeline::CreateGraphicsPipeline( )
         spdlog::error("Failed to create fragment function (required when render targets are specified)");
         return;
     }
-    // Configure a pipeline descriptor that is used to create a pipeline state.
     MTLRenderPipelineDescriptor *pipelineStateDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
     pipelineStateDescriptor.label                        = @"Graphics Pipeline#";
     pipelineStateDescriptor.vertexFunction               = vertexFunction;
@@ -276,7 +264,6 @@ void MetalPipeline::CreateComputePipeline( )
         return;
     }
 
-    // Configure a pipeline descriptor that is used to create a pipeline state.
     MTLComputePipelineDescriptor *pipelineStateDescriptor = [[MTLComputePipelineDescriptor alloc] init];
     pipelineStateDescriptor.label                         = @"Compute Pipeline#";
     pipelineStateDescriptor.computeFunction               = computeFunction;
@@ -299,16 +286,7 @@ void MetalPipeline::CreateComputePipeline( )
         }
     }
 
-    MTLNewComputePipelineStateCompletionHandler completionHandler = ^( id<MTLComputePipelineState> pipelineState, NSError *err ) {
-      if ( err != nil )
-      {
-          spdlog::error( "Error creating pipeline state" );
-      }
-    };
-
-    NSError          *error   = nil;
-    MTLPipelineOption options = MTLPipelineOptionArgumentInfo;
-
+    NSError *error = nil;
     if ( DENOFIZ_HANDLE_IS_VALID( m_desc.PipelineCache ) )
     {
         auto metalCache = static_cast<MetalPipelineCache *>( PIPELINE_CACHE_PTR( m_desc.PipelineCache ) );
@@ -631,7 +609,7 @@ const MeshShaderUsedStages &MetalPipeline::MeshShaderUsedStages( )
     return m_usedMeshShaderStages;
 }
 
-const uint64_t &MetalPipeline::FindVisibleShaderIndexByName( const std::string &name ) const
+uint64_t MetalPipeline::FindVisibleShaderIndexByName( const std::string &name ) const
 {
     auto shaderFunction = m_visibleFunctions.find( name );
     if ( shaderFunction == m_visibleFunctions.end( ) )
@@ -654,13 +632,13 @@ const id<MTLVisibleFunctionTable> &MetalPipeline::VisibleFunctionTable( ) const
 
 void MetalPipeline::CreateMeshPipeline( )
 {
-    id<MTLFunction> objectFunction = nullptr; // Task (Amplification) shader
-    id<MTLFunction> meshFunction = nullptr;   // Mesh shader
+    id<MTLFunction> objectFunction = nullptr; // Task (amplification) shader
+    id<MTLFunction> meshFunction = nullptr;
     id<MTLFunction> fragmentFunction = nullptr;
     m_usedMeshShaderStages = {};
 
-    DenOfIz_ThreadGroupDesc objectThreadGroup = { 0, 0, 0 }; // Task shader thread group
-    DenOfIz_ThreadGroupDesc meshThreadGroup = { 0, 0, 0 };   // Mesh shader thread group
+    DenOfIz_ThreadGroupDesc objectThreadGroup = { 0, 0, 0 };
+    DenOfIz_ThreadGroupDesc meshThreadGroup = { 0, 0, 0 };
 
     if ( !DENOFIZ_HANDLE_IS_VALID( m_desc.ShaderProgram ) )
     {
@@ -715,7 +693,6 @@ void MetalPipeline::CreateMeshPipeline( )
     pipelineStateDescriptor.fragmentFunction = isDepthOnlyPipeline ? nil : fragmentFunction;
     pipelineStateDescriptor.rasterSampleCount = DenOfIz_MSAASampleCount_ToNumSamples( m_desc.Graphics.MSAASampleCount );
 
-    // Compute thread group count from reflection
     if (objectFunction && (objectThreadGroup.X > 0 || objectThreadGroup.Y > 0 || objectThreadGroup.Z > 0))
     {
         m_objectThreadsPerThreadgroup = MTLSizeMake(

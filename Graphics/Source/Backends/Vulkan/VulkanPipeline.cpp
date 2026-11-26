@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanPipeline.h"
 
@@ -73,19 +62,17 @@ void VulkanPipeline::CreateGraphicsPipeline( )
     VkPipelineDepthStencilStateCreateInfo            depthStencilStateCreateInfo  = CreateDepthAttachmentImages( );
     VkPipelineVertexInputStateCreateInfo             inputStateCreateInfo         = ConfigureVertexInputState( );
 
-    // Configure Dynamic States:
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{ };
     dynamicStateCreateInfo.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicStateCreateInfo.dynamicStateCount = g_dynamicStates.size( );
     dynamicStateCreateInfo.pDynamicStates    = g_dynamicStates.data( );
     pipelineCreateInfo.pDynamicState         = &dynamicStateCreateInfo;
-    // --
-    // Render pass configuration, disabled for now
+    // Dynamic rendering through pNext, no render pass.
     pipelineCreateInfo.renderPass         = nullptr;
     pipelineCreateInfo.subpass            = 0;
     pipelineCreateInfo.basePipelineHandle = nullptr;
     pipelineCreateInfo.basePipelineIndex  = -1;
-    // --
+
     pipelineCreateInfo.pVertexInputState   = &inputStateCreateInfo;
     pipelineCreateInfo.pTessellationState  = &tessellationStateCreateInfo;
     pipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;
@@ -116,10 +103,10 @@ void VulkanPipeline::CreateComputePipeline( )
     pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 
     const std::vector<VkPipelineShaderStageCreateInfo> pipelineStageCreateInfos = ConfigurePipelineStages( );
-    // Render pass configuration, disabled for now
+
     pipelineCreateInfo.basePipelineHandle = nullptr;
     pipelineCreateInfo.basePipelineIndex  = -1;
-    // --
+
     pipelineCreateInfo.stage  = pipelineStageCreateInfos[ 0 ];
     pipelineCreateInfo.layout = m_layout;
 
@@ -149,7 +136,6 @@ void VulkanPipeline::CreateRayTracingPipeline( )
     auto                               rootSigLayouts = rootSig->DescriptorSetLayouts( );
     allLayouts.insert( allLayouts.end( ), rootSigLayouts.begin( ), rootSigLayouts.end( ) );
 
-    // Create a local root signature
     rayTracingLocalRootSignature = std::make_unique<VulkanLocalRootSignature>( m_context, DenOfIz_LocalRootSignatureDesc{ }, false );
     auto mergeLocalRootSignature = [ & ]( DenOfIz_LocalRootSignature localRootSignatureHandle )
     {
@@ -221,7 +207,6 @@ void VulkanPipeline::CreateRayTracingPipeline( )
         mergeLocalRootSignature( hitGroup.LocalRootSignature );
     }
 
-    // Add the merged local layouts
     rayTracingLocalRootSignature->Create( );
     for ( const auto &layout : rayTracingLocalRootSignature->DescriptorSetLayouts( ) )
     {
@@ -349,9 +334,10 @@ void VulkanPipeline::CreateMeshPipeline( )
     dynamicStateCreateInfo.pDynamicStates    = g_dynamicStates.data( );
     pipelineCreateInfo.pDynamicState         = &dynamicStateCreateInfo;
 
-    pipelineCreateInfo.pVertexInputState   = nullptr; // MUST be null for mesh pipelines
-    pipelineCreateInfo.pInputAssemblyState = nullptr; // MUST be null for mesh pipelines
-    pipelineCreateInfo.pTessellationState  = nullptr; // MUST be null for mesh pipelines
+    // Must be null for mesh pipelines.
+    pipelineCreateInfo.pVertexInputState   = nullptr;
+    pipelineCreateInfo.pInputAssemblyState = nullptr;
+    pipelineCreateInfo.pTessellationState  = nullptr;
 
     pipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;
     pipelineCreateInfo.pViewportState      = &viewportStateCreateInfo;
@@ -390,7 +376,6 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigureMeshPipeli
     {
         const auto &compiledShader = compiledShaders.Elements[ i ];
 
-        // Only include task, mesh, and pixel/fragment shaders for mesh pipeline
         if ( compiledShader->Stage != DENOFIZ_SHADER_STAGE_TASK_BIT && compiledShader->Stage != DENOFIZ_SHADER_STAGE_MESH_BIT &&
              compiledShader->Stage != DENOFIZ_SHADER_STAGE_PIXEL_BIT )
         {
@@ -428,7 +413,7 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigureMeshPipeli
     renderingCreateInfo.colorAttachmentCount    = colorAttachmentsStore.size( );
     renderingCreateInfo.pColorAttachmentFormats = colorAttachmentsStore.data( );
     renderingCreateInfo.depthAttachmentFormat   = DenOfIz_VulkanEnumConverter_ConvertImageFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
-    if ( m_desc.Graphics.DepthStencilAttachmentFormat == DENOFIZ_FORMAT_D24_UNORM_S8_UINT ) // Todo other formats?
+    if ( m_desc.Graphics.DepthStencilAttachmentFormat == DENOFIZ_FORMAT_D24_UNORM_S8_UINT ) // TODO: other depth stencil formats
     {
         renderingCreateInfo.stencilAttachmentFormat = DenOfIz_VulkanEnumConverter_ConvertImageFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
     }
@@ -443,7 +428,7 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigureMeshPipeli
 {
     VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo{ };
     tessellationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-    // Todo read this value from somewhere
+    // TODO: hardcoded, not taken from the pipeline desc
     tessellationStateCreateInfo.patchControlPoints = 3;
     return tessellationStateCreateInfo;
 }
@@ -516,7 +501,7 @@ VkPipelineMultisampleStateCreateInfo VulkanPipeline::ConfigureMultisampling( ) c
 
 VkPipelineViewportStateCreateInfo VulkanPipeline::ConfigureViewport( ) const
 {
-    // Todo test, these are dynamic states
+    // Viewports and scissors are dynamic state.
     VkPipelineViewportStateCreateInfo viewportStateCreateInfo{ };
     viewportStateCreateInfo.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewportStateCreateInfo.viewportCount = 0;
@@ -606,7 +591,7 @@ VkPipelineColorBlendStateCreateInfo VulkanPipeline::ConfigureColorBlend( std::ve
         }
     }
 
-    // This overwrites the above
+    // An enabled logic op disables the attachments' blending.
     VkPipelineColorBlendStateCreateInfo colorBlending{ };
     colorBlending.sType               = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable       = m_desc.Graphics.BlendLogicOpEnable;

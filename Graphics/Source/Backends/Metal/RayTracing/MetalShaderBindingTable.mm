@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #import "DenOfIzGraphicsInternal/Backends/Metal/MetalBuffer.h"
@@ -29,8 +18,7 @@ using namespace DenOfIz;
 MetalShaderBindingTable::MetalShaderBindingTable( MetalContext *context, const DenOfIz_ShaderBindingTableDesc &desc ) : m_context( context ), m_desc( desc )
 {
     m_pipeline = MTL_PIPELINE_IMPL( desc.Pipeline );
-    // In Metal, the concept of a local root signature does not apply to shader stages independently. In case a source of the shader is shared between multiple stages,
-    // we need to account for the maximum size of the data for all stages.
+    // Metal has no per-stage local root signatures and a shader can be shared between stages, so every record holds the largest data size.
     const uint32_t maxBytes = Utilities::Align( std::max( { m_desc.MaxRayGenDataBytes, m_desc.MaxHitGroupDataBytes, m_desc.MaxMissDataBytes, m_pipeline->LocalShaderLayout( ).NumBytes( ) } ), 16 );
     m_maxDataBytes     = maxBytes;
     m_rayGenNumBytes   = sizeof( IRShaderIdentifier ) + maxBytes;
@@ -201,7 +189,6 @@ uint32_t MetalShaderBindingTable::EncodeData( uint32_t offset, MetalShaderLocalD
     }
     memcpy( dest, record->Data.data( ), numBytes );
 
-    // Todo optimize this
     for ( const id<MTLResource> &resource : record->UsedResources )
     {
         if ( std::find( m_usedResources.begin( ), m_usedResources.end( ), resource ) == m_usedResources.end( ) )

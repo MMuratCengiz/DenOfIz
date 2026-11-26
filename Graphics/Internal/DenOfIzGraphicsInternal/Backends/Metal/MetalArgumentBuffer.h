@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -52,9 +41,8 @@ namespace DenOfIz
         }
     };
 
-    //! Bump allocator for the top level argument buffers of the draws of one command list. It grows in segments: when the current buffer is
-    //! full the next one is used, and one is added when there is none. Offsets are relative to the current segment, Buffer( ) is the current
-    //! segment. Earlier segments are not touched again until Reset( ), draws that were already encoded keep reading from them.
+    // Grows in segments of capacity bytes instead of reallocating, because draws already encoded keep reading from earlier segments until
+    // Reset( ). Offsets are relative to the current segment.
     class MetalArgumentBuffer
     {
         MetalContext              *m_context;
@@ -67,7 +55,6 @@ namespace DenOfIz
         std::mutex    m_reserveMutex;
 
     public:
-        //! @param capacity size of one segment
         MetalArgumentBuffer( MetalContext *context, size_t capacity );
         void                        EncodeRootConstant( uint64_t offset, uint32_t numRootConstantBytes, const Byte *data ) const;
         void                        EncodeAddress( uint64_t offset, uint64_t address ) const;
@@ -76,7 +63,7 @@ namespace DenOfIz
         void                        Reset( );
         [[nodiscard]] uint64_t             Offset( ) const;
         [[nodiscard]] const id<MTLBuffer> &Buffer( ) const;
-        //! Index of the current segment. A buffer bound to an encoder has to be bound again when this changes.
+        // A buffer bound to an encoder has to be bound again when this changes.
         [[nodiscard]] size_t Segment( ) const;
 
     private:

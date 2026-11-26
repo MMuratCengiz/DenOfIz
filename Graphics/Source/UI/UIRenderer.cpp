@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphicsInternal/UI/UIRenderer.h"
@@ -22,7 +11,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cmath>
 #include <cstring>
 #include <string>
-#include "DenOfIzGraphics/Assets/Font/Font.h"
 #include "DenOfIzGraphics/Backends/Interface/CommandListPool.h"
 #include "DenOfIzGraphics/Backends/Interface/CommandQueue.h"
 #include "DenOfIzGraphicsInternal/Assets/Shaders/EmbeddedShaders.h"
@@ -37,10 +25,20 @@ using namespace DirectX;
 
 namespace
 {
-    constexpr uint32_t MinVertexCapacity = 16384;
-    constexpr uint32_t MinIndexCapacity  = 24576;
-    constexpr uint32_t MinStateCapacity  = 256;
-    constexpr uint64_t ShapeCacheAge     = 60;
+    constexpr uint64_t ShapeCacheAge = 60;
+
+    struct StreamInfo
+    {
+        uint32_t    Stride;
+        uint32_t    MinCapacity;
+        const char *Name;
+    };
+
+    // Indexed by UIRenderer::Stream. Every stream but the index buffer is a structured buffer in the constants group.
+    constexpr std::array<StreamInfo, 4> Streams = { { { sizeof( UIVertex ), 4096, "UI Vertices" },
+                                                      { sizeof( UIQuad ), 4096, "UI Quads" },
+                                                      { sizeof( uint32_t ), 24576, "UI Indices" },
+                                                      { sizeof( UIStateRecord ), 256, "UI States" } } };
 
     uint32_t GrowCapacity( const uint32_t current, const uint32_t required, const uint32_t minimum )
     {
@@ -53,12 +51,8 @@ namespace
     }
 } // namespace
 
-UIRenderer::UIRenderer( const UIRendererDesc &desc ) : m_desc( desc ), m_device( desc.LogicalDevice )
+UIRenderer::UIRenderer( const UIRendererDesc &desc ) : m_desc( desc ), m_device( desc.LogicalDevice ), m_glyphBuffers( desc.LogicalDevice )
 {
-    DenOfIz_PhysicalDevice deviceInfo{ };
-    DenOfIz_LogicalDevice_DeviceInfo( m_device, &deviceInfo );
-    m_supportsSrvArray = deviceInfo.Capabilities.SrvArray;
-
     if ( DENOFIZ_HANDLE_IS_VALID( desc.ResourceTracking ) )
     {
         m_resourceTracking = desc.ResourceTracking;
@@ -69,7 +63,7 @@ UIRenderer::UIRenderer( const UIRendererDesc &desc ) : m_desc( desc ), m_device(
         m_ownsTracking = true;
     }
 
-    m_shaderProgram = m_supportsSrvArray ? EmbeddedShaders::GetUIArrayShaderProgram( ) : EmbeddedShaders::GetUISingleShaderProgram( );
+    m_shaderProgram = EmbeddedShaders::GetUIShaderProgram( );
 
     DenOfIz_ShaderReflectDesc reflectDesc{ };
     DenOfIz_ShaderProgram_Reflect( m_shaderProgram, &reflectDesc );
@@ -135,30 +129,12 @@ UIRenderer::~UIRenderer( )
     DenOfIz_LogicalDevice_WaitIdle( m_device );
     for ( FrameData &frame : m_frames )
     {
-        if ( frame.VertexData )
+        for ( const FrameStream &stream : frame.Streams )
         {
-            DenOfIz_Buffer_UnmapMemory( frame.VertexBuffer );
-        }
-        if ( frame.IndexData )
-        {
-            DenOfIz_Buffer_UnmapMemory( frame.IndexBuffer );
-        }
-        if ( frame.StateData )
-        {
-            DenOfIz_Buffer_UnmapMemory( frame.StateBuffer );
-        }
-        for ( const DenOfIz_Buffer buffer : { frame.VertexBuffer, frame.IndexBuffer, frame.StateBuffer } )
-        {
-            if ( DENOFIZ_HANDLE_IS_VALID( buffer ) )
+            if ( DENOFIZ_HANDLE_IS_VALID( stream.Buffer ) )
             {
-                DenOfIz_Buffer_Destroy( buffer );
-            }
-        }
-        for ( const DenOfIz_BindGroup group : frame.SlotGroups )
-        {
-            if ( DENOFIZ_HANDLE_IS_VALID( group ) )
-            {
-                DenOfIz_BindGroup_Destroy( group );
+                DenOfIz_Buffer_UnmapMemory( stream.Buffer );
+                DenOfIz_Buffer_Destroy( stream.Buffer );
             }
         }
         for ( const DenOfIz_BindGroup group : { frame.Constants, frame.Textures } )
@@ -280,114 +256,81 @@ void UIRenderer::CreateFrameResources( )
         DenOfIz_BindGroupDesc constantsDesc{ };
         constantsDesc.Layout = m_bindGroupLayouts[ 1 ];
         DenOfIz_LogicalDevice_CreateBindGroup( m_device, &constantsDesc, &frame.Constants );
-        EnsureStateCapacity( i, MinStateCapacity, 0 );
 
-        if ( m_supportsSrvArray )
+        DenOfIz_BindGroupDesc texturesDesc{ };
+        texturesDesc.Layout = m_bindGroupLayouts[ 0 ];
+        DenOfIz_LogicalDevice_CreateBindGroup( m_device, &texturesDesc, &frame.Textures );
+        for ( uint32_t stream = 0; stream < NumStreams; ++stream )
         {
-            DenOfIz_BindGroupDesc texturesDesc{ };
-            texturesDesc.Layout = m_bindGroupLayouts[ 0 ];
-            DenOfIz_LogicalDevice_CreateBindGroup( m_device, &texturesDesc, &frame.Textures );
+            Reserve( frame, static_cast<Stream>( stream ), Streams[ stream ].MinCapacity, 0 );
         }
-        EnsureGeometryCapacity( frame, MinVertexCapacity, MinIndexCapacity, 0, 0 );
     }
 }
 
-void UIRenderer::EnsureGeometryCapacity( FrameData &frame, const uint32_t vertexCount, const uint32_t indexCount, const uint32_t keepVertices, const uint32_t keepIndices ) const
+void UIRenderer::Reserve( FrameData &frame, const Stream stream, const uint32_t count, const uint32_t keep ) const
 {
-    if ( vertexCount > frame.VertexCapacity )
+    FrameStream &target = frame.Streams[ stream ];
+    if ( count <= target.Capacity )
     {
-        const uint32_t capacity = GrowCapacity( frame.VertexCapacity, vertexCount, MinVertexCapacity );
-        DenOfIz_BufferDesc desc{ };
-        desc.NumBytes  = static_cast<uint64_t>( capacity ) * sizeof( UIVertex );
-        desc.Usage     = DENOFIZ_BUFFER_USAGE_VERTEX_BIT;
-        desc.HeapType  = DENOFIZ_HEAP_TYPE_CPU_GPU;
-        desc.DebugName = DENOFIZ_STRING( "UI Vertices" );
-        DenOfIz_Buffer buffer = DENOFIZ_NULL_HANDLE;
-        uint8_t       *data   = nullptr;
-        DenOfIz_LogicalDevice_CreateBuffer( m_device, &desc, &buffer );
-        DenOfIz_Buffer_MapMemory( buffer, reinterpret_cast<void **>( &data ) );
-        if ( DENOFIZ_HANDLE_IS_VALID( frame.VertexBuffer ) )
-        {
-            std::memcpy( data, frame.VertexData, static_cast<size_t>( keepVertices ) * sizeof( UIVertex ) );
-            DenOfIz_Buffer_UnmapMemory( frame.VertexBuffer );
-            DenOfIz_Buffer_Destroy( frame.VertexBuffer );
-        }
-        frame.VertexBuffer   = buffer;
-        frame.VertexData     = data;
-        frame.VertexCapacity = capacity;
+        return;
     }
-    if ( indexCount > frame.IndexCapacity )
+    const StreamInfo  &info     = Streams[ stream ];
+    const uint32_t     capacity = GrowCapacity( target.Capacity, count, info.MinCapacity );
+    DenOfIz_BufferDesc desc{ };
+    desc.NumBytes  = static_cast<uint64_t>( capacity ) * info.Stride;
+    desc.HeapType  = DENOFIZ_HEAP_TYPE_CPU_GPU;
+    desc.DebugName = DENOFIZ_STRING( info.Name );
+    if ( stream == Indices )
     {
-        const uint32_t capacity = GrowCapacity( frame.IndexCapacity, indexCount, MinIndexCapacity );
-        DenOfIz_BufferDesc desc{ };
-        desc.NumBytes  = static_cast<uint64_t>( capacity ) * sizeof( uint32_t );
-        desc.Usage     = DENOFIZ_BUFFER_USAGE_INDEX_BIT;
-        desc.HeapType  = DENOFIZ_HEAP_TYPE_CPU_GPU;
-        desc.DebugName = DENOFIZ_STRING( "UI Indices" );
-        DenOfIz_Buffer buffer = DENOFIZ_NULL_HANDLE;
-        uint8_t       *data   = nullptr;
-        DenOfIz_LogicalDevice_CreateBuffer( m_device, &desc, &buffer );
-        DenOfIz_Buffer_MapMemory( buffer, reinterpret_cast<void **>( &data ) );
-        if ( DENOFIZ_HANDLE_IS_VALID( frame.IndexBuffer ) )
-        {
-            std::memcpy( data, frame.IndexData, static_cast<size_t>( keepIndices ) * sizeof( uint32_t ) );
-            DenOfIz_Buffer_UnmapMemory( frame.IndexBuffer );
-            DenOfIz_Buffer_Destroy( frame.IndexBuffer );
-        }
-        frame.IndexBuffer   = buffer;
-        frame.IndexData     = data;
-        frame.IndexCapacity = capacity;
+        desc.Usage = DENOFIZ_BUFFER_USAGE_INDEX_BIT;
     }
+    else
+    {
+        desc.StructureDesc.NumElements = capacity;
+        desc.StructureDesc.Stride      = info.Stride;
+        frame.ConstantsStale           = true;
+    }
+    DenOfIz_Buffer buffer = DENOFIZ_NULL_HANDLE;
+    uint8_t       *data   = nullptr;
+    DenOfIz_LogicalDevice_CreateBuffer( m_device, &desc, &buffer );
+    DenOfIz_Buffer_MapMemory( buffer, reinterpret_cast<void **>( &data ) );
+    if ( DENOFIZ_HANDLE_IS_VALID( target.Buffer ) )
+    {
+        std::memcpy( data, target.Data, static_cast<size_t>( keep ) * info.Stride );
+        DenOfIz_Buffer_UnmapMemory( target.Buffer );
+        DenOfIz_Buffer_Destroy( target.Buffer );
+    }
+    target = FrameStream{ buffer, data, capacity };
 }
 
-void UIRenderer::BindFrameConstants( const uint32_t frameIndex ) const
+template <typename T>
+T *UIRenderer::StreamData( const Stream stream, const uint32_t first ) const
 {
-    const FrameData       &frame = m_frames[ frameIndex ];
+    return reinterpret_cast<T *>( m_target->Streams[ stream ].Data ) + first;
+}
+
+void UIRenderer::BindFrameConstants( const uint32_t frameIndex )
+{
+    FrameData             &frame = m_frames[ frameIndex ];
     DenOfIz_BindBufferDesc bindUniforms{ };
     bindUniforms.Resource       = m_uniformBuffer;
     bindUniforms.ResourceOffset = frameIndex * m_alignedUniforms;
     DenOfIz_BindGroup_BeginUpdate( frame.Constants );
     DenOfIz_BindGroup_CbvWithDesc( frame.Constants, &bindUniforms );
-    DenOfIz_BindGroup_SrvBuffer( frame.Constants, 0, frame.StateBuffer );
+    DenOfIz_BindGroup_SrvBuffer( frame.Constants, 0, frame.Streams[ States ].Buffer );
+    m_glyphBuffers.Bind( frame.Constants, 1 );
+    DenOfIz_BindGroup_SrvBuffer( frame.Constants, 5, frame.Streams[ Vertices ].Buffer );
+    DenOfIz_BindGroup_SrvBuffer( frame.Constants, 6, frame.Streams[ Quads ].Buffer );
     DenOfIz_BindGroup_EndUpdate( frame.Constants );
-}
-
-void UIRenderer::EnsureStateCapacity( const uint32_t frameIndex, const uint32_t recordCount, const uint32_t keepRecords )
-{
-    FrameData &frame = m_frames[ frameIndex ];
-    if ( recordCount <= frame.StateCapacity )
-    {
-        return;
-    }
-    const uint32_t     capacity = GrowCapacity( frame.StateCapacity, recordCount, MinStateCapacity );
-    DenOfIz_BufferDesc desc{ };
-    desc.NumBytes                  = static_cast<uint64_t>( capacity ) * sizeof( UIStateRecord );
-    desc.HeapType                  = DENOFIZ_HEAP_TYPE_CPU_GPU;
-    desc.StructureDesc.NumElements = capacity;
-    desc.StructureDesc.Stride      = sizeof( UIStateRecord );
-    desc.DebugName                 = DENOFIZ_STRING( "UI States" );
-    DenOfIz_Buffer buffer          = DENOFIZ_NULL_HANDLE;
-    UIStateRecord *data            = nullptr;
-    DenOfIz_LogicalDevice_CreateBuffer( m_device, &desc, &buffer );
-    DenOfIz_Buffer_MapMemory( buffer, reinterpret_cast<void **>( &data ) );
-    if ( DENOFIZ_HANDLE_IS_VALID( frame.StateBuffer ) )
-    {
-        std::memcpy( data, frame.StateData, static_cast<size_t>( keepRecords ) * sizeof( UIStateRecord ) );
-        DenOfIz_Buffer_UnmapMemory( frame.StateBuffer );
-        DenOfIz_Buffer_Destroy( frame.StateBuffer );
-    }
-    data[ 0 ]           = UIStateRecord{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } };
-    frame.StateBuffer   = buffer;
-    frame.StateData     = data;
-    frame.StateCapacity = capacity;
-    BindFrameConstants( frameIndex );
+    frame.GlyphGeneration = m_glyphBuffers.Generation( );
+    frame.ConstantsStale  = false;
 }
 
 uint32_t UIRenderer::AllocateRecord( )
 {
-    if ( m_recordCount >= m_target->StateCapacity )
+    if ( m_recordCount >= m_target->Streams[ States ].Capacity )
     {
-        EnsureStateCapacity( m_targetIndex, m_recordCount + 1, m_recordCount );
+        Reserve( *m_target, States, m_recordCount + 1, m_recordCount );
     }
     return m_recordCount++;
 }
@@ -400,33 +343,69 @@ void UIRenderer::PushState( const DrawState &state )
     {
         next.Record = AllocateRecord( );
         const UILayerCommand &layer = next.Layer;
-        m_target->StateData[ next.Record ] =
-            UIStateRecord{ { layer.BiasR, layer.BiasG, layer.BiasB, layer.Scale },
-                           { layer.Opacity, static_cast<float>( next.ClipCount ), 0.0f, 0.0f },
-                           { static_cast<float>( next.Clips[ 0 ] ), static_cast<float>( next.Clips[ 1 ] ), static_cast<float>( next.Clips[ 2 ] ), static_cast<float>( next.Clips[ 3 ] ) } };
+        *StreamData<UIStateRecord>( States, next.Record ) = UIStateRecord{ { layer.BiasR, layer.BiasG, layer.BiasB, layer.Scale },
+                                                                           { layer.Opacity, static_cast<float>( next.ClipCount ), 0.0f, 0.0f },
+                                                                           { static_cast<float>( next.Clips[ 0 ] ), static_cast<float>( next.Clips[ 1 ] ),
+                                                                             static_cast<float>( next.Clips[ 2 ] ), static_cast<float>( next.Clips[ 3 ] ) } };
     }
     m_stateStack.push_back( next );
     m_stateBits = next.Record << UITextureSlots::Bits;
 }
 
+// Quads are indexed above UIQuadIndexBit, so neither vertices nor quad corners may reach it.
 UIVertex *UIRenderer::AllocateVertices( const uint32_t count )
 {
-    if ( m_vertexCount + count > m_target->VertexCapacity )
+    if ( m_vertexCount + count > UIQuadIndexBit )
     {
-        EnsureGeometryCapacity( *m_target, m_vertexCount + count, 0, m_vertexCount, m_indexCount );
+        if ( !m_geometryExhaustedReported )
+        {
+            spdlog::error( "UI: more than {} vertices or {} quads in one frame, the rest are not drawn", UIQuadIndexBit, UIMaxQuads );
+            m_geometryExhaustedReported = true;
+        }
+        return nullptr;
     }
-    UIVertex *vertices = reinterpret_cast<UIVertex *>( m_target->VertexData ) + m_vertexCount;
+    if ( m_vertexCount + count > m_target->Streams[ Vertices ].Capacity )
+    {
+        Reserve( *m_target, Vertices, m_vertexCount + count, m_vertexCount );
+    }
+    UIVertex *vertices = StreamData<UIVertex>( Vertices, m_vertexCount );
     m_vertexCount += count;
     return vertices;
 }
 
+UIQuad *UIRenderer::AllocateQuad( )
+{
+    if ( m_quadCount >= UIMaxQuads )
+    {
+        if ( !m_geometryExhaustedReported )
+        {
+            spdlog::error( "UI: more than {} vertices or {} quads in one frame, the rest are not drawn", UIQuadIndexBit, UIMaxQuads );
+            m_geometryExhaustedReported = true;
+        }
+        return nullptr;
+    }
+    if ( m_quadCount >= m_target->Streams[ Quads ].Capacity )
+    {
+        Reserve( *m_target, Quads, m_quadCount + 1, m_quadCount );
+    }
+    const uint32_t base    = UIQuadIndexBit | m_quadCount * 4;
+    uint32_t      *indices = AllocateIndices( 6 );
+    indices[ 0 ]           = base;
+    indices[ 1 ]           = base + 1;
+    indices[ 2 ]           = base + 2;
+    indices[ 3 ]           = base;
+    indices[ 4 ]           = base + 2;
+    indices[ 5 ]           = base + 3;
+    return StreamData<UIQuad>( Quads, m_quadCount++ );
+}
+
 uint32_t *UIRenderer::AllocateIndices( const uint32_t count )
 {
-    if ( m_indexCount + count > m_target->IndexCapacity )
+    if ( m_indexCount + count > m_target->Streams[ Indices ].Capacity )
     {
-        EnsureGeometryCapacity( *m_target, 0, m_indexCount + count, m_vertexCount, m_indexCount );
+        Reserve( *m_target, Indices, m_indexCount + count, m_indexCount );
     }
-    uint32_t *indices = reinterpret_cast<uint32_t *>( m_target->IndexData ) + m_indexCount;
+    uint32_t *indices = StreamData<uint32_t>( Indices, m_indexCount );
     m_indexCount += count;
     m_batches.back( ).IndexCount += count;
     return indices;
@@ -499,81 +478,42 @@ void UIRenderer::SetScissor( const Scissor &scissor )
     Batch next;
     next.FirstIndex = m_indexCount;
     next.Clip       = scissor;
-    next.Slot       = m_supportsSrvArray ? 0 : batch.Slot;
-    m_batches.push_back( next );
-}
-
-void UIRenderer::StartBatch( const uint32_t slot )
-{
-    if ( m_supportsSrvArray || slot == 0 )
-    {
-        return;
-    }
-    Batch &batch = m_batches.back( );
-    if ( batch.Slot == slot )
-    {
-        return;
-    }
-    if ( batch.Slot == 0 || batch.IndexCount == 0 )
-    {
-        batch.Slot = slot;
-        return;
-    }
-    Batch next;
-    next.FirstIndex = m_indexCount;
-    next.Clip       = batch.Clip;
-    next.Slot       = slot;
     m_batches.push_back( next );
 }
 
 void UIRenderer::EmitQuad( const float x0, const float y0, const float x1, const float y1, const float u0, const float v0, const float u1, const float v1,
                            const DenOfIz_UIColor &color, const uint32_t slot )
 {
-    StartBatch( slot );
-    const DenOfIz_Float4 c       = ShadeColor( color );
-    const uint32_t       index   = ( m_supportsSrvArray ? slot : ( slot == 0 ? 0 : slot < UITextureSlots::FirstImage ? 1 : 2 ) ) | m_stateBits;
-    const uint32_t       base     = m_vertexCount;
-    UIVertex            *vertices = AllocateVertices( 4 );
-    vertices[ 0 ]                 = UIVertex{ { x0, y0, 0.0f }, { u0, v0 }, c, index };
-    vertices[ 1 ]                 = UIVertex{ { x1, y0, 0.0f }, { u1, v0 }, c, index };
-    vertices[ 2 ]                 = UIVertex{ { x1, y1, 0.0f }, { u1, v1 }, c, index };
-    vertices[ 3 ]                 = UIVertex{ { x0, y1, 0.0f }, { u0, v1 }, c, index };
-    uint32_t *indices             = AllocateIndices( 6 );
-    indices[ 0 ]                  = base;
-    indices[ 1 ]                  = base + 1;
-    indices[ 2 ]                  = base + 2;
-    indices[ 3 ]                  = base;
-    indices[ 4 ]                  = base + 2;
-    indices[ 5 ]                  = base + 3;
+    if ( UIQuad *quad = AllocateQuad( ) )
+    {
+        *quad = UIQuad{ { x0, y0, x1, y1 }, { u0, v0, u1, v1 }, ShadeColor( color ), slot | m_stateBits, 0, {} };
+    }
 }
 
 void UIRenderer::EmitShape( const UIShape &shape, const DenOfIz_UIRect &rect, const DenOfIz_UIColor &color, const uint32_t slot, const DenOfIz_Float4 *uv )
 {
-    StartBatch( slot );
-    const uint32_t       index    = ( m_supportsSrvArray ? slot : ( slot == 0 ? 0 : slot < UITextureSlots::FirstImage ? 1 : 2 ) ) | m_stateBits;
+    const uint32_t       index    = slot | m_stateBits;
     const uint32_t       base     = m_vertexCount;
     const float          invW     = rect.Width > 0.0f ? 1.0f / rect.Width : 0.0f;
     const float          invH     = rect.Height > 0.0f ? 1.0f / rect.Height : 0.0f;
     const DenOfIz_Float4 full     = ShadeColor( color );
     const auto           count    = static_cast<uint32_t>( shape.Vertices.size( ) );
     UIVertex            *vertices = AllocateVertices( count );
+    if ( vertices == nullptr )
+    {
+        return;
+    }
     for ( uint32_t i = 0; i < count; ++i )
     {
-        const UIShapeVertex &v      = shape.Vertices[ i ];
-        UIVertex            &vertex = vertices[ i ];
-        vertex.Position             = DenOfIz_Float3{ rect.X + v.X, rect.Y + v.Y, 0.0f };
-        vertex.Color                = DenOfIz_Float4{ full.X, full.Y, full.Z, full.W * v.Coverage };
-        vertex.TextureIndex         = index;
+        const UIShapeVertex &v = shape.Vertices[ i ];
+        DenOfIz_Float2       texCoord{ 0.0f, 0.0f };
         if ( uv )
         {
-            const float u   = std::clamp( v.X * invW, 0.0f, 1.0f );
-            const float t   = std::clamp( v.Y * invH, 0.0f, 1.0f );
-            vertex.TexCoord = DenOfIz_Float2{ uv->X + ( uv->Z - uv->X ) * u, uv->Y + ( uv->W - uv->Y ) * t };
+            const float u = std::clamp( v.X * invW, 0.0f, 1.0f );
+            const float t = std::clamp( v.Y * invH, 0.0f, 1.0f );
+            texCoord      = DenOfIz_Float2{ uv->X + ( uv->Z - uv->X ) * u, uv->Y + ( uv->W - uv->Y ) * t };
         }
-        else
-        {
-            vertex.TexCoord = DenOfIz_Float2{ 0.0f, 0.0f };
-        }
+        vertices[ i ] = UIVertex{ { full.X, full.Y, full.Z, full.W * v.Coverage }, { rect.X + v.X, rect.Y + v.Y, 0.0f }, index, texCoord, 0, 0 };
     }
     const auto indexCount = static_cast<uint32_t>( shape.Indices.size( ) );
     uint32_t  *indices    = AllocateIndices( indexCount );
@@ -585,24 +525,33 @@ void UIRenderer::EmitShape( const UIShape &shape, const DenOfIz_UIRect &rect, co
 
 void UIRenderer::EmitText( const UICommand &command )
 {
-    const UITextLayout &layout = *command.Text.Layout;
-    const auto         &quads  = layout.GetQuads( );
+    const UITextLayout &layout       = *command.Text.Layout;
+    ColourGlyphStore   &colourGlyphs = m_desc.Text->ColourGlyphs( );
+    const auto         &quads        = layout.GetQuads( m_desc.Text->Glyphs( ), colourGlyphs );
     if ( quads.empty( ) )
     {
         return;
     }
-    const uint32_t slot = layout.TextureSlot;
-    if ( !DENOFIZ_HANDLE_IS_VALID( m_slots[ slot ] ) )
-    {
-        return;
-    }
-    StartBatch( slot );
     const float          s          = command.Text.Scale;
-    const float          lineHeight = layout.LineHeight * s;
     const DenOfIz_Float4 color      = ShadeColor( command.Text.Color );
-    const uint32_t       index      = ( m_supportsSrvArray ? slot : 1 ) | m_stateBits;
+    const uint32_t       index      = UITextureSlots::Glyph | m_stateBits;
+    const float          pixel      = 1.0f / m_pixelsPerPoint;
     const float          clipTop    = m_clipPoints.Y;
     const float          clipBottom = m_clipPoints.Y + m_clipPoints.Height;
+    // Colour glyphs keep their own colours, only the text's alpha fades them. Their foreground layers use the text colour.
+    const DenOfIz_UIColor &text        = command.Text.Color;
+    const uint32_t         foreground  = static_cast<uint32_t>( text.R ) << 24 | static_cast<uint32_t>( text.G ) << 16 | static_cast<uint32_t>( text.B ) << 8 | text.A;
+    const DenOfIz_Float4   tint        = { 1.0f, 1.0f, 1.0f, color.W };
+    const uint32_t         colourIndex = UITextureSlots::ColourGlyph | m_stateBits;
+    const float            pixelsPerEm = layout.Params.FontSize * s * m_pixelsPerPoint;
+
+    auto addQuad = [ this ]( const UIQuad &quad )
+    {
+        if ( UIQuad *target = AllocateQuad( ) )
+        {
+            *target = quad;
+        }
+    };
 
     uint32_t line    = UINT32_MAX;
     float    lineX   = 0.0f;
@@ -612,37 +561,55 @@ void UIRenderer::EmitText( const UICommand &command )
     {
         if ( quad.Line != line )
         {
-            line              = quad.Line;
-            const float top   = command.Rect.Y + static_cast<float>( line ) * lineHeight;
+            line                        = quad.Line;
+            const UITextLineLayout &l   = layout.Lines[ line ];
+            const float             top = command.Rect.Y + l.Top * s;
             if ( top > clipBottom )
             {
                 break;
             }
-            visible = top + lineHeight >= clipTop;
+            visible = top + l.Height * s >= clipTop;
             lineX   = command.Rect.X + layout.AlignOffset( line, command.Text.BoxWidth, command.Text.Align ) * s;
-            lineY   = std::round( ( top + layout.Baseline * s ) * m_pixelsPerPoint ) / m_pixelsPerPoint;
+            lineY   = std::round( ( command.Rect.Y + l.Baseline * s ) * m_pixelsPerPoint ) / m_pixelsPerPoint;
         }
         if ( !visible )
         {
             continue;
         }
-        const float x0   = lineX + quad.X0 * s;
-        const float x1   = lineX + quad.X1 * s;
-        const float y0   = lineY + quad.Y0 * s;
-        const float y1   = lineY + quad.Y1 * s;
-        const uint32_t base     = m_vertexCount;
-        UIVertex      *vertices = AllocateVertices( 4 );
-        vertices[ 0 ]           = UIVertex{ { x0, y0, 0.0f }, { quad.U0, quad.V0 }, color, index };
-        vertices[ 1 ]           = UIVertex{ { x1, y0, 0.0f }, { quad.U1, quad.V0 }, color, index };
-        vertices[ 2 ]           = UIVertex{ { x1, y1, 0.0f }, { quad.U1, quad.V1 }, color, index };
-        vertices[ 3 ]           = UIVertex{ { x0, y1, 0.0f }, { quad.U0, quad.V1 }, color, index };
-        uint32_t *indices       = AllocateIndices( 6 );
-        indices[ 0 ]            = base;
-        indices[ 1 ]            = base + 1;
-        indices[ 2 ]            = base + 2;
-        indices[ 3 ]            = base;
-        indices[ 4 ]            = base + 2;
-        indices[ 5 ]            = base + 3;
+        if ( quad.Colour )
+        {
+            const ColourGlyph &bitmap = colourGlyphs.Get( quad.Glyph, pixelsPerEm, foreground );
+            if ( bitmap.Width == 0 )
+            {
+                continue;
+            }
+            // Bitmap pixels to points, the top left corner on a device pixel so a bitmap drawn at its own size stays crisp.
+            const float k  = pixelsPerEm / static_cast<float>( bitmap.Ppem ) * pixel;
+            const float x0 = std::round( ( lineX + quad.X0 * s + static_cast<float>( bitmap.Left ) * k ) * m_pixelsPerPoint ) * pixel;
+            const float y0 = std::round( ( lineY + quad.Y0 * s + static_cast<float>( bitmap.Top ) * k ) * m_pixelsPerPoint ) * pixel;
+            const float x1 = x0 + static_cast<float>( bitmap.Width ) * k;
+            const float y1 = y0 + static_cast<float>( bitmap.Height ) * k;
+            const auto  w  = static_cast<float>( bitmap.Width );
+            const auto  h  = static_cast<float>( bitmap.Height );
+            addQuad( UIQuad{ { x0, y0, x1, y1 }, { 0.0f, 0.0f, w, h }, tint, colourIndex, bitmap.Offset, {} } );
+            continue;
+        }
+        const float x0 = lineX + quad.X0 * s;
+        const float x1 = lineX + quad.X1 * s;
+        const float y0 = lineY + quad.Y0 * s;
+        const float y1 = lineY + quad.Y1 * s;
+        if ( x1 <= x0 || y1 <= y0 )
+        {
+            continue;
+        }
+        // Pixels whose centers lie just outside the outline still get coverage, so grow the quad by a pixel and extend the em coordinates to match.
+        const float du = ( quad.U1 - quad.U0 ) / ( x1 - x0 ) * pixel;
+        const float dv = ( quad.V1 - quad.V0 ) / ( y1 - y0 ) * pixel;
+        const float u0 = quad.U0 - du;
+        const float u1 = quad.U1 + du;
+        const float v0 = quad.V0 - dv;
+        const float v1 = quad.V1 + dv;
+        addQuad( UIQuad{ { x0 - pixel, y0 - pixel, x1 + pixel, y1 + pixel }, { u0, v0, u1, v1 }, color, index, quad.Glyph, {} } );
     }
 }
 
@@ -651,26 +618,25 @@ void UIRenderer::Build( const std::vector<UICommand> &commands, const uint32_t f
     ++m_frameCounter;
     m_pixelsPerPoint = pixelsPerPoint;
     m_target         = &m_frames[ frameIndex ];
-    m_targetIndex    = frameIndex;
     m_vertexCount    = 0;
+    m_quadCount      = 0;
     m_indexCount     = 0;
     m_recordCount    = 1;
     m_stateBits      = 0;
+    m_desc.Text->ColourGlyphs( ).BeginFrame( );
+    // Record 0 leaves colours and coverage alone.
+    *StreamData<UIStateRecord>( States, 0 ) = UIStateRecord{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } };
     m_batches.clear( );
     m_clipStack.clear( );
     m_stateStack.clear( );
     m_stateStack.push_back( DrawState{ } );
     m_slots.fill( DENOFIZ_NULL_HANDLE );
-    for ( uint32_t font = 0; font < UITextureSlots::MaxFonts; ++font )
-    {
-        m_slots[ UITextureSlots::FirstFont + font ] = m_desc.Text->GetAtlas( font );
-    }
     m_nextImageSlot = UITextureSlots::FirstImage;
 
     const Scissor viewport{ 0, 0, static_cast<int32_t>( pixelWidth ), static_cast<int32_t>( pixelHeight ) };
     m_clipStack.push_back( viewport );
     m_clipPoints = DenOfIz_UIRect{ 0.0f, 0.0f, pixelWidth / pixelsPerPoint, pixelHeight / pixelsPerPoint };
-    m_batches.push_back( Batch{ 0, 0, viewport, 0 } );
+    m_batches.push_back( Batch{ 0, 0, viewport } );
 
     const float feather = 1.0f / pixelsPerPoint;
     for ( const UICommand &command : commands )
@@ -700,10 +666,11 @@ void UIRenderer::Build( const std::vector<UICommand> &commands, const uint32_t f
             }
             const uint32_t          record = AllocateRecord( );
             const DenOfIz_UICorners radius = UIMath::ScaleCorners( command.Clip.Radius, pixelsPerPoint );
-            m_target->StateData[ record ]  = UIStateRecord{ { command.Rect.X * pixelsPerPoint, command.Rect.Y * pixelsPerPoint, ( command.Rect.X + command.Rect.Width ) * pixelsPerPoint,
-                                                              ( command.Rect.Y + command.Rect.Height ) * pixelsPerPoint },
-                                                            { radius.TopLeft, radius.TopRight, radius.BottomRight, radius.BottomLeft },
-                                                            { 0.0f, 0.0f, 0.0f, 0.0f } };
+            *StreamData<UIStateRecord>( States, record ) =
+                UIStateRecord{ { command.Rect.X * pixelsPerPoint, command.Rect.Y * pixelsPerPoint, ( command.Rect.X + command.Rect.Width ) * pixelsPerPoint,
+                                 ( command.Rect.Y + command.Rect.Height ) * pixelsPerPoint },
+                               { radius.TopLeft, radius.TopRight, radius.BottomRight, radius.BottomLeft },
+                               { 0.0f, 0.0f, 0.0f, 0.0f } };
             DrawState next = m_stateStack.back( );
             for ( uint32_t i = std::min( next.ClipCount, UIMaxRoundedClips - 1 ); i > 0; --i )
             {
@@ -797,6 +764,7 @@ void UIRenderer::Build( const std::vector<UICommand> &commands, const uint32_t f
     {
         m_shapes.Evict( m_frameCounter, ShapeCacheAge );
     }
+    m_glyphBuffers.Write( m_desc.Text->Glyphs( ), m_desc.Text->ColourGlyphs( ) );
 }
 
 void UIRenderer::Upload( const uint32_t frameIndex, const float pixelWidth, const float pixelHeight )
@@ -811,51 +779,28 @@ void UIRenderer::Upload( const uint32_t frameIndex, const float pixelWidth, cons
     Uniforms uniforms{ };
     uniforms.Projection = InteropMathConverter::Float_4x4FromXMFLOAT4X4( projection );
     uniforms.ScreenSize = DenOfIz_Float4{ pixelWidth, pixelHeight, m_pixelsPerPoint, 0.0f };
-    const UIFontFace *face = m_desc.Text->GetFace( 0 );
-    uniforms.FontParams     = DenOfIz_Float4{ face->AtlasWidth, face->AtlasHeight, DENOFIZ_FONT_MSDF_PIXEL_RANGE, static_cast<float>( UITextureSlots::FirstImage ) };
     std::memcpy( m_uniformData + frameIndex * m_alignedUniforms, &uniforms, sizeof( Uniforms ) );
-
-    if ( m_supportsSrvArray )
+    if ( frame.ConstantsStale || frame.GlyphGeneration != m_glyphBuffers.Generation( ) )
     {
-        if ( !frame.BoundValid || frame.Bound != m_slots )
-        {
-            std::array<DenOfIz_Texture, UITextureSlots::Count> textures{ };
-            for ( uint32_t i = 0; i < UITextureSlots::Count; ++i )
-            {
-                textures[ i ] = DENOFIZ_HANDLE_IS_VALID( m_slots[ i ] ) ? m_slots[ i ] : m_nullTexture;
-            }
-            DenOfIz_TextureArray array{ };
-            array.Elements    = textures.data( );
-            array.NumElements = UITextureSlots::Count;
-            DenOfIz_BindGroup_BeginUpdate( frame.Textures );
-            DenOfIz_BindGroup_SrvArray( frame.Textures, 0, &array );
-            DenOfIz_BindGroup_Sampler( frame.Textures, 0, m_sampler );
-            DenOfIz_BindGroup_EndUpdate( frame.Textures );
-            frame.Bound      = m_slots;
-            frame.BoundValid = true;
-        }
-        return;
+        BindFrameConstants( frameIndex );
     }
 
-    for ( const Batch &batch : m_batches )
+    if ( !frame.BoundValid || frame.Bound != m_slots )
     {
-        const uint32_t        slot    = batch.Slot;
-        const DenOfIz_Texture texture = DENOFIZ_HANDLE_IS_VALID( m_slots[ slot ] ) ? m_slots[ slot ] : m_nullTexture;
-        if ( !DENOFIZ_HANDLE_IS_VALID( frame.SlotGroups[ slot ] ) )
+        std::array<DenOfIz_Texture, UITextureSlots::Count> textures{ };
+        for ( uint32_t i = 0; i < UITextureSlots::Count; ++i )
         {
-            DenOfIz_BindGroupDesc groupDesc{ };
-            groupDesc.Layout = m_bindGroupLayouts[ 0 ];
-            DenOfIz_LogicalDevice_CreateBindGroup( m_device, &groupDesc, &frame.SlotGroups[ slot ] );
-            frame.SlotTextures[ slot ] = DENOFIZ_NULL_HANDLE;
+            textures[ i ] = DENOFIZ_HANDLE_IS_VALID( m_slots[ i ] ) ? m_slots[ i ] : m_nullTexture;
         }
-        if ( frame.SlotTextures[ slot ] != texture )
-        {
-            DenOfIz_BindGroup_BeginUpdate( frame.SlotGroups[ slot ] );
-            DenOfIz_BindGroup_SrvTexture( frame.SlotGroups[ slot ], 0, texture );
-            DenOfIz_BindGroup_Sampler( frame.SlotGroups[ slot ], 0, m_sampler );
-            DenOfIz_BindGroup_EndUpdate( frame.SlotGroups[ slot ] );
-            frame.SlotTextures[ slot ] = texture;
-        }
+        DenOfIz_TextureArray array{ };
+        array.Elements    = textures.data( );
+        array.NumElements = UITextureSlots::Count;
+        DenOfIz_BindGroup_BeginUpdate( frame.Textures );
+        DenOfIz_BindGroup_SrvArray( frame.Textures, 0, &array );
+        DenOfIz_BindGroup_Sampler( frame.Textures, 0, m_sampler );
+        DenOfIz_BindGroup_EndUpdate( frame.Textures );
+        frame.Bound      = m_slots;
+        frame.BoundValid = true;
     }
 }
 
@@ -869,14 +814,9 @@ void UIRenderer::Record( const uint32_t frameIndex, const DenOfIz_CommandList co
     DenOfIz_CommandList_BindViewport( commandList, 0.0f, 0.0f, pixelWidth, pixelHeight );
     DenOfIz_CommandList_BindPipeline( commandList, pipeline );
     DenOfIz_CommandList_BindGroup( commandList, frame.Constants );
-    if ( m_supportsSrvArray )
-    {
-        DenOfIz_CommandList_BindGroup( commandList, frame.Textures );
-    }
-    DenOfIz_CommandList_BindVertexBuffer( commandList, frame.VertexBuffer, 0, sizeof( UIVertex ), 0 );
-    DenOfIz_CommandList_BindIndexBuffer( commandList, frame.IndexBuffer, DENOFIZ_INDEX_TYPE_UINT32, 0 );
+    DenOfIz_CommandList_BindGroup( commandList, frame.Textures );
+    DenOfIz_CommandList_BindIndexBuffer( commandList, frame.Streams[ Indices ].Buffer, DENOFIZ_INDEX_TYPE_UINT32, 0 );
 
-    uint32_t boundSlot = UINT32_MAX;
     for ( const Batch &batch : m_batches )
     {
         if ( batch.IndexCount == 0 || batch.Clip.Width <= 0 || batch.Clip.Height <= 0 )
@@ -885,11 +825,6 @@ void UIRenderer::Record( const uint32_t frameIndex, const DenOfIz_CommandList co
         }
         DenOfIz_CommandList_BindScissorRect( commandList, static_cast<float>( batch.Clip.X ), static_cast<float>( batch.Clip.Y ), static_cast<float>( batch.Clip.Width ),
                                              static_cast<float>( batch.Clip.Height ) );
-        if ( !m_supportsSrvArray && batch.Slot != boundSlot )
-        {
-            DenOfIz_CommandList_BindGroup( commandList, frame.SlotGroups[ batch.Slot ] );
-            boundSlot = batch.Slot;
-        }
         DenOfIz_CommandList_DrawIndexed( commandList, batch.IndexCount, 1, batch.FirstIndex, 0, 0 );
     }
 }

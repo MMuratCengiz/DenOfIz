@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12CommandList.h"
@@ -641,7 +630,7 @@ void DX12CommandList::CopyBufferToTexture( const DenOfIz_CopyBufferToTextureDesc
     D3D12_TEXTURE_COPY_LOCATION dst = { };
     dst.pResource                   = dstTexture->Resource( );
     dst.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-    dst.SubresourceIndex            = copyBufferToTexture.MipLevel;
+    dst.SubresourceIndex            = subresource;
     m_commandList->CopyTextureRegion( &dst, copyBufferToTexture.DstX, copyBufferToTexture.DstY, copyBufferToTexture.DstZ, &src, nullptr );
 }
 
@@ -655,15 +644,15 @@ void DX12CommandList::CopyTextureToBuffer( const DenOfIz_CopyTextureToBufferDesc
     D3D12_TEXTURE_COPY_LOCATION src = { };
     src.pResource                   = srcTexture->Resource( );
     src.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-    src.SubresourceIndex            = copyTextureToBuffer.MipLevel;
 
     D3D12_TEXTURE_COPY_LOCATION dst = { };
     dst.pResource                   = dstBuffer->Resource( );
     dst.Type                        = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
     const uint32_t subresource      = copyTextureToBuffer.ArrayLayer * srcTexture->GetDesc( ).MipLevels + copyTextureToBuffer.MipLevel;
     m_context->D3DDevice->GetCopyableFootprints( &srcTexture->GetResourceDesc( ), subresource, 1, copyTextureToBuffer.DstOffset, &dst.PlacedFootprint, nullptr, nullptr, nullptr );
+    src.SubresourceIndex = subresource;
 
-    m_commandList->CopyTextureRegion( &dst, copyTextureToBuffer.DstOffset, 0, 0, &src, nullptr );
+    m_commandList->CopyTextureRegion( &dst, 0, 0, 0, &src, nullptr );
 }
 
 void DX12CommandList::BuildTopLevelAS( const DenOfIz_BuildTopLevelASDesc &buildTopLevelASDesc )

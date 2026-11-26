@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -24,12 +13,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 
 /**
- * @file OzzExporterRuntime.h
- * @brief Runtime API for loading GLTF files and building ozz skeleton/animation data in memory.
- *
- * This API allows loading GLTF files and extracting skeleton/animation data as ozz binary format
- * in memory, without writing to disk. The returned BinaryContainer objects can be used directly
- * with OzzAnimation_CreateFromBinaryContainer and OzzAnimation_LoadAnimationFromBinaryContainer.
+ * Builds ozz skeletons and animations from glTF in memory, without writing files. The Build functions return a new container the caller
+ * destroys with DenOfIz_BinaryContainer_Destroy, ready for DenOfIz_Ozz_CreateSkeletonFromBinaryContainer and
+ * DenOfIz_Ozz_LoadAnimationFromBinaryContainer, or NULL on failure.
  */
 
 typedef struct DenOfIz_OzzGltfDesc

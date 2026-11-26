@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -224,7 +213,6 @@ namespace DenOfIz
         DenOfIz_UITextDesc Desc;
         uint32_t           Offset;
         uint32_t           Length;
-        uint64_t           Hash;
     };
 
     struct UIFrame
@@ -301,6 +289,7 @@ namespace DenOfIz
         std::vector<uint32_t>                        m_reconcile;
         std::vector<std::pair<uint32_t, uint32_t>>   m_reconcileRanges;
         std::vector<UIScrollRequest>                 m_scrollRequests;
+        std::vector<DenOfIz_Float2>                  m_selectionSpans;
 
         uint64_t m_frameNumber   = 0;
         float    m_deltaTime     = 0.0f;
@@ -350,7 +339,7 @@ namespace DenOfIz
         float                       m_scrollbarGrab     = 0.0f;
 
     public:
-        explicit UIContext( DenOfIz_LogicalDevice device );
+        UIContext( );
         ~UIContext( );
 
         UIText &Text( );

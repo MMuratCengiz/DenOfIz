@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzExamples/AnimatedFoxExample.h"
@@ -97,11 +86,10 @@ void AnimatedFoxExample::ModifyApiPreferences( DenOfIz_APIPreference &apiPrefere
 
 void AnimatedFoxExample::LoadFoxAssets( )
 {
-    DenOfIz_StringView gltfPath         = DENOFIZ_STRING( "Assets/Models/Fox.gltf" );
-    DenOfIz_StringView skeletonPath     = DENOFIZ_STRING( "Assets/Models/Fox_Exported_skeleton.ozzskel" );
-    DenOfIz_StringView walkAnimPath     = DENOFIZ_STRING( "Assets/Models/Fox_Exported_Survey.ozzanim" );
-    DenOfIz_StringView runAnimPath      = DENOFIZ_STRING( "Assets/Models/Fox_Exported_Run.ozzanim" );
-    DenOfIz_StringView exportedGltfPath = DENOFIZ_STRING( "Assets/Models/Fox_Exported_exported.glb" );
+    DenOfIz_StringView gltfPath     = DENOFIZ_STRING( "Assets/Models/Fox.gltf" );
+    DenOfIz_StringView skeletonPath = DENOFIZ_STRING( "Assets/Models/Fox_Exported.ozzskel" );
+    DenOfIz_StringView walkAnimPath = DENOFIZ_STRING( "Assets/Models/Survey.ozzanim" );
+    DenOfIz_StringView runAnimPath  = DENOFIZ_STRING( "Assets/Models/Run.ozzanim" );
 
     bool needsExport = !FileIO::FileExists( skeletonPath ) || !FileIO::FileExists( walkAnimPath ) || !FileIO::FileExists( runAnimPath );
 
@@ -264,7 +252,7 @@ void AnimatedFoxExample::LoadMeshFromGltf( const char *gltfPath )
 
 void AnimatedFoxExample::SetupAnimation( )
 {
-    DenOfIz_StringView skeletonPath = DENOFIZ_STRING( "Assets/Models/Fox_Exported_skeleton.ozzskel" );
+    DenOfIz_StringView skeletonPath = DENOFIZ_STRING( "Assets/Models/Fox_Exported.ozzskel" );
     m_ozzAnimation                  = DenOfIz_Ozz_CreateSkeleton( skeletonPath );
 
     if ( !DenOfIz_Ozz_IsSkeletonValid( m_ozzAnimation ) )
@@ -277,8 +265,8 @@ void AnimatedFoxExample::SetupAnimation( )
     m_runContext    = DenOfIz_Ozz_NewContext( m_ozzAnimation );
     m_activeContext = m_walkContext;
 
-    DenOfIz_StringView walkAnimPath = DENOFIZ_STRING( "Assets/Models/Fox_Exported_Survey.ozzanim" );
-    DenOfIz_StringView runAnimPath  = DENOFIZ_STRING( "Assets/Models/Fox_Exported_Run.ozzanim" );
+    DenOfIz_StringView walkAnimPath = DENOFIZ_STRING( "Assets/Models/Survey.ozzanim" );
+    DenOfIz_StringView runAnimPath  = DENOFIZ_STRING( "Assets/Models/Run.ozzanim" );
 
     if ( !DenOfIz_Ozz_LoadAnimation( m_ozzAnimation, walkAnimPath, m_walkContext ) )
     {

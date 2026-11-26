@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -102,6 +91,7 @@ namespace DenOfIz
         std::vector<MetalUpdateDescItem<MetalSampler>> m_samplers;
 
         mutable std::vector<std::unique_ptr<MetalBindGroupTables>> m_tables;
+        uint32_t                                                   m_version = 0;
 
     public:
         MetalBindGroup( MetalContext *context, DenOfIz_BindGroupDesc desc );
@@ -129,6 +119,7 @@ namespace DenOfIz
         const std::vector<MetalUpdateDescItem<MetalSampler>> &Samplers( ) const;
         [[nodiscard]] MetalBindGroupLayout                   *BindGroupLayout( ) const;
         [[nodiscard]] uint32_t                                RegisterSpace( ) const;
+        [[nodiscard]] uint32_t                                Version( ) const;
 
     private:
         void                        EncodeTables( MetalBindGroupTables &tables ) const;

@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzExamples/PerFrameBinding.h"
@@ -57,7 +46,7 @@ PerFrameBinding::PerFrameBinding( DenOfIz_LogicalDevice device, DenOfIz_BindGrou
 
 void PerFrameBinding::Update( const FreeCamera *camera, float deltaTime ) const
 {
-    constexpr float deltaTimeTemp = 1.0f; // deltaTime is not quite used yet, maybe not even required
+    constexpr float deltaTimeTemp = 1.0f; // DefaultRenderPipeline.vs scales texCoord by this value
     memcpy( m_deltaTimeMappedData, &deltaTimeTemp, sizeof( float ) );
     XMFLOAT4X4 viewProjectionMatrix{ };
     XMStoreFloat4x4( &viewProjectionMatrix, camera->ViewProjectionMatrix( ) );

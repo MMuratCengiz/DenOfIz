@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanCommandList.h"
@@ -39,7 +28,7 @@ VulkanCommandList::VulkanCommandList( VulkanContext *context, const DenOfIz_Comm
     VkCommandBufferAllocateInfo allocInfo{ };
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool        = m_commandPool;
-    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY; // Todo
+    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = 1;
 
     VK_CHECK_RESULT( vkAllocateCommandBuffers( m_context->LogicalDevice, &allocInfo, &m_commandBuffer ) );
@@ -63,7 +52,6 @@ void VulkanCommandList::Begin( )
     VK_CHECK_RESULT( vkBeginCommandBuffer( m_commandBuffer, &beginInfo ) );
 }
 
-// Todo !IMPROVEMENT! this function may not need to exist.
 void VulkanCommandList::BeginRendering( const DenOfIz_RenderingDesc &renderingDesc )
 {
     for ( uint32_t i = 0; i < renderingDesc.RTAttachments.NumElements; ++i )
@@ -119,6 +107,8 @@ void VulkanCommandList::BeginRendering( const DenOfIz_RenderingDesc &renderingDe
     renderInfo.colorAttachmentCount = colorAttachments.size( );
     renderInfo.pColorAttachments    = colorAttachments.data( );
 
+    VkRenderingAttachmentInfo depthAttachmentInfo{ };
+    VkRenderingAttachmentInfo stencilAttachmentInfo{ };
     if ( renderingDesc.DepthAttachment.Resource != DENOFIZ_NULL_HANDLE )
     {
 
@@ -139,7 +129,6 @@ void VulkanCommandList::BeginRendering( const DenOfIz_RenderingDesc &renderingDe
             renderInfo.renderArea.extent.height = vkDepthStencilResource->GetHeight( );
         }
 
-        VkRenderingAttachmentInfo depthAttachmentInfo{ };
         depthAttachmentInfo.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
         depthAttachmentInfo.imageView   = vkDepthStencilResource->ImageView( );
         depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -158,7 +147,7 @@ void VulkanCommandList::BeginRendering( const DenOfIz_RenderingDesc &renderingDe
 
     if ( renderingDesc.StencilAttachment.Resource != DENOFIZ_NULL_HANDLE )
     {
-        const auto depthStencilResource = DENOFIZ_FROM_HANDLE( ITexture, renderingDesc.DepthAttachment.Resource );
+        const auto depthStencilResource = DENOFIZ_FROM_HANDLE( ITexture, renderingDesc.StencilAttachment.Resource );
 
         const auto          *vkDepthStencilResource = dynamic_cast<VulkanTexture *>( depthStencilResource );
         const DenOfIz_Format stencilFormat          = vkDepthStencilResource->GetFormat( );
@@ -168,14 +157,13 @@ void VulkanCommandList::BeginRendering( const DenOfIz_RenderingDesc &renderingDe
             spdlog::error( "VulkanCommandList::BeginRendering: Stencil attachment provided with format ({}) that has no stencil component.", static_cast<int>( stencilFormat ) );
         }
 
-        VkRenderingAttachmentInfo stencilAttachmentInfo{ };
         stencilAttachmentInfo.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
         stencilAttachmentInfo.imageView   = vkDepthStencilResource->ImageView( );
         stencilAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         stencilAttachmentInfo.loadOp      = DenOfIz_VulkanEnumConverter_ConvertLoadOp( renderingDesc.StencilAttachment.LoadOp );
         stencilAttachmentInfo.storeOp     = DenOfIz_VulkanEnumConverter_ConvertStoreOp( renderingDesc.StencilAttachment.StoreOp );
         stencilAttachmentInfo.clearValue.depthStencil =
-            VkClearDepthStencilValue( renderingDesc.StencilAttachment.ClearDepthStencil.X, renderingDesc.DepthAttachment.ClearDepthStencil.Y );
+            VkClearDepthStencilValue( renderingDesc.StencilAttachment.ClearDepthStencil.X, renderingDesc.StencilAttachment.ClearDepthStencil.Y );
 
         renderInfo.pStencilAttachment = &stencilAttachmentInfo;
     }
@@ -301,7 +289,7 @@ void VulkanCommandList::BindViewport( const float offsetX, const float offsetY, 
     // Vulkan has inverted y-axis
     m_viewport.y      = newY;
     m_viewport.height = newHeight;
-    // --
+
     m_viewport.width    = width;
     m_viewport.minDepth = 0.0f;
     m_viewport.maxDepth = 1.0f;
@@ -791,18 +779,14 @@ void VulkanCommandList::BeginQuery( IQueryPool *queryPool, const DenOfIz_QueryDe
 
     if ( vkQueryPool->GetType( ) == DENOFIZ_QUERY_TYPE_TIMESTAMP )
     {
-        // Following The Forge's approach: Timestamp queries use vkCmdWriteTimestamp, not vkCmdBeginQuery
-        // Write begin timestamp using even index
+        // As in The Forge: timestamps are written with vkCmdWriteTimestamp, the begin at the even index and the end at the odd one.
         const uint32_t actualIndex = queryDesc.Index * 2;
         vkCmdWriteTimestamp( m_commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, vkQueryPool->GetVkQueryPool( ), actualIndex );
     }
     else if ( vkQueryPool->GetType( ) == DENOFIZ_QUERY_TYPE_OCCLUSION || vkQueryPool->GetType( ) == DENOFIZ_QUERY_TYPE_PIPELINE_STATISTICS )
     {
-        // Occlusion and pipeline statistics queries use vkCmdBeginQuery/vkCmdEndQuery pattern
-        // Remove precise flag to avoid validation errors unless precision is specifically needed
+        // No VK_QUERY_CONTROL_PRECISE_BIT, it raises validation errors.
         VkQueryControlFlags flags = 0;
-        // Only use precise bit if it's specifically needed and enabled
-        // flags = VK_QUERY_CONTROL_PRECISE_BIT; // Commented out to avoid validation errors
 
         vkCmdBeginQuery( m_commandBuffer, vkQueryPool->GetVkQueryPool( ), queryDesc.Index, flags );
     }

@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #pragma once
@@ -63,8 +52,7 @@ typedef enum DenOfIz_TargetIL
 {
     DENOFIZ_TARGET_IL_DXIL,
     DENOFIZ_TARGET_IL_MSL,
-    DENOFIZ_TARGET_IL_SPIRV,
-    DENOFIZ_TARGET_IL_WGSL
+    DENOFIZ_TARGET_IL_SPIRV
 } DenOfIz_TargetIL;
 
 typedef enum DenOfIz_RayTracingStage
@@ -84,12 +72,11 @@ typedef struct DenOfIz_ShaderRayTracingDesc
 
 typedef struct DenOfIz_RayTracingShaderDesc
 {
-    // For metal, it needs to know before compiling what the hit group is otherwise intersection shaders do not work
-    DenOfIz_HitGroupType             HitGroupType;
+    // Metal compiles hit group shaders for one hit group type, intersection shaders do not work without it.
+    DenOfIz_HitGroupType HitGroupType;
+    // Bindings of the shader's local root signature: left out of the global root signature and reflected into
+    // ShaderReflectDesc.LocalRootSignatures[i] instead, i being the stage's index in DenOfIz_ShaderProgramDesc::ShaderStages.
     DenOfIz_ResourceBindingSlotArray LocalBindings;
-    // Local bindings are used to mark resources as local, so they are not included in the global resource list
-    // The binding will be added to the corresponding ShaderDataLayoutDesc in the corresponding index of DenOfIz_LocalRootSignatureDesc at
-    // ShaderReflectDesc.LocalRootSignatures[shaderIndex], where shaderIndex is the index of the shader in the order of shaders provided to CompileDesc.
 } DenOfIz_RayTracingShaderDesc;
 
 typedef struct DenOfIz_BindlessSlot
@@ -143,7 +130,6 @@ typedef struct DenOfIz_CompiledShaderStage
     DenOfIz_ByteArray            DXIL;
     DenOfIz_ByteArray            MSL;
     DenOfIz_ByteArray            SPIRV;
-    DenOfIz_ByteArray            WGSL;
     DenOfIz_ByteArray            Reflection;
     DenOfIz_StringView           EntryPoint;
     DenOfIz_RayTracingShaderDesc RayTracing;

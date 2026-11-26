@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphics/Assets/Shaders/ShaderCompiler.h"
@@ -279,8 +268,7 @@ DenOfIz_CompileResult ShaderCompiler::CompileHLSL( const DenOfIz_CompileDesc &co
         return { };
     }
 
-    // Attribute to reference: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
-    // https://github.com/KhronosGroup/Vulkan-Guide
+    // HLSL attributes for Vulkan: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
     IDxcBlobEncoding *sourceBlob = nullptr;
     HRESULT           result     = S_OK;
     uint32_t          codePage   = DXC_CP_ACP;
@@ -386,7 +374,6 @@ DenOfIz_CompileResult ShaderCompiler::CompileHLSL( const DenOfIz_CompileDesc &co
         wsShaderPath = L"memory_shader";
     }
     arguments.push_back( wsShaderPath.c_str( ) );
-    // Set shader stage
     arguments.push_back( L"-T" );
     std::wstring wsTargetProfile( targetProfile.begin( ), targetProfile.end( ) );
     arguments.push_back( wsTargetProfile.c_str( ) );
@@ -414,33 +401,28 @@ DenOfIz_CompileResult ShaderCompiler::CompileHLSL( const DenOfIz_CompileDesc &co
         }
 
         arguments.push_back( L"-Wno-parameter-usage" );
-        // Vulkan requires unique binding for each descriptor, hlsl has a binding per buffer view.
-        // Docs suggest shifting the binding to avoid conflicts.
+        // Vulkan needs a unique binding per descriptor while HLSL registers are per resource type, so each type is shifted to its own range.
         static const std::wstring VkShiftCbvWs     = std::to_wstring( DENOFIZ_VK_SHIFT_CBV );
         static const std::wstring VkShiftSrvWs     = std::to_wstring( DENOFIZ_VK_SHIFT_SRV );
         static const std::wstring VkShiftUavWs     = std::to_wstring( DENOFIZ_VK_SHIFT_UAV );
         static const std::wstring VkShiftSamplerWs = std::to_wstring( DENOFIZ_VK_SHIFT_SAMPLER );
 
         {
-            // Shift Cbv for Vk
             arguments.push_back( L"-fvk-b-shift" );
             arguments.push_back( VkShiftCbvWs.c_str( ) );
             arguments.push_back( L"all" );
         }
         {
-            // Shift Srv for Vk
             arguments.push_back( L"-fvk-t-shift" );
             arguments.push_back( VkShiftSrvWs.c_str( ) );
             arguments.push_back( L"all" );
         }
         {
-            // Shift Uav for Vk
             arguments.push_back( L"-fvk-u-shift" );
             arguments.push_back( VkShiftUavWs.c_str( ) );
             arguments.push_back( L"all" );
         }
         {
-            // Shift Sampler for Vk
             arguments.push_back( L"-fvk-s-shift" );
             arguments.push_back( VkShiftSamplerWs.c_str( ) );
             arguments.push_back( L"all" );
@@ -467,13 +449,13 @@ DenOfIz_CompileResult ShaderCompiler::CompileHLSL( const DenOfIz_CompileDesc &co
     arguments.push_back( L"-HV" );
     arguments.push_back( L"2021" );
 #ifndef NDEBUG
-    if ( compileDesc.TargetIL == DENOFIZ_TARGET_IL_DXIL ) // Use Zi only on DXIL, for SPIRV this breaks naga compatibility
+    if ( compileDesc.TargetIL == DENOFIZ_TARGET_IL_DXIL )
     {
         arguments.push_back( L"-Zi" );
     }
 #endif
 
-    // Set the entry point, and export only the specific entry point, helps with Vulkan and Metal compatibility
+    // Libraries export only the entry point, which keeps them compatible with Vulkan and Metal.
     arguments.push_back( L"-E" );
     std::string  entryPoint( compileDesc.EntryPoint.Chars, compileDesc.EntryPoint.NumChars );
     std::wstring wsEntryPoint( entryPoint.begin( ), entryPoint.end( ) );
@@ -489,7 +471,7 @@ DenOfIz_CompileResult ShaderCompiler::CompileHLSL( const DenOfIz_CompileDesc &co
     }
 
     DxcBuffer buffer{ };
-    buffer.Encoding = DXC_CP_ACP; // or? DXC_CP_UTF8;
+    buffer.Encoding = DXC_CP_ACP;
     buffer.Ptr      = sourceBlob->GetBufferPointer( );
     buffer.Size     = sourceBlob->GetBufferSize( );
 

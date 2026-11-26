@@ -2,18 +2,7 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12Pipeline.h"
@@ -76,7 +65,7 @@ void DX12Pipeline::CreateGraphicsPipeline( )
     }
     else
     {
-        m_iaStride      = inputLayout->Stride( 0 ); // Use stride from first input group
+        m_iaStride      = inputLayout->Stride( 0 );
         inputLayoutDesc = inputLayout->GetInputLayout( );
     }
 
@@ -206,7 +195,7 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     DenOfIz_ShaderProgramDesc shaderProgramDesc;
     DenOfIz_ShaderProgram_Desc( m_desc.ShaderProgram, &shaderProgramDesc );
     Storage storage{ };
-    storage.Reserve( compiledShaders.NumElements * 2 ); // 2, Local root signature Desc, SubObject to exports association Desc
+    storage.Reserve( compiledShaders.NumElements * 2 ); // A local root signature and an exports association per shader
     std::vector<D3D12_STATE_SUBOBJECT> subObjects;
     subObjects.reserve( 256 );
     m_hitGroups.reserve( m_desc.RayTracing.HitGroups.NumElements );
@@ -220,13 +209,12 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     rootSignatureSubObject.Type                        = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
     rootSignatureSubObject.pDesc                       = &globalRootSignature;
 
-    // std::vector<D3D12_DXIL_LIBRARY_DESC> dxilLibs;
     std::vector<D3D12_DXIL_LIBRARY_DESC> dxilLibs;
     dxilLibs.reserve( compiledShaders.NumElements );
-    // Lifetime Management:
+    // Reserved up front: the exports point into these strings.
     std::vector<std::wstring> entryPoints;
     entryPoints.reserve( compiledShaders.NumElements * 2 );
-    // --
+
     for ( uint32_t i = 0; i < compiledShaders.NumElements; ++i )
     {
         if ( const auto &compiledShader = compiledShaders.Elements[ i ] )
@@ -243,7 +231,7 @@ void DX12Pipeline::CreateRayTracingPipeline( )
 
     std::unordered_map<ID3D12RootSignature *, std::vector<LPCWSTR>> rootSignatureExports;
     std::unordered_set<std::wstring>                                processedExports;
-    // Handle local root signatures per shader
+
     auto localRootSignatures = m_desc.RayTracing.LocalRootSignatures;
     for ( uint32_t i = 0; i < localRootSignatures.NumElements; ++i )
     {
@@ -257,7 +245,6 @@ void DX12Pipeline::CreateRayTracingPipeline( )
         }
     }
 
-    // Handle RootSignatures for hit groups, create said hit groups in the meantime
     for ( uint32_t i = 0; i < m_desc.RayTracing.HitGroups.NumElements; ++i )
     {
         const auto &hitGroup = m_desc.RayTracing.HitGroups.Elements[ i ];
@@ -566,8 +553,8 @@ void DX12Pipeline::CreateMeshPipeline( )
     {
         CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE        RootSignature;
         CD3DX12_PIPELINE_STATE_STREAM_PS                    PS;
-        CD3DX12_PIPELINE_STATE_STREAM_AS                    AS; // Task Shader (Amplification Shader)
-        CD3DX12_PIPELINE_STATE_STREAM_MS                    MS; // Mesh Shader
+        CD3DX12_PIPELINE_STATE_STREAM_AS                    AS; // Task shader
+        CD3DX12_PIPELINE_STATE_STREAM_MS                    MS;
         CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC            BlendState;
         CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_MASK           SampleMask;
         CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER            RasterizerState;

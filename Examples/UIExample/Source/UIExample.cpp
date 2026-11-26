@@ -2,40 +2,135 @@
 Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Licensed under the MIT License. See LICENSE in the project root.
 */
 
 #include "DenOfIzExamples/UIExample.h"
 #include <algorithm>
+#include <cctype>
+#include <chrono>
 #include <cmath>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
+#include <thread>
 #include <utility>
+#include "DenOfIzGraphics/Assets/Font/Text.h"
 #include "DenOfIzGraphics/Input/InputSystem.h"
+#ifndef _WIN32
+#include <sys/wait.h>
+#endif
 
 using namespace DenOfIz;
 
 namespace
 {
-    constexpr const char *PageNames[] = { "Controls", "Text", "Media" };
-    constexpr const char *Qualities[] = { "Low", "Medium", "High", "Ultra" };
+    constexpr const char *PageNames[]  = { "Controls", "Text", "Fonts", "Scripts", "Media" };
+    constexpr const char *Qualities[]  = { "Low", "Medium", "High", "Ultra" };
     constexpr uint32_t    NumQualities = 4;
     constexpr uint32_t    NumRows      = 40;
     constexpr float       KnobSize     = 16.0f;
     constexpr const char *Paragraph    = "Text is measured by the font and wrapped by the layout, resize the window to see it reflow. "
                                          "A word longer than the line, like Supercalifragilisticexpialidocious, overflows instead of breaking.";
+    constexpr const char *Ligatures    = "-> => != == >= <= === !== <=> |> <| :: ... /* */ // www 0xFF";
+    constexpr uint16_t    InterFont    = 1;
+    constexpr uint16_t    BidiFont     = 2;
+    constexpr uint16_t    IconFont     = 3;
+    constexpr uint16_t    MaxFonts     = 64;
+    constexpr uint16_t    NotoChain    = MaxFonts - 1; // Inter with Noto Color Emoji as its fallback.
+    constexpr float       TextSizes[]  = { 9, 11, 13, 16, 24, 48, 96 };
+    constexpr float       Waterfall[]  = { 12, 18, 28, 40 };
+    constexpr float       MinSample    = 8.0f;
+    constexpr float       MaxSample    = 400.0f;
+    constexpr const char *Pangram      = "Sphinx of black quartz, judge my vow. Five boxing wizards jump quickly, 0123456789 & ?!";
+    constexpr const char *Presets[]    = { "Roboto",         "Lobster",        "Playfair Display", "Pacifico",     "Fira Code",
+                                           "JetBrains Mono", "Press Start 2P", "Noto Serif",       "Merriweather", "Dancing Script",
+                                           "Nabla",          "Bungee Spice",   "Honk",             "Noto Color Emoji" };
+
+    struct ScriptSample
+    {
+        const char *Script;
+        const char *Family;
+        const char *Text;
+        bool        Rtl;
+    };
+
+    constexpr ScriptSample Scripts[] = {
+        { "Arabic, vocalised", "Noto Naskh Arabic", "اَلْخَطُّ الْعَرَبِيُّ فَنٌّ جَمِيلٌ", true },
+        { "Urdu, Nastaliq", "Noto Nastaliq Urdu", "اردو نستعلیق میں لکھی جاتی ہے", true },
+        { "Hebrew, niqqud", "Noto Sans Hebrew", "עִבְרִית הִיא שָׂפָה יָפָה", true },
+        { "Devanagari", "Noto Sans Devanagari", "विद्यार्थी हिन्दी किताब पढ़ते हैं", false },
+        { "Bengali", "Noto Sans Bengali", "আমি বাংলায় স্বপ্ন দেখি", false },
+        { "Tamil", "Noto Sans Tamil", "தமிழ் இனிமையான மொழி", false },
+        { "Thai", "Noto Sans Thai", "ผู้ใหญ่ปั่นจักรยานไปดื่มน้ำที่ญี่ปุ่น", false },
+        { "Khmer", "Noto Sans Khmer", "ភាសាខ្មែរ ស្រស់ស្អាត", false },
+        { "Myanmar", "Noto Sans Myanmar", "မြန်မာဘာသာစကား", false },
+        { "Japanese", "Noto Sans JP", "日本語の文章は、漢字とひらがなとカタカナで書きます。", false },
+        { "Korean", "Noto Sans KR", "한국어는 아름다운 언어입니다", false },
+        { "Vietnamese", "Roboto", "Tiếng Việt có dấu: Ở Huế, chữ quốc ngữ thật đẹp", false },
+        { "Code ligatures", "Fira Code", "-> => != === >= <= <=> |> :: /* */ www 0xFF &&", false },
+    };
+
+    struct BidiSample
+    {
+        const char *Name;
+        const char *Text;
+        bool        Rtl;
+    };
+
+    constexpr BidiSample BidiSamples[] = {
+        { "Hebrew words in English", "The word שלום means peace, and עולם means world.", false },
+        { "Arabic with a number and English", "قرأت 3 كتب في Book World اليوم", true },
+        { "English in parentheses", "הוא אמר (hello world) ויצא", true },
+        { "A price in Hebrew", "המחיר הוא 1,234.50 ₪ בלבד", true },
+        { "Nested brackets", "Call (שלום [123]) now", false },
+    };
+
+    // Inter covers Latin, Greek and Cyrillic, everything else comes from the system fonts. The icons are Font Awesome private use code points.
+    constexpr const char *FallbackLines[] = {
+        "English · العربية · עברית · हिन्दी · ไทย · 日本語 · 한국어 · Ελληνικά · Русский · ქართული · አማርኛ",
+        "हिन्दी · বাংলা · ਪੰਜਾਬੀ · ગુજરાતી · தமிழ் · తెలుగు · ಕನ್ನಡ · മലയാളം · සිංහල",
+        "中文 · 日本語 · 한국어 · ລາວ · ខ្មែរ · မြန်မာ · Հայերեն · فارسی · ᏣᎳᎩ · ᓀᐦᐃᔭᐍᐏᐣ",
+        "Save \xEF\x83\x87   Search \xEF\x80\x82   Settings \xEF\x80\x93   Delete \xEF\x87\xB8   Home \xEF\x80\x95",
+    };
+
+    // Drawn with Inter, every emoji cluster takes the system's colour emoji font.
+    constexpr const char *EmojiLines[] = {
+        "Smileys 😀 😃 😄 😁 😆 😅 🤣 😂 🙂 😉 😊 😇 🥰 😍 🤩 🥳",
+        "Skin tones 👍 👍🏻 👍🏼 👍🏽 👍🏾 👍🏿 ✌🏽 🧑🏾‍💻 👩🏻‍🚀",
+        "ZWJ sequences 👨‍👩‍👧 👩‍👩‍👦‍👦 🧑‍🤝‍🧑 ❤️‍🔥 🏳️‍🌈 🏴‍☠️ 🐻‍❄️",
+        "Flags 🇳🇱 🇹🇷 🇯🇵 🇧🇷 🇺🇦 🇨🇦 🇪🇺 🏴󠁧󠁢󠁥󠁮󠁧󠁿 🏴󠁧󠁢󠁳󠁣󠁴󠁿 · Keycaps 1️⃣ 2️⃣ 3️⃣ #️⃣ *️⃣ 🔟",
+        "Presentation: ☺ and ☺️, ❤ and ❤️, ✔ and ✔️, ❤︎ asks for text with VS15",
+        "Inline: the build passed ✅ and shipped 🚀 before lunch 🍜, then coffee ☕.",
+        "مبروك 🎉 عيد ميلاد سعيد 🎂 · מזל טוב 🥂 לכולם",
+    };
+    constexpr const char *EmojiSample   = "😀 👍🏽 🇳🇱 👨‍👩‍👧 🦄 🌈 🔥";
+    constexpr float       EmojiSizes[]  = { 16, 20, 24, 32, 48, 64, 96, 128 };
+    constexpr const char *ColourFonts[] = { "Noto Color Emoji", "Nabla", "Bungee Spice", "Honk" };
+
+    struct EdgeCase
+    {
+        const char        *Name;
+        const char        *Text;
+        float              Width;
+        DenOfIz_UITextWrap Wrap;
+    };
+
+    // Drawn with Inter and the system fonts. The invisible code points are escaped.
+    constexpr EdgeCase EdgeCases[] = {
+        { "Line boxes, selected", "Latin line\nမြန်မာဘာသာ line\nEmoji 😀 line\nLatin again", 190, DENOFIZ_UI_TEXT_WRAP_WORDS },
+        { "Over-long Arabic word", "مستشفياتمستشفياتمستشفيات", 120, DENOFIZ_UI_TEXT_WRAP_ANYWHERE },
+        { "Over-long kerned word", "AVAVAVAVAVAVAVAVAVAVAV", 120, DENOFIZ_UI_TEXT_WRAP_ANYWHERE },
+        { "Controls and ill-formed UTF-8", "RLO a\u202Ebcd\u202Ce \u00B7 soft hy\u00ADphen, zw\u200Bsp, wj\u2060oin\nbad \xC0\xAF \xE2\x82 \xF0\x9F\x98 end", 190,
+          DENOFIZ_UI_TEXT_WRAP_WORDS },
+    };
+
+    constexpr const char *BidiParagraphs[] = {
+        "تلتف هذه الفقرة العربية داخل صندوق ضيق، ويبدأ كل سطر من اليمين. تبقى الأرقام مثل 2025 والكلمات الإنجليزية مثل Unicode بترتيبها الصحيح.",
+        "פסקה בעברית שנשברת לשורות בתוך תיבה צרה. מילים באנגלית like these ומספרים כמו 42 נשארים במקומם.",
+    };
+
+    using Clock = std::chrono::steady_clock;
 
     constexpr DenOfIz_UIColor Hex( const uint32_t rgba )
     {
@@ -64,6 +159,7 @@ namespace
         constexpr DenOfIz_UIColor Dark         = Hex( 0x111827FF );
         constexpr DenOfIz_UIColor Selection    = Hex( 0x2563EB59 );
         constexpr DenOfIz_UIColor Backdrop     = Hex( 0x0F172A73 );
+        constexpr DenOfIz_UIColor Danger       = Hex( 0xDC2626FF );
         constexpr DenOfIz_UIColor Clear        = Hex( 0x00000000 );
     } // namespace Theme
 
@@ -85,40 +181,6 @@ namespace
     bool Shortcut( const uint32_t mod )
     {
         return Has( mod, DENOFIZ_KEY_MOD_GUI | DENOFIZ_KEY_MOD_LGUI | DENOFIZ_KEY_MOD_RGUI | DENOFIZ_KEY_MOD_CTRL | DENOFIZ_KEY_MOD_LCTRL | DENOFIZ_KEY_MOD_RCTRL );
-    }
-
-    bool IsContinuation( const char c )
-    {
-        return ( static_cast<uint8_t>( c ) & 0xC0 ) == 0x80;
-    }
-
-    uint32_t PrevCodepoint( const std::string &text, uint32_t offset )
-    {
-        if ( offset == 0 )
-        {
-            return 0;
-        }
-        --offset;
-        while ( offset > 0 && IsContinuation( text[ offset ] ) )
-        {
-            --offset;
-        }
-        return offset;
-    }
-
-    uint32_t NextCodepoint( const std::string &text, uint32_t offset )
-    {
-        const auto size = static_cast<uint32_t>( text.size( ) );
-        if ( offset >= size )
-        {
-            return size;
-        }
-        ++offset;
-        while ( offset < size && IsContinuation( text[ offset ] ) )
-        {
-            ++offset;
-        }
-        return offset;
     }
 
     DenOfIz_UIElementDesc Row( const float gap = 0.0f )
@@ -163,6 +225,108 @@ namespace
         transition.Exit.Opacity  = 0.0f;
         return transition;
     }
+
+    double MsSince( const Clock::time_point start )
+    {
+        return std::chrono::duration<double, std::milli>( Clock::now( ) - start ).count( );
+    }
+
+    std::string Trim( const std::string &text )
+    {
+        const size_t begin = text.find_first_not_of( ' ' );
+        return begin == std::string::npos ? std::string( ) : text.substr( begin, text.find_last_not_of( ' ' ) - begin + 1 );
+    }
+
+    // Family names and font URLs end up in a shell command, so only plain characters get through.
+    bool IsFamilyName( const std::string &family )
+    {
+        return !family.empty( ) && std::all_of( family.begin( ), family.end( ), []( const char c ) { return std::isalnum( static_cast<unsigned char>( c ) ) || c == ' '; } );
+    }
+
+    bool IsFontUrl( const std::string &url )
+    {
+        constexpr std::string_view allowed = "/:._-";
+        return url.starts_with( "https://fonts.gstatic.com/" ) &&
+               std::all_of( url.begin( ), url.end( ),
+                            [ & ]( const char c ) { return std::isalnum( static_cast<unsigned char>( c ) ) || allowed.find( c ) != std::string_view::npos; } );
+    }
+
+    // Returns curl's exit code and appends the response body to out.
+    int Curl( const std::string &url, const char *flags, std::vector<uint8_t> &out )
+    {
+        const std::string command = std::string( "curl " ) + flags + " --max-time 30 \"" + url + "\"";
+#ifdef _WIN32
+        FILE *pipe = _popen( command.c_str( ), "rb" );
+#else
+        FILE *pipe = popen( command.c_str( ), "r" );
+#endif
+        if ( pipe == nullptr )
+        {
+            return -1;
+        }
+        std::array<uint8_t, 1 << 16> chunk{ };
+        for ( size_t read; ( read = std::fread( chunk.data( ), 1, chunk.size( ), pipe ) ) > 0; )
+        {
+            out.insert( out.end( ), chunk.begin( ), chunk.begin( ) + read );
+        }
+#ifdef _WIN32
+        return _pclose( pipe );
+#else
+        const int status = pclose( pipe );
+        return WIFEXITED( status ) ? WEXITSTATUS( status ) : -1;
+#endif
+    }
+
+    std::string CurlError( const int code )
+    {
+        switch ( code )
+        {
+        case 6:
+            return "Could not resolve the host, is the network up?";
+        case 7:
+            return "Could not connect to the server";
+        case 22:
+        case 56:
+            return "The server answered with an HTTP error";
+        case 28:
+            return "Timed out after 30 seconds";
+        case 127:
+        case 9009:
+            return "curl was not found on the PATH";
+        default:
+            return "curl failed with exit code " + std::to_string( code );
+        }
+    }
+
+    // Google Fonts answers clients it does not know as browsers, curl included, with TrueType URLs. Returns an error or an empty string.
+    std::string FetchGoogleFont( const std::string &family, std::vector<uint8_t> &bytes )
+    {
+        std::string query = family;
+        std::replace( query.begin( ), query.end( ), ' ', '+' );
+        // No -f for the stylesheet: an unknown family gets an HTML error page, which has no url( ) in it.
+        std::vector<uint8_t> css;
+        if ( const int code = Curl( "https://fonts.googleapis.com/css2?family=" + query, "-sSL", css ); code != 0 )
+        {
+            return CurlError( code );
+        }
+        const std::string text( css.begin( ), css.end( ) );
+        const size_t      begin = text.find( "url(" );
+        const size_t      end   = text.find( ')', begin );
+        if ( begin == std::string::npos || end == std::string::npos )
+        {
+            return "Google Fonts has no family named \"" + family + "\", names are case sensitive";
+        }
+        const std::string url = text.substr( begin + 4, end - begin - 4 );
+        if ( !IsFontUrl( url ) )
+        {
+            return "Unexpected font URL in the stylesheet";
+        }
+        if ( const int code = Curl( url, "-sSfL", bytes ); code != 0 )
+        {
+            return CurlError( code );
+        }
+        return { };
+    }
 } // namespace
 
 void UIExample::Init( )
@@ -177,16 +341,34 @@ void UIExample::Init( )
     uiDesc.Height             = m_pixelHeight;
     m_ui                      = DenOfIz_UI_Create( &uiDesc );
 
-    m_tabsId        = Id( "Tabs" );
-    m_pagesId       = Id( "Pages" );
-    m_clickId       = Id( "ClickMe" );
-    m_qualityId     = Id( "Quality" );
-    m_fieldId       = Id( "TextField" );
-    m_fieldScrollId = DenOfIz_UI_CombineId( m_fieldId, 1 );
-    m_fieldTextId   = DenOfIz_UI_CombineId( m_fieldId, 2 );
-    m_listId        = Id( "List" );
-    m_dialogId      = Id( "Dialog" );
-    m_caret = m_anchor = static_cast<uint32_t>( m_text.size( ) );
+    m_interFont = DenOfIz_Font_CreateFromPath( DENOFIZ_STRING( "Assets/Fonts/Inter-Regular.ttf" ), 0 );
+    DenOfIz_UI_AddFont( m_ui, InterFont, m_interFont );
+    m_iconFont = DenOfIz_Font_CreateFromPath( DENOFIZ_STRING( "Assets/Fonts/FontAwesome7.otf" ), 0 );
+    DenOfIz_UI_AddFont( m_ui, IconFont, m_iconFont );
+    uint16_t            interFallbacks[] = { IconFont };
+    DenOfIz_UInt16Array fallbacks{ interFallbacks, 1 };
+    DenOfIz_UI_SetFontFallbacks( m_ui, InterFont, &fallbacks );
+#ifdef __APPLE__
+    // Latin, Hebrew and Arabic from one file, so the caret and selection are measured in one font. The Bidi card is skipped without it.
+    m_bidiFont = DenOfIz_Font_CreateFromPath( DENOFIZ_STRING( "/System/Library/Fonts/Supplemental/Arial Unicode.ttf" ), 0 );
+    if ( DENOFIZ_HANDLE_IS_VALID( m_bidiFont ) )
+    {
+        DenOfIz_UI_AddFont( m_ui, BidiFont, m_bidiFont );
+    }
+#endif
+    m_bidi.FontId = BidiFont;
+
+    m_tabsId    = Id( "Tabs" );
+    m_pagesId   = Id( "Pages" );
+    m_clickId   = Id( "ClickMe" );
+    m_qualityId = Id( "Quality" );
+    m_listId    = Id( "List" );
+    m_dialogId  = Id( "Dialog" );
+    for ( TextEdit *edit : { &m_field, &m_family, &m_bidi } )
+    {
+        edit->Id    = Id( edit == &m_field ? "TextField" : edit == &m_family ? "FamilyField" : "BidiField" );
+        edit->Caret = edit->Anchor = static_cast<uint32_t>( edit->Text.size( ) );
+    }
 
     m_cube = std::make_unique<Spinning3DCubeWidget>( Id( "Cube" ) );
     m_cube->SetCubeColor( DirectX::XMFLOAT4( 0.2f, 0.6f, 1.0f, 1.0f ) );
@@ -205,6 +387,8 @@ void UIExample::Update( )
         return;
     }
     m_cube->RenderToTexture( frameIndex );
+    LoadDownloadedFont( );
+    const auto start = Clock::now( );
     BuildUI( frameIndex );
 
     const DenOfIz_SystemCursor cursor = DenOfIz_UI_GetCursor( m_ui );
@@ -215,6 +399,17 @@ void UIExample::Update( )
     }
 
     Render( frameIndex, m_frame.CommandList );
+    // Building and recording the UI covers shaping, layout and compiling the glyphs a new font draws for the first time.
+    const double frameMs = MsSince( start );
+    m_frameMs            = m_frameMs == 0.0 ? frameMs : m_frameMs + ( frameMs - m_frameMs ) * 0.05;
+    for ( const auto &font : m_webFonts )
+    {
+        if ( std::exchange( font->Drawn, false ) )
+        {
+            font->FirstFrameMs = frameMs;
+        }
+    }
+
     DenOfIz_Semaphore      cubeSemaphore = m_cube->GetRenderSemaphore( );
     DenOfIz_SemaphoreArray waitSemaphores{ };
     waitSemaphores.Elements    = &cubeSemaphore;
@@ -226,7 +421,7 @@ void UIExample::BuildUI( const uint32_t frameIndex )
 {
     DenOfIz_UI_BeginFrame( m_ui, m_deltaTime );
     m_focusId            = DenOfIz_UI_GetFocus( m_ui );
-    const bool wantsText = m_focusId == m_fieldId;
+    const bool wantsText = Editing( ) != nullptr;
     if ( wantsText && !m_textInput )
     {
         DenOfIz_InputSystem_StartTextInput( );
@@ -252,6 +447,8 @@ void UIExample::BuildUI( const uint32_t frameIndex )
             Sidebar( );
             ControlsPage( );
             TextPage( );
+            FontsPage( );
+            ScriptsPage( );
             MediaPage( frameIndex );
         }
         Close( );
@@ -369,15 +566,20 @@ void UIExample::BeginCard( const char *title, const char *description, const flo
     Label( description, 13, Theme::Muted );
 }
 
+void UIExample::BeginPage( const Page page ) const
+{
+    DenOfIz_UIElementDesc desc = Column( 16 );
+    desc.Id                    = DenOfIz_UI_CombineId( m_pagesId, static_cast<uint32_t>( page ) );
+    desc.Layout.Display        = m_page == page ? DENOFIZ_UI_DISPLAY_FLEX : DENOFIZ_UI_DISPLAY_NONE;
+    desc.Layout.Padding        = DenOfIz_UILengthEdges_All( 24 );
+    desc.Scroll.OverflowY      = DENOFIZ_UI_OVERFLOW_SCROLL;
+    Fill( desc.Layout );
+    Open( desc );
+}
+
 void UIExample::ControlsPage( )
 {
-    DenOfIz_UIElementDesc page = Column( 16 );
-    page.Id                    = DenOfIz_UI_CombineId( m_pagesId, static_cast<uint32_t>( Page::Controls ) );
-    page.Layout.Display        = m_page == Page::Controls ? DENOFIZ_UI_DISPLAY_FLEX : DENOFIZ_UI_DISPLAY_NONE;
-    page.Layout.Padding        = DenOfIz_UILengthEdges_All( 24 );
-    page.Scroll.OverflowY      = DENOFIZ_UI_OVERFLOW_SCROLL;
-    Fill( page.Layout );
-    Open( page );
+    BeginPage( Page::Controls );
 
     DenOfIz_UIElementDesc grid = { };
     grid.Layout.Wrap           = DENOFIZ_UI_FLEX_WRAP_WRAP;
@@ -437,17 +639,34 @@ void UIExample::ControlsPage( )
 
 void UIExample::TextPage( )
 {
-    DenOfIz_UIElementDesc page = Column( 16 );
-    page.Id                    = DenOfIz_UI_CombineId( m_pagesId, static_cast<uint32_t>( Page::Text ) );
-    page.Layout.Display        = m_page == Page::Text ? DENOFIZ_UI_DISPLAY_FLEX : DENOFIZ_UI_DISPLAY_NONE;
-    page.Layout.Padding        = DenOfIz_UILengthEdges_All( 24 );
-    page.Scroll.OverflowY      = DENOFIZ_UI_OVERFLOW_SCROLL;
-    Fill( page.Layout );
-    Open( page );
+    BeginPage( Page::Text );
 
     BeginCard( "Text field", "Click to place the caret, drag or Shift+arrows to select, double click selects everything." );
-    TextField( );
-    Label( Format( "Caret %u, selection %u..%u", m_caret, std::min( m_caret, m_anchor ), std::max( m_caret, m_anchor ) ), 12, Theme::Muted );
+    TextField( m_field );
+    Label( Format( "Caret %u, selection %u..%u", m_field.Caret, std::min( m_field.Caret, m_field.Anchor ), std::max( m_field.Caret, m_field.Anchor ) ), 12, Theme::Muted );
+    Close( );
+
+    BeginCard( "Glyphs", "Outlines are rendered from the font's curves, so every size stays sharp. The built in font draws its programming ligatures." );
+    for ( const float size : TextSizes )
+    {
+        Label( Format( "%.0fpx Sphinx of black quartz, judge my vow", size ), size, Theme::Text );
+    }
+    Label( Ligatures, 18, Theme::Text );
+    for ( const float size : { 11.0f, 14.0f, 20.0f, 32.0f } )
+    {
+        Label( Format( "Inter %.0fpx The quick brown fox -> jumps over 1/2 the lazy dog", size ), size, Theme::Text, InterFont );
+    }
+    {
+        DenOfIz_UIElementDesc clip = Row( );
+        clip.Layout.Height         = DenOfIz_UIValue_Points( 64 );
+        clip.Scroll.OverflowX      = DENOFIZ_UI_OVERFLOW_CLIP;
+        clip.Scroll.OverflowY      = DENOFIZ_UI_OVERFLOW_CLIP;
+        clip.Style.BackgroundColor = Theme::AccentSoft;
+        clip.Style.CornerRadius    = DenOfIz_UICorners_All( 28 );
+        Open( clip );
+        Label( "Clipped by rounded corners", 72, Theme::Accent, InterFont );
+        Close( );
+    }
     Close( );
 
     BeginCard( "Wrapping", "Each column gets an equal share of the row and wraps its text to that width." );
@@ -489,15 +708,516 @@ void UIExample::TextPage( )
     Close( );
 }
 
+void UIExample::FontsPage( )
+{
+    BeginPage( Page::Fonts );
+
+    BeginCard( "Google Fonts", "Type a family name or pick one below. A worker thread fetches the stylesheet and the TrueType file from "
+                               "fonts.googleapis.com with curl, the same file a browser downloads, and the text is drawn straight from the outlines." );
+    {
+        auto show = [ this ]( const std::string &family )
+        {
+            WebFont &font = RequestFont( family );
+            font.Listed   = true;
+            m_sizeFont    = &font;
+        };
+
+        Open( Row( 8 ) );
+        DenOfIz_UIElementDesc field = Column( );
+        Fill( field.Layout );
+        Open( field );
+        TextField( m_family );
+        Close( );
+        const bool submit = std::exchange( m_submitFamily, false );
+        if ( Button( "Load", Id( "LoadFamily" ) ) || submit )
+        {
+            const std::string family = Trim( m_family.Text );
+            m_fontsStatus            = IsFamilyName( family ) ? std::string( ) : "Family names are letters, digits and spaces, like Open Sans";
+            if ( m_fontsStatus.empty( ) )
+            {
+                show( family );
+            }
+        }
+        Close( );
+
+        DenOfIz_UIElementDesc presets = Row( 8 );
+        presets.Layout.Wrap           = DENOFIZ_UI_FLEX_WRAP_WRAP;
+        presets.Layout.LineGap        = DenOfIz_UILength_Points( 8 );
+        Open( presets );
+        for ( uint32_t i = 0; i < std::size( Presets ); ++i )
+        {
+            if ( Button( Presets[ i ], DenOfIz_UI_CombineId( Id( "Preset" ), i ), false ) )
+            {
+                show( Presets[ i ] );
+            }
+        }
+        if ( Button( "Load all", Id( "LoadAll" ) ) )
+        {
+            std::for_each( std::begin( Presets ), std::end( Presets ), show );
+        }
+        Close( );
+
+        uint32_t loaded = 0, pending = 0;
+        for ( const auto &font : m_webFonts )
+        {
+            loaded += font->FontId != 0;
+            pending += !font->Done.load( std::memory_order_acquire );
+        }
+        if ( m_fontsStatus.empty( ) )
+        {
+            Label( Format( "%u fonts loaded, %u downloading. A frame takes %.1f ms on the CPU.", loaded, pending, m_frameMs ), 12, Theme::Muted );
+        }
+        else
+        {
+            Label( m_fontsStatus.c_str( ), 12, Theme::Danger );
+        }
+    }
+    Close( );
+
+    BeginCard( "Any size", "One outline for every size: coverage is solved from the curves per pixel, nothing is rasterised ahead of time." );
+    {
+        const float size = MinSample * std::pow( MaxSample / MinSample, m_sizeValue );
+        Open( Row( 12 ) );
+        Label( m_sizeFont != nullptr ? m_sizeFont->Family.c_str( ) : "Inter", 14, Theme::Text );
+        Slider( Id( "SampleSize" ), m_sizeValue );
+        Label( Format( "%.0f px", size ), 14, Theme::Muted );
+        Close( );
+
+        if ( m_sizeFont != nullptr && m_sizeFont->FontId == 0 )
+        {
+            FontStatus( *m_sizeFont );
+        }
+        else
+        {
+            DenOfIz_UIElementDesc view = Row( );
+            view.Scroll.OverflowX      = DENOFIZ_UI_OVERFLOW_SCROLL;
+            view.Scroll.OverflowY      = DENOFIZ_UI_OVERFLOW_CLIP;
+            Open( view );
+            DenOfIz_UITextDesc text{ };
+            text.FontId   = m_sizeFont != nullptr ? Use( *m_sizeFont, Page::Fonts ) : InterFont;
+            text.FontSize = size;
+            text.Color    = Theme::Text;
+            text.Wrap     = DENOFIZ_UI_TEXT_WRAP_NONE;
+            DenOfIz_UI_Text( m_ui, View( "Hamburgefonstiv" ), &text );
+            Close( );
+        }
+    }
+    Close( );
+
+    DenOfIz_UIElementDesc grid = { };
+    grid.Layout.Wrap           = DENOFIZ_UI_FLEX_WRAP_WRAP;
+    grid.Layout.Gap            = DenOfIz_UILength_Points( 16 );
+    grid.Layout.LineGap        = DenOfIz_UILength_Points( 16 );
+    Open( grid );
+    for ( uint32_t i = 0; i < m_webFonts.size( ); ++i )
+    {
+        if ( m_webFonts[ i ]->Listed )
+        {
+            FontCard( *m_webFonts[ i ], i );
+        }
+    }
+    Close( );
+
+    Close( );
+}
+
+void UIExample::FontCard( WebFont &font, const uint32_t index )
+{
+    const uint32_t              id          = DenOfIz_UI_CombineId( Id( "FontCard" ), index );
+    const DenOfIz_UIInteraction interaction = Interaction( id );
+    if ( font.FontId != 0 && Activated( id, interaction ) )
+    {
+        m_sizeFont = &font;
+    }
+    const bool hovered = Has( interaction.Flags, DENOFIZ_UI_INTERACTION_HOVERED_BIT );
+
+    DenOfIz_UIElementDesc card = Column( 10 );
+    card.Id                    = id;
+    card.Flags                 = DENOFIZ_UI_ELEMENT_FOCUSABLE_BIT;
+    card.Cursor                = DENOFIZ_SYSTEM_CURSOR_POINTER;
+    card.Layout.Padding        = DenOfIz_UILengthEdges_All( 16 );
+    card.Style.BackgroundColor = Theme::Surface;
+    card.Style.BorderColor     = m_sizeFont == &font ? Theme::Accent : hovered ? Theme::BorderStrong : Theme::Border;
+    card.Style.BorderWidth     = DenOfIz_UIEdges_All( 1 );
+    card.Style.CornerRadius    = DenOfIz_UICorners_All( 10 );
+    card.Transition            = ColorTransition( );
+    Fill( card.Layout );
+    card.Layout.Basis = DenOfIz_UIValue_Points( 360 );
+    FocusRing( card );
+    Open( card );
+    const uint16_t fontId = font.FontId != 0 ? Use( font, Page::Fonts ) : 0;
+    Label( font.Family.c_str( ), 26, Theme::Text, fontId );
+    FontStatus( font );
+    if ( fontId != 0 )
+    {
+        DenOfIz_UITextDesc paragraph{ };
+        paragraph.FontId     = fontId;
+        paragraph.FontSize   = 16;
+        paragraph.LineHeight = 24;
+        paragraph.Color      = Theme::Text;
+        DenOfIz_UI_Text( m_ui, View( Pangram ), &paragraph );
+        for ( const float size : Waterfall )
+        {
+            Label( Format( "%.0f Handgloves", size ), size, Theme::Text, fontId );
+        }
+    }
+    Close( );
+}
+
+void UIExample::ScriptsPage( )
+{
+    if ( m_page == Page::Scripts && m_scriptFonts.empty( ) )
+    {
+        for ( const ScriptSample &sample : Scripts )
+        {
+            m_scriptFonts.push_back( &RequestFont( sample.Family ) );
+        }
+        for ( const char *family : ColourFonts )
+        {
+            m_colourFonts.push_back( &RequestFont( family ) );
+        }
+    }
+    BeginPage( Page::Scripts );
+    FallbackCard( );
+    EmojiCard( );
+    BidiCard( );
+
+    BeginCard( "Complex scripts", "Each line is one script, shaped by HarfBuzz with the font's OpenType rules and drawn from a Google font fetched when "
+                                  "this page first opened. Right to left lines wrap and start on the right." );
+    for ( uint32_t i = 0; i < m_scriptFonts.size( ); ++i )
+    {
+        const ScriptSample &sample = Scripts[ i ];
+        WebFont            &font   = *m_scriptFonts[ i ];
+
+        DenOfIz_UIElementDesc row = Row( 24 );
+        row.Layout.Padding        = DenOfIz_UILengthEdges_Symmetric( 0, 12 );
+        row.Style.BorderColor     = Theme::Border;
+        row.Style.BorderWidth.Top = 1.0f;
+        Open( row );
+        {
+            DenOfIz_UIElementDesc info = Column( 3 );
+            info.Layout.Width          = DenOfIz_UIValue_Points( 300 );
+            info.Layout.Shrink         = 0.0f;
+            Open( info );
+            Label( sample.Script, 15, Theme::Text );
+            Label( font.Family.c_str( ), 12, Theme::Muted );
+            FontStatus( font );
+            Close( );
+
+            DenOfIz_UIElementDesc cell = Row( );
+            cell.Layout.Justify        = sample.Rtl ? DENOFIZ_UI_JUSTIFY_END : DENOFIZ_UI_JUSTIFY_START;
+            Fill( cell.Layout );
+            Open( cell );
+            if ( font.FontId != 0 )
+            {
+                DenOfIz_UITextDesc text{ };
+                text.FontId   = Use( font, Page::Scripts );
+                text.FontSize = 30;
+                text.Color    = Theme::Text;
+                DenOfIz_UI_Text( m_ui, View( sample.Text ), &text );
+            }
+            Close( );
+        }
+        Close( );
+    }
+    Close( );
+
+    EdgeCaseCard( );
+    Close( );
+}
+
+void UIExample::EdgeCaseCard( )
+{
+    BeginCard( "Edge cases", "A line box is as tall as the tallest font drawing on it, the selection shows each one. A word longer than its box breaks "
+                             "between clusters and is shaped again on both sides of the cut: kerning stops there, Arabic keeps its joining forms. Bidi "
+                             "controls and other default ignorables take no space, ill-formed UTF-8 shows one U+FFFD per maximal subpart." );
+    DenOfIz_UIElementDesc boxes = Row( 16 );
+    boxes.Layout.AlignItems     = DENOFIZ_UI_ALIGN_START;
+    boxes.Layout.Wrap           = DENOFIZ_UI_FLEX_WRAP_WRAP;
+    boxes.Layout.LineGap        = DenOfIz_UILength_Points( 16 );
+    Open( boxes );
+    for ( uint32_t i = 0; i < std::size( EdgeCases ); ++i )
+    {
+        const EdgeCase       &sample = EdgeCases[ i ];
+        DenOfIz_UIElementDesc box    = Column( 8 );
+        box.Layout.Width             = DenOfIz_UIValue_Points( sample.Width + 24 );
+        box.Layout.Padding           = DenOfIz_UILengthEdges_All( 12 );
+        box.Style.BackgroundColor    = Theme::RowAlt;
+        box.Style.CornerRadius       = DenOfIz_UICorners_All( 8 );
+        Open( box );
+        Label( sample.Name, 12, Theme::Muted );
+        DenOfIz_UITextDesc text{ };
+        text.FontId   = InterFont;
+        text.FontSize = 20;
+        text.Color    = Theme::Text;
+        text.Wrap     = sample.Wrap;
+        if ( i == 0 )
+        {
+            text.Selection = DenOfIz_UITextSelection{ 0, static_cast<uint32_t>( std::strlen( sample.Text ) ), Theme::Selection };
+        }
+        DenOfIz_UI_Text( m_ui, View( sample.Text ), &text );
+        Close( );
+    }
+    Close( );
+    Close( );
+}
+
+void UIExample::FallbackCard( )
+{
+    BeginCard( "Fallback", "Every line is drawn with Inter, which covers Latin, Greek and Cyrillic. A grapheme cluster Inter lacks takes the first font of its "
+                           "fallback list that covers it, here Font Awesome for the icons, else the font the OS picks for it (CoreText, DirectWrite or "
+                           "fontconfig), mapped from its file once and cached for every later character of that script." );
+    for ( const char *line : FallbackLines )
+    {
+        DenOfIz_UITextDesc text{ };
+        text.FontId   = InterFont;
+        text.FontSize = 22;
+        text.Color    = Theme::Text;
+        DenOfIz_UI_Text( m_ui, View( line ), &text );
+    }
+    Close( );
+}
+
+void UIExample::EmojiCard( )
+{
+    BeginCard( "Emoji and colour fonts", "Emoji presentation clusters (an emoji base, VS16, keycaps, skin tones, ZWJ sequences, flags) take the first colour font "
+                                         "of the fallback chain, else the system's emoji font, VS15 asks for a text font. COLR v0 and v1 paint graphs and sbix or CBDT "
+                                         "bitmaps are rasterised on the CPU once per size bucket and sampled from a GPU buffer, other glyphs stay Slug outlines." );
+    for ( const char *line : EmojiLines )
+    {
+        DenOfIz_UITextDesc text{ };
+        text.FontId   = InterFont;
+        text.FontSize = 22;
+        text.Color    = Theme::Text;
+        DenOfIz_UI_Text( m_ui, View( line ), &text );
+    }
+
+    DenOfIz_UIElementDesc sizes = Row( 16 );
+    sizes.Layout.AlignItems     = DENOFIZ_UI_ALIGN_END;
+    sizes.Layout.Wrap           = DENOFIZ_UI_FLEX_WRAP_WRAP;
+    Open( sizes );
+    for ( const float size : EmojiSizes )
+    {
+        DenOfIz_UIElementDesc cell = Column( 4 );
+        cell.Layout.AlignItems     = DENOFIZ_UI_ALIGN_CENTER;
+        Open( cell );
+        Label( "😀🦄", size, Theme::Text, InterFont );
+        Label( Format( "%.0f px", size ), 11, Theme::Muted );
+        Close( );
+    }
+    Close( );
+
+    for ( uint32_t i = 0; i < m_colourFonts.size( ); ++i )
+    {
+        WebFont              &font = *m_colourFonts[ i ];
+        DenOfIz_UIElementDesc row  = Row( 24 );
+        row.Layout.Padding         = DenOfIz_UILengthEdges_Symmetric( 0, 10 );
+        row.Style.BorderColor      = Theme::Border;
+        row.Style.BorderWidth.Top  = 1.0f;
+        Open( row );
+        {
+            DenOfIz_UIElementDesc info = Column( 3 );
+            info.Layout.Width          = DenOfIz_UIValue_Points( 220 );
+            info.Layout.Shrink         = 0.0f;
+            Open( info );
+            Label( font.Family.c_str( ), 15, Theme::Text );
+            Label( i == 0 ? "COLRv1 build from Google Fonts as Inter's fallback, above the system emoji" : "COLRv1 gradients, transforms and composites", 12,
+                   Theme::Muted );
+            FontStatus( font );
+            Close( );
+
+            if ( font.FontId != 0 )
+            {
+                DenOfIz_UIElementDesc column = Column( 6 );
+                Open( column );
+                if ( i == 0 )
+                {
+                    // Emoji take the first colour font of the fallback chain before the system's.
+                    uint16_t fallback[] = { Use( font, Page::Scripts ) };
+                    if ( !m_notoChain )
+                    {
+                        DenOfIz_UInt16Array fallbacks{ fallback, 1 };
+                        DenOfIz_UI_AddFont( m_ui, NotoChain, m_interFont );
+                        DenOfIz_UI_SetFontFallbacks( m_ui, NotoChain, &fallbacks );
+                        m_notoChain = true;
+                    }
+                    Label( EmojiSample, 48, Theme::Text, NotoChain );
+                    Label( EmojiSample, 48, Theme::Text, InterFont );
+                }
+                else
+                {
+                    Label( "Colour 123", 80, Theme::Text, Use( font, Page::Scripts ) );
+                }
+                Close( );
+            }
+        }
+        Close( );
+    }
+    Close( );
+}
+
+void UIExample::BidiCard( )
+{
+    if ( !DENOFIZ_HANDLE_IS_VALID( m_bidiFont ) )
+    {
+        return;
+    }
+    BeginCard( "Bidi", "Mixed directions in one string. SheenBidi resolves the embedding levels (UAX #9), every run is shaped in its own direction and "
+                       "each line is drawn in visual order, with brackets mirrored and numbers kept left to right. Lines break at libunibreak's "
+                       "opportunities (UAX #14). Drawn with Arial Unicode from the system fonts." );
+    for ( const BidiSample &sample : BidiSamples )
+    {
+        DenOfIz_UIElementDesc row = Row( 24 );
+        row.Layout.Padding        = DenOfIz_UILengthEdges_Symmetric( 0, 8 );
+        row.Style.BorderColor     = Theme::Border;
+        row.Style.BorderWidth.Top = 1.0f;
+        Open( row );
+        {
+            DenOfIz_UIElementDesc info = Column( );
+            info.Layout.Width          = DenOfIz_UIValue_Points( 240 );
+            info.Layout.Shrink         = 0.0f;
+            Open( info );
+            Label( sample.Name, 13, Theme::Muted );
+            Close( );
+
+            DenOfIz_UIElementDesc cell = Row( );
+            cell.Layout.Justify        = sample.Rtl ? DENOFIZ_UI_JUSTIFY_END : DENOFIZ_UI_JUSTIFY_START;
+            Fill( cell.Layout );
+            Open( cell );
+            DenOfIz_UITextDesc text{ };
+            text.FontId   = BidiFont;
+            text.FontSize = 22;
+            text.Color    = Theme::Text;
+            DenOfIz_UI_Text( m_ui, View( sample.Text ), &text );
+            Close( );
+        }
+        Close( );
+    }
+
+    DenOfIz_UIElementDesc boxes = Row( 16 );
+    boxes.Layout.AlignItems     = DENOFIZ_UI_ALIGN_START;
+    boxes.Layout.Wrap           = DENOFIZ_UI_FLEX_WRAP_WRAP;
+    boxes.Layout.LineGap        = DenOfIz_UILength_Points( 16 );
+    Open( boxes );
+    for ( const char *paragraph : BidiParagraphs )
+    {
+        DenOfIz_UIElementDesc box = Column( );
+        box.Layout.Width          = DenOfIz_UIValue_Points( 300 );
+        box.Layout.Padding        = DenOfIz_UILengthEdges_All( 12 );
+        box.Style.BackgroundColor = Theme::RowAlt;
+        box.Style.CornerRadius    = DenOfIz_UICorners_All( 8 );
+        Open( box );
+        DenOfIz_UITextDesc text{ };
+        text.FontId     = BidiFont;
+        text.FontSize   = 18;
+        text.LineHeight = 30;
+        text.Color      = Theme::Text;
+        DenOfIz_UI_Text( m_ui, View( paragraph ), &text );
+        Close( );
+    }
+    Close( );
+
+    Label( "The caret steps over grapheme clusters, a selection across a direction change is drawn as several rectangles.", 13, Theme::Muted );
+    TextField( m_bidi );
+    Label( Format( "Caret %u, selection %u..%u", m_bidi.Caret, std::min( m_bidi.Caret, m_bidi.Anchor ), std::max( m_bidi.Caret, m_bidi.Anchor ) ), 12, Theme::Muted );
+    Close( );
+}
+
+UIExample::WebFont &UIExample::RequestFont( const std::string &family )
+{
+    auto it = std::find_if( m_webFonts.begin( ), m_webFonts.end( ), [ & ]( const auto &font ) { return font->Family == family; } );
+    if ( it == m_webFonts.end( ) )
+    {
+        it              = m_webFonts.insert( it, std::make_shared<WebFont>( ) );
+        ( *it )->Family = family;
+    }
+    else if ( !( *it )->Done.load( std::memory_order_acquire ) || ( *it )->Error.empty( ) )
+    {
+        return **it;
+    }
+
+    // A new family, or a failed one that is retried.
+    std::shared_ptr<WebFont> font = *it;
+    font->Error.clear( );
+    font->Done = false;
+    std::thread(
+        [ font ]
+        {
+            const auto start = Clock::now( );
+            font->Error      = FetchGoogleFont( font->Family, font->Bytes );
+            font->Size       = font->Bytes.size( );
+            font->DownloadMs = MsSince( start );
+            font->Done.store( true, std::memory_order_release );
+        } )
+        .detach( );
+    return *font;
+}
+
+// One font per frame, so the first frame cost of each font is measured on its own.
+void UIExample::LoadDownloadedFont( )
+{
+    for ( const auto &entry : m_webFonts )
+    {
+        WebFont &font = *entry;
+        if ( font.FontId != 0 || !font.Done.load( std::memory_order_acquire ) || !font.Error.empty( ) )
+        {
+            continue;
+        }
+        DenOfIz_FontDesc desc{ };
+        desc.Data.Elements    = font.Bytes.data( );
+        desc.Data.NumElements = font.Bytes.size( );
+        const auto start      = Clock::now( );
+        font.Font             = DenOfIz_Font_Create( &desc );
+        font.CreateMs         = MsSince( start );
+        font.Bytes            = { };
+        if ( !DENOFIZ_HANDLE_IS_VALID( font.Font ) )
+        {
+            font.Error = "The download is not a font file";
+        }
+        else if ( m_nextFontId >= NotoChain )
+        {
+            DenOfIz_Font_Destroy( font.Font );
+            font.Font  = DENOFIZ_NULL_HANDLE;
+            font.Error = "Every UI font id is in use";
+        }
+        else
+        {
+            font.FontId = m_nextFontId++;
+            DenOfIz_UI_AddFont( m_ui, font.FontId, font.Font );
+        }
+        return;
+    }
+}
+
+void UIExample::FontStatus( const WebFont &font )
+{
+    if ( !font.Done.load( std::memory_order_acquire ) || ( font.FontId == 0 && font.Error.empty( ) ) )
+    {
+        Label( "Downloading...", 12, Theme::Muted );
+        return;
+    }
+    if ( !font.Error.empty( ) )
+    {
+        Label( font.Error.c_str( ), 12, Theme::Danger );
+        return;
+    }
+    const double kb = static_cast<double>( font.Size ) / 1024.0;
+    Open( Column( 2 ) );
+    Label( kb < 1024.0 ? Format( "%.0f KB, fetched in %.0f ms", kb, font.DownloadMs ) : Format( "%.1f MB, fetched in %.0f ms", kb / 1024.0, font.DownloadMs ), 12, Theme::Muted );
+    Label( font.FirstFrameMs < 0.0 ? Format( "created in %.2f ms", font.CreateMs ) : Format( "created in %.2f ms, first frame %.1f ms", font.CreateMs, font.FirstFrameMs ), 12,
+           Theme::Muted );
+    Close( );
+}
+
+uint16_t UIExample::Use( WebFont &font, const Page page ) const
+{
+    font.Drawn = font.Drawn || ( m_page == page && font.FirstFrameMs < 0.0 );
+    return font.FontId;
+}
+
 void UIExample::MediaPage( const uint32_t frameIndex )
 {
-    DenOfIz_UIElementDesc page = Column( 16 );
-    page.Id                    = DenOfIz_UI_CombineId( m_pagesId, static_cast<uint32_t>( Page::Media ) );
-    page.Layout.Display        = m_page == Page::Media ? DENOFIZ_UI_DISPLAY_FLEX : DENOFIZ_UI_DISPLAY_NONE;
-    page.Layout.Padding        = DenOfIz_UILengthEdges_All( 24 );
-    page.Scroll.OverflowY      = DENOFIZ_UI_OVERFLOW_SCROLL;
-    Fill( page.Layout );
-    Open( page );
+    BeginPage( Page::Media );
 
     BeginCard( "Render target as an image", "The cube is rendered into a texture every frame and drawn with each fit mode." );
     {
@@ -873,31 +1593,32 @@ void UIExample::Dialog( )
     Close( );
 }
 
-void UIExample::TextField( )
+void UIExample::TextField( TextEdit &edit )
 {
-    const DenOfIz_UIInteraction interaction = Interaction( m_fieldId );
+    const uint32_t              textId      = DenOfIz_UI_CombineId( edit.Id, 2 );
+    const DenOfIz_UIInteraction interaction = Interaction( edit.Id );
     if ( Has( interaction.Flags, DENOFIZ_UI_INTERACTION_PRESS_STARTED_BIT ) )
     {
-        m_selecting = interaction.ClickCount == 1;
+        edit.Selecting = interaction.ClickCount == 1;
         if ( interaction.ClickCount >= 2 )
         {
-            m_anchor = 0;
-            MoveCaret( static_cast<uint32_t>( m_text.size( ) ), true );
+            edit.Anchor = 0;
+            MoveCaret( edit, static_cast<uint32_t>( edit.Text.size( ) ), true );
         }
         else
         {
-            MoveCaret( DenOfIz_UI_GetTextOffsetAtPoint( m_ui, m_fieldTextId, DenOfIz_UI_GetPointerPosition( m_ui ) ), Shift( DenOfIz_InputSystem_GetModState( ) ) );
+            MoveCaret( edit, DenOfIz_UI_GetTextOffsetAtPoint( m_ui, textId, DenOfIz_UI_GetPointerPosition( m_ui ) ), Shift( DenOfIz_InputSystem_GetModState( ) ) );
         }
     }
-    else if ( m_selecting && Has( interaction.Flags, DENOFIZ_UI_INTERACTION_PRESSED_BIT ) )
+    else if ( edit.Selecting && Has( interaction.Flags, DENOFIZ_UI_INTERACTION_PRESSED_BIT ) )
     {
-        MoveCaret( DenOfIz_UI_GetTextOffsetAtPoint( m_ui, m_fieldTextId, DenOfIz_UI_GetPointerPosition( m_ui ) ), true );
+        MoveCaret( edit, DenOfIz_UI_GetTextOffsetAtPoint( m_ui, textId, DenOfIz_UI_GetPointerPosition( m_ui ) ), true );
     }
-    const bool focused = m_focusId == m_fieldId;
+    const bool focused = m_focusId == edit.Id;
     const bool hovered = Has( interaction.Flags, DENOFIZ_UI_INTERACTION_HOVERED_BIT );
 
     DenOfIz_UIElementDesc field = Row( );
-    field.Id                    = m_fieldId;
+    field.Id                    = edit.Id;
     field.Flags                 = DENOFIZ_UI_ELEMENT_FOCUSABLE_BIT;
     field.Cursor                = DENOFIZ_SYSTEM_CURSOR_TEXT;
     field.Layout.Padding        = DenOfIz_UILengthEdges_Symmetric( 10, 7 );
@@ -909,7 +1630,7 @@ void UIExample::TextField( )
     Open( field );
     {
         DenOfIz_UIElementDesc viewport = Row( );
-        viewport.Id                    = m_fieldScrollId;
+        viewport.Id                    = DenOfIz_UI_CombineId( edit.Id, 1 );
         viewport.Layout.Padding.Right  = DenOfIz_UILength_Points( 2 );
         viewport.Scroll.OverflowX      = DENOFIZ_UI_OVERFLOW_SCROLL;
         viewport.Scroll.Scrollbar      = DENOFIZ_UI_SCROLLBAR_MODE_HIDDEN;
@@ -917,19 +1638,20 @@ void UIExample::TextField( )
         Open( viewport );
 
         DenOfIz_UITextDesc text{ };
-        text.Id              = m_fieldTextId;
+        text.Id              = textId;
+        text.FontId          = edit.FontId;
         text.Color           = Theme::Text;
         text.Wrap            = DENOFIZ_UI_TEXT_WRAP_NONE;
-        text.Selection.Start = std::min( m_caret, m_anchor );
-        text.Selection.End   = std::max( m_caret, m_anchor );
+        text.Selection.Start = std::min( edit.Caret, edit.Anchor );
+        text.Selection.End   = std::max( edit.Caret, edit.Anchor );
         text.Selection.Color = Theme::Selection;
-        text.Caret           = m_caret;
+        text.Caret           = edit.Caret;
         text.CaretColor      = focused && std::fmod( m_blinkTimer, 1.06f ) < 0.53f ? Theme::Text : Theme::Clear;
-        DenOfIz_UI_Text( m_ui, DenOfIz_StringView{ m_text.data( ), m_text.size( ) }, &text );
-        if ( m_reveal )
+        DenOfIz_UI_Text( m_ui, DenOfIz_StringView{ edit.Text.data( ), edit.Text.size( ) }, &text );
+        if ( edit.Reveal )
         {
-            DenOfIz_UI_ScrollCaretIntoView( m_ui, m_fieldTextId, m_caret );
-            m_reveal = false;
+            DenOfIz_UI_ScrollCaretIntoView( m_ui, textId, edit.Caret );
+            edit.Reveal = false;
         }
         Close( );
     }
@@ -971,21 +1693,21 @@ void UIExample::HandleEvent( DenOfIz_Event &event )
 {
     DenOfIz_UI_HandleEvent( m_ui, &event );
 
-    const bool editing = DenOfIz_UI_GetFocus( m_ui ) == m_fieldId;
+    TextEdit *edit = Editing( );
     switch ( event.Type )
     {
     case DENOFIZ_EVENT_TYPE_MOUSE_BUTTON_DOWN:
         m_focusVisible = false;
         break;
     case DENOFIZ_EVENT_TYPE_TEXT_INPUT:
-        if ( editing )
+        if ( edit != nullptr )
         {
-            Insert( event.Text.Text );
+            Insert( *edit, event.Text.Text );
             return;
         }
         break;
     case DENOFIZ_EVENT_TYPE_KEY_DOWN:
-        if ( HandleKeyDown( event.Key, editing ) )
+        if ( HandleKeyDown( event.Key, edit ) )
         {
             return;
         }
@@ -996,7 +1718,20 @@ void UIExample::HandleEvent( DenOfIz_Event &event )
     IExample::HandleEvent( event );
 }
 
-bool UIExample::HandleKeyDown( const DenOfIz_KeyboardEventData &key, const bool editing )
+UIExample::TextEdit *UIExample::Editing( )
+{
+    const uint32_t focus = DenOfIz_UI_GetFocus( m_ui );
+    for ( TextEdit *edit : { &m_field, &m_family, &m_bidi } )
+    {
+        if ( focus == edit->Id )
+        {
+            return edit;
+        }
+    }
+    return nullptr;
+}
+
+bool UIExample::HandleKeyDown( const DenOfIz_KeyboardEventData &key, TextEdit *edit )
 {
     switch ( key.KeyCode )
     {
@@ -1027,8 +1762,14 @@ bool UIExample::HandleKeyDown( const DenOfIz_KeyboardEventData &key, const bool 
         return false;
     case DENOFIZ_KEY_CODE_RETURN:
     case DENOFIZ_KEY_CODE_KEYPAD_ENTER:
+        if ( edit == &m_family )
+        {
+            m_submitFamily = true;
+            return true;
+        }
+        [[fallthrough]];
     case DENOFIZ_KEY_CODE_SPACE:
-        if ( !editing )
+        if ( edit == nullptr )
         {
             m_keyActivate = true;
             return true;
@@ -1037,49 +1778,60 @@ bool UIExample::HandleKeyDown( const DenOfIz_KeyboardEventData &key, const bool 
     default:
         break;
     }
-    return editing && EditKey( key );
+    return edit != nullptr && EditKey( *edit, key );
 }
 
-bool UIExample::EditKey( const DenOfIz_KeyboardEventData &key )
+bool UIExample::EditKey( TextEdit &edit, const DenOfIz_KeyboardEventData &key )
 {
-    const auto     size   = static_cast<uint32_t>( m_text.size( ) );
-    const bool     extend = Shift( key.Mod );
-    const uint32_t start  = std::min( m_caret, m_anchor );
-    const uint32_t end    = std::max( m_caret, m_anchor );
+    const auto               size   = static_cast<uint32_t>( edit.Text.size( ) );
+    const bool               extend = Shift( key.Mod );
+    const uint32_t           start  = std::min( edit.Caret, edit.Anchor );
+    const uint32_t           end    = std::max( edit.Caret, edit.Anchor );
+    const DenOfIz_StringView text{ edit.Text.data( ), edit.Text.size( ) };
     switch ( key.KeyCode )
     {
     case DENOFIZ_KEY_CODE_BACKSPACE:
-        if ( !DeleteSelection( ) && m_caret > 0 )
+        if ( !DeleteSelection( edit ) && edit.Caret > 0 )
         {
-            const uint32_t previous = PrevCodepoint( m_text, m_caret );
-            m_text.erase( previous, m_caret - previous );
-            MoveCaret( previous, false );
+            const uint32_t previous = DenOfIz_Text_PreviousGrapheme( text, edit.Caret );
+            edit.Text.erase( previous, edit.Caret - previous );
+            MoveCaret( edit, previous, false );
         }
         return true;
     case DENOFIZ_KEY_CODE_DELETE:
-        if ( !DeleteSelection( ) && m_caret < size )
+        if ( !DeleteSelection( edit ) && edit.Caret < size )
         {
-            m_text.erase( m_caret, NextCodepoint( m_text, m_caret ) - m_caret );
-            MoveCaret( m_caret, false );
+            edit.Text.erase( edit.Caret, DenOfIz_Text_NextGrapheme( text, edit.Caret ) - edit.Caret );
+            MoveCaret( edit, edit.Caret, false );
         }
         return true;
+    // Logical movement: in right to left text Left moves the caret forward in the string, which is right on screen.
     case DENOFIZ_KEY_CODE_LEFT:
-        MoveCaret( !extend && start != end ? start : PrevCodepoint( m_text, m_caret ), extend );
+        MoveCaret( edit, !extend && start != end ? start : DenOfIz_Text_PreviousGrapheme( text, edit.Caret ), extend );
         return true;
     case DENOFIZ_KEY_CODE_RIGHT:
-        MoveCaret( !extend && start != end ? end : NextCodepoint( m_text, m_caret ), extend );
+        MoveCaret( edit, !extend && start != end ? end : DenOfIz_Text_NextGrapheme( text, edit.Caret ), extend );
         return true;
     case DENOFIZ_KEY_CODE_HOME:
-        MoveCaret( 0, extend );
-        return true;
     case DENOFIZ_KEY_CODE_END:
-        MoveCaret( size, extend );
-        return true;
+        {
+            const uint32_t     textId = DenOfIz_UI_CombineId( edit.Id, 2 );
+            DenOfIz_UITextLine line{ 0, size, {} };
+            for ( uint32_t i = 0, count = DenOfIz_UI_GetTextLineCount( m_ui, textId ); i < count; ++i )
+            {
+                if ( DenOfIz_UI_GetTextLine( m_ui, textId, i, &line ) && edit.Caret <= line.EndOffset )
+                {
+                    break;
+                }
+            }
+            MoveCaret( edit, key.KeyCode == DENOFIZ_KEY_CODE_HOME ? line.StartOffset : line.EndOffset, extend );
+            return true;
+        }
     case DENOFIZ_KEY_CODE_A:
         if ( Shortcut( key.Mod ) )
         {
-            m_anchor = 0;
-            MoveCaret( size, true );
+            edit.Anchor = 0;
+            MoveCaret( edit, size, true );
             return true;
         }
         return false;
@@ -1088,38 +1840,38 @@ bool UIExample::EditKey( const DenOfIz_KeyboardEventData &key )
     }
 }
 
-void UIExample::Insert( const DenOfIz_StringView text )
+void UIExample::Insert( TextEdit &edit, const DenOfIz_StringView text )
 {
     if ( text.Chars == nullptr || text.NumChars == 0 )
     {
         return;
     }
-    DeleteSelection( );
-    m_text.insert( m_caret, text.Chars, text.NumChars );
-    std::replace_if( m_text.begin( ) + m_caret, m_text.begin( ) + m_caret + text.NumChars, []( const char c ) { return c == '\n' || c == '\r'; }, ' ' );
-    MoveCaret( m_caret + static_cast<uint32_t>( text.NumChars ), false );
+    DeleteSelection( edit );
+    edit.Text.insert( edit.Caret, text.Chars, text.NumChars );
+    std::replace_if( edit.Text.begin( ) + edit.Caret, edit.Text.begin( ) + edit.Caret + text.NumChars, []( const char c ) { return c == '\n' || c == '\r'; }, ' ' );
+    MoveCaret( edit, edit.Caret + static_cast<uint32_t>( text.NumChars ), false );
 }
 
-bool UIExample::DeleteSelection( )
+bool UIExample::DeleteSelection( TextEdit &edit )
 {
-    if ( m_caret == m_anchor )
+    if ( edit.Caret == edit.Anchor )
     {
         return false;
     }
-    const uint32_t start = std::min( m_caret, m_anchor );
-    m_text.erase( start, std::max( m_caret, m_anchor ) - start );
-    MoveCaret( start, false );
+    const uint32_t start = std::min( edit.Caret, edit.Anchor );
+    edit.Text.erase( start, std::max( edit.Caret, edit.Anchor ) - start );
+    MoveCaret( edit, start, false );
     return true;
 }
 
-void UIExample::MoveCaret( const uint32_t offset, const bool extend )
+void UIExample::MoveCaret( TextEdit &edit, const uint32_t offset, const bool extend )
 {
-    m_caret = std::min( offset, static_cast<uint32_t>( m_text.size( ) ) );
+    edit.Caret = std::min( offset, static_cast<uint32_t>( edit.Text.size( ) ) );
     if ( !extend )
     {
-        m_anchor = m_caret;
+        edit.Anchor = edit.Caret;
     }
-    m_reveal     = true;
+    edit.Reveal  = true;
     m_blinkTimer = 0.0f;
 }
 
@@ -1158,17 +1910,18 @@ void UIExample::Close( ) const
     DenOfIz_UI_CloseElement( m_ui );
 }
 
-void UIExample::Label( const DenOfIz_StringView text, const float size, const DenOfIz_UIColor color ) const
+void UIExample::Label( const DenOfIz_StringView text, const float size, const DenOfIz_UIColor color, const uint16_t fontId ) const
 {
     DenOfIz_UITextDesc desc{ };
+    desc.FontId   = fontId;
     desc.Color    = color;
     desc.FontSize = size;
     DenOfIz_UI_Text( m_ui, text, &desc );
 }
 
-void UIExample::Label( const char *text, const float size, const DenOfIz_UIColor color ) const
+void UIExample::Label( const char *text, const float size, const DenOfIz_UIColor color, const uint16_t fontId ) const
 {
-    Label( View( text ), size, color );
+    Label( View( text ), size, color, fontId );
 }
 
 DenOfIz_StringView UIExample::Format( const char *format, ... )
@@ -1190,5 +1943,12 @@ void UIExample::Quit( )
     m_cube.reset( );
     DenOfIz_UI_Destroy( m_ui );
     m_ui = DENOFIZ_NULL_HANDLE;
+    DenOfIz_Font_Destroy( m_interFont );
+    DenOfIz_Font_Destroy( m_iconFont );
+    DenOfIz_Font_Destroy( m_bidiFont );
+    for ( const auto &font : m_webFonts )
+    {
+        DenOfIz_Font_Destroy( font->Font );
+    }
     IExample::Quit( );
 }

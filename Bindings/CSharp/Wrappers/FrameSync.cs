@@ -1,4 +1,3 @@
-// Manual wrapper - parent caches children
 using System;
 using System.Runtime.InteropServices;
 using DenOfIz.Native;
