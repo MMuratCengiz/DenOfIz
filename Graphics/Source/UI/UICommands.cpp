@@ -418,9 +418,20 @@ void UIContext::EmitTextRuns( const UINode &node, const bool foreground )
             {
                 continue;
             }
+            const auto &glyphs  = layout.Glyphs( );
+            uint32_t    visible = l.GlyphEnd;
+            while ( visible > l.GlyphStart && ( glyphs[ visible - 1 ].Flags & ( TextGlyphFlags::Space | TextGlyphFlags::Newline ) ) )
+            {
+                --visible;
+            }
+            const uint32_t end = visible < l.GlyphEnd ? std::min( style.ByteEnd, glyphs[ visible ].Cluster ) : style.ByteEnd;
+            if ( end <= style.ByteStart )
+            {
+                continue;
+            }
             const float align    = layout.AlignOffset( line, boxWidth, desc.Align );
             const float baseline = l.Baseline - style.Shift;
-            layout.SelectionSpans( line, style.ByteStart, style.ByteEnd, 0.0f, m_selectionSpans );
+            layout.SelectionSpans( line, style.ByteStart, end, 0.0f, m_selectionSpans );
             for ( const DenOfIz_Float2 &span : m_selectionSpans )
             {
                 if ( span.Y <= span.X )

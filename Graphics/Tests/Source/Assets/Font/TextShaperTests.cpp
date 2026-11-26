@@ -668,3 +668,113 @@ TEST_F( UITextLayoutTest, LineHeightIsTheTallestFontOnTheLine )
     // Hit testing finds the taller line.
     EXPECT_EQ( layout->LineAt( layout->Lines[ 1 ].Top + layout->Lines[ 1 ].Height - 0.5f ), 1u );
 }
+
+namespace
+{
+    UIRunStyle RunStyle( const uint32_t start, const uint32_t end, const uint16_t fontId, const float size )
+    {
+        UIRunStyle style;
+        style.ByteStart = start;
+        style.ByteEnd   = end;
+        style.FontId    = fontId;
+        style.Size      = size;
+        return style;
+    }
+
+    const UITextLayout *RichLayout( UIText &text, const std::string &chars, const std::vector<UIRunStyle> &styles, const float width = -1.0f )
+    {
+        const uint64_t     hash = UIText::HashStyles( UIText::Hash( chars.data( ), chars.size( ) ), styles );
+        const UIShapedRun *run  = text.ShapeRich( 2, chars.data( ), static_cast<uint32_t>( chars.size( ) ), styles, hash );
+        UITextParams       params;
+        params.FontId   = 2;
+        params.FontSize = 20.0f;
+        return text.Layout( run, params, width );
+    }
+} // namespace
+
+TEST_F( TextShaperTest, SegmentsPickTheirOwnFonts )
+{
+    FontFile mono{ MonoPath };
+    ASSERT_NE( mono.Get( ), nullptr );
+    Font *const          fonts[] = { m_unicode.Get( ), mono.Get( ) };
+    const uint8_t        chains[] = { 1, 0 };
+    const TextSegment    segments[] = { { 3, 0, 1, false, 0.0f }, { UINT32_MAX, 1, 1, false, 0.0f } };
+    const std::string    text     = "abcdef";
+    m_shaper.Shape( text.data( ), static_cast<uint32_t>( text.size( ) ), fonts, segments, chains, TextAutoLevel, m_shaped );
+    ASSERT_EQ( m_shaped.Glyphs.size( ), 6u );
+    for ( const TextGlyph &glyph : m_shaped.Glyphs )
+    {
+        EXPECT_EQ( glyph.Font, glyph.Cluster < 3 ? 1 : 0 ) << glyph.Cluster;
+    }
+    EXPECT_EQ( m_shaped.Items.size( ), 2u );
+}
+
+TEST_F( UITextLayoutTest, ColourRunsKeepGlyphsAndOrder )
+{
+    const std::string   text  = "office \xD7\xA9\xD7\x9C\xD7\x95\xD7\x9D hours";
+    const UITextLayout *plain = Layout( text, 2 );
+    std::vector<UIRunStyle> styles{ RunStyle( 0, 9, 2, 20.0f ), RunStyle( 9, static_cast<uint32_t>( text.size( ) ), 2, 20.0f ) };
+    styles[ 1 ].Color          = DenOfIz_UIColor{ 255, 0, 0, 255 };
+    const UITextLayout *rich   = RichLayout( m_text, text, styles );
+    const auto         &a      = plain->Glyphs( );
+    const auto         &b      = rich->Glyphs( );
+    ASSERT_EQ( a.size( ), b.size( ) );
+    for ( size_t i = 0; i < a.size( ); ++i )
+    {
+        EXPECT_EQ( a[ i ].GlyphId, b[ i ].GlyphId ) << i;
+        EXPECT_FLOAT_EQ( plain->GlyphX[ i ], rich->GlyphX[ i ] ) << i;
+    }
+    EXPECT_FLOAT_EQ( plain->Width, rich->Width );
+    EXPECT_FLOAT_EQ( plain->Height, rich->Height );
+}
+
+TEST_F( UITextLayoutTest, MixedSizesShareOneLine )
+{
+    const std::string   text  = "small BIG";
+    const UITextLayout *rich  = RichLayout( m_text, text, { RunStyle( 0, 6, 2, 10.0f ), RunStyle( 6, 9, 2, 30.0f ) } );
+    const UIShapedRun  *run   = m_text.Shape( 2, "BIG", 3, UIText::Hash( "BIG", 3 ) );
+    UITextParams        big;
+    big.FontId                = 2;
+    big.FontSize              = 30.0f;
+    const UITextLayout *plain = m_text.Layout( run, big, -1.0f );
+    ASSERT_EQ( rich->Lines.size( ), 1u );
+    EXPECT_FLOAT_EQ( rich->Height, plain->Height );
+    EXPECT_FLOAT_EQ( rich->Baseline, plain->Baseline );
+    const float advance = rich->Glyphs( )[ 0 ].Advance;
+    EXPECT_FLOAT_EQ( rich->GlyphX[ 6 ] - rich->GlyphX[ 5 ], advance * 10.0f );
+    EXPECT_FLOAT_EQ( rich->Width - rich->GlyphX[ 8 ], advance * 30.0f );
+}
+
+TEST_F( UITextLayoutTest, ObjectRunIsOneBox )
+{
+    const std::string       text = "a \xEF\xBF\xBC b";
+    std::vector<UIRunStyle> styles{ RunStyle( 0, 2, 2, 20.0f ), RunStyle( 2, 5, 2, 20.0f ), RunStyle( 5, 7, 2, 20.0f ) };
+    styles[ 1 ].Object     = true;
+    styles[ 1 ].ObjectSize = DenOfIz_Float2{ 40.0f, 50.0f };
+    styles[ 1 ].Id         = 7;
+    const UITextLayout *layout = RichLayout( m_text, text, styles );
+    const auto         &glyphs = layout->Glyphs( );
+    const auto          object = std::ranges::find_if( glyphs, []( const TextGlyph &glyph ) { return glyph.Cluster == 2; } );
+    ASSERT_NE( object, glyphs.end( ) );
+    EXPECT_EQ( object->GlyphId, TextHiddenGlyph );
+    const auto index = static_cast<size_t>( object - glyphs.begin( ) );
+    EXPECT_FLOAT_EQ( layout->GlyphX[ index + 1 ] - layout->GlyphX[ index ], 40.0f );
+    EXPECT_GE( layout->Lines[ 0 ].Baseline, 50.0f );
+    const float x = layout->GlyphX[ index ] + 20.0f;
+    EXPECT_EQ( layout->StyleAtPoint( x, layout->Lines[ 0 ].Baseline - 10.0f, 400.0f, DENOFIZ_UI_TEXT_ALIGN_LEFT ), 1u );
+    EXPECT_EQ( layout->StyleAtPoint( x, layout->Height + 1.0f, 400.0f, DENOFIZ_UI_TEXT_ALIGN_LEFT ), UINT32_MAX );
+}
+
+TEST_F( UITextLayoutTest, SyntheticBoldIsWider )
+{
+    const DenOfIz_FontSynthesisDesc bold{ 0.04f, 0.0f };
+    const DenOfIz_Font              handle = DenOfIz_Font_CreateSynthetic( m_mono.Handle, &bold );
+    ASSERT_TRUE( DENOFIZ_HANDLE_IS_VALID( handle ) );
+    m_text.AddFont( 3, FONT_IMPL( handle ) );
+    const std::string   text    = "office";
+    const UITextLayout *regular = Layout( text, 2 );
+    const UITextLayout *heavier = Layout( text, 3 );
+    EXPECT_GT( heavier->Width, regular->Width );
+    m_text.RemoveFont( 3 );
+    DenOfIz_Font_Destroy( handle );
+}
