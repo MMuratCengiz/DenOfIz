@@ -7,7 +7,6 @@ Licensed under the MIT License. See LICENSE in the project root.
 
 #include "DenOfIzGraphics/Assets/Font/TextRenderer.h"
 
-#include <DirectXMath.h>
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -23,6 +22,7 @@ Licensed under the MIT License. See LICENSE in the project root.
 #include "DenOfIzGraphicsInternal/Assets/Shaders/EmbeddedShaders.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
+#include <DirectXMath.h>
 
 #define TEXT_RENDERER_IMPL( handle ) DENOFIZ_FROM_HANDLE( DenOfIz::TextRenderer, handle )
 
