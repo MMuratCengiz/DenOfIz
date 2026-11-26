@@ -394,6 +394,12 @@ extern "C"
         return UI_IMPL( ui )->Context.AddText( text, desc ? *desc : defaultDesc );
     }
 
+    uint32_t DenOfIz_UI_RichText( const DenOfIz_UI ui, const DenOfIz_StringView text, const DenOfIz_UITextRunArray *runs, const DenOfIz_UITextDesc *desc )
+    {
+        static const DenOfIz_UITextDesc defaultDesc{ };
+        return UI_IMPL( ui )->Context.AddText( text, desc ? *desc : defaultDesc, runs );
+    }
+
     void DenOfIz_UI_EndFrame( const DenOfIz_UI ui )
     {
         UI_IMPL( ui )->EndFrame( );
@@ -488,6 +494,11 @@ extern "C"
     uint32_t DenOfIz_UI_GetTextOffsetAtPoint( const DenOfIz_UI ui, const uint32_t textId, const DenOfIz_Float2 point )
     {
         return UI_IMPL( ui )->Context.GetTextOffsetAtPoint( textId, point );
+    }
+
+    uint32_t DenOfIz_UI_GetTextRunAtPoint( const DenOfIz_UI ui, const uint32_t textId, const DenOfIz_Float2 point )
+    {
+        return UI_IMPL( ui )->Context.GetTextRunAtPoint( textId, point );
     }
 
     uint32_t DenOfIz_UI_GetTextLineCount( const DenOfIz_UI ui, const uint32_t textId )

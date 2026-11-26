@@ -62,7 +62,8 @@ namespace
     // character, else the primary font. Emoji presentation clusters prefer colour fonts and VS15 text presentation ones the others, a font of the
     // other kind only takes them when no font of their kind covers them. System fonts are appended after the chain, the cache behind
     // SystemFallbackFont picks them per script.
-    uint8_t SelectFont( std::vector<Font *> &fonts, const size_t chain, const char *text, const uint32_t length, const uint32_t start, const uint32_t end, const SBScript script )
+    uint8_t SelectFont( std::vector<Font *> &fonts, const std::span<const uint8_t> chain, const char *text, const uint32_t length, const uint32_t start, const uint32_t end,
+                        const SBScript script )
     {
         const SBCodepoint      base         = CodepointAt( text, length, start );
         const TextPresentation presentation = ClusterPresentation( text + start, end - start );
@@ -70,19 +71,19 @@ namespace
         { return presentation == TextPresentation::Default || font->IsColour( ) == ( presentation == TextPresentation::Emoji ); };
         int covering = -1;
         int other    = -1;
-        for ( size_t f = 0; f < chain; ++f )
+        for ( const uint8_t f : chain )
         {
             if ( fonts[ f ]->Covers( text + start, end - start ) )
             {
                 if ( preferred( fonts[ f ] ) )
                 {
-                    return static_cast<uint8_t>( f );
+                    return f;
                 }
-                other = other < 0 ? static_cast<int>( f ) : other;
+                other = other < 0 ? f : other;
             }
             if ( covering < 0 && fonts[ f ]->HasCodePoint( base ) )
             {
-                covering = static_cast<int>( f );
+                covering = f;
             }
         }
         Font *system = IsControl( base ) ? nullptr
@@ -101,7 +102,7 @@ namespace
                 return static_cast<uint8_t>( fonts.size( ) - 1 );
             }
         }
-        return static_cast<uint8_t>( other >= 0 ? other : std::max( covering, 0 ) );
+        return static_cast<uint8_t>( other >= 0 ? other : covering >= 0 ? covering : chain.empty( ) ? 0 : chain[ 0 ] );
     }
 
     bool AllIgnorable( const char *text, const uint32_t start, const uint32_t end )
@@ -200,12 +201,33 @@ TextShaper::~TextShaper( )
 
 void TextShaper::Shape( const char *text, const uint32_t length, const std::span<Font *const> fonts, const uint8_t baseLevel, ShapedText &out )
 {
+    m_chain.resize( std::min<size_t>( fonts.size( ), UINT8_MAX + 1 ) );
+    for ( size_t f = 0; f < m_chain.size( ); ++f )
+    {
+        m_chain[ f ] = static_cast<uint8_t>( f );
+    }
+    const TextSegment whole{ UINT32_MAX, 0, static_cast<uint32_t>( m_chain.size( ) ), false, 0.0f };
+    Shape( text, length, fonts, std::span( &whole, 1 ), m_chain, baseLevel, out );
+}
+
+void TextShaper::Shape( const char *text, const uint32_t length, const std::span<Font *const> fonts, const std::span<const TextSegment> segments,
+                        const std::span<const uint8_t> chains, const uint8_t baseLevel, ShapedText &out )
+{
     if ( !TextReplaceIllFormed( text, length, m_valid, m_origins ) )
     {
-        ShapeWellFormed( text, length, fonts, baseLevel, out );
+        ShapeWellFormed( text, length, fonts, segments, chains, baseLevel, out );
         return;
     }
-    ShapeWellFormed( m_valid.data( ), static_cast<uint32_t>( m_valid.size( ) ), fonts, baseLevel, out );
+    // Segment ends move with the replacement, onto the first byte that came from at or after them.
+    m_segments.assign( segments.begin( ), segments.end( ) );
+    for ( TextSegment &segment : m_segments )
+    {
+        if ( segment.ByteEnd < length )
+        {
+            segment.ByteEnd = static_cast<uint32_t>( std::lower_bound( m_origins.begin( ), m_origins.end( ), segment.ByteEnd ) - m_origins.begin( ) );
+        }
+    }
+    ShapeWellFormed( m_valid.data( ), static_cast<uint32_t>( m_valid.size( ) ), fonts, m_segments, chains, baseLevel, out );
     for ( TextGlyph &glyph : out.Glyphs )
     {
         glyph.Cluster = m_origins[ glyph.Cluster ];
@@ -227,13 +249,14 @@ void TextShaper::Shape( const char *text, const uint32_t length, const std::span
     out.GraphemeStarts.swap( starts );
 }
 
-void TextShaper::ShapeWellFormed( const char *text, const uint32_t length, const std::span<Font *const> fonts, const uint8_t baseLevel, ShapedText &out )
+void TextShaper::ShapeWellFormed( const char *text, const uint32_t length, const std::span<Font *const> fonts, const std::span<const TextSegment> segments,
+                                  const std::span<const uint8_t> chains, const uint8_t baseLevel, ShapedText &out )
 {
     out.Fonts.assign( fonts.begin( ), fonts.end( ) );
     out.Glyphs.clear( );
     out.Paragraphs.clear( );
     out.Items.clear( );
-    if ( length == 0 || fonts.empty( ) )
+    if ( length == 0 || fonts.empty( ) || segments.empty( ) )
     {
         out.GraphemeStarts.assign( length + 1, 1 );
         out.Paragraphs.push_back( TextParagraph{ 0, 0, 0, 0, static_cast<uint8_t>( baseLevel == 1 ? 1 : 0 ) } );
@@ -259,6 +282,21 @@ void TextShaper::ShapeWellFormed( const char *text, const uint32_t length, const
         return hasAgent ? agent->script : static_cast<SBScript>( SBScriptZYYY );
     };
 
+    uint32_t segment   = 0;
+    auto     segmentAt = [ & ]( const uint32_t offset )
+    {
+        while ( segment + 1 < segments.size( ) && offset >= segments[ segment ].ByteEnd )
+        {
+            ++segment;
+        }
+        return segment;
+    };
+    auto chainOf = [ & ]( const uint32_t s )
+    {
+        const TextSegment &seg = segments[ s ];
+        return seg.ChainStart + seg.ChainCount <= chains.size( ) ? chains.subspan( seg.ChainStart, seg.ChainCount ) : std::span<const uint8_t>( );
+    };
+
     SBUInteger separatorLength = 0;
     for ( uint32_t start = 0; start < length; )
     {
@@ -270,16 +308,29 @@ void TextShaper::ShapeWellFormed( const char *text, const uint32_t length, const
         const uint32_t       contentEnd = end - static_cast<uint32_t>( separatorLength );
         TextParagraph        info{ start, contentEnd, static_cast<uint32_t>( out.Glyphs.size( ) ), 0, SBParagraphGetBaseLevel( paragraph ) };
 
-        // Items are maximal runs of grapheme clusters with the same level, script and font, shaped with the whole paragraph as context. A cluster of
-        // default ignorables keeps the font before it, so a joiner or bidi control never splits an item by font.
-        uint32_t itemStart = start;
-        uint8_t  level     = levels[ 0 ];
-        SBScript script    = scriptAt( start );
-        uint8_t  font      = 0;
-        auto     shapeItem = [ & ]( const uint32_t itemEnd )
+        // Items are maximal runs of grapheme clusters with the same level, script, font and segment, shaped with the whole paragraph as context. A
+        // cluster of default ignorables keeps the font before it, so a joiner or bidi control never splits an item by font.
+        uint32_t itemStart   = start;
+        uint8_t  level       = levels[ 0 ];
+        SBScript script      = scriptAt( start );
+        uint8_t  font        = 0;
+        uint32_t itemSegment = segmentAt( start );
+        auto     shapeItem   = [ & ]( const uint32_t itemEnd )
         {
             const hb_script_t hbScript = hb_script_from_iso15924_tag( SBScriptGetUnicodeTag( script ) );
             out.Items.push_back( TextItem{ static_cast<uint32_t>( out.Glyphs.size( ) ), itemEnd, static_cast<uint32_t>( out.Paragraphs.size( ) ), hbScript } );
+            if ( segments[ itemSegment ].Object )
+            {
+                for ( uint32_t g = itemStart; g < itemEnd; ++g )
+                {
+                    if ( out.GraphemeStarts[ g ] )
+                    {
+                        const float advance = g == itemStart ? segments[ itemSegment ].ObjectAdvance : 0.0f;
+                        out.Glyphs.push_back( TextGlyph{ TextHiddenGlyph, g, advance, 0.0f, 0.0f, font, level, 0 } );
+                    }
+                }
+                return;
+            }
             ShapeItem( text + start, end - start, start, itemStart, itemEnd, level, hbScript, out.Fonts[ font ], font, out.Glyphs );
         };
         for ( uint32_t g = start; g < end; )
@@ -289,20 +340,31 @@ void TextShaper::ShapeWellFormed( const char *text, const uint32_t length, const
             {
                 ++next;
             }
-            const uint8_t  graphemeLevel  = levels[ g - start ];
-            const SBScript graphemeScript = scriptAt( g );
-            const uint8_t  graphemeFont   = g > start && AllIgnorable( text, g, next ) ? font : SelectFont( out.Fonts, fonts.size( ), text, length, g, next, graphemeScript );
+            const uint8_t  graphemeLevel   = levels[ g - start ];
+            const SBScript graphemeScript  = scriptAt( g );
+            const uint32_t graphemeSegment = segmentAt( g );
+            const auto     chain           = chainOf( graphemeSegment );
+            uint8_t        graphemeFont    = font;
+            if ( segments[ graphemeSegment ].Object )
+            {
+                graphemeFont = chain.empty( ) ? 0 : chain[ 0 ];
+            }
+            else if ( g == start || graphemeSegment != itemSegment || !AllIgnorable( text, g, next ) )
+            {
+                graphemeFont = SelectFont( out.Fonts, chain, text, length, g, next, graphemeScript );
+            }
             if ( g == start )
             {
                 font = graphemeFont;
             }
-            else if ( graphemeLevel != level || graphemeScript != script || graphemeFont != font )
+            else if ( graphemeLevel != level || graphemeScript != script || graphemeFont != font || graphemeSegment != itemSegment )
             {
                 shapeItem( g );
-                itemStart = g;
-                level     = graphemeLevel;
-                script    = graphemeScript;
-                font      = graphemeFont;
+                itemStart   = g;
+                level       = graphemeLevel;
+                script      = graphemeScript;
+                font        = graphemeFont;
+                itemSegment = graphemeSegment;
             }
             g = next;
         }

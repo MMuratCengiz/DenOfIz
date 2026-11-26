@@ -546,6 +546,42 @@ extern "C"
         float                   CaretWidth; /**< Points, zero is 1.5. */
     } DenOfIz_UITextDesc;
 
+    typedef enum DenOfIz_UITextDecorationFlagBits
+    {
+        DENOFIZ_UI_TEXT_DECORATION_NONE_BIT         = 0,
+        DENOFIZ_UI_TEXT_DECORATION_UNDERLINE_BIT    = 1 << 0,
+        DENOFIZ_UI_TEXT_DECORATION_OVERLINE_BIT     = 1 << 1,
+        DENOFIZ_UI_TEXT_DECORATION_LINE_THROUGH_BIT = 1 << 2
+    } DenOfIz_UITextDecorationFlagBits;
+    typedef uint32_t DenOfIz_UITextDecorationFlags;
+
+    /**
+     * A styled range of a rich text leaf. Runs follow each other from byte 0, each ending at ByteEnd; text past the last run takes the leaf's
+     * font, size and colour. The whole text is shaped, bidi ordered and wrapped as one paragraph: runs only cut shaping where font or size change.
+     * A run with a non zero ObjectSize is an inline box of that size in points instead of text (one U+FFFC by convention), its bottom on the
+     * baseline, Image drawn in it when set. Decorations are drawn from the metrics of the run's font.
+     */
+    typedef struct DenOfIz_UITextRun
+    {
+        uint32_t                      ByteEnd;
+        uint32_t                      Id;            /**< Reported by GetTextRunAtPoint, zero is none. */
+        uint16_t                      FontId;
+        float                         FontSize;      /**< Points, zero is the leaf's FontSize. */
+        DenOfIz_UIColor               Color;         /**< Zero is the leaf's Color. */
+        DenOfIz_UIColor               BackgroundColor;
+        DenOfIz_UITextDecorationFlags Decoration;
+        DenOfIz_UIColor               DecorationColor; /**< Zero is the run's colour. */
+        float                         BaselineShift;   /**< Points the run is raised by, negative lowers it. */
+        DenOfIz_Float2                ObjectSize;
+        DenOfIz_Texture               Image;
+    } DenOfIz_UITextRun;
+
+    typedef struct DenOfIz_UITextRunArray
+    {
+        DenOfIz_UITextRun *Elements;
+        size_t             NumElements;
+    } DenOfIz_UITextRunArray;
+
     typedef struct DenOfIz_UIInteraction
     {
         DenOfIz_UIInteractionFlags Flags;
@@ -638,6 +674,11 @@ extern "C"
     DZ_API void     DenOfIz_UI_CloseElement( DenOfIz_UI ui );
     /** Adds a text leaf to the open element and returns its id. The text is copied. */
     DZ_API uint32_t DenOfIz_UI_Text( DenOfIz_UI ui, DenOfIz_StringView text, const DenOfIz_UITextDesc *desc );
+    /**
+     * Adds a text leaf made of styled runs, see DenOfIz_UITextRun. The desc's font and size set the line's strut: a line is never shorter than a
+     * line of plain text in them. Selection, caret and the text queries work across runs. The text and runs are copied.
+     */
+    DZ_API uint32_t DenOfIz_UI_RichText( DenOfIz_UI ui, DenOfIz_StringView text, const DenOfIz_UITextRunArray *runs, const DenOfIz_UITextDesc *desc );
     /** Lays out the declared tree and updates interaction, scrolling and transitions. */
     DZ_API void DenOfIz_UI_EndFrame( DenOfIz_UI ui );
     /** Records draws into a render pass the caller has begun on a target of RenderTargetFormat (and DepthFormat). */
@@ -677,6 +718,8 @@ extern "C"
     DZ_API bool DenOfIz_UI_GetTextCaretRect( DenOfIz_UI ui, uint32_t textId, uint32_t byteOffset, DenOfIz_UIRect *outRect );
     /** Byte offset of the caret position closest to a point. */
     DZ_API uint32_t DenOfIz_UI_GetTextOffsetAtPoint( DenOfIz_UI ui, uint32_t textId, DenOfIz_Float2 point );
+    /** Id of the run of a rich text element drawn under a point, zero when there is none. */
+    DZ_API uint32_t DenOfIz_UI_GetTextRunAtPoint( DenOfIz_UI ui, uint32_t textId, DenOfIz_Float2 point );
     DZ_API uint32_t DenOfIz_UI_GetTextLineCount( DenOfIz_UI ui, uint32_t textId );
     DZ_API bool     DenOfIz_UI_GetTextLine( DenOfIz_UI ui, uint32_t textId, uint32_t lineIndex, DenOfIz_UITextLine *outLine );
 

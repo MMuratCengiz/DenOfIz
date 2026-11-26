@@ -8,6 +8,7 @@ Licensed under the MIT License. See LICENSE in the project root.
 #include <array>
 #include <cmath>
 #include <cstdio>
+#include "DenOfIzGraphicsInternal/Assets/Font/Font.h"
 #include "DenOfIzGraphicsInternal/UI/UIContext.h"
 
 using namespace DenOfIz;
@@ -330,6 +331,12 @@ void UIContext::EmitText( const UINode &node )
     const DenOfIz_UIRect     &rect     = node.Rect;
     const float               boxWidth = node.LayoutRect.Width;
 
+    const bool rich = !layout->Run->Styles.empty( );
+    if ( rich )
+    {
+        EmitTextRuns( node, false );
+    }
+
     const DenOfIz_UITextSelection &selection = desc.Selection;
     if ( selection.Start != selection.End && selection.Color.A > 0 )
     {
@@ -355,7 +362,7 @@ void UIContext::EmitText( const UINode &node )
         }
     }
 
-    if ( desc.Color.A > 0 && UIMath::Intersects( rect, node.Clip ) )
+    if ( ( desc.Color.A > 0 || rich ) && UIMath::Intersects( rect, node.Clip ) )
     {
         UICommand &command     = m_frame->Commands.emplace_back( );
         command.Type           = UICommandType::Text;
@@ -366,6 +373,10 @@ void UIContext::EmitText( const UINode &node )
         command.Text.BoxWidth  = boxWidth;
         command.Text.Align     = desc.Align;
     }
+    if ( rich )
+    {
+        EmitTextRuns( node, true );
+    }
 
     if ( desc.CaretColor.A > 0 )
     {
@@ -374,6 +385,93 @@ void UIContext::EmitText( const UINode &node )
         float          x     = rect.X + ( layout->AlignOffset( line, boxWidth, desc.Align ) + layout->CaretX( line, desc.Caret ) ) * s - width * 0.5f;
         x                    = std::round( x * m_pixelsPerPoint ) / m_pixelsPerPoint;
         PushFill( DenOfIz_UIRect{ x, rect.Y + layout->Lines[ line ].Top * s, width, layout->Lines[ line ].Height * s }, desc.CaretColor, DenOfIz_UICorners{ } );
+    }
+}
+
+// Run backgrounds go under the glyphs, decorations and inline images over them, one rectangle per visual piece of the run on each line.
+void UIContext::EmitTextRuns( const UINode &node, const bool foreground )
+{
+    const UITextLayout       &layout   = *node.State->Layout;
+    const DenOfIz_UITextDesc &desc     = m_frame->Texts[ node.Data ].Desc;
+    const float               s        = node.Scale;
+    const DenOfIz_UIRect     &rect     = node.Rect;
+    const float               boxWidth = node.LayoutRect.Width;
+    const float               pixel    = 1.0f / m_pixelsPerPoint;
+    auto                      isSet    = []( const DenOfIz_UIColor &c ) { return ( c.R | c.G | c.B | c.A ) != 0; };
+    auto                      snap     = [ this ]( const float v ) { return std::round( v * m_pixelsPerPoint ) / m_pixelsPerPoint; };
+    for ( const UIRunStyle &style : layout.Run->Styles )
+    {
+        const bool image  = style.Object && DENOFIZ_HANDLE_IS_VALID( style.Image );
+        const bool wanted = foreground ? style.Decoration != 0 || image : style.Background.A > 0;
+        const Font *font  = m_text.GetFace( style.FontId )->FontPtr;
+        if ( !wanted || font == nullptr )
+        {
+            continue;
+        }
+        const DenOfIz_FontMetrics &m          = font->Metrics( );
+        const DenOfIz_UIColor      color      = isSet( style.Color ) ? style.Color : desc.Color;
+        const DenOfIz_UIColor      decoration = isSet( style.DecorationColor ) ? style.DecorationColor : color;
+        for ( uint32_t line = 0; line < layout.Lines.size( ); ++line )
+        {
+            const UITextLineLayout &l = layout.Lines[ line ];
+            if ( style.ByteEnd <= l.ByteStart || style.ByteStart >= l.ByteEnd )
+            {
+                continue;
+            }
+            const float align    = layout.AlignOffset( line, boxWidth, desc.Align );
+            const float baseline = l.Baseline - style.Shift;
+            layout.SelectionSpans( line, style.ByteStart, style.ByteEnd, 0.0f, m_selectionSpans );
+            for ( const DenOfIz_Float2 &span : m_selectionSpans )
+            {
+                if ( span.Y <= span.X )
+                {
+                    continue;
+                }
+                const float x = rect.X + ( align + span.X ) * s;
+                const float w = ( span.Y - span.X ) * s;
+                if ( style.Object )
+                {
+                    const DenOfIz_UIRect box{ x, rect.Y + ( baseline - style.ObjectSize.Y ) * s, w, style.ObjectSize.Y * s };
+                    if ( !foreground )
+                    {
+                        PushFill( box, style.Background, DenOfIz_UICorners{ } );
+                    }
+                    else if ( image )
+                    {
+                        UICommand &command    = m_frame->Commands.emplace_back( );
+                        command.Type          = UICommandType::Image;
+                        command.Rect          = box;
+                        command.Image.Texture = style.Image;
+                        command.Image.Tint    = DenOfIz_UIColor{ 255, 255, 255, 255 };
+                        command.Image.Radius  = DenOfIz_UICorners{ };
+                        command.Image.UV      = DenOfIz_Float4{ 0.0f, 0.0f, 1.0f, 1.0f };
+                    }
+                    continue;
+                }
+                if ( !foreground )
+                {
+                    PushFill( DenOfIz_UIRect{ x, rect.Y + ( baseline - m.Ascent * style.Size ) * s, w, ( m.Ascent + m.Descent ) * style.Size * s }, style.Background,
+                              DenOfIz_UICorners{ } );
+                    continue;
+                }
+                const float underline = std::max( m.UnderlineThickness * style.Size * s, pixel );
+                const float strikeout = std::max( ( m.StrikeoutThickness > 0.0f ? m.StrikeoutThickness : m.UnderlineThickness ) * style.Size * s, pixel );
+                auto        stroke    = [ & ]( const float y, const float thickness )
+                { PushFill( DenOfIz_UIRect{ x, snap( rect.Y + y * s ), w, thickness }, decoration, DenOfIz_UICorners{ } ); };
+                if ( style.Decoration & DENOFIZ_UI_TEXT_DECORATION_UNDERLINE_BIT )
+                {
+                    stroke( baseline + m.UnderlinePos * style.Size - underline * 0.5f / s, underline );
+                }
+                if ( style.Decoration & DENOFIZ_UI_TEXT_DECORATION_OVERLINE_BIT )
+                {
+                    stroke( baseline - m.Ascent * style.Size, underline );
+                }
+                if ( style.Decoration & DENOFIZ_UI_TEXT_DECORATION_LINE_THROUGH_BIT )
+                {
+                    stroke( baseline - m.StrikeoutPos * style.Size, strikeout );
+                }
+            }
+        }
     }
 }
 

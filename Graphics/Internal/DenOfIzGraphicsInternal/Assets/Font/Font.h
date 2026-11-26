@@ -24,6 +24,7 @@ namespace DenOfIz
 
     public:
         Font( hb_blob_t *blob, uint32_t faceIndex );
+        Font( const Font &base, const DenOfIz_FontSynthesisDesc &synthesis );
         ~Font( );
         Font( const Font & )            = delete;
         Font &operator=( const Font & ) = delete;
@@ -38,6 +39,9 @@ namespace DenOfIz
         bool                       Covers( const char *text, uint32_t length ) const;
 
         static Font *Default( );
+
+    private:
+        void LoadMetrics( );
     };
 } // namespace DenOfIz
 

@@ -26,7 +26,7 @@ extern "C"
         uint32_t              FaceIndex;
     } DenOfIz_FontDesc;
 
-    // In ems, multiply by the font size. Descent and UnderlinePos are distances below the baseline.
+    // In ems, multiply by the font size. Descent and UnderlinePos are distances below the baseline, StrikeoutPos is above it.
     typedef struct DenOfIz_FontMetrics
     {
         float Ascent;
@@ -35,11 +35,23 @@ extern "C"
         float LineHeight;
         float UnderlinePos;
         float UnderlineThickness;
+        float StrikeoutPos;
+        float StrikeoutThickness;
         float CapHeight;
     } DenOfIz_FontMetrics;
 
+    // A face synthesized from another, as browsers do for a missing bold or italic. Bold thickens outlines and widens advances by that fraction of an
+    // em, around 0.03 for a bold weight. Slant shears outlines by that tangent, around 0.2 for an oblique.
+    typedef struct DenOfIz_FontSynthesisDesc
+    {
+        float Bold;
+        float Slant;
+    } DenOfIz_FontSynthesisDesc;
+
     // NULL when the data holds no face at FaceIndex.
     DZ_API DenOfIz_Font DenOfIz_Font_Create( const DenOfIz_FontDesc *desc );
+    // A new font sharing the data of font, which may be destroyed first. Destroy it like any other font.
+    DZ_API DenOfIz_Font DenOfIz_Font_CreateSynthetic( DenOfIz_Font font, const DenOfIz_FontSynthesisDesc *desc );
     // A relative path is resolved against DenOfIz_FSConfig's asset path.
     DZ_API DenOfIz_Font DenOfIz_Font_CreateFromPath( DenOfIz_StringView path, uint32_t faceIndex );
     // Does nothing for the default font.

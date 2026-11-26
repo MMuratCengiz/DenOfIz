@@ -213,6 +213,8 @@ namespace DenOfIz
         DenOfIz_UITextDesc Desc;
         uint32_t           Offset;
         uint32_t           Length;
+        uint32_t           RunOffset = 0;
+        uint32_t           RunCount  = 0;
     };
 
     struct UIFrame
@@ -221,6 +223,7 @@ namespace DenOfIz
         std::vector<DenOfIz_UIElementDesc> Elements;
         std::vector<UITextNode>            Texts;
         std::vector<char>                  TextArena;
+        std::vector<DenOfIz_UITextRun>     TextRuns;
         std::vector<uint32_t>              Layers;
         std::vector<UICommand>             Commands;
         std::vector<UIRoundClip>           RoundClips;
@@ -290,6 +293,7 @@ namespace DenOfIz
         std::vector<std::pair<uint32_t, uint32_t>>   m_reconcileRanges;
         std::vector<UIScrollRequest>                 m_scrollRequests;
         std::vector<DenOfIz_Float2>                  m_selectionSpans;
+        std::vector<UIRunStyle>                      m_styles;
 
         uint64_t m_frameNumber   = 0;
         float    m_deltaTime     = 0.0f;
@@ -361,7 +365,7 @@ namespace DenOfIz
         void     BeginFrame( float deltaTime );
         uint32_t OpenElement( const DenOfIz_UIElementDesc &desc );
         void     CloseElement( );
-        uint32_t AddText( const DenOfIz_StringView &text, const DenOfIz_UITextDesc &desc );
+        uint32_t AddText( const DenOfIz_StringView &text, const DenOfIz_UITextDesc &desc, const DenOfIz_UITextRunArray *runs = nullptr );
         void     EndFrame( );
 
         const std::vector<UICommand> &Commands( ) const;
@@ -386,6 +390,7 @@ namespace DenOfIz
         bool           GetTextCaretRect( uint32_t textId, uint32_t byteOffset, DenOfIz_UIRect *out ) const;
         uint32_t       GetTextOffsetAtPoint( uint32_t textId, DenOfIz_Float2 point ) const;
         uint32_t       GetTextLineCount( uint32_t textId ) const;
+        uint32_t       GetTextRunAtPoint( uint32_t textId, DenOfIz_Float2 point ) const;
         bool           GetTextLine( uint32_t textId, uint32_t lineIndex, DenOfIz_UITextLine *out ) const;
 
     private:
@@ -399,6 +404,7 @@ namespace DenOfIz
         uint32_t        AppendNode( UINodeKind kind, uint32_t requestedId, bool isText );
 
         void ResolveTexts( );
+        void ResolveStyles( const UITextNode &text, const UITextParams &params );
         void ApplyStyles( );
         void ApplyElementStyle( uint32_t nodeIndex );
         void ApplyTextStyle( uint32_t nodeIndex );
@@ -436,6 +442,7 @@ namespace DenOfIz
         void BuildCommands( );
         void EmitNode( uint32_t nodeIndex );
         void EmitText( const UINode &node );
+        void EmitTextRuns( const UINode &node, bool foreground );
         void EmitGhosts( uint32_t parentId, bool above );
         void EmitGhost( const UIGhost &ghost, bool restoreContext );
         void EmitScrollbars( const UINode &node );

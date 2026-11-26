@@ -65,7 +65,29 @@ Font::Font( hb_blob_t *blob, const uint32_t faceIndex ) :
 {
     hb_font_set_scale( m_font, static_cast<int>( m_upem ), static_cast<int>( m_upem ) );
     hb_font_make_immutable( m_font );
+    LoadMetrics( );
+}
 
+// HarfBuzz applies the synthesis to advances, extents and drawn outlines, so shaping and the glyph stores see a face of its own.
+Font::Font( const Font &base, const DenOfIz_FontSynthesisDesc &synthesis ) :
+    m_blob( hb_blob_reference( base.m_blob ) ), m_face( hb_face_reference( base.m_face ) ), m_font( hb_font_create( m_face ) ), m_id( g_nextFontId++ ),
+    m_upem( base.m_upem ), m_colour( base.m_colour )
+{
+    hb_font_set_scale( m_font, static_cast<int>( m_upem ), static_cast<int>( m_upem ) );
+    if ( synthesis.Bold > 0.0f )
+    {
+        hb_font_set_synthetic_bold( m_font, synthesis.Bold, synthesis.Bold, false );
+    }
+    if ( synthesis.Slant != 0.0f )
+    {
+        hb_font_set_synthetic_slant( m_font, synthesis.Slant );
+    }
+    hb_font_make_immutable( m_font );
+    LoadMetrics( );
+}
+
+void Font::LoadMetrics( )
+{
     const float       em = 1.0f / static_cast<float>( m_upem );
     hb_font_extents_t extents{ };
     hb_font_get_h_extents( m_font, &extents );
@@ -79,6 +101,10 @@ Font::Font( hb_blob_t *blob, const uint32_t faceIndex ) :
     m_metrics.UnderlinePos = static_cast<float>( -value ) * em;
     hb_ot_metrics_get_position_with_fallback( m_font, HB_OT_METRICS_TAG_UNDERLINE_SIZE, &value );
     m_metrics.UnderlineThickness = static_cast<float>( value ) * em;
+    hb_ot_metrics_get_position_with_fallback( m_font, HB_OT_METRICS_TAG_STRIKEOUT_OFFSET, &value );
+    m_metrics.StrikeoutPos = static_cast<float>( value ) * em;
+    hb_ot_metrics_get_position_with_fallback( m_font, HB_OT_METRICS_TAG_STRIKEOUT_SIZE, &value );
+    m_metrics.StrikeoutThickness = static_cast<float>( value ) * em;
     hb_ot_metrics_get_position_with_fallback( m_font, HB_OT_METRICS_TAG_CAP_HEIGHT, &value );
     m_metrics.CapHeight = static_cast<float>( value ) * em;
 }
@@ -158,6 +184,17 @@ extern "C"
         }
         const auto *data = reinterpret_cast<const char *>( desc->Data.Elements );
         return NewFont( hb_blob_create_or_fail( data, static_cast<unsigned int>( desc->Data.NumElements ), HB_MEMORY_MODE_DUPLICATE, nullptr, nullptr ), desc->FaceIndex );
+    }
+
+    DenOfIz_Font DenOfIz_Font_CreateSynthetic( const DenOfIz_Font font, const DenOfIz_FontSynthesisDesc *desc )
+    {
+        if ( !DENOFIZ_HANDLE_IS_VALID( font ) )
+        {
+            spdlog::error( "DenOfIz_Font_CreateSynthetic: font is null" );
+            return DENOFIZ_NULL_HANDLE;
+        }
+        static constexpr DenOfIz_FontSynthesisDesc none{ };
+        return DENOFIZ_TO_HANDLE( new Font( *FONT_IMPL( font ), desc ? *desc : none ) );
     }
 
     DenOfIz_Font DenOfIz_Font_CreateFromPath( const DenOfIz_StringView path, const uint32_t faceIndex )

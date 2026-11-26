@@ -539,11 +539,17 @@ void UIRenderer::EmitText( const UICommand &command )
     const float          clipTop    = m_clipPoints.Y;
     const float          clipBottom = m_clipPoints.Y + m_clipPoints.Height;
     // Colour glyphs keep their own colours, only the text's alpha fades them. Their foreground layers use the text colour.
-    const DenOfIz_UIColor &text        = command.Text.Color;
-    const uint32_t         foreground  = static_cast<uint32_t>( text.R ) << 24 | static_cast<uint32_t>( text.G ) << 16 | static_cast<uint32_t>( text.B ) << 8 | text.A;
-    const DenOfIz_Float4   tint        = { 1.0f, 1.0f, 1.0f, color.W };
-    const uint32_t         colourIndex = UITextureSlots::ColourGlyph | m_stateBits;
-    const float            pixelsPerEm = layout.Params.FontSize * s * m_pixelsPerPoint;
+    auto pack = []( const DenOfIz_UIColor &c )
+    { return static_cast<uint32_t>( c.R ) << 24 | static_cast<uint32_t>( c.G ) << 16 | static_cast<uint32_t>( c.B ) << 8 | c.A; };
+    const uint32_t       textForeground = pack( command.Text.Color );
+    const DenOfIz_Float4 textTint       = { 1.0f, 1.0f, 1.0f, color.W };
+    const uint32_t       colourIndex    = UITextureSlots::ColourGlyph | m_stateBits;
+    const auto          &styles         = layout.Run->Styles;
+    // Rich text glyphs take the colour of their run, looked up again only when the run changes.
+    uint32_t       style      = UINT32_MAX;
+    DenOfIz_Float4 glyphColor = color;
+    DenOfIz_Float4 tint       = textTint;
+    uint32_t       foreground = textForeground;
 
     auto addQuad = [ this ]( const UIQuad &quad )
     {
@@ -576,6 +582,23 @@ void UIRenderer::EmitText( const UICommand &command )
         {
             continue;
         }
+        if ( quad.Style != style )
+        {
+            style = quad.Style;
+            if ( style < styles.size( ) )
+            {
+                glyphColor = ShadeColor( styles[ style ].Color );
+                tint       = { 1.0f, 1.0f, 1.0f, glyphColor.W };
+                foreground = pack( styles[ style ].Color );
+            }
+            else
+            {
+                glyphColor = color;
+                tint       = textTint;
+                foreground = textForeground;
+            }
+        }
+        const float pixelsPerEm = quad.Em * s * m_pixelsPerPoint;
         if ( quad.Colour )
         {
             const ColourGlyph &bitmap = colourGlyphs.Get( quad.Glyph, pixelsPerEm, foreground );
@@ -609,7 +632,7 @@ void UIRenderer::EmitText( const UICommand &command )
         const float u1 = quad.U1 + du;
         const float v0 = quad.V0 - dv;
         const float v1 = quad.V1 + dv;
-        addQuad( UIQuad{ { x0 - pixel, y0 - pixel, x1 + pixel, y1 + pixel }, { u0, v0, u1, v1 }, color, index, quad.Glyph, {} } );
+        addQuad( UIQuad{ { x0 - pixel, y0 - pixel, x1 + pixel, y1 + pixel }, { u0, v0, u1, v1 }, glyphColor, index, quad.Glyph, {} } );
     }
 }
 

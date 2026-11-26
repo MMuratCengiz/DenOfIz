@@ -179,6 +179,16 @@ namespace DenOfIz
             }
         }
 
+        public unsafe uint RichText(ReadOnlySpan<byte> utf8, ReadOnlySpan<UITextRun> runs, in UITextDesc desc)
+        {
+            fixed (byte* chars = utf8)
+            fixed (UITextRun* elements = runs)
+            {
+                var array = new UITextRunArray { Elements = (IntPtr)elements, NumElements = (ulong)runs.Length };
+                return Methods.DenOfIz_UI_RichText(Handle, new StringView { Chars = (IntPtr)chars, NumChars = (ulong)utf8.Length }, in array, in desc);
+            }
+        }
+
         public uint Text(ReadOnlySpan<char> text, in UITextDesc desc)
         {
             var maxBytes = Encoding.UTF8.GetMaxByteCount(text.Length);
@@ -327,6 +337,11 @@ namespace DenOfIz
         public uint GetTextOffsetAtPoint(uint textId, Vector2 point)
         {
             return Methods.DenOfIz_UI_GetTextOffsetAtPoint(Handle, textId, point);
+        }
+
+        public uint GetTextRunAtPoint(uint textId, Vector2 point)
+        {
+            return Methods.DenOfIz_UI_GetTextRunAtPoint(Handle, textId, point);
         }
 
         public uint GetTextLineCount(uint textId)

@@ -7,6 +7,7 @@ Licensed under the MIT License. See LICENSE in the project root.
 
 #include "DenOfIzGraphicsInternal/UI/UIContext.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <unordered_set>
@@ -541,6 +542,7 @@ void UIFrame::Clear( )
     Elements.clear( );
     Texts.clear( );
     TextArena.clear( );
+    TextRuns.clear( );
     Layers.clear( );
     Commands.clear( );
     RoundClips.clear( );
@@ -840,7 +842,7 @@ void UIContext::CloseElement( )
     m_openStack.pop_back( );
 }
 
-uint32_t UIContext::AddText( const DenOfIz_StringView &text, const DenOfIz_UITextDesc &desc )
+uint32_t UIContext::AddText( const DenOfIz_StringView &text, const DenOfIz_UITextDesc &desc, const DenOfIz_UITextRunArray *runs )
 {
     if ( !m_inFrame )
     {
@@ -856,7 +858,13 @@ uint32_t UIContext::AddText( const DenOfIz_StringView &text, const DenOfIz_UITex
     UINode &node  = m_frame->Nodes[ index ];
     node.Data     = static_cast<uint32_t>( m_frame->Texts.size( ) );
     node.Captures = true;
-    m_frame->Texts.push_back( UITextNode{ desc, offset, length } );
+    UITextNode &textNode = m_frame->Texts.emplace_back( UITextNode{ desc, offset, length } );
+    if ( runs != nullptr && runs->Elements != nullptr && runs->NumElements > 0 )
+    {
+        textNode.RunOffset = static_cast<uint32_t>( m_frame->TextRuns.size( ) );
+        textNode.RunCount  = static_cast<uint32_t>( runs->NumElements );
+        m_frame->TextRuns.insert( m_frame->TextRuns.end( ), runs->Elements, runs->Elements + runs->NumElements );
+    }
     return id;
 }
 
@@ -939,13 +947,24 @@ void UIContext::ResolveTexts( )
         const char         *chars  = m_frame->TextArena.data( ) + text.Offset;
         const UITextParams  params = UITextParams::From( text.Desc );
         const UIShapedRun  *run    = state.Run;
+        const bool          rich   = text.RunCount > 0;
+        if ( rich )
+        {
+            ResolveStyles( text, params );
+        }
         // Unchanged text is recognised by comparing it with the run it was shaped into, only new text is hashed to look its run up.
         const bool cached = run != nullptr && state.TextEpoch == m_text.Epoch( ) && run->Text.size( ) == text.Length && run->FontId == m_text.ResolveFontId( params.FontId ) &&
+                            ( rich ? std::ranges::equal( run->Styles, m_styles ) : run->Styles.empty( ) ) &&
                             ( text.Length == 0 || std::memcmp( run->Text.data( ), chars, text.Length ) == 0 );
-        const uint64_t hash = cached ? run->Hash : UIText::Hash( chars, text.Length );
+        uint64_t hash = cached ? run->Hash : UIText::Hash( chars, text.Length );
         if ( cached )
         {
             run->LastUsedFrame = m_text.Frame( );
+        }
+        else if ( rich )
+        {
+            hash = UIText::HashStyles( hash, m_styles );
+            run  = m_text.ShapeRich( text.Desc.FontId, chars, text.Length, m_styles, hash );
         }
         else
         {
@@ -971,6 +990,45 @@ void UIContext::ResolveTexts( )
             }
             state.TextMinWidth = minWidth;
         }
+    }
+}
+
+// Runs clamped to the text and to each other, text past the last run takes the leaf's style.
+void UIContext::ResolveStyles( const UITextNode &text, const UITextParams &params )
+{
+    m_styles.clear( );
+    uint32_t start = 0;
+    for ( uint32_t i = 0; i < text.RunCount && start < text.Length; ++i )
+    {
+        const DenOfIz_UITextRun &source = m_frame->TextRuns[ text.RunOffset + i ];
+        const uint32_t           end    = std::min( source.ByteEnd, text.Length );
+        if ( end <= start )
+        {
+            continue;
+        }
+        UIRunStyle &style     = m_styles.emplace_back( );
+        style.ByteStart       = start;
+        style.ByteEnd         = end;
+        style.Id              = source.Id;
+        style.FontId          = m_text.ResolveFontId( source.FontId );
+        style.Size            = source.FontSize > 0.0f ? source.FontSize : params.FontSize;
+        style.Shift           = source.BaselineShift;
+        style.Color           = source.Color;
+        style.Background      = source.BackgroundColor;
+        style.DecorationColor = source.DecorationColor;
+        style.Decoration      = source.Decoration;
+        style.Object          = source.ObjectSize.X > 0.0f || source.ObjectSize.Y > 0.0f;
+        style.ObjectSize      = style.Object ? source.ObjectSize : DenOfIz_Float2{ };
+        style.Image           = style.Object ? source.Image : DENOFIZ_NULL_HANDLE;
+        start                 = end;
+    }
+    if ( start < text.Length || m_styles.empty( ) )
+    {
+        UIRunStyle &style = m_styles.emplace_back( );
+        style.ByteStart   = start;
+        style.ByteEnd     = text.Length;
+        style.FontId      = m_text.ResolveFontId( params.FontId );
+        style.Size        = params.FontSize;
     }
 }
 
@@ -2111,6 +2169,20 @@ uint32_t UIContext::GetTextOffsetAtPoint( const uint32_t textId, const DenOfIz_F
     const float x = ( point.X - node->Rect.X ) / node->Scale;
     const float y = ( point.Y - node->Rect.Y ) / node->Scale;
     return node->State->Layout->OffsetAt( x, y, node->LayoutRect.Width, m_last->Texts[ node->Data ].Desc.Align );
+}
+
+uint32_t UIContext::GetTextRunAtPoint( const uint32_t textId, const DenOfIz_Float2 point ) const
+{
+    const UINode *node = FindLastNode( textId );
+    if ( node == nullptr || node->Kind != UINodeKind::Text || node->Hidden || node->State->Layout == nullptr || node->Scale <= 0.0f )
+    {
+        return 0;
+    }
+    const UITextLayout &layout = *node->State->Layout;
+    const float         x      = ( point.X - node->Rect.X ) / node->Scale;
+    const float         y      = ( point.Y - node->Rect.Y ) / node->Scale;
+    const uint32_t      style  = layout.StyleAtPoint( x, y, node->LayoutRect.Width, m_last->Texts[ node->Data ].Desc.Align );
+    return style < layout.Run->Styles.size( ) ? layout.Run->Styles[ style ].Id : 0;
 }
 
 uint32_t UIContext::GetTextLineCount( const uint32_t textId ) const

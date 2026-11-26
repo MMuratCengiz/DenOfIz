@@ -37,16 +37,41 @@ namespace DenOfIz
         float      EllipsisAdvance = 0.0f;
     };
 
+    // A resolved DenOfIz_UITextRun: FontId is registered and Size is in points.
+    struct UIRunStyle
+    {
+        uint32_t                      ByteStart = 0;
+        uint32_t                      ByteEnd   = 0;
+        uint32_t                      Id        = 0;
+        uint16_t                      FontId    = 0;
+        float                         Size      = 0.0f;
+        float                         Shift     = 0.0f;
+        DenOfIz_UIColor               Color{ };
+        DenOfIz_UIColor               Background{ };
+        DenOfIz_UIColor               DecorationColor{ };
+        DenOfIz_UITextDecorationFlags Decoration = 0;
+        bool                          Object     = false;
+        DenOfIz_Float2                ObjectSize{ };
+        DenOfIz_Texture               Image = DENOFIZ_NULL_HANDLE;
+
+        bool operator==( const UIRunStyle &other ) const;
+    };
+
+    // Styles is empty for plain text, whose glyphs take the layout's size. LongestWord is in em for plain text and in points for rich text.
     struct UIShapedRun
     {
-        uint16_t         FontId     = 0;
-        uint32_t         Generation = 0;
-        uint64_t         Hash       = 0;
-        std::string      Text;
-        ShapedText       Shaped;
-        float            LongestWord       = 0.0f;
-        uint32_t         LongestWordGlyphs = 0;
-        mutable uint64_t LastUsedFrame     = 0;
+        uint16_t                FontId     = 0;
+        uint32_t                Generation = 0;
+        uint64_t                Hash       = 0;
+        std::string             Text;
+        ShapedText              Shaped;
+        std::vector<UIRunStyle> Styles;
+        float                   LongestWord       = 0.0f;
+        uint32_t                LongestWordGlyphs = 0;
+        mutable uint64_t        LastUsedFrame     = 0;
+
+        // Index of the style holding a byte, the last one past the end.
+        uint32_t StyleAt( uint32_t byte ) const;
     };
 
     struct UITextParams
@@ -93,6 +118,7 @@ namespace DenOfIz
 
     // U/V are em-space glyph coordinates (y up), Glyph is the SlugGlyphStore record. A colour glyph has its pen position in X0/Y0 and its
     // ColourGlyphStore source in Glyph, the bitmap is picked for the size it is drawn at.
+    // Em is the size the glyph is drawn at, Style its run style or UINT32_MAX when it takes the text's colour.
     struct UIGlyphQuad
     {
         float    X0, Y0, X1, Y1;
@@ -100,6 +126,8 @@ namespace DenOfIz
         uint32_t Glyph;
         uint32_t Line;
         bool     Colour;
+        float    Em;
+        uint32_t Style;
     };
 
     class UITextLayout
@@ -124,6 +152,7 @@ namespace DenOfIz
         mutable uint64_t                 LastUsedFrame = 0;
 
         const std::vector<TextGlyph> &Glyphs( ) const;
+        float                         GlyphScale( const TextGlyph &glyph ) const;
         uint32_t                      LineAt( float y ) const;
         float                         AlignOffset( uint32_t line, float boxWidth, DenOfIz_UITextAlign align ) const;
         float                         CaretX( uint32_t line, uint32_t byteOffset ) const;
@@ -132,6 +161,8 @@ namespace DenOfIz
         // The x ranges of the selected bytes [start, end) on a line, left to right. A selection past the end of the line adds newlineWidth at its end.
         void                            SelectionSpans( uint32_t line, uint32_t start, uint32_t end, float newlineWidth, std::vector<DenOfIz_Float2> &out ) const;
         const std::vector<UIGlyphQuad> &GetQuads( SlugGlyphStore &slugGlyphs, ColourGlyphStore &colourGlyphs ) const;
+        // The run style drawn under a point, UINT32_MAX for none.
+        uint32_t StyleAtPoint( float x, float y, float boxWidth, DenOfIz_UITextAlign align ) const;
 
     private:
         float         GlyphWidth( uint32_t glyph ) const;
@@ -180,6 +211,8 @@ namespace DenOfIz
         std::unordered_map<UITextLayoutKey, std::unique_ptr<UITextLayout>, UITextLayoutKeyHash> m_layouts;
         std::vector<uint32_t>                                                                   m_order;
         std::vector<TextGlyph>                                                                  m_pieces;
+        std::vector<TextSegment>                                                                m_segments;
+        std::vector<uint8_t>                                                                    m_segmentChains;
         uint64_t                                                                                m_frame = 1;
         uint64_t                                                                                m_epoch = 1;
 
@@ -196,6 +229,9 @@ namespace DenOfIz
 
         static uint64_t     Hash( const char *chars, size_t length );
         const UIShapedRun  *Shape( uint16_t fontId, const char *chars, uint32_t length, uint64_t hash );
+        // fontId is the strut font, the styles tile the text. hash covers the text and the styles, see HashStyles.
+        const UIShapedRun  *ShapeRich( uint16_t fontId, const char *chars, uint32_t length, std::span<const UIRunStyle> styles, uint64_t hash );
+        static uint64_t     HashStyles( uint64_t textHash, std::span<const UIRunStyle> styles );
         const UITextLayout *Layout( const UIShapedRun *run, const UITextParams &params, float maxWidth );
         float               MinContentWidth( const UIShapedRun *run, const UITextParams &params ) const;
         DenOfIz_Float2      Measure( const char *chars, uint32_t length, const DenOfIz_UITextDesc &desc, float maxWidth );
@@ -208,6 +244,8 @@ namespace DenOfIz
 
     private:
         void LoadFace( UIFontFace &face, Font *font );
+        void MeasureWords( UIShapedRun &run ) const;
+        bool Uses( const UIShapedRun &run, uint16_t fontId ) const;
         void ReleaseFace( UIFontFace &face );
         // Drops the runs and layouts drawn with the font, as primary or fallback.
         void  Invalidate( uint16_t fontId );

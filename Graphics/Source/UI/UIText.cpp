@@ -101,6 +101,16 @@ namespace
         return true;
     }
 
+    bool SameColor( const DenOfIz_UIColor &a, const DenOfIz_UIColor &b )
+    {
+        return a.R == b.R && a.G == b.G && a.B == b.B && a.A == b.A;
+    }
+
+    uint32_t PackColor( const DenOfIz_UIColor &c )
+    {
+        return static_cast<uint32_t>( c.R ) << 24 | static_cast<uint32_t>( c.G ) << 16 | static_cast<uint32_t>( c.B ) << 8 | c.A;
+    }
+
     uint32_t GraphemesIn( const std::vector<uint8_t> &starts, const uint32_t start, const uint32_t end )
     {
         uint32_t count = 0;
@@ -111,6 +121,19 @@ namespace
         return count;
     }
 } // namespace
+
+bool UIRunStyle::operator==( const UIRunStyle &other ) const
+{
+    return ByteStart == other.ByteStart && ByteEnd == other.ByteEnd && Id == other.Id && FontId == other.FontId && Size == other.Size && Shift == other.Shift &&
+           SameColor( Color, other.Color ) && SameColor( Background, other.Background ) && SameColor( DecorationColor, other.DecorationColor ) &&
+           Decoration == other.Decoration && Object == other.Object && ObjectSize.X == other.ObjectSize.X && ObjectSize.Y == other.ObjectSize.Y && Image == other.Image;
+}
+
+uint32_t UIShapedRun::StyleAt( const uint32_t byte ) const
+{
+    const auto it = std::upper_bound( Styles.begin( ), Styles.end( ), byte, []( const uint32_t b, const UIRunStyle &style ) { return b < style.ByteEnd; } );
+    return static_cast<uint32_t>( std::min<ptrdiff_t>( it - Styles.begin( ), static_cast<ptrdiff_t>( Styles.size( ) ) - 1 ) );
+}
 
 bool UITextParams::operator==( const UITextParams &other ) const
 {
@@ -188,9 +211,36 @@ float UITextLayout::AlignOffset( const uint32_t line, const float boxWidth, cons
     }
 }
 
+float UITextLayout::GlyphScale( const TextGlyph &glyph ) const
+{
+    return Run->Styles.empty( ) ? Scale : Run->Styles[ Run->StyleAt( glyph.Cluster ) ].Size;
+}
+
 float UITextLayout::GlyphWidth( const uint32_t glyph ) const
 {
-    return ::GlyphWidth( Glyphs( )[ glyph ], Scale, Params.LetterSpacing, Face->SpaceAdvance, Params.Wrap == DENOFIZ_UI_TEXT_WRAP_NONE );
+    const TextGlyph &g = Glyphs( )[ glyph ];
+    return ::GlyphWidth( g, GlyphScale( g ), Params.LetterSpacing, Face->SpaceAdvance, Params.Wrap == DENOFIZ_UI_TEXT_WRAP_NONE );
+}
+
+uint32_t UITextLayout::StyleAtPoint( const float x, const float y, const float boxWidth, const DenOfIz_UITextAlign align ) const
+{
+    if ( Run->Styles.empty( ) || Lines.empty( ) || y < 0.0f || y >= Height )
+    {
+        return UINT32_MAX;
+    }
+    const uint32_t line = LineAt( y );
+    const auto    &l    = Lines[ line ];
+    const float    lx   = x - AlignOffset( line, boxWidth, align );
+    for ( uint32_t i = l.GlyphStart; i < l.GlyphEnd; )
+    {
+        const UITextCluster cluster = ClusterAt( l, i );
+        if ( lx >= cluster.Left && lx < cluster.Right )
+        {
+            return Run->StyleAt( cluster.ByteStart );
+        }
+        i = cluster.Last + 1;
+    }
+    return UINT32_MAX;
 }
 
 UITextCluster UITextLayout::ClusterAt( const UITextLineLayout &line, const uint32_t glyph ) const
@@ -351,18 +401,17 @@ const std::vector<UIGlyphQuad> &UITextLayout::GetQuads( SlugGlyphStore &slugGlyp
     const auto &glyphs = Glyphs( );
     Quads.reserve( glyphs.size( ) );
 
-    const float em       = Params.FontSize;
-    auto        addGlyph = [ & ]( const TextGlyph &glyph, const Font *font, const float penX, const uint32_t line )
+    auto addGlyph = [ & ]( const TextGlyph &glyph, const Font *font, const float penX, const uint32_t line, const float em, const float shift, const uint32_t style )
     {
         if ( glyph.GlyphId == TextHiddenGlyph )
         {
             return;
         }
-        const float x = penX + glyph.OffsetX * Scale;
-        const float y = -glyph.OffsetY * Scale;
+        const float x = penX + glyph.OffsetX * em;
+        const float y = -glyph.OffsetY * em - shift;
         if ( const uint32_t source = colourGlyphs.Find( font, glyph.GlyphId ); source != ColourGlyphStore::None )
         {
-            Quads.push_back( UIGlyphQuad{ x, y, x, y, 0.0f, 0.0f, 0.0f, 0.0f, source, line, true } );
+            Quads.push_back( UIGlyphQuad{ x, y, x, y, 0.0f, 0.0f, 0.0f, 0.0f, source, line, true, em, style } );
             return;
         }
         const uint32_t        record = slugGlyphs.Get( font->Id( ), font->HbFont( ), font->Upem( ), glyph.GlyphId );
@@ -371,23 +420,32 @@ const std::vector<UIGlyphQuad> &UITextLayout::GetQuads( SlugGlyphStore &slugGlyp
         {
             return;
         }
-        Quads.push_back( UIGlyphQuad{ x + bounds.X * em, y - bounds.W * em, x + bounds.Z * em, y - bounds.Y * em, bounds.X, bounds.W, bounds.Z, bounds.Y, record, line, false } );
+        Quads.push_back(
+            UIGlyphQuad{ x + bounds.X * em, y - bounds.W * em, x + bounds.Z * em, y - bounds.Y * em, bounds.X, bounds.W, bounds.Z, bounds.Y, record, line, false, em, style } );
     };
 
+    const auto &styles = Run->Styles;
     for ( uint32_t line = 0; line < Lines.size( ); ++line )
     {
         const UITextLineLayout &l = Lines[ line ];
         for ( uint32_t i = l.GlyphStart; i < l.GlyphEnd; ++i )
         {
             const TextGlyph &glyph = glyphs[ i ];
-            addGlyph( glyph, Run->Shaped.Fonts[ glyph.Font ], GlyphX[ i ], line );
+            if ( styles.empty( ) )
+            {
+                addGlyph( glyph, Run->Shaped.Fonts[ glyph.Font ], GlyphX[ i ], line, Scale, 0.0f, UINT32_MAX );
+                continue;
+            }
+            const uint32_t    index = Run->StyleAt( glyph.Cluster );
+            const UIRunStyle &style = styles[ index ];
+            addGlyph( glyph, Run->Shaped.Fonts[ glyph.Font ], GlyphX[ i ], line, style.Size, style.Shift, PackColor( style.Color ) != 0 ? index : UINT32_MAX );
         }
         if ( l.Ellipsis )
         {
             float pen = l.Rtl ? 0.0f : l.Width - Face->EllipsisAdvance * Scale - Params.LetterSpacing * static_cast<float>( Face->Ellipsis.Glyphs.size( ) );
             for ( const TextGlyph &glyph : Face->Ellipsis.Glyphs )
             {
-                addGlyph( glyph, Face->Ellipsis.Fonts[ glyph.Font ], pen, line );
+                addGlyph( glyph, Face->Ellipsis.Fonts[ glyph.Font ], pen, line, Scale, 0.0f, UINT32_MAX );
                 pen += glyph.Advance * Scale + Params.LetterSpacing;
             }
         }
@@ -448,10 +506,15 @@ void UIText::SetFallbacks( const uint16_t fontId, const std::span<const uint16_t
 
 void UIText::Invalidate( const uint16_t fontId )
 {
-    auto uses = [ this, fontId ]( const uint16_t id ) { return id == fontId || std::ranges::find( m_fallbacks[ id ], fontId ) != m_fallbacks[ id ].end( ); };
-    std::erase_if( m_layouts, [ &uses ]( const auto &entry ) { return uses( entry.first.Run->FontId ); } );
-    std::erase_if( m_runs, [ &uses ]( const auto &entry ) { return uses( entry.first.FontId ); } );
+    std::erase_if( m_layouts, [ this, fontId ]( const auto &entry ) { return Uses( *entry.first.Run, fontId ); } );
+    std::erase_if( m_runs, [ this, fontId ]( const auto &entry ) { return Uses( *entry.second, fontId ); } );
     ++m_epoch;
+}
+
+bool UIText::Uses( const UIShapedRun &run, const uint16_t fontId ) const
+{
+    auto uses = [ this, fontId ]( const uint16_t id ) { return id == fontId || std::ranges::find( m_fallbacks[ id ], fontId ) != m_fallbacks[ id ].end( ); };
+    return uses( run.FontId ) || std::ranges::any_of( run.Styles, [ &uses ]( const UIRunStyle &style ) { return uses( style.FontId ); } );
 }
 
 const UIFontFace *UIText::GetFace( const uint16_t fontId ) const
@@ -539,7 +602,7 @@ const UIShapedRun *UIText::Shape( const uint16_t fontId, const char *chars, cons
 
     for ( auto it = m_runs.find( key ); it != m_runs.end( ); it = m_runs.find( key ) )
     {
-        if ( length == 0 || std::memcmp( it->second->Text.data( ), chars, length ) == 0 )
+        if ( it->second->Styles.empty( ) && ( length == 0 || std::memcmp( it->second->Text.data( ), chars, length ) == 0 ) )
         {
             it->second->LastUsedFrame = m_frame;
             return it->second.get( );
@@ -563,10 +626,109 @@ const UIShapedRun *UIText::Shape( const uint16_t fontId, const char *chars, cons
         }
     }
     m_shaper.Shape( run->Text.data( ), length, m_chain, TextAutoLevel, run->Shaped );
+    MeasureWords( *run );
 
-    float    word       = 0.0f;
-    uint32_t wordGlyphs = 0;
-    for ( const TextGlyph &glyph : run->Shaped.Glyphs )
+    const UIShapedRun *result = run.get( );
+    m_runs.emplace( key, std::move( run ) );
+    return result;
+}
+
+uint64_t UIText::HashStyles( const uint64_t textHash, const std::span<const UIRunStyle> styles )
+{
+    uint64_t h = Mix64( textHash ^ 0xA0761D6478BD642FULL ^ styles.size( ) );
+    for ( const UIRunStyle &style : styles )
+    {
+        h = Mix64( h ^ style.ByteEnd ^ static_cast<uint64_t>( style.FontId ) << 32 ^ static_cast<uint64_t>( style.Id ) << 40 );
+        h = Mix64( h ^ std::bit_cast<uint32_t>( style.Size ) ^ static_cast<uint64_t>( std::bit_cast<uint32_t>( style.Shift ) ) << 32 );
+        h = Mix64( h ^ PackColor( style.Color ) ^ static_cast<uint64_t>( PackColor( style.Background ) ) << 32 );
+        h = Mix64( h ^ PackColor( style.DecorationColor ) ^ static_cast<uint64_t>( style.Decoration ) << 32 ^ static_cast<uint64_t>( style.Object ) << 40 );
+        h = Mix64( h ^ std::bit_cast<uint32_t>( style.ObjectSize.X ) ^ static_cast<uint64_t>( std::bit_cast<uint32_t>( style.ObjectSize.Y ) ) << 32 ^ style.Image );
+    }
+    return h;
+}
+
+// Consecutive runs with the same font and size share a segment, so only a change of font or size cuts shaping. A segment's chain is its font and the
+// font's fallbacks.
+const UIShapedRun *UIText::ShapeRich( const uint16_t fontId, const char *chars, const uint32_t length, const std::span<const UIRunStyle> styles, const uint64_t hash )
+{
+    const uint16_t resolved = ResolveFontId( fontId );
+    UIRunKey       key{ hash, length, resolved, m_faces[ resolved ].Generation };
+    for ( auto it = m_runs.find( key ); it != m_runs.end( ); it = m_runs.find( key ) )
+    {
+        const UIShapedRun &existing = *it->second;
+        if ( std::ranges::equal( existing.Styles, styles ) && ( length == 0 || std::memcmp( existing.Text.data( ), chars, length ) == 0 ) )
+        {
+            existing.LastUsedFrame = m_frame;
+            return it->second.get( );
+        }
+        key.Hash = Mix64( key.Hash + 0x9E3779B97F4A7C15ULL );
+    }
+
+    auto run           = std::make_unique<UIShapedRun>( );
+    run->FontId        = resolved;
+    run->Generation    = m_faces[ resolved ].Generation;
+    run->Hash          = hash;
+    run->LastUsedFrame = m_frame;
+    run->Text.assign( chars, length );
+    run->Styles.assign( styles.begin( ), styles.end( ) );
+
+    m_chain.clear( );
+    m_segments.clear( );
+    m_segmentChains.clear( );
+    auto addFont = [ this ]( const uint16_t id )
+    {
+        Font *font = id < m_faces.size( ) ? m_faces[ id ].FontPtr : nullptr;
+        if ( font == nullptr )
+        {
+            return;
+        }
+        auto it = std::ranges::find( m_chain, font );
+        if ( it == m_chain.end( ) )
+        {
+            if ( m_chain.size( ) > UINT8_MAX )
+            {
+                return;
+            }
+            m_chain.push_back( font );
+            it = m_chain.end( ) - 1;
+        }
+        m_segmentChains.push_back( static_cast<uint8_t>( it - m_chain.begin( ) ) );
+    };
+    for ( size_t i = 0; i < styles.size( ); )
+    {
+        const UIRunStyle &style = styles[ i ];
+        size_t            next  = i + 1;
+        while ( !style.Object && next < styles.size( ) && !styles[ next ].Object && styles[ next ].FontId == style.FontId && styles[ next ].Size == style.Size )
+        {
+            ++next;
+        }
+        TextSegment segment{ styles[ next - 1 ].ByteEnd, static_cast<uint32_t>( m_segmentChains.size( ) ), 0, style.Object,
+                             style.Object && style.Size > 0.0f ? style.ObjectSize.X / style.Size : 0.0f };
+        addFont( style.FontId );
+        for ( const uint16_t fallback : style.Object ? std::span<const uint16_t>( ) : std::span( m_fallbacks[ style.FontId ] ) )
+        {
+            addFont( fallback );
+        }
+        segment.ChainCount = static_cast<uint32_t>( m_segmentChains.size( ) ) - segment.ChainStart;
+        m_segments.push_back( segment );
+        i = next;
+    }
+    m_shaper.Shape( run->Text.data( ), length, m_chain, m_segments, m_segmentChains, TextAutoLevel, run->Shaped );
+    MeasureWords( *run );
+
+    const UIShapedRun *result = run.get( );
+    m_runs.emplace( key, std::move( run ) );
+    return result;
+}
+
+// The longest run of glyphs a line cannot break inside, in em for plain text and in points for rich text.
+void UIText::MeasureWords( UIShapedRun &run ) const
+{
+    run.LongestWord       = 0.0f;
+    run.LongestWordGlyphs = 0;
+    float    word         = 0.0f;
+    uint32_t wordGlyphs   = 0;
+    for ( const TextGlyph &glyph : run.Shaped.Glyphs )
     {
         if ( glyph.Flags & ( TextGlyphFlags::Space | TextGlyphFlags::Newline ) )
         {
@@ -574,12 +736,12 @@ const UIShapedRun *UIText::Shape( const uint16_t fontId, const char *chars, cons
             wordGlyphs = 0;
             continue;
         }
-        word += glyph.Advance;
+        word += run.Styles.empty( ) ? glyph.Advance : glyph.Advance * run.Styles[ run.StyleAt( glyph.Cluster ) ].Size;
         wordGlyphs += glyph.Advance != 0.0f;
-        if ( word > run->LongestWord )
+        if ( word > run.LongestWord )
         {
-            run->LongestWord       = word;
-            run->LongestWordGlyphs = wordGlyphs;
+            run.LongestWord       = word;
+            run.LongestWordGlyphs = wordGlyphs;
         }
         if ( glyph.Flags & ( TextGlyphFlags::BreakAfter | TextGlyphFlags::MustBreak ) )
         {
@@ -587,10 +749,6 @@ const UIShapedRun *UIText::Shape( const uint16_t fontId, const char *chars, cons
             wordGlyphs = 0;
         }
     }
-
-    const UIShapedRun *result = run.get( );
-    m_runs.emplace( key, std::move( run ) );
-    return result;
 }
 
 const UITextLayout *UIText::Layout( const UIShapedRun *run, const UITextParams &params, const float maxWidth )
@@ -643,7 +801,8 @@ void UIText::BuildLayout( UITextLayout &layout )
     std::span<const TextGlyph> glyphs = shaped.Glyphs;
     const auto                 count  = static_cast<uint32_t>( glyphs.size( ) );
     const auto                 bytes  = static_cast<uint32_t>( run.Text.size( ) );
-    const auto                 width  = [ & ]( const uint32_t glyph ) { return GlyphWidth( glyphs[ glyph ], scale, spacing, face.SpaceAdvance, newlineAsSpace ); };
+    const auto                 width  = [ & ]( const uint32_t glyph )
+    { return GlyphWidth( glyphs[ glyph ], layout.GlyphScale( glyphs[ glyph ] ), spacing, face.SpaceAdvance, newlineAsSpace ); };
     const auto                 byteAt = [ & ]( const uint32_t glyph ) { return glyph < glyphs.size( ) ? glyphs[ glyph ].Cluster : bytes; };
     const uint32_t             spaces = TextGlyphFlags::Space | TextGlyphFlags::Newline;
     // GlyphX holds logical x from the start of each line until the lines are known, then the visual x.
@@ -838,37 +997,50 @@ void UIText::BuildLayout( UITextLayout &layout )
     }
 
     // CSS line-height normal: a line is as tall as the tallest of the fonts drawing on it and the primary font, each with its line gap split around it.
-    const float primaryAbove = face.Ascent + ( face.LineHeight - face.Ascent - face.Descent ) * 0.5f;
-    const float primaryBelow = face.LineHeight - primaryAbove;
-    float       top          = 0.0f;
-    layout.Width             = 0.0f;
+    // A fixed line height is the strut of rich text, runs taller than it still grow the line. Shifted runs and inline objects reach further.
+    const auto &styles   = run.Styles;
+    const bool  rich     = !styles.empty( );
+    const bool  fixed    = params.LineHeight > 0.0f;
+    const float strutTop = fixed ? ( params.LineHeight - ( face.Ascent + face.Descent ) * scale ) * 0.5f + face.Ascent * scale
+                                 : ( face.Ascent + ( face.LineHeight - face.Ascent - face.Descent ) * 0.5f ) * scale;
+    const float strutBottom = ( fixed ? params.LineHeight : face.LineHeight * scale ) - strutTop;
+    float       top         = 0.0f;
+    layout.Width            = 0.0f;
     for ( UITextLineLayout &line : layout.Lines )
     {
-        line.Top = top;
-        if ( params.LineHeight > 0.0f )
+        line.Top    = top;
+        float above = strutTop;
+        float below = strutBottom;
+        if ( rich || !fixed )
         {
-            line.Height   = params.LineHeight;
-            line.Baseline = top + ( params.LineHeight - ( face.Ascent + face.Descent ) * scale ) * 0.5f + face.Ascent * scale;
-        }
-        else
-        {
-            float   above = primaryAbove;
-            float   below = primaryBelow;
-            uint8_t font  = 0;
+            uint32_t font  = 0;
+            uint32_t style = UINT32_MAX;
             for ( uint32_t i = line.GlyphStart; i < line.GlyphEnd; ++i )
             {
-                if ( glyphs[ i ].GlyphId != TextHiddenGlyph && glyphs[ i ].Font != font )
+                const TextGlyph &glyph = glyphs[ i ];
+                const uint32_t   index = rich ? run.StyleAt( glyph.Cluster ) : UINT32_MAX;
+                if ( rich && styles[ index ].Object )
                 {
-                    font                           = glyphs[ i ].Font;
-                    const DenOfIz_FontMetrics &m   = shaped.Fonts[ font ]->Metrics( );
-                    const float                gap = m.LineGap * 0.5f;
-                    above                          = std::max( above, m.Ascent + gap );
-                    below                          = std::max( below, m.Descent + gap );
+                    above = std::max( above, styles[ index ].ObjectSize.Y + styles[ index ].Shift );
+                    below = std::max( below, -styles[ index ].Shift );
+                    continue;
                 }
+                if ( glyph.GlyphId == TextHiddenGlyph || ( glyph.Font == font && index == style ) )
+                {
+                    continue;
+                }
+                font                         = glyph.Font;
+                style                        = index;
+                const DenOfIz_FontMetrics &m = shaped.Fonts[ font ]->Metrics( );
+                const float                gap   = fixed ? 0.0f : m.LineGap * 0.5f;
+                const float                size  = rich ? styles[ index ].Size : scale;
+                const float                shift = rich ? styles[ index ].Shift : 0.0f;
+                above                            = std::max( above, ( m.Ascent + gap ) * size + shift );
+                below                            = std::max( below, ( m.Descent + gap ) * size - shift );
             }
-            line.Height   = ( above + below ) * scale;
-            line.Baseline = top + above * scale;
         }
+        line.Height   = above + below;
+        line.Baseline = top + above;
         top += line.Height;
         layout.Width = std::max( layout.Width, line.Width );
     }
@@ -964,7 +1136,7 @@ float UIText::ReshapedEnd( const UITextLayout &layout, const uint32_t lineStart,
     uint32_t          end    = 0;
     if ( !ReshapeSpan( shaped, cut, start, end ) )
     {
-        return layout.GlyphX[ cut - 1 ] + ::GlyphWidth( shaped.Glyphs[ cut - 1 ], layout.Scale, layout.Params.LetterSpacing, layout.Face->SpaceAdvance, false );
+        return layout.GlyphX[ cut - 1 ] + ::GlyphWidth( shaped.Glyphs[ cut - 1 ], layout.GlyphScale( shaped.Glyphs[ cut - 1 ] ), layout.Params.LetterSpacing, layout.Face->SpaceAdvance, false );
     }
     start = std::max( start, lineStart );
     m_pieces.clear( );
@@ -972,7 +1144,7 @@ float UIText::ReshapedEnd( const UITextLayout &layout, const uint32_t lineStart,
     float width = start > lineStart ? layout.GlyphX[ start ] : 0.0f;
     for ( const TextGlyph &glyph : m_pieces )
     {
-        width += ::GlyphWidth( glyph, layout.Scale, layout.Params.LetterSpacing, layout.Face->SpaceAdvance, false );
+        width += ::GlyphWidth( glyph, layout.GlyphScale( glyph ), layout.Params.LetterSpacing, layout.Face->SpaceAdvance, false );
     }
     return width;
 }
@@ -985,7 +1157,8 @@ float UIText::MinContentWidth( const UIShapedRun *run, const UITextParams &param
     }
     if ( params.Wrap == DENOFIZ_UI_TEXT_WRAP_WORDS )
     {
-        return run->LongestWord * params.FontSize + params.LetterSpacing * static_cast<float>( run->LongestWordGlyphs );
+        const float scale = run->Styles.empty( ) ? params.FontSize : 1.0f;
+        return run->LongestWord * scale + params.LetterSpacing * static_cast<float>( run->LongestWordGlyphs );
     }
     return -1.0f;
 }

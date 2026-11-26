@@ -35,6 +35,11 @@ namespace DenOfIz
             }
         }
 
+        public static Font CreateSynthetic(Font font, in FontSynthesisDesc desc)
+        {
+            return new Font(Methods.DenOfIz_Font_CreateSynthetic(font, in desc), ownsHandle: true);
+        }
+
         public static Font CreateFromPath(StringView path, uint faceIndex = 0)
         {
             return new Font(Methods.DenOfIz_Font_CreateFromPath(path, faceIndex), ownsHandle: true);

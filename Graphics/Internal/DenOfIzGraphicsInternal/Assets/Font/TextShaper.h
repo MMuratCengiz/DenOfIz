@@ -75,12 +75,26 @@ namespace DenOfIz
         std::vector<uint8_t>       GraphemeStarts; // One per byte plus one for the end, non zero where a grapheme cluster starts.
     };
 
+    // A range of the text that picks its fonts from its own chain, given as indices into the fonts passed to Shape. Items never cross a segment.
+    // An object segment is not shaped: each of its grapheme clusters becomes one hidden glyph, the first advancing by ObjectAdvance ems, an inline
+    // box the caller draws. Segments follow each other from byte 0, the last one reaches the end of the text.
+    struct TextSegment
+    {
+        uint32_t ByteEnd;
+        uint32_t ChainStart;
+        uint32_t ChainCount;
+        bool     Object;
+        float    ObjectAdvance;
+    };
+
     class TextShaper
     {
-        hb_buffer_t          *m_buffer;
-        std::vector<char>     m_breaks;
-        std::string           m_valid;
-        std::vector<uint32_t> m_origins;
+        hb_buffer_t             *m_buffer;
+        std::vector<char>        m_breaks;
+        std::string              m_valid;
+        std::vector<uint32_t>    m_origins;
+        std::vector<TextSegment> m_segments;
+        std::vector<uint8_t>     m_chain;
 
     public:
         TextShaper( );
@@ -90,12 +104,15 @@ namespace DenOfIz
 
         // Every grapheme cluster takes the first font that covers it, else the system font covering it. baseLevel is 0, 1 or TextAutoLevel.
         void Shape( const char *text, uint32_t length, std::span<Font *const> fonts, uint8_t baseLevel, ShapedText &out );
+        void Shape( const char *text, uint32_t length, std::span<Font *const> fonts, std::span<const TextSegment> segments, std::span<const uint8_t> chains,
+                    uint8_t baseLevel, ShapedText &out );
         // Shapes the glyphs [start, end) of one item of shaped again as separate pieces cut before the glyphs in cuts, with the paragraph around
         // them as context, and appends them to out. Each new glyph takes the flags of the glyph it replaces.
         void Reshape( const char *text, uint32_t length, const ShapedText &shaped, uint32_t start, uint32_t end, std::span<const uint32_t> cuts, std::vector<TextGlyph> &out );
 
     private:
-        void ShapeWellFormed( const char *text, uint32_t length, std::span<Font *const> fonts, uint8_t baseLevel, ShapedText &out );
+        void ShapeWellFormed( const char *text, uint32_t length, std::span<Font *const> fonts, std::span<const TextSegment> segments, std::span<const uint8_t> chains,
+                              uint8_t baseLevel, ShapedText &out );
         void ShapeItem( const char *paragraph, uint32_t paragraphLength, uint32_t paragraphStart, uint32_t start, uint32_t end, uint8_t level, hb_script_t script, const Font *font,
                         uint8_t fontIndex, std::vector<TextGlyph> &out );
     };
