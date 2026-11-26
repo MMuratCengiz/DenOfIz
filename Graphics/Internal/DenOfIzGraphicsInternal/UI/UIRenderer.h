@@ -134,6 +134,10 @@ namespace DenOfIz
         uint64_t                                           m_frameCounter = 0;
         float                                              m_pixelsPerPoint = 1.0f;
         DenOfIz_UIRect                                     m_clipPoints{ };
+        DenOfIz_Texture                                    m_captureTarget   = DENOFIZ_NULL_HANDLE;
+        DenOfIz_Buffer                                     m_captureReadback = DENOFIZ_NULL_HANDLE;
+        uint32_t                                           m_captureWidth    = 0;
+        uint32_t                                           m_captureHeight   = 0;
 
     public:
         explicit UIRenderer( const UIRendererDesc &desc );
@@ -142,10 +146,14 @@ namespace DenOfIz
         void Render( const std::vector<UICommand> &commands, uint32_t frameIndex, DenOfIz_CommandList commandList, float pixelWidth, float pixelHeight, float pixelsPerPoint );
         void RenderToTexture( const std::vector<UICommand> &commands, uint32_t frameIndex, uint32_t pixelWidth, uint32_t pixelHeight, float pixelsPerPoint,
                               const DenOfIz_SemaphoreArray *waitSemaphores, DenOfIz_UIRenderResult *outResult );
+        bool Capture( const std::vector<UICommand> &commands, uint32_t frameIndex, uint32_t pixelWidth, uint32_t pixelHeight, float pixelsPerPoint,
+                      const DenOfIz_SemaphoreArray *waitSemaphores, DenOfIz_ByteArray *outPixels );
 
     private:
         DenOfIz_Pipeline CreatePipeline( DenOfIz_Format depthFormat ) const;
         void             CreateFrameResources( );
+        void             EnsureCaptureTarget( uint32_t width, uint32_t height );
+        void             DestroyCaptureTarget( );
         void             Reserve( FrameData &frame, Stream stream, uint32_t count, uint32_t keep ) const;
         template <typename T>
         T               *StreamData( Stream stream, uint32_t first ) const;

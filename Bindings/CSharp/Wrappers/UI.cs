@@ -354,6 +354,67 @@ namespace DenOfIz
             return Methods.DenOfIz_UI_GetTextLine(Handle, textId, lineIndex, out line);
         }
 
+        public uint NodeCount => Methods.DenOfIz_UI_GetNodeCount(Handle);
+
+        public bool TryGetNode(uint index, out UINodeInfo node)
+        {
+            return Methods.DenOfIz_UI_GetNode(Handle, index, out node);
+        }
+
+        // UINodeInfo.Parent and FindNode's result for none.
+        public const uint NoNode = uint.MaxValue;
+
+        public uint FindNode(uint id)
+        {
+            return Methods.DenOfIz_UI_FindNode(Handle, id);
+        }
+
+        public uint HitTest(Vector2 point)
+        {
+            var chain = new UInt32Array();
+            return Methods.DenOfIz_UI_HitTest(Handle, point, ref chain);
+        }
+
+        public unsafe uint HitTest(Vector2 point, Span<uint> chain, out int count)
+        {
+            fixed (uint* elements = chain)
+            {
+                var array = new UInt32Array { Elements = (IntPtr)elements, NumElements = (ulong)chain.Length };
+                var deepest = Methods.DenOfIz_UI_HitTest(Handle, point, ref array);
+                count = (int)array.NumElements;
+                return deepest;
+            }
+        }
+
+        public bool IsAnimating => Methods.DenOfIz_UI_IsAnimating(Handle);
+
+        public (uint Width, uint Height) ViewportPixelSize
+        {
+            get
+            {
+                ThrowIfDisposed();
+                Methods.DenOfIz_UI_GetViewportPixelSize(Handle, out var width, out var height);
+                return (width, height);
+            }
+        }
+
+        public unsafe bool Capture(uint frameIndex, Span<byte> rgba, ReadOnlySpan<Semaphore> waitSemaphores = default)
+        {
+            ThrowIfDisposed();
+            Span<ulong> handles = stackalloc ulong[waitSemaphores.Length];
+            for (var i = 0; i < waitSemaphores.Length; ++i)
+            {
+                handles[i] = waitSemaphores[i];
+            }
+            fixed (byte* pixels = rgba)
+            fixed (ulong* semaphores = handles)
+            {
+                var waits = new SemaphoreArray { Elements = (IntPtr)semaphores, NumElements = (ulong)handles.Length };
+                var array = new ByteArray { Elements = (IntPtr)pixels, NumElements = (ulong)rgba.Length };
+                return Methods.DenOfIz_UI_Capture(Handle, frameIndex, in waits, ref array);
+            }
+        }
+
         public void Dispose()
         {
             if (Handle == 0)

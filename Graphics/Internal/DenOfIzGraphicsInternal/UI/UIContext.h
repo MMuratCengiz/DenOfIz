@@ -175,6 +175,7 @@ namespace DenOfIz
         UIElementState *State       = nullptr;
         UINodeKind      Kind        = UINodeKind::Element;
         bool            Floating    = false;
+        bool            Animating   = false;
         bool            Captures    = false;
         bool            Disabled    = false;
         bool            Focusable   = false;
@@ -298,6 +299,7 @@ namespace DenOfIz
         uint64_t m_frameNumber   = 0;
         float    m_deltaTime     = 0.0f;
         bool     m_inFrame       = false;
+        bool     m_animating     = false;
         bool     m_snapTransitions = true;
         float    m_viewportPixelWidth  = 1.0f;
         float    m_viewportPixelHeight = 1.0f;
@@ -392,6 +394,12 @@ namespace DenOfIz
         uint32_t       GetTextLineCount( uint32_t textId ) const;
         uint32_t       GetTextRunAtPoint( uint32_t textId, DenOfIz_Float2 point ) const;
         bool           GetTextLine( uint32_t textId, uint32_t lineIndex, DenOfIz_UITextLine *out ) const;
+
+        uint32_t NodeCount( ) const;
+        bool     GetNode( uint32_t index, DenOfIz_UINodeInfo *out ) const;
+        uint32_t FindNode( uint32_t id ) const;
+        uint32_t HitTestPoint( DenOfIz_Float2 point, DenOfIz_UInt32Array *outChain ) const;
+        bool     IsAnimating( ) const;
 
     private:
         static YGSize MeasureTextNode( YGNodeConstRef node, float width, YGMeasureMode widthMode, float height, YGMeasureMode heightMode );

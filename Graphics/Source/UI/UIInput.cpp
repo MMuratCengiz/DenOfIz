@@ -5,6 +5,7 @@ Copyright (c) 2020-2024 Muhammed Murat Cengiz
 Licensed under the MIT License. See LICENSE in the project root.
 */
 
+#include <algorithm>
 #include <cmath>
 #include "DenOfIzGraphicsInternal/UI/UIContext.h"
 
@@ -738,4 +739,18 @@ DenOfIz_Float2 UIContext::GetPointerPosition( ) const
 DenOfIz_SystemCursor UIContext::GetCursor( ) const
 {
     return m_cursor;
+}
+
+uint32_t UIContext::HitTestPoint( const DenOfIz_Float2 point, DenOfIz_UInt32Array *outChain ) const
+{
+    std::vector<uint32_t> chain;
+    uint32_t              deepest = 0;
+    HitTest( *m_last, point.X, point.Y, chain, nullptr, &deepest );
+    if ( outChain != nullptr )
+    {
+        const size_t count = outChain->Elements != nullptr ? std::min( outChain->NumElements, chain.size( ) ) : 0;
+        std::copy_n( chain.begin( ), count, outChain->Elements );
+        outChain->NumElements = count;
+    }
+    return deepest;
 }

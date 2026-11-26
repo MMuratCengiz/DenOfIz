@@ -185,6 +185,15 @@ namespace DenOfIz
             m_commandsPending = false;
         }
 
+        bool Capture( const uint32_t frameIndex, const DenOfIz_SemaphoreArray *waitSemaphores, DenOfIz_ByteArray *outPixels )
+        {
+            const DenOfIz_Float2 pixels = Context.GetViewportPixels( );
+            const bool captured = Renderer->Capture( Context.Commands( ), frameIndex, static_cast<uint32_t>( pixels.X ), static_cast<uint32_t>( pixels.Y ),
+                                                     Context.GetPixelsPerPoint( ), waitSemaphores, outPixels );
+            m_commandsPending = false;
+            return captured;
+        }
+
     private:
         bool OwnsWindow( const uint32_t windowId ) const
         {
@@ -509,5 +518,42 @@ extern "C"
     bool DenOfIz_UI_GetTextLine( const DenOfIz_UI ui, const uint32_t textId, const uint32_t lineIndex, DenOfIz_UITextLine *outLine )
     {
         return UI_IMPL( ui )->Context.GetTextLine( textId, lineIndex, outLine );
+    }
+
+    uint32_t DenOfIz_UI_GetNodeCount( const DenOfIz_UI ui )
+    {
+        return UI_IMPL( ui )->Context.NodeCount( );
+    }
+
+    bool DenOfIz_UI_GetNode( const DenOfIz_UI ui, const uint32_t index, DenOfIz_UINodeInfo *outNode )
+    {
+        return UI_IMPL( ui )->Context.GetNode( index, outNode );
+    }
+
+    uint32_t DenOfIz_UI_FindNode( const DenOfIz_UI ui, const uint32_t id )
+    {
+        return UI_IMPL( ui )->Context.FindNode( id );
+    }
+
+    uint32_t DenOfIz_UI_HitTest( const DenOfIz_UI ui, const DenOfIz_Float2 point, DenOfIz_UInt32Array *chain )
+    {
+        return UI_IMPL( ui )->Context.HitTestPoint( point, chain );
+    }
+
+    bool DenOfIz_UI_IsAnimating( const DenOfIz_UI ui )
+    {
+        return UI_IMPL( ui )->Context.IsAnimating( );
+    }
+
+    void DenOfIz_UI_GetViewportPixelSize( const DenOfIz_UI ui, uint32_t *outWidth, uint32_t *outHeight )
+    {
+        const DenOfIz_Float2 pixels = UI_IMPL( ui )->Context.GetViewportPixels( );
+        *outWidth                   = static_cast<uint32_t>( pixels.X );
+        *outHeight                  = static_cast<uint32_t>( pixels.Y );
+    }
+
+    bool DenOfIz_UI_Capture( const DenOfIz_UI ui, const uint32_t frameIndex, const DenOfIz_SemaphoreArray *waitSemaphores, DenOfIz_ByteArray *pixels )
+    {
+        return UI_IMPL( ui )->Capture( frameIndex, waitSemaphores, pixels );
     }
 }

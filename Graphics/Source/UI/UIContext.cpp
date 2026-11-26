@@ -107,6 +107,28 @@ namespace
         return tween.Current;
     }
 
+    template <typename T>
+    bool TweenRunning( const UITween<T> &tween, const float duration )
+    {
+        return tween.Initialized && tween.Elapsed < duration;
+    }
+
+    bool TextTruncated( const UITextLayout &layout, const char *text, uint32_t length )
+    {
+        for ( const UITextLineLayout &line : layout.Lines )
+        {
+            if ( line.Ellipsis )
+            {
+                return true;
+            }
+        }
+        while ( length > 0 && ( text[ length - 1 ] == ' ' || text[ length - 1 ] == '\n' || text[ length - 1 ] == '\r' || text[ length - 1 ] == '\t' ) )
+        {
+            --length;
+        }
+        return !layout.Lines.empty( ) && layout.Lines.back( ).ByteEnd < length;
+    }
+
     YGFlexDirection ToYoga( const DenOfIz_UIDirection direction )
     {
         switch ( direction )
@@ -1450,7 +1472,8 @@ void UIContext::AnimateNode( const uint32_t nodeIndex )
     {
         local = DenOfIz_Float2{ 0.0f, 0.0f };
     }
-    node.Effect = UIEffect{ };
+    node.Effect    = UIEffect{ };
+    node.Animating = false;
 
     if ( node.Kind == UINodeKind::Text )
     {
@@ -1553,6 +1576,9 @@ void UIContext::AnimateNode( const uint32_t nodeIndex )
         }
         state.HasExit    = transition.Exit.Flags != 0;
         state.Transition = transition;
+        node.Animating   = state.EnterElapsed >= 0.0f || ( !node.Floating && TweenRunning( state.Position, duration ) ) || TweenRunning( state.Size, duration ) ||
+                         TweenRunning( state.Background, duration ) || TweenRunning( state.BorderColor, duration ) || TweenRunning( state.Overlay, duration ) ||
+                         TweenRunning( state.Radius, duration );
     }
     else
     {
@@ -1613,6 +1639,7 @@ void UIContext::UpdateScroll( UINode &node, const DenOfIz_UIElementDesc &desc )
     }
     state.ScrollOffset.X = std::clamp( state.ScrollOffset.X, 0.0f, state.MaxScroll.X );
     state.ScrollOffset.Y = std::clamp( state.ScrollOffset.Y, 0.0f, state.MaxScroll.Y );
+    node.Animating       = node.Animating || state.ScrollOffset.X != state.ScrollTarget.X || state.ScrollOffset.Y != state.ScrollTarget.Y;
 }
 
 void UIContext::ExtendContentBounds( const UINode &node, float &right, float &bottom ) const
@@ -2063,8 +2090,10 @@ void UIContext::UpdateGhosts( )
 void UIContext::StoreResults( )
 {
     auto &nodes = m_frame->Nodes;
+    m_animating = !m_ghosts.empty( );
     for ( UINode &node : nodes )
     {
+        m_animating = m_animating || ( node.Animating && !node.Hidden );
         UIElementState &state = *node.State;
         state.Rect            = node.Contents ? node.Union : node.Rect;
         state.HasRect         = !node.Hidden && ( !node.Contents || node.HasUnion );
@@ -2210,4 +2239,109 @@ bool UIContext::GetTextLine( const uint32_t textId, const uint32_t lineIndex, De
     out->EndOffset                 = line.ByteEnd;
     out->Rect = DenOfIz_UIRect{ node->Rect.X + x * node->Scale, node->Rect.Y + line.Top * node->Scale, line.Width * node->Scale, line.Height * node->Scale };
     return true;
+}
+
+uint32_t UIContext::NodeCount( ) const
+{
+    return static_cast<uint32_t>( m_last->Nodes.size( ) );
+}
+
+bool UIContext::GetNode( const uint32_t index, DenOfIz_UINodeInfo *out ) const
+{
+    *out                 = DenOfIz_UINodeInfo{ };
+    const UIFrame &frame = *m_last;
+    if ( index >= frame.Nodes.size( ) )
+    {
+        return false;
+    }
+    const UINode         &node  = frame.Nodes[ index ];
+    const UIElementState &state = *node.State;
+    out->Id                     = node.Id;
+    out->Parent                 = node.Parent;
+    out->Layer                  = node.Layer;
+    out->ZIndex                 = node.ZIndex;
+    out->Kind = node.Kind == UINodeKind::Root ? DENOFIZ_UI_NODE_KIND_ROOT : node.Kind == UINodeKind::Text ? DENOFIZ_UI_NODE_KIND_TEXT : DENOFIZ_UI_NODE_KIND_ELEMENT;
+    out->Opacity = 1.0f;
+    for ( uint32_t n = index; n != UINode::Invalid; n = frame.Nodes[ n ].Parent )
+    {
+        out->Depth += n != index ? 1 : 0;
+    }
+    for ( uint32_t n = index; n != UINode::Invalid; n = frame.Nodes[ n ].Parent )
+    {
+        out->Opacity *= frame.Nodes[ n ].Effect.Opacity;
+        if ( frame.Nodes[ n ].Floating )
+        {
+            break;
+        }
+    }
+
+    DenOfIz_UINodeFlags flags = 0;
+    flags |= node.Hidden ? DENOFIZ_UI_NODE_HIDDEN_BIT : 0;
+    flags |= node.Floating ? DENOFIZ_UI_NODE_FLOATING_BIT : 0;
+    flags |= node.Contents ? DENOFIZ_UI_NODE_CONTENTS_BIT : 0;
+    flags |= node.Clips ? DENOFIZ_UI_NODE_CLIPS_BIT : 0;
+    flags |= state.Scrollable && !node.Hidden ? DENOFIZ_UI_NODE_SCROLLABLE_BIT : 0;
+    flags |= node.Focusable ? DENOFIZ_UI_NODE_FOCUSABLE_BIT : 0;
+    flags |= node.Disabled ? DENOFIZ_UI_NODE_DISABLED_BIT : 0;
+    flags |= node.Captures && node.Kind == UINodeKind::Element ? DENOFIZ_UI_NODE_CAPTURES_BIT : 0;
+    flags |= node.Animating ? DENOFIZ_UI_NODE_ANIMATING_BIT : 0;
+
+    if ( !node.Hidden )
+    {
+        out->Rect        = node.Contents ? ( node.HasUnion ? node.Union : DenOfIz_UIRect{ } ) : node.Rect;
+        out->LayoutRect  = node.LayoutRect;
+        out->VisibleRect = UIMath::Intersect( out->Rect, node.Clip );
+        if ( out->VisibleRect.Width <= 0.0f || out->VisibleRect.Height <= 0.0f )
+        {
+            out->VisibleRect = DenOfIz_UIRect{ out->Rect.X, out->Rect.Y, 0.0f, 0.0f };
+        }
+    }
+
+    if ( node.Kind == UINodeKind::Text )
+    {
+        const UITextNode &text = frame.Texts[ node.Data ];
+        const char       *utf8 = frame.TextArena.data( ) + text.Offset;
+        out->Text              = DenOfIz_StringView{ utf8, text.Length };
+        out->TextColor         = text.Desc.Color;
+        out->FontId            = state.TextParams.FontId;
+        out->FontSize          = state.TextParams.FontSize;
+        if ( state.Layout != nullptr && !node.Hidden )
+        {
+            const UITextLayout &layout = *state.Layout;
+            const float         slack  = 1.0f / m_pixelsPerPoint + 0.01f;
+            out->ContentSize           = DenOfIz_Float2{ layout.Width, layout.Height };
+            out->LineCount             = static_cast<uint32_t>( layout.Lines.size( ) );
+            flags |= TextTruncated( layout, utf8, text.Length ) ? DENOFIZ_UI_NODE_TRUNCATED_BIT : 0;
+            flags |= layout.Width > node.LayoutRect.Width + slack || layout.Height > node.LayoutRect.Height + slack ? DENOFIZ_UI_NODE_OVERFLOWS_BIT : 0;
+        }
+    }
+    else if ( node.Kind == UINodeKind::Element )
+    {
+        const DenOfIz_UIElementDesc &desc = frame.Elements[ node.Data ];
+        out->BackgroundColor              = node.Background;
+        out->BorderColor                  = node.BorderColor;
+        out->OverlayColor                 = node.Overlay;
+        out->BorderWidth                  = node.Contents ? DenOfIz_UIEdges{ } : desc.Style.BorderWidth;
+        out->CornerRadius                 = node.Radius;
+        out->Image                        = state.ImageTexture;
+        flags |= desc.Layout.Position == DENOFIZ_UI_POSITION_ABSOLUTE && !node.Floating ? DENOFIZ_UI_NODE_ABSOLUTE_BIT : 0;
+        if ( state.Scrollable && !node.Hidden )
+        {
+            out->ContentSize  = state.ContentSize;
+            out->ScrollOffset = state.ScrollOffset;
+        }
+    }
+    out->Flags = flags;
+    return true;
+}
+
+uint32_t UIContext::FindNode( const uint32_t id ) const
+{
+    const UINode *node = FindLastNode( id );
+    return node != nullptr ? static_cast<uint32_t>( node - m_last->Nodes.data( ) ) : UINode::Invalid;
+}
+
+bool UIContext::IsAnimating( ) const
+{
+    return m_animating;
 }

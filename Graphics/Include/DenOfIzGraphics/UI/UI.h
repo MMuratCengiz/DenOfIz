@@ -606,6 +606,64 @@ extern "C"
         DenOfIz_UIRect Rect;
     } DenOfIz_UITextLine;
 
+    typedef enum DenOfIz_UINodeKind
+    {
+        DENOFIZ_UI_NODE_KIND_ROOT, /**< The implicit column the size of the viewport, always node 0. */
+        DENOFIZ_UI_NODE_KIND_ELEMENT,
+        DENOFIZ_UI_NODE_KIND_TEXT
+    } DenOfIz_UINodeKind;
+
+    typedef enum DenOfIz_UINodeFlagBits
+    {
+        DENOFIZ_UI_NODE_NONE_BIT       = 0,
+        DENOFIZ_UI_NODE_HIDDEN_BIT     = 1 << 0,  /**< Display NONE, its own or an ancestor's: the rectangles are zero. */
+        DENOFIZ_UI_NODE_FLOATING_BIT   = 1 << 1,
+        DENOFIZ_UI_NODE_CONTENTS_BIT   = 1 << 2,  /**< Display CONTENTS: Rect is the union of the children's. */
+        DENOFIZ_UI_NODE_CLIPS_BIT      = 1 << 3,  /**< Overflow is not VISIBLE on an axis, descendants are clipped to its padding box on it. */
+        DENOFIZ_UI_NODE_SCROLLABLE_BIT = 1 << 4,
+        DENOFIZ_UI_NODE_FOCUSABLE_BIT  = 1 << 5,
+        DENOFIZ_UI_NODE_DISABLED_BIT   = 1 << 6,
+        DENOFIZ_UI_NODE_CAPTURES_BIT   = 1 << 7,  /**< Takes the pointer from the layers below. */
+        DENOFIZ_UI_NODE_ANIMATING_BIT  = 1 << 8,  /**< A transition, enter animation or smooth scroll of the node is in progress. */
+        DENOFIZ_UI_NODE_TRUNCATED_BIT  = 1 << 9,  /**< Text cut by MaxLines or ended with an ellipsis. */
+        DENOFIZ_UI_NODE_OVERFLOWS_BIT  = 1 << 10, /**< Text larger than its box by more than the pixel lost to rounding. */
+        DENOFIZ_UI_NODE_ABSOLUTE_BIT   = 1 << 11  /**< Position ABSOLUTE, out of the flow. */
+    } DenOfIz_UINodeFlagBits;
+    typedef uint32_t DenOfIz_UINodeFlags;
+
+    /**
+     * A node of the most recent EndFrame, see DenOfIz_UI_GetNode. Rect is where the node is drawn, LayoutRect where it is laid out before the
+     * scale and offset of enter animations; both include scrolling and transitions. VisibleRect is the part of Rect inside the clips of its
+     * ancestors and its layer, zero sized when it is clipped away, rounded corners ignored.
+     */
+    typedef struct DenOfIz_UINodeInfo
+    {
+        uint32_t            Id;
+        uint32_t            Parent; /**< Node index, UINT32_MAX for the root. */
+        uint32_t            Layer;  /**< Index of the floating node whose layer holds the node, 0 for the base layer. */
+        uint32_t            Depth;
+        DenOfIz_UINodeKind  Kind;
+        DenOfIz_UINodeFlags Flags;
+        int32_t             ZIndex;
+        DenOfIz_UIRect      Rect;
+        DenOfIz_UIRect      LayoutRect;
+        DenOfIz_UIRect      VisibleRect;
+        DenOfIz_Float2      ContentSize; /**< The laid out text of a text leaf, the content of a scrollable element, zero otherwise. */
+        DenOfIz_Float2      ScrollOffset;
+        DenOfIz_UIColor     BackgroundColor; /**< The colours drawn this frame, transitions applied. */
+        DenOfIz_UIColor     BorderColor;
+        DenOfIz_UIColor     OverlayColor;
+        DenOfIz_UIEdges     BorderWidth;
+        DenOfIz_UICorners   CornerRadius;
+        float               Opacity; /**< Of the enter animations of the node and its ancestors. */
+        DenOfIz_Texture     Image;
+        DenOfIz_StringView  Text; /**< UTF-8 of a text leaf, valid until the next EndFrame. */
+        DenOfIz_UIColor     TextColor;
+        uint16_t            FontId;
+        float               FontSize;
+        uint32_t            LineCount;
+    } DenOfIz_UINodeInfo;
+
     typedef struct DenOfIz_UIDesc
     {
         DenOfIz_LogicalDevice    LogicalDevice;
@@ -722,6 +780,31 @@ extern "C"
     DZ_API uint32_t DenOfIz_UI_GetTextRunAtPoint( DenOfIz_UI ui, uint32_t textId, DenOfIz_Float2 point );
     DZ_API uint32_t DenOfIz_UI_GetTextLineCount( DenOfIz_UI ui, uint32_t textId );
     DZ_API bool     DenOfIz_UI_GetTextLine( DenOfIz_UI ui, uint32_t textId, uint32_t lineIndex, DenOfIz_UITextLine *outLine );
+
+    /**
+     * Inspection of the most recent EndFrame, for tools and tests. Nodes are in declaration order, each followed by its descendants, node 0
+     * is the root. Hidden nodes are included.
+     */
+    DZ_API uint32_t DenOfIz_UI_GetNodeCount( DenOfIz_UI ui );
+    DZ_API bool     DenOfIz_UI_GetNode( DenOfIz_UI ui, uint32_t index, DenOfIz_UINodeInfo *outNode );
+    /** Node index of an element or text leaf, UINT32_MAX when the most recent frame did not declare it. */
+    DZ_API uint32_t DenOfIz_UI_FindNode( DenOfIz_UI ui, uint32_t id );
+    /**
+     * The elements the pointer at a point would hover, deepest first, into caller allocated memory: NumElements is set to the ids written,
+     * at most its value on input. Returns the deepest id, zero when the point hits nothing. chain is optional.
+     */
+    DZ_API uint32_t DenOfIz_UI_HitTest( DenOfIz_UI ui, DenOfIz_Float2 point, DenOfIz_UInt32Array *chain );
+    /** A transition, enter or exit animation or smooth scroll is in progress: the next frame draws differently with the same declarations. */
+    DZ_API bool DenOfIz_UI_IsAnimating( DenOfIz_UI ui );
+    /** The size of a capture. */
+    DZ_API void DenOfIz_UI_GetViewportPixelSize( DenOfIz_UI ui, uint32_t *outWidth, uint32_t *outHeight );
+    /**
+     * Renders the most recent frame like RenderToTexture and reads it back, waiting for the device to be idle before and for the GPU after.
+     * pixels is caller allocated: Elements must hold 4 * width * height bytes of GetViewportPixelSize. They are written as RGBA8 rows,
+     * top to bottom, with straight alpha over a transparent background, and NumElements is set to the bytes written. Returns false when
+     * nothing was written.
+     */
+    DZ_API bool DenOfIz_UI_Capture( DenOfIz_UI ui, uint32_t frameIndex, const DenOfIz_SemaphoreArray *waitSemaphores, DenOfIz_ByteArray *pixels );
 
 #ifdef __cplusplus
 }

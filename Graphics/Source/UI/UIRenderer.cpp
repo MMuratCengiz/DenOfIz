@@ -7,6 +7,7 @@ Licensed under the MIT License. See LICENSE in the project root.
 
 #include "DenOfIzGraphicsInternal/UI/UIRenderer.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstring>
@@ -127,6 +128,7 @@ UIRenderer::UIRenderer( const UIRendererDesc &desc ) : m_desc( desc ), m_device(
 UIRenderer::~UIRenderer( )
 {
     DenOfIz_LogicalDevice_WaitIdle( m_device );
+    DestroyCaptureTarget( );
     for ( FrameData &frame : m_frames )
     {
         for ( const FrameStream &stream : frame.Streams )
@@ -927,4 +929,153 @@ void UIRenderer::RenderToTexture( const std::vector<UICommand> &commands, const 
         outResult->Texture   = frame.ColorTarget;
         outResult->Semaphore = frame.Semaphore;
     }
+}
+
+void UIRenderer::EnsureCaptureTarget( const uint32_t width, const uint32_t height )
+{
+    if ( DENOFIZ_HANDLE_IS_VALID( m_captureTarget ) && m_captureWidth == width && m_captureHeight == height )
+    {
+        return;
+    }
+    DestroyCaptureTarget( );
+    DenOfIz_TextureDesc desc{ };
+    desc.Width     = width;
+    desc.Height    = height;
+    desc.Depth     = 1;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format    = m_desc.RenderTargetFormat;
+    desc.Usage     = DENOFIZ_TEXTURE_USAGE_COPY_SRC_BIT | DENOFIZ_TEXTURE_USAGE_RENDER_ATTACHMENT_BIT;
+    desc.HeapType  = DENOFIZ_HEAP_TYPE_GPU;
+    desc.DebugName = DENOFIZ_STRING( "UI Capture Target" );
+    DenOfIz_LogicalDevice_CreateTexture( m_device, &desc, &m_captureTarget );
+    DenOfIz_ResourceTracking_TrackTexture( m_resourceTracking, m_captureTarget, DENOFIZ_QUEUE_TYPE_GRAPHICS );
+
+    DenOfIz_BufferDesc readbackDesc{ };
+    readbackDesc.NumBytes  = static_cast<size_t>( width ) * height * 4;
+    readbackDesc.Usage     = DENOFIZ_BUFFER_USAGE_COPY_DST_BIT;
+    readbackDesc.HeapType  = DENOFIZ_HEAP_TYPE_GPU_CPU;
+    readbackDesc.DebugName = DENOFIZ_STRING( "UI Capture Readback" );
+    DenOfIz_LogicalDevice_CreateBuffer( m_device, &readbackDesc, &m_captureReadback );
+    DenOfIz_ResourceTracking_TrackBuffer( m_resourceTracking, m_captureReadback, DENOFIZ_QUEUE_TYPE_GRAPHICS );
+    m_captureWidth  = width;
+    m_captureHeight = height;
+}
+
+void UIRenderer::DestroyCaptureTarget( )
+{
+    if ( DENOFIZ_HANDLE_IS_VALID( m_captureTarget ) )
+    {
+        DenOfIz_ResourceTracking_UntrackTexture( m_resourceTracking, m_captureTarget );
+        DenOfIz_Texture_Destroy( m_captureTarget );
+        m_captureTarget = DENOFIZ_NULL_HANDLE;
+    }
+    if ( DENOFIZ_HANDLE_IS_VALID( m_captureReadback ) )
+    {
+        DenOfIz_ResourceTracking_UntrackBuffer( m_resourceTracking, m_captureReadback );
+        DenOfIz_Buffer_Destroy( m_captureReadback );
+        m_captureReadback = DENOFIZ_NULL_HANDLE;
+    }
+    m_captureWidth = m_captureHeight = 0;
+}
+
+bool UIRenderer::Capture( const std::vector<UICommand> &commands, const uint32_t frameIndex, const uint32_t pixelWidth, const uint32_t pixelHeight, const float pixelsPerPoint,
+                          const DenOfIz_SemaphoreArray *waitSemaphores, DenOfIz_ByteArray *outPixels )
+{
+    const DenOfIz_Format format = m_desc.RenderTargetFormat;
+    const bool           bgra   = format == DENOFIZ_FORMAT_B8G8R8A8_UNORM;
+    const size_t         bytes  = static_cast<size_t>( pixelWidth ) * pixelHeight * 4;
+    if ( frameIndex >= m_frames.size( ) )
+    {
+        spdlog::error( "UI: frame index {} is out of range, NumFrames is {}", frameIndex, m_frames.size( ) );
+        return false;
+    }
+    if ( !bgra && format != DENOFIZ_FORMAT_R8G8B8A8_UNORM && format != DENOFIZ_FORMAT_R8G8B8A8_UNORM_SRGB )
+    {
+        spdlog::error( "UI: Capture needs an 8 bit RGBA or BGRA render target format" );
+        return false;
+    }
+    if ( outPixels == nullptr || outPixels->Elements == nullptr || outPixels->NumElements < bytes || bytes == 0 )
+    {
+        spdlog::error( "UI: Capture needs {} bytes for {}x{} pixels", bytes, pixelWidth, pixelHeight );
+        return false;
+    }
+
+    // Rows of a multiple of 64 pixels are 256 byte aligned, which every backend lays out the same way in the readback buffer.
+    const uint32_t paddedWidth = ( pixelWidth + 63u ) & ~63u;
+    DenOfIz_LogicalDevice_WaitIdle( m_device );
+    EnsureCaptureTarget( paddedWidth, pixelHeight );
+    FrameData &frame  = m_frames[ frameIndex ];
+    const auto width  = static_cast<float>( paddedWidth );
+    const auto height = static_cast<float>( pixelHeight );
+    Build( commands, frameIndex, width, height, pixelsPerPoint );
+    Upload( frameIndex, width, height );
+
+    const DenOfIz_CommandList commandList = frame.CommandList;
+    DenOfIz_CommandList_Begin( commandList );
+    DenOfIz_ResourceTracking_TransitionTexture( m_resourceTracking, commandList, m_captureTarget, DENOFIZ_RESOURCE_USAGE_RENDER_TARGET_BIT, DENOFIZ_QUEUE_TYPE_GRAPHICS );
+
+    DenOfIz_RenderingAttachmentDesc colorAttachment{ };
+    colorAttachment.Resource   = m_captureTarget;
+    colorAttachment.LoadOp     = DENOFIZ_LOAD_OP_CLEAR;
+    colorAttachment.StoreOp    = DENOFIZ_STORE_OP_STORE;
+    colorAttachment.ClearColor = DenOfIz_Float4{ 0.0f, 0.0f, 0.0f, 0.0f };
+
+    DenOfIz_RenderingDesc renderingDesc{ };
+    renderingDesc.RTAttachments.Elements    = &colorAttachment;
+    renderingDesc.RTAttachments.NumElements = 1;
+    renderingDesc.NumLayers                 = 1;
+    renderingDesc.RenderAreaWidth           = width;
+    renderingDesc.RenderAreaHeight          = height;
+    DenOfIz_CommandList_BeginRendering( commandList, &renderingDesc );
+    DenOfIz_CommandList_BindScissorRect( commandList, 0.0f, 0.0f, width, height );
+    Record( frameIndex, commandList, m_texturePipeline, width, height );
+    DenOfIz_CommandList_EndRendering( commandList );
+
+    DenOfIz_ResourceTracking_TransitionTexture( m_resourceTracking, commandList, m_captureTarget, DENOFIZ_RESOURCE_USAGE_COPY_SRC_BIT, DENOFIZ_QUEUE_TYPE_GRAPHICS );
+    DenOfIz_ResourceTracking_TransitionBuffer( m_resourceTracking, commandList, m_captureReadback, DENOFIZ_RESOURCE_USAGE_COPY_DST_BIT, DENOFIZ_QUEUE_TYPE_GRAPHICS );
+    DenOfIz_CopyTextureToBufferDesc copy{ };
+    copy.DstBuffer  = m_captureReadback;
+    copy.SrcTexture = m_captureTarget;
+    copy.Format     = format;
+    copy.RowPitch   = paddedWidth * 4;
+    copy.NumRows    = pixelHeight;
+    DenOfIz_CommandList_CopyTextureToBuffer( commandList, &copy );
+    DenOfIz_CommandList_End( commandList );
+
+    DenOfIz_ExecuteCommandListsDesc executeDesc{ };
+    executeDesc.CommandLists.Elements    = &frame.CommandList;
+    executeDesc.CommandLists.NumElements = 1;
+    executeDesc.Signal                   = frame.Fence;
+    if ( waitSemaphores )
+    {
+        executeDesc.WaitSemaphores = *waitSemaphores;
+    }
+    DenOfIz_CommandQueue_ExecuteCommandLists( m_queue, &executeDesc );
+    DenOfIz_Fence_Wait( frame.Fence );
+    frame.Submitted = false;
+
+    void *mapped = nullptr;
+    DenOfIz_Buffer_MapMemory( m_captureReadback, &mapped );
+    for ( uint32_t y = 0; y < pixelHeight; ++y )
+    {
+        const uint8_t *src = static_cast<const uint8_t *>( mapped ) + static_cast<size_t>( y ) * paddedWidth * 4;
+        uint8_t       *dst = outPixels->Elements + static_cast<size_t>( y ) * pixelWidth * 4;
+        for ( uint32_t x = 0; x < pixelWidth; ++x, src += 4, dst += 4 )
+        {
+            const uint8_t a = src[ 3 ];
+            const uint8_t r = bgra ? src[ 2 ] : src[ 0 ];
+            const uint8_t g = src[ 1 ];
+            const uint8_t b = bgra ? src[ 0 ] : src[ 2 ];
+            // The blend state accumulates premultiplied colour over the transparent clear.
+            const auto straight = [ a ]( const uint8_t c ) { return a == 0 ? uint8_t{ 0 } : static_cast<uint8_t>( std::min( 255, ( c * 255 + a / 2 ) / a ) ); };
+            dst[ 0 ]            = a == 255 ? r : straight( r );
+            dst[ 1 ]            = a == 255 ? g : straight( g );
+            dst[ 2 ]            = a == 255 ? b : straight( b );
+            dst[ 3 ]            = a;
+        }
+    }
+    DenOfIz_Buffer_UnmapMemory( m_captureReadback );
+    outPixels->NumElements = bytes;
+    return true;
 }
