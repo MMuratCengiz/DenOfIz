@@ -44,7 +44,6 @@ namespace
         return h;
     }
 
-    // Letter spacing goes after every glyph that advances, so marks and joiners stay attached.
     float GlyphWidth( const TextGlyph &glyph, const float scale, const float spacing, const float spaceAdvance, const bool newlineAsSpace )
     {
         if ( glyph.Flags & TextGlyphFlags::Newline )
@@ -63,8 +62,6 @@ namespace
         return glyph;
     }
 
-    // The glyphs [start, end) shaped again when a line is cut before glyph cut: from the nearest boundary before the cut that is safe to break at to the
-    // nearest one after it, within the cut's item and paragraph. False when the cut is safe, at an item boundary or after a mandatory break.
     bool ReshapeSpan( const ShapedText &shaped, const uint32_t cut, uint32_t &start, uint32_t &end )
     {
         const auto &glyphs = shaped.Glyphs;
@@ -265,7 +262,6 @@ UITextCluster UITextLayout::ClusterAt( const UITextLineLayout &line, const uint3
     return cluster;
 }
 
-// A ligature covering several grapheme clusters gets evenly spaced caret stops, from its left edge for LTR and its right edge for RTL.
 float UITextLayout::ClusterCaret( const UITextCluster &cluster, const uint32_t byteOffset ) const
 {
     const auto    &starts = Run->Shaped.GraphemeStarts;
@@ -340,7 +336,6 @@ uint32_t UITextLayout::OffsetAt( const float x, const float y, const float boxWi
             offset = b;
         }
     }
-    // The end of a soft wrapped line is the start of the next one, so the caret stays before the space the line was broken at.
     const bool softBreak = line + 1 < Lines.size( ) && Lines[ line + 1 ].ByteStart == l.ByteEnd;
     return softBreak && offset >= l.ByteEnd ? Glyphs( )[ l.GlyphEnd - 1 ].Cluster : offset;
 }
@@ -478,7 +473,6 @@ void UIText::AddFont( const uint16_t fontId, Font *font )
         spdlog::error( "UI: AddFont called with a null font" );
         return;
     }
-    // Fonts listing this id as a fallback were shaped without it even when the id was empty.
     Invalidate( fontId );
     LoadFace( m_faces[ fontId ], font );
 }
@@ -541,7 +535,6 @@ uint16_t UIText::ResolveFontId( const uint16_t fontId ) const
     return 0;
 }
 
-// Eight bytes per step, equal hashes are always confirmed by comparing the text.
 uint64_t UIText::Hash( const char *chars, const size_t length )
 {
     uint64_t hash = 0x9E3779B97F4A7C15ULL ^ length;
@@ -647,8 +640,6 @@ uint64_t UIText::HashStyles( const uint64_t textHash, const std::span<const UIRu
     return h;
 }
 
-// Consecutive runs with the same font and size share a segment, so only a change of font or size cuts shaping. A segment's chain is its font and the
-// font's fallbacks.
 const UIShapedRun *UIText::ShapeRich( const uint16_t fontId, const char *chars, const uint32_t length, const std::span<const UIRunStyle> styles, const uint64_t hash )
 {
     const uint16_t resolved = ResolveFontId( fontId );
@@ -721,7 +712,6 @@ const UIShapedRun *UIText::ShapeRich( const uint16_t fontId, const char *chars, 
     return result;
 }
 
-// The longest run of glyphs a line cannot break inside, in em for plain text and in points for rich text.
 void UIText::MeasureWords( UIShapedRun &run ) const
 {
     run.LongestWord       = 0.0f;
@@ -801,11 +791,9 @@ void UIText::BuildLayout( UITextLayout &layout )
     std::span<const TextGlyph> glyphs = shaped.Glyphs;
     const auto                 count  = static_cast<uint32_t>( glyphs.size( ) );
     const auto                 bytes  = static_cast<uint32_t>( run.Text.size( ) );
-    const auto                 width  = [ & ]( const uint32_t glyph )
-    { return GlyphWidth( glyphs[ glyph ], layout.GlyphScale( glyphs[ glyph ] ), spacing, face.SpaceAdvance, newlineAsSpace ); };
-    const auto                 byteAt = [ & ]( const uint32_t glyph ) { return glyph < glyphs.size( ) ? glyphs[ glyph ].Cluster : bytes; };
-    const uint32_t             spaces = TextGlyphFlags::Space | TextGlyphFlags::Newline;
-    // GlyphX holds logical x from the start of each line until the lines are known, then the visual x.
+    const auto width  = [ & ]( const uint32_t glyph ) { return GlyphWidth( glyphs[ glyph ], layout.GlyphScale( glyphs[ glyph ] ), spacing, face.SpaceAdvance, newlineAsSpace ); };
+    const auto byteAt = [ & ]( const uint32_t glyph ) { return glyph < glyphs.size( ) ? glyphs[ glyph ].Cluster : bytes; };
+    const uint32_t spaces = TextGlyphFlags::Space | TextGlyphFlags::Newline;
     layout.GlyphX.assign( count, 0.0f );
     layout.Levels.assign( count, 0 );
     layout.Lines.clear( );
@@ -858,7 +846,6 @@ void UIText::BuildLayout( UITextLayout &layout )
                     breakAt    = -1;
                     continue;
                 }
-                // The glyphs before a cut HarfBuzz marks unsafe are shaped again, which can widen the line: cut a cluster earlier while it overflows.
                 uint32_t cut = i;
                 while ( ClusterStart( glyphs, cut - 1 ) > lineStart && ReshapedEnd( layout, lineStart, cut ) > limit )
                 {
@@ -923,7 +910,6 @@ void UIText::BuildLayout( UITextLayout &layout )
         }
     }
 
-    // Lines are cut in logical order, which matches the visual end of the line unless the line mixes directions.
     const float ellipsis = face.EllipsisAdvance * scale + spacing * static_cast<float>( face.Ellipsis.Glyphs.size( ) );
     if ( params.Overflow == DENOFIZ_UI_TEXT_OVERFLOW_ELLIPSIS )
     {
@@ -958,14 +944,12 @@ void UIText::BuildLayout( UITextLayout &layout )
         }
     }
 
-    // Visual order per line and paragraph. Trailing spaces hang past the end of the line, which is the left edge for right to left paragraphs.
     size_t paragraphIndex = 0;
     for ( const UITextLineLayout &line : layout.Lines )
     {
         float x = line.Ellipsis && line.Rtl ? ellipsis : 0.0f;
         for ( uint32_t start = line.GlyphStart; start < line.GlyphEnd; )
         {
-            // Paragraphs are found by bytes, reshaped lines moved their glyph indices.
             while ( paragraphIndex + 1 < shaped.Paragraphs.size( ) && shaped.Paragraphs[ paragraphIndex + 1 ].ByteStart <= byteAt( start ) )
             {
                 ++paragraphIndex;
@@ -996,13 +980,11 @@ void UIText::BuildLayout( UITextLayout &layout )
         }
     }
 
-    // CSS line-height normal: a line is as tall as the tallest of the fonts drawing on it and the primary font, each with its line gap split around it.
-    // A fixed line height is the strut of rich text, runs taller than it still grow the line. Shifted runs and inline objects reach further.
-    const auto &styles   = run.Styles;
-    const bool  rich     = !styles.empty( );
-    const bool  fixed    = params.LineHeight > 0.0f;
-    const float strutTop = fixed ? ( params.LineHeight - ( face.Ascent + face.Descent ) * scale ) * 0.5f + face.Ascent * scale
-                                 : ( face.Ascent + ( face.LineHeight - face.Ascent - face.Descent ) * 0.5f ) * scale;
+    const auto &styles      = run.Styles;
+    const bool  rich        = !styles.empty( );
+    const bool  fixed       = params.LineHeight > 0.0f;
+    const float strutTop    = fixed ? ( params.LineHeight - ( face.Ascent + face.Descent ) * scale ) * 0.5f + face.Ascent * scale
+                                    : ( face.Ascent + ( face.LineHeight - face.Ascent - face.Descent ) * 0.5f ) * scale;
     const float strutBottom = ( fixed ? params.LineHeight : face.LineHeight * scale ) - strutTop;
     float       top         = 0.0f;
     layout.Width            = 0.0f;
@@ -1029,9 +1011,9 @@ void UIText::BuildLayout( UITextLayout &layout )
                 {
                     continue;
                 }
-                font                         = glyph.Font;
-                style                        = index;
-                const DenOfIz_FontMetrics &m = shaped.Fonts[ font ]->Metrics( );
+                font                             = glyph.Font;
+                style                            = index;
+                const DenOfIz_FontMetrics &m     = shaped.Fonts[ font ]->Metrics( );
                 const float                gap   = fixed ? 0.0f : m.LineGap * 0.5f;
                 const float                size  = rich ? styles[ index ].Size : scale;
                 const float                shift = rich ? styles[ index ].Shift : 0.0f;
@@ -1048,9 +1030,6 @@ void UIText::BuildLayout( UITextLayout &layout )
     layout.Baseline = layout.Lines.empty( ) ? 0.0f : layout.Lines[ 0 ].Baseline;
 }
 
-// Lines cut inside an item where HarfBuzz marks the cut unsafe get the glyphs around the cut shaped again on each side, with the paragraph as context:
-// kerning, ligatures and contextual alternates no longer reach across the cut while joining forms stay, as browsers do (CSS Text 3, shaping across
-// intra-word breaks). The span shaped again grows to the nearest safe cluster boundaries, close cuts share one span.
 bool UIText::ReshapeCuts( UITextLayout &layout )
 {
     struct Span
@@ -1092,7 +1071,6 @@ bool UIText::ReshapeCuts( UITextLayout &layout )
         return false;
     }
 
-    // Line ranges move to the new glyph indices, a cut to the first glyph shaped after it.
     std::vector<uint32_t>   remap( count + 1 );
     std::vector<TextGlyph> &out = layout.Reshaped;
     out.reserve( count + 16 );
@@ -1128,7 +1106,6 @@ bool UIText::ReshapeCuts( UITextLayout &layout )
     return true;
 }
 
-// The logical width of the line [lineStart, cut) once the glyphs before an unsafe cut are shaped again, GlyphX still holding logical x.
 float UIText::ReshapedEnd( const UITextLayout &layout, const uint32_t lineStart, const uint32_t cut )
 {
     const ShapedText &shaped = layout.Run->Shaped;
@@ -1136,7 +1113,8 @@ float UIText::ReshapedEnd( const UITextLayout &layout, const uint32_t lineStart,
     uint32_t          end    = 0;
     if ( !ReshapeSpan( shaped, cut, start, end ) )
     {
-        return layout.GlyphX[ cut - 1 ] + ::GlyphWidth( shaped.Glyphs[ cut - 1 ], layout.GlyphScale( shaped.Glyphs[ cut - 1 ] ), layout.Params.LetterSpacing, layout.Face->SpaceAdvance, false );
+        return layout.GlyphX[ cut - 1 ] +
+               ::GlyphWidth( shaped.Glyphs[ cut - 1 ], layout.GlyphScale( shaped.Glyphs[ cut - 1 ] ), layout.Params.LetterSpacing, layout.Face->SpaceAdvance, false );
     }
     start = std::max( start, lineStart );
     m_pieces.clear( );

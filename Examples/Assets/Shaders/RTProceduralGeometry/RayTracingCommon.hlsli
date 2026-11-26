@@ -17,8 +17,6 @@
 #include "ProceduralPrimitivesLibrary.hlsli"
 #include "RaytracingShaderHelper.hlsli"
 
-//  g_* - bound via a global root signature.
-//  l_* - bound via a local root signature.
 RaytracingAccelerationStructure g_scene : register(t0, space0);
 RWTexture2D<float4> g_renderTarget : register(u0);
 ConstantBuffer<SceneConstantBuffer> g_sceneCB : register(b0);
@@ -30,7 +28,6 @@ StructuredBuffer<PrimitiveInstancePerFrameBuffer> g_AABBPrimitiveAttributes : re
 
 [[vk::shader_record_ext]] ConstantBuffer<LocalData> localData : register(b1, space3);
 
-// The material and AABB constants share a single local constant buffer; the aliases keep the l_* names.
 #define l_materialCB localData.materialCB
 #define l_aabbCB localData.aabbCB
 
@@ -65,7 +62,6 @@ float4 CalculatePhongLighting(in float4 albedo, in float3 normal, in bool isInSh
         specularColor = specularCoef * Ks * lightSpecularColor;
     }
 
-    // Fake AO: Darken faces with normal facing downwards/away from the sky a little bit.
     float4 ambientColor = g_sceneCB.lightAmbientColor;
     float4 ambientColorMin = g_sceneCB.lightAmbientColor - 0.1;
     float4 ambientColorMax = g_sceneCB.lightAmbientColor;
@@ -85,8 +81,6 @@ float4 TraceRadianceRay(in Ray ray, in UINT currentRayRecursionDepth)
     RayDesc rayDesc;
     rayDesc.Origin = ray.origin;
     rayDesc.Direction = ray.direction;
-    // Set TMin to a zero value to avoid aliasing artifacts along contact areas.
-    // Note: make sure to enable face culling so as to avoid surface face fighting.
     rayDesc.TMin = 0;
     rayDesc.TMax = 10000;
     RayPayload rayPayload = { float4(0, 0, 0, 0), currentRayRecursionDepth + 1 };
@@ -111,19 +105,15 @@ bool TraceShadowRayAndReportIfHit(in Ray ray, in UINT currentRayRecursionDepth)
     RayDesc rayDesc;
     rayDesc.Origin = ray.origin;
     rayDesc.Direction = ray.direction;
-    // Set TMin to a zero value to avoid aliasing artifcats along contact areas.
-    // Note: make sure to enable back-face culling so as to avoid surface face fighting.
     rayDesc.TMin = 0;
     rayDesc.TMax = 10000;
 
-    // Set the initial value to true since closest and any hit shaders are skipped.
-    // Shadow miss shader, if called, will set it to false.
     ShadowRayPayload shadowPayload = { true };
     TraceRay(g_scene,
         RAY_FLAG_CULL_BACK_FACING_TRIANGLES
         | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH
-        | RAY_FLAG_FORCE_OPAQUE             // ~skip any hit shaders
-        | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER, // ~skip closest hit shaders,
+        | RAY_FLAG_FORCE_OPAQUE
+        | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
         TraceRayParameters::InstanceMask,
         TraceRayParameters::HitGroup::Offset[RayType::Shadow],
         TraceRayParameters::HitGroup::GeometryStride,

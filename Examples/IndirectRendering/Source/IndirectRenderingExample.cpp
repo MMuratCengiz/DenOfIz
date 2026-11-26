@@ -508,7 +508,6 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
             SimulationData g_SimData;
         };
 
-        // Boids parameters
         static const float MAX_SPEED = 2.0f, MIN_SPEED = 0.2f, MOUSE_ATTRACTION = 0.4f;
         static const float SEP_RADIUS = 0.045f, ALN_RADIUS = 0.11f, COH_RADIUS = 0.15f;
         static const float SEP_WEIGHT = 1.0f, ALN_WEIGHT = 1.0f, COH_WEIGHT = 1.3f;
@@ -541,7 +540,7 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
             float seed = g_SimData.ElapsedTime * 100.0f + float(triangleIndex);
             force += float2(sin(seed), cos(seed * 1.3f)) * 0.02f;
 
-            if (drawData.GroupType == 0) // MouseFollower
+            if (drawData.GroupType == 0)
             {
                 float2 toMouse = g_SimData.MousePosition - pos2D;
                 float distToMouse = length(toMouse);
@@ -555,10 +554,10 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
                     }
                     else
                     {
-                        float2 perpendicular = float2(-toMouse.y, toMouse.x); // 90-degree rotation
+                        float2 perpendicular = float2(-toMouse.y, toMouse.x);
 
-                        float orbitalStrength = 1.0f - (distToMouse / 0.25f); // Stronger when closer
-                        float indexOffset = float(triangleIndex) * 0.1f; // Unique offset per triangle
+                        float orbitalStrength = 1.0f - (distToMouse / 0.25f);
+                        float indexOffset = float(triangleIndex) * 0.1f;
                         float orbitalDirection = sin(g_SimData.ElapsedTime * 2.0f + indexOffset);
 
                         float2 orbitalVel = Normalize2D(perpendicular) * orbitalDirection * orbitalStrength * MAX_SPEED * 0.8f;
@@ -594,7 +593,7 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
                         float sepStrength = ((SEP_RADIUS - dist) / SEP_RADIUS);
                         float distToMouse = length(g_SimData.MousePosition - pos2D);
                         if (distToMouse < 0.2f)
-                            sepStrength *= 1.5f; // Extra separation for better distribution
+                            sepStrength *= 1.5f;
 
                         sepForce += Normalize2D(diff) * sepStrength;
                         sepCount++;
@@ -636,14 +635,12 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
                     {
                         float distToMouse = length(g_SimData.MousePosition - pos2D);
 
-                        // When close to mouse, encourage circular distribution instead of center pull
                         if (distToMouse < 0.2f)
                         {
-                            // Find ideal orbital position
                             float2 mouseToCenter = centerMass - g_SimData.MousePosition;
                             if (length(mouseToCenter) > 0.001f)
                             {
-                                float idealDist = 0.12f; // Preferred distance from mouse
+                                float idealDist = 0.12f;
                                 float2 idealPos = g_SimData.MousePosition + Normalize2D(mouseToCenter) * idealDist;
                                 cohForce = idealPos - pos2D;
                             }
@@ -654,19 +651,18 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
                         if (length(cohForce) > MAX_FORCE * 1.2f)
                             cohForce = Normalize2D(cohForce) * (MAX_FORCE * 1.2f);
 
-                        float cohScale = (distToMouse < 0.15f) ? 0.8f : 1.0f; // Reduce when close
+                        float cohScale = (distToMouse < 0.15f) ? 0.8f : 1.0f;
                         force += cohForce * COH_WEIGHT * cohScale;
                     }
                 }
             }
 
-            // Update physics
             float deltaTime = clamp(g_SimData.DeltaTime, 0.0001f, 0.1f);
 
             if (length(force) > MAX_FORCE * 1.5f)
                 force = Normalize2D(force) * (MAX_FORCE * 1.5f);
 
-            drawData.Velocity *= 0.95f; // Dampening
+            drawData.Velocity *= 0.95f;
             drawData.Velocity += force * deltaTime;
 
             float speed = length(drawData.Velocity);
@@ -681,7 +677,6 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
 
             pos2D += drawData.Velocity * deltaTime;
 
-            // Escape mechanism and wrapping
             float2 toMouse = g_SimData.MousePosition - pos2D;
             if (length(toMouse) > 0.8f)
                 pos2D += Normalize2D(toMouse) * 0.5f * deltaTime;
@@ -691,7 +686,6 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
             if (pos2D.y > 1.0f) pos2D.y = -1.0f;
             if (pos2D.y < -1.0f) pos2D.y = 1.0f;
 
-            // Rotation and transform
             float scale = 0.012f;
             float angle = (speed > MIN_VEL_ROT) ?
                          atan2(drawData.Velocity.y, drawData.Velocity.x) - 1.57079632679f :
@@ -708,28 +702,22 @@ DenOfIz_ByteArray IndirectRenderingExample::ComputeShader( )
             drawData.Transform._41 = pos2D.x; drawData.Transform._42 = pos2D.y;
             drawData.Transform._43 = 0.0f; drawData.Transform._44 = 1.0f;
 
-            // Update color based on speed for visual effect
             float speedNorm = speed / MAX_SPEED;
-            drawData.Color.w = 0.3f + speedNorm * 0.7f; // Vary alpha based on speed
+            drawData.Color.w = 0.3f + speedNorm * 0.7f;
 
-            // Write back updated data
             g_PerDrawData[triangleIndex] = drawData;
 
-            // Generate triangle vertices
             uint baseVertexIndex = triangleIndex * 3;
             uint baseIndexIndex = triangleIndex * 3;
 
-            // Triangle vertices (clockwise winding for left-handed system)
             float3 baseTriangle[3] = {
-                float3(0.0, 0.8, 0.0),    // Top vertex
-                float3(-0.5, -0.5, 0.0),  // Bottom left
-                float3(0.5, -0.5, 0.0)    // Bottom right
+                float3(0.0, 0.8, 0.0),
+                float3(-0.5, -0.5, 0.0),
+                float3(0.5, -0.5, 0.0)
             };
 
-            // Transform vertices and generate geometry
             for (int i = 0; i < 3; i++)
             {
-                // Apply transform (following DirectX convention: position * matrix)
                 float4 localPos = float4(baseTriangle[i], 1.0);
                 float4 worldPos = mul(localPos, drawData.Transform);
 

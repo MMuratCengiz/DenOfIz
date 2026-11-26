@@ -25,7 +25,7 @@ namespace DenOfIz
         DX12RootSignature                                    *m_rootSignature = nullptr;
         DenOfIz_PipelineDesc                                  m_desc{ };
         D3D12_PRIMITIVE_TOPOLOGY                              m_topology{ };
-        std::vector<std::wstring>                             m_exportNames; // Only for lifetime management
+        std::vector<std::wstring>                             m_exportNames;
         std::unordered_map<std::string, D3D12_HIT_GROUP_DESC> m_hitGroups;
 
     public:

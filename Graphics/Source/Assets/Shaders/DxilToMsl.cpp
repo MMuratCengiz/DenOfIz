@@ -199,12 +199,10 @@ void DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
         return;
     }
 
-    const DenOfIz_CompiledShaderStageArray &dxilShaders = desc.DXILShaders;
-    // The root signature the shader is compiled against fixes the top level argument buffer layout. The runtime (MetalShaderLayout) rebuilds the
-    // same layout from DenOfIz_ShaderProgram_Reflect through MetalRootSignatureBuilder, so both sides must feed the builder identical bindings.
+    const DenOfIz_CompiledShaderStageArray   &dxilShaders = desc.DXILShaders;
     std::vector<MetalRootSignatureBinding>    globalBindings;
     std::vector<MetalRootSignatureBinding>    localBindings;
-    std::vector<D3D12_SHADER_INPUT_BIND_DESC> processedInputs; // Stages share resources, each binding is added once
+    std::vector<D3D12_SHADER_INPUT_BIND_DESC> processedInputs;
 
     for ( uint32_t shaderIndex = 0; shaderIndex < dxilShaders.NumElements; ++shaderIndex )
     {
@@ -427,8 +425,6 @@ DenOfIz_ByteArray DxilToMsl::Impl::Compile( const DenOfIz_CompileDesc &compileDe
             fclose( f );
         }
     }
-
-    // metalLibByteCode is owned by the returned DenOfIz_ByteArray.
 
     IRMetalLibBinaryDestroy( metalLib );
     IRObjectDestroy( irDxil );

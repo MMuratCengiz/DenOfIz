@@ -32,7 +32,6 @@ float length_toPow2(float3 p)
     return dot(p, p);
 }
 
-// Returns a cycling <0 -> 1 -> 0> animation interpolant
 float CalculateAnimationInterpolant(in float elapsedTime, in float cycleDuration)
 {
     float curLinearCycleTime = fmod(elapsedTime, cycleDuration) / cycleDuration;
@@ -57,24 +56,16 @@ uint3 Load3x16BitIndices(uint offsetBytes, ByteAddressBuffer Indices)
 {
     uint3 indices;
 
-    // ByteAdressBuffer loads must be aligned at a 4 byte boundary.
-    // Since we need to read three 16 bit indices: { 0, 1, 2 } 
-    // aligned at a 4 byte boundary as: { 0 1 } { 2 0 } { 1 2 } { 0 1 } ...
-    // we will load 8 bytes (~ 4 indices { a b | c d }) to handle two possible index triplet layouts,
-    // based on first index's offsetBytes being aligned at the 4 byte boundary or not:
-    //  Aligned:     { 0 1 | 2 - }
-    //  Not aligned: { - 0 | 1 2 }
     const uint dwordAlignedOffset = offsetBytes & ~3;
     const uint2 four16BitIndices = Indices.Load2(dwordAlignedOffset);
 
-    // Aligned: { 0 1 | 2 - } => retrieve first three 16bit indices
     if (dwordAlignedOffset == offsetBytes)
     {
         indices.x = four16BitIndices.x & 0xffff;
         indices.y = (four16BitIndices.x >> 16) & 0xffff;
         indices.z = four16BitIndices.y & 0xffff;
     }
-    else // Not aligned: { - 0 | 1 2 } => retrieve last three 16bit indices
+    else
     {
         indices.x = (four16BitIndices.x >> 16) & 0xffff;
         indices.y = four16BitIndices.y & 0xffff;
@@ -98,10 +89,9 @@ float3 HitAttribute(float3 vertexAttribute[3], float2 barycentrics)
 
 inline Ray GenerateCameraRay(uint2 index, in float3 cameraPosition, in float4x4 projectionToWorld)
 {
-    float2 xy = index + 0.5f; // center in the middle of the pixel.
+    float2 xy = index + 0.5f;
     float2 screenPos = xy / DispatchRaysDimensions().xy * 2.0 - 1.0;
 
-    // Invert Y for DirectX-style coordinates.
     screenPos.y = -screenPos.y;
 
     float4 world = mul(float4(screenPos, 0, 1), projectionToWorld);
@@ -138,7 +128,6 @@ float2 TexCoords(in float3 position)
 
 void CalculateRayDifferentials(out float2 ddx_uv, out float2 ddy_uv, in float2 uv, in float3 hitPosition, in float3 surfaceNormal, in float3 cameraPosition, in float4x4 projectionToWorld)
 {
-    // Compute ray differentials by intersecting the tangent plane to the surface.
     Ray ddx = GenerateCameraRay(DispatchRaysIndex().xy + uint2(1, 0), cameraPosition, projectionToWorld);
     Ray ddy = GenerateCameraRay(DispatchRaysIndex().xy + uint2(0, 1), cameraPosition, projectionToWorld);
 
@@ -168,4 +157,4 @@ float3 FresnelReflectanceSchlick(in float3 I, in float3 N, in float3 f0)
 }
 
 
-#endif // RAYTRACINGSHADERHELPER_H
+#endif

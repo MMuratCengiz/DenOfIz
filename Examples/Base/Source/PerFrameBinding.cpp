@@ -46,7 +46,7 @@ PerFrameBinding::PerFrameBinding( DenOfIz_LogicalDevice device, DenOfIz_BindGrou
 
 void PerFrameBinding::Update( const FreeCamera *camera, float deltaTime ) const
 {
-    constexpr float deltaTimeTemp = 1.0f; // DefaultRenderPipeline.vs scales texCoord by this value
+    constexpr float deltaTimeTemp = 1.0f;
     memcpy( m_deltaTimeMappedData, &deltaTimeTemp, sizeof( float ) );
     XMFLOAT4X4 viewProjectionMatrix{ };
     XMStoreFloat4x4( &viewProjectionMatrix, camera->ViewProjectionMatrix( ) );

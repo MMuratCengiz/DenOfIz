@@ -38,6 +38,11 @@ extern "C"
     DZ_API void DenOfIz_InputSystem_PumpEvents( );
     DZ_API void DenOfIz_InputSystem_FlushEvents( DenOfIz_EventType minType, DenOfIz_EventType maxType );
     DZ_API void DenOfIz_InputSystem_PushEvent( const DenOfIz_Event *ev );
+    /**
+     * Queues a DENOFIZ_EVENT_TYPE_WAKE event, which returns a WaitEvent or WaitEventTimeout blocked on another thread. Thread safe. A call
+     * while a wake event is still queued adds nothing, so calling it for every change does not fill the queue.
+     */
+    DZ_API void DenOfIz_InputSystem_Wake( );
 
     DZ_API DenOfIz_KeyState   DenOfIz_InputSystem_GetKeyState( DenOfIz_KeyCode key );
     DZ_API bool               DenOfIz_InputSystem_IsKeyPressed( DenOfIz_KeyCode key );

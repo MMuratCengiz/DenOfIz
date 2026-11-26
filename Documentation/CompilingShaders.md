@@ -49,8 +49,8 @@ The reflection gives the input layout, bind group layouts, root constants, ray t
   ```hlsl
   [[vk::push_constant]] ConstantBuffer<PushConstants> pushConstants : register(b0, space31);
   ```
-- Metal compiles every stage of a program against one root signature built from the program's reflection, so the program, not a single shader, is the unit that is converted.
-- Intersection shaders need `DenOfIz_RayTracingShaderDesc::HitGroupType` on Metal.
+- Metal compiles every stage of a program against one root signature built from the program's reflection, so programs are converted as a whole.
+- On Metal the shaders of AABBS hit groups, intersection shaders included, need `DenOfIz_RayTracingShaderDesc::HitGroupType` set to `DENOFIZ_HIT_GROUP_TYPE_AABBS`.
 
 ## Compiling Directly
 

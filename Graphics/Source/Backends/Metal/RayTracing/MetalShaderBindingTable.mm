@@ -18,7 +18,6 @@ using namespace DenOfIz;
 MetalShaderBindingTable::MetalShaderBindingTable( MetalContext *context, const DenOfIz_ShaderBindingTableDesc &desc ) : m_context( context ), m_desc( desc )
 {
     m_pipeline = MTL_PIPELINE_IMPL( desc.Pipeline );
-    // Metal has no per-stage local root signatures and a shader can be shared between stages, so every record holds the largest data size.
     const uint32_t maxBytes = Utilities::Align( std::max( { m_desc.MaxRayGenDataBytes, m_desc.MaxHitGroupDataBytes, m_desc.MaxMissDataBytes, m_pipeline->LocalShaderLayout( ).NumBytes( ) } ), 16 );
     m_maxDataBytes     = maxBytes;
     m_rayGenNumBytes   = sizeof( IRShaderIdentifier ) + maxBytes;

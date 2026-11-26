@@ -24,7 +24,6 @@ namespace DenOfIz
         VkQueueFamilyProperties Properties;
     };
 
-    // Additional queue type for Vulkan since it has a presentation queue
     enum class VulkanQueueType
     {
         Graphics,

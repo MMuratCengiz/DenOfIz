@@ -144,7 +144,7 @@ DenOfIz_ShaderAsset ShaderAssetReader::Read( )
 
 void ShaderAssetReader::ReadHeader( ) const
 {
-    DenOfIz_BinaryReader_ReadUInt64( m_reader ); // Magic
+    DenOfIz_BinaryReader_ReadUInt64( m_reader );
     uint32_t           version  = DenOfIz_BinaryReader_ReadUInt32( m_reader );
     uint64_t           numBytes = DenOfIz_BinaryReader_ReadUInt64( m_reader );
     DenOfIz_StringView pathStr  = DenOfIz_BinaryReader_ReadString( m_reader );

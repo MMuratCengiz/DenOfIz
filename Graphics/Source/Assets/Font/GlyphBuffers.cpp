@@ -44,9 +44,6 @@ GlyphBuffers::~GlyphBuffers( )
     }
 }
 
-// Glyphs are only ever appended and frames in flight only read older ranges, so new data is written straight behind them. Growing, or the colour
-// glyph store packing its pixels, replaces the buffer and writes everything again; the device defers destroying the old one until frames in flight
-// are done with it.
 void GlyphBuffers::Write( SlugGlyphStore &glyphs, ColourGlyphStore &colourGlyphs )
 {
     const bool repacked = colourGlyphs.Generation( ) != m_colourGeneration;

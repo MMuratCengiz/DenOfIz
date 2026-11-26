@@ -26,7 +26,6 @@ void RayTracedSceneExample::Init( )
     CreateRayTracingPipeline( );
     CreateShaderBindingTable( );
 
-    // Looking at the cute moped
     const XMVECTOR cameraPosition = XMVectorSet( -26.77f, 6.38f, -7.45f, 1.0f );
     const XMVECTOR cameraRotation = XMVectorSet( 0.122f, 0.60f, -0.07f, 0.78f );
 

@@ -86,7 +86,6 @@ VulkanTexture::VulkanTexture( VulkanContext *context, const DenOfIz_TextureDesc 
     }
     CreateImageView( );
 
-    // Vulkan is the only API without an initial layout at creation, so the image is transitioned with a blocking submit.
     TransitionToInitialLayout( );
 }
 
@@ -136,7 +135,7 @@ void VulkanTexture::CreateImageView( )
     viewCreateInfo.components.a                    = VK_COMPONENT_SWIZZLE_IDENTITY;
     viewCreateInfo.subresourceRange.aspectMask     = DenOfIz_VulkanEnumConverter_GetImageAspectFromFormat( m_desc.Format );
     viewCreateInfo.subresourceRange.baseMipLevel   = 0;
-    viewCreateInfo.subresourceRange.levelCount     = 1; // One view per mip level
+    viewCreateInfo.subresourceRange.levelCount     = 1;
     viewCreateInfo.subresourceRange.baseArrayLayer = 0;
     viewCreateInfo.subresourceRange.layerCount     = m_desc.ArraySize;
 

@@ -13,7 +13,7 @@ SamplerState samplerState : register(s0, space1);
 
 float3 applyNormalMap(float3 normal, float2 texCoord) {
     float3 normalMapValue = normalTexture.Sample(samplerState, texCoord).rgb;
-    return normalize(2.0f * normalMapValue - 1.0f); // Remap from [0,1] to [-1,1]
+    return normalize(2.0f * normalMapValue - 1.0f);
 }
 
 float4 main(PSInput input) : SV_TARGET {

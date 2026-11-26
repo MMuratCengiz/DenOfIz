@@ -579,7 +579,6 @@ VkFormat DenOfIz_VulkanEnumConverter_ConvertImageFormat( const DenOfIz_Format im
     case DENOFIZ_FORMAT_BC7_UNORM_SRGB:
         return VK_FORMAT_BC7_SRGB_BLOCK;
     case DENOFIZ_FORMAT_R32G32B32A32_TYPELESS:
-        // No Typeless in Vulkan
         return VK_FORMAT_R32G32B32_SINT;
     case DENOFIZ_FORMAT_R16G16B16A16_TYPELESS:
         return VK_FORMAT_R16G16B16A16_SINT;

@@ -16,7 +16,6 @@ Licensed under the MIT License. See LICENSE in the project root.
 namespace DenOfIz
 {
 
-    // Timeline-style like DX12Fence: every submission signalling it gets an increasing value, Wait() waits for the latest one.
     class MetalFence final : public IFence
     {
         struct State
@@ -28,7 +27,7 @@ namespace DenOfIz
         };
 
         MetalContext          *m_context;
-        std::shared_ptr<State> m_state; // shared with completion handlers so they outlive the fence safely
+        std::shared_ptr<State> m_state;
 
     public:
         MetalFence( MetalContext *context );

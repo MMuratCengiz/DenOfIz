@@ -15,7 +15,7 @@ shader. Root level buffers (space 30) can't be local on Metal, use a local const
 - A bind group keeps only the bindings of its latest update, bind everything the shaders use in every update.
 - No pipeline statistics queries, occlusion queries only work inside a rendering pass.
 - No blend logic ops.
-- Intersection shaders need `DenOfIz_RayTracingShaderDesc::HitGroupType`.
+- The shaders of AABBS hit groups, intersection shaders included, need `DenOfIz_RayTracingShaderDesc::HitGroupType` set to `DENOFIZ_HIT_GROUP_TYPE_AABBS`.
 
 ## DirectX 12
 

@@ -37,15 +37,14 @@ namespace
     constexpr uint16_t    BidiFont     = 2;
     constexpr uint16_t    IconFont     = 3;
     constexpr uint16_t    MaxFonts     = 64;
-    constexpr uint16_t    NotoChain    = MaxFonts - 1; // Inter with Noto Color Emoji as its fallback.
+    constexpr uint16_t    NotoChain    = MaxFonts - 1;
     constexpr float       TextSizes[]  = { 9, 11, 13, 16, 24, 48, 96 };
     constexpr float       Waterfall[]  = { 12, 18, 28, 40 };
     constexpr float       MinSample    = 8.0f;
     constexpr float       MaxSample    = 400.0f;
     constexpr const char *Pangram      = "Sphinx of black quartz, judge my vow. Five boxing wizards jump quickly, 0123456789 & ?!";
-    constexpr const char *Presets[]    = { "Roboto",         "Lobster",        "Playfair Display", "Pacifico",     "Fira Code",
-                                           "JetBrains Mono", "Press Start 2P", "Noto Serif",       "Merriweather", "Dancing Script",
-                                           "Nabla",          "Bungee Spice",   "Honk",             "Noto Color Emoji" };
+    constexpr const char *Presets[]    = { "Roboto",     "Lobster",      "Playfair Display", "Pacifico", "Fira Code",    "JetBrains Mono", "Press Start 2P",
+                                           "Noto Serif", "Merriweather", "Dancing Script",   "Nabla",    "Bungee Spice", "Honk",           "Noto Color Emoji" };
 
     struct ScriptSample
     {
@@ -86,7 +85,6 @@ namespace
         { "Nested brackets", "Call (שלום [123]) now", false },
     };
 
-    // Inter covers Latin, Greek and Cyrillic, everything else comes from the system fonts. The icons are Font Awesome private use code points.
     constexpr const char *FallbackLines[] = {
         "English · العربية · עברית · हिन्दी · ไทย · 日本語 · 한국어 · Ελληνικά · Русский · ქართული · አማርኛ",
         "हिन्दी · বাংলা · ਪੰਜਾਬੀ · ગુજરાતી · தமிழ் · తెలుగు · ಕನ್ನಡ · മലയാളം · සිංහල",
@@ -94,7 +92,6 @@ namespace
         "Save \xEF\x83\x87   Search \xEF\x80\x82   Settings \xEF\x80\x93   Delete \xEF\x87\xB8   Home \xEF\x80\x95",
     };
 
-    // Drawn with Inter, every emoji cluster takes the system's colour emoji font.
     constexpr const char *EmojiLines[] = {
         "Smileys 😀 😃 😄 😁 😆 😅 🤣 😂 🙂 😉 😊 😇 🥰 😍 🤩 🥳",
         "Skin tones 👍 👍🏻 👍🏼 👍🏽 👍🏾 👍🏿 ✌🏽 🧑🏾‍💻 👩🏻‍🚀",
@@ -116,7 +113,6 @@ namespace
         DenOfIz_UITextWrap Wrap;
     };
 
-    // Drawn with Inter and the system fonts. The invisible code points are escaped.
     constexpr EdgeCase EdgeCases[] = {
         { "Line boxes, selected", "Latin line\nမြန်မာဘာသာ line\nEmoji 😀 line\nLatin again", 190, DENOFIZ_UI_TEXT_WRAP_WORDS },
         { "Over-long Arabic word", "مستشفياتمستشفياتمستشفيات", 120, DENOFIZ_UI_TEXT_WRAP_ANYWHERE },
@@ -237,7 +233,6 @@ namespace
         return begin == std::string::npos ? std::string( ) : text.substr( begin, text.find_last_not_of( ' ' ) - begin + 1 );
     }
 
-    // Family names and font URLs end up in a shell command, so only plain characters get through.
     bool IsFamilyName( const std::string &family )
     {
         return !family.empty( ) && std::all_of( family.begin( ), family.end( ), []( const char c ) { return std::isalnum( static_cast<unsigned char>( c ) ) || c == ' '; } );
@@ -251,7 +246,6 @@ namespace
                             [ & ]( const char c ) { return std::isalnum( static_cast<unsigned char>( c ) ) || allowed.find( c ) != std::string_view::npos; } );
     }
 
-    // Returns curl's exit code and appends the response body to out.
     int Curl( const std::string &url, const char *flags, std::vector<uint8_t> &out )
     {
         const std::string command = std::string( "curl " ) + flags + " --max-time 30 \"" + url + "\"";
@@ -298,12 +292,10 @@ namespace
         }
     }
 
-    // Google Fonts answers clients it does not know as browsers, curl included, with TrueType URLs. Returns an error or an empty string.
     std::string FetchGoogleFont( const std::string &family, std::vector<uint8_t> &bytes )
     {
         std::string query = family;
         std::replace( query.begin( ), query.end( ), ' ', '+' );
-        // No -f for the stylesheet: an unknown family gets an HTML error page, which has no url( ) in it.
         std::vector<uint8_t> css;
         if ( const int code = Curl( "https://fonts.googleapis.com/css2?family=" + query, "-sSL", css ); code != 0 )
         {
@@ -349,7 +341,6 @@ void UIExample::Init( )
     DenOfIz_UInt16Array fallbacks{ interFallbacks, 1 };
     DenOfIz_UI_SetFontFallbacks( m_ui, InterFont, &fallbacks );
 #ifdef __APPLE__
-    // Latin, Hebrew and Arabic from one file, so the caret and selection are measured in one font. The Bidi card is skipped without it.
     m_bidiFont = DenOfIz_Font_CreateFromPath( DENOFIZ_STRING( "/System/Library/Fonts/Supplemental/Arial Unicode.ttf" ), 0 );
     if ( DENOFIZ_HANDLE_IS_VALID( m_bidiFont ) )
     {
@@ -399,7 +390,6 @@ void UIExample::Update( )
     }
 
     Render( frameIndex, m_frame.CommandList );
-    // Building and recording the UI covers shaping, layout and compiling the glyphs a new font draws for the first time.
     const double frameMs = MsSince( start );
     m_frameMs            = m_frameMs == 0.0 ? frameMs : m_frameMs + ( frameMs - m_frameMs ) * 0.05;
     for ( const auto &font : m_webFonts )
@@ -1032,7 +1022,6 @@ void UIExample::EmojiCard( )
                 Open( column );
                 if ( i == 0 )
                 {
-                    // Emoji take the first colour font of the fallback chain before the system's.
                     uint16_t fallback[] = { Use( font, Page::Scripts ) };
                     if ( !m_notoChain )
                     {
@@ -1136,7 +1125,6 @@ UIExample::WebFont &UIExample::RequestFont( const std::string &family )
         return **it;
     }
 
-    // A new family, or a failed one that is retried.
     std::shared_ptr<WebFont> font = *it;
     font->Error.clear( );
     font->Done = false;
@@ -1153,7 +1141,6 @@ UIExample::WebFont &UIExample::RequestFont( const std::string &family )
     return *font;
 }
 
-// One font per frame, so the first frame cost of each font is measured on its own.
 void UIExample::LoadDownloadedFont( )
 {
     for ( const auto &entry : m_webFonts )
@@ -1805,7 +1792,6 @@ bool UIExample::EditKey( TextEdit &edit, const DenOfIz_KeyboardEventData &key )
             MoveCaret( edit, edit.Caret, false );
         }
         return true;
-    // Logical movement: in right to left text Left moves the caret forward in the string, which is right on screen.
     case DENOFIZ_KEY_CODE_LEFT:
         MoveCaret( edit, !extend && start != end ? start : DenOfIz_Text_PreviousGrapheme( text, edit.Caret ), extend );
         return true;

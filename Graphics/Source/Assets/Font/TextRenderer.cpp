@@ -35,10 +35,8 @@ namespace
     constexpr uint32_t DefaultNumFrames = 3;
     constexpr uint32_t MinQuadCapacity  = 1024;
     constexpr uint64_t ShapeCacheAge    = 240;
-    // Set on a quad's glyph when it samples a colour glyph bitmap, matches the text shaders.
-    constexpr uint32_t ColourGlyphBit = 0x80000000u;
-    // t4, after the four glyph buffers.
-    constexpr uint32_t QuadBinding = 4;
+    constexpr uint32_t ColourGlyphBit   = 0x80000000u;
+    constexpr uint32_t QuadBinding      = 4;
 
     uint32_t GrowCapacity( const uint32_t current, const uint32_t required, const uint32_t minimum )
     {
@@ -68,8 +66,6 @@ namespace DenOfIz
 {
     class TextRenderer
     {
-        // One per glyph, the vertex shader expands it into the four corners of its quad. Bounds = (left, top, right, bottom) in em space, or in texels
-        // for a colour glyph bitmap. EmsPerUnit is used by SlugDilate.
         struct Quad
         {
             DenOfIz_Float4 Rect;
@@ -89,7 +85,6 @@ namespace DenOfIz
         };
         static_assert( sizeof( Uniforms ) == 80 && offsetof( Uniforms, Viewport ) == 64 );
 
-        // Em units, each line in visual order. Record is the ColourGlyphStore source of a colour glyph, the SlugGlyphStore record otherwise.
         struct ShapedGlyph
         {
             const Font *FontPtr;
@@ -101,7 +96,6 @@ namespace DenOfIz
             bool        Colour;
         };
 
-        // Above and Below the baseline in em, the tallest of the line's fonts for line-height normal.
         struct ShapedLine
         {
             uint32_t GlyphStart;
@@ -136,7 +130,6 @@ namespace DenOfIz
             }
         };
 
-        // LineHeight and Baseline are zero for line-height normal, each line then has its own.
         struct LineMetrics
         {
             Font *FontPtr;
@@ -180,7 +173,7 @@ namespace DenOfIz
         std::map<uint16_t, std::vector<uint16_t>>               m_fallbacks;
         std::vector<Font *>                                     m_chain;
         std::unordered_map<ShapeKey, ShapedBlock, ShapeKeyHash> m_shapes;
-        ShapeKey                                                m_shapeLookup{ }; // Reused so looking text up does not allocate.
+        ShapeKey                                                m_shapeLookup{ };
         std::vector<Quad>                                       m_quads;
         DenOfIz_Float4x4                                        m_projection{ };
         DenOfIz_Viewport                                        m_viewport{ };
@@ -347,7 +340,6 @@ void TextRenderer::SetFallbacks( const uint16_t fontId, std::vector<uint16_t> fa
     Invalidate( fontId );
 }
 
-// Drops the shaped text drawn with the font, as primary or fallback.
 void TextRenderer::Invalidate( const uint16_t fontId )
 {
     auto uses = [ this, fontId ]( const uint16_t id )
@@ -481,7 +473,6 @@ bool TextRenderer::Metrics( const DenOfIz_TextRenderDesc &desc, LineMetrics &met
     return true;
 }
 
-// Shaping happens in em, so one result serves every font size. Every paragraph is one line, laid out in visual order.
 const TextRenderer::ShapedBlock &TextRenderer::Shape( const DenOfIz_StringView text, const uint16_t fontId, Font *font, const DenOfIz_TextDirection direction )
 {
     const std::string_view chars = text.Chars != nullptr ? std::string_view( text.Chars, text.NumChars ) : std::string_view( );
@@ -557,7 +548,6 @@ void TextRenderer::EmitGlyph( const LineMetrics &metrics, const ShapedGlyph &gly
     {
         return;
     }
-    // Object space is y down, em space is y up.
     const float size = metrics.Size;
     const float ox   = x + glyph.OffsetX * metrics.Scale;
     const float oy   = baseline - glyph.OffsetY * metrics.Scale;
@@ -581,7 +571,6 @@ void TextRenderer::EmitGlyph( const LineMetrics &metrics, const ShapedGlyph &gly
     m_quads.push_back( Quad{ { x0, y0, x1, y1 }, { bounds.X, bounds.W, bounds.Z, bounds.Y }, color, { du, dv }, record, 0 } );
 }
 
-// The bitmap is picked for the size the glyph covers on screen at its pen position, colour glyphs ignore the text colour but for its alpha.
 void TextRenderer::EmitColourGlyph( const uint32_t source, const float size, const float x, const float y, const DenOfIz_Float4 &color )
 {
     auto               channel    = []( const float v ) { return static_cast<uint32_t>( std::lround( std::clamp( v, 0.0f, 1.0f ) * 255.0f ) ); };
@@ -603,7 +592,6 @@ void TextRenderer::EmitColourGlyph( const uint32_t source, const float size, con
     m_quads.push_back( Quad{ { x0, y0, x1, y1 }, { 0.0f, 0.0f, w, h }, tint, { 0.0f, 0.0f }, glyph, 0 } );
 }
 
-// How many pixels one em at ( x, y ) spans after the projection, the larger of both axes.
 float TextRenderer::PixelsPerEm( const float x, const float y, const float size ) const
 {
     const DenOfIz_Float4x4 &m       = m_projection;
@@ -620,7 +608,6 @@ float TextRenderer::PixelsPerEm( const float x, const float y, const float size 
     return std::max( std::hypot( ax - ox, ay - oy ), std::hypot( bx - ox, by - oy ) );
 }
 
-// Every quad uses the same index pattern, so one buffer serves all frames.
 void TextRenderer::EnsureQuadCapacity( const uint32_t quads )
 {
     if ( quads <= m_quadCapacity )
@@ -654,7 +641,6 @@ void TextRenderer::EnsureQuadCapacity( const uint32_t quads )
     DenOfIz_Buffer_UnmapMemory( m_indexBuffer );
 }
 
-// The quads are a structured buffer per frame in flight, bound with the glyph buffers.
 void TextRenderer::EnsureFrameCapacity( Frame &frame, const uint32_t index, const uint32_t quads ) const
 {
     if ( quads <= frame.QuadCapacity )

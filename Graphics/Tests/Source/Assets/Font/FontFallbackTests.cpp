@@ -54,7 +54,6 @@ namespace
         return glyph;
     }
 
-    // Outlines the glyph store can compile and no colour bitmaps, which a glyf table may only box.
     bool Drawable( const Font *font )
     {
         hb_face_t *face  = hb_font_get_face( font->HbFont( ) );
@@ -68,7 +67,6 @@ namespace
         return ( table( HB_TAG( 'g', 'l', 'y', 'f' ) ) || table( HB_TAG( 'C', 'F', 'F', ' ' ) ) || table( HB_TAG( 'C', 'F', 'F', '2' ) ) ) && !hb_ot_color_has_png( face );
     }
 
-    // JetBrains Mono covers Latin, Greek and Cyrillic but no Hebrew, Arial Unicode covers all of them.
     class FontFallbackTest : public testing::Test
     {
     protected:
@@ -117,7 +115,6 @@ TEST_F( FontFallbackTest, ChainOrder )
     EXPECT_EQ( GlyphAt( 3 ).Font, 1 );
     EXPECT_EQ( GlyphAt( 3 ).GlyphId, Nominal( m_unicode.Get( ), 0x5D0 ) );
 
-    // Every character is covered by the first font, so the second is never used.
     Shape( text, { m_unicode.Get( ), m_mono.Get( ) } );
     for ( const TextGlyph &glyph : m_shaped.Glyphs )
     {
@@ -127,7 +124,6 @@ TEST_F( FontFallbackTest, ChainOrder )
 
 TEST_F( FontFallbackTest, ClusterStaysInOneFont )
 {
-    // The mono font has the base letter but not the Hebrew point, so the whole cluster moves to the font covering both.
     const std::string text = "xa\xD6\xB8y";
     Shape( text, { m_mono.Get( ), m_unicode.Get( ) } );
     EXPECT_EQ( GlyphAt( 0 ).Font, 0 );
@@ -164,7 +160,6 @@ TEST_F( FontFallbackTest, UITextChainAndInvalidation )
 {
     UIText text;
     text.AddFont( 1, m_mono.Get( ) );
-    // A fallback may be named before it is registered.
     text.SetFallbacks( 1, std::vector<uint16_t>{ 2 } );
     text.AddFont( 2, m_unicode.Get( ) );
 
@@ -243,7 +238,6 @@ TEST_F( SystemFallbackTest, CacheReturnsTheSameFont )
     Font *first = SystemFallbackFont( "\xE6\x97\xA5", 3, HB_SCRIPT_HAN, false );
     ASSERT_NE( first, nullptr );
     EXPECT_EQ( SystemFallbackFont( "\xE6\x97\xA5", 3, HB_SCRIPT_HAN, false ), first );
-    // A new character of the same script is found in the font already picked for it.
     EXPECT_EQ( SystemFallbackFont( "\xE6\x9C\xAC", 3, HB_SCRIPT_HAN, false ), first );
 
     Shape( "\xE6\x97\xA5 \xE6\x97\xA5" );

@@ -23,7 +23,6 @@ void MyClosestHitShader_Triangle(inout RayPayload rayPayload, in BuiltInTriangle
 
     float3 triangleNormal = g_vertices[indices[0]].normal.xyz;
 
-    // PERFORMANCE TIP: values like HitWorldPosition() are recomputed rather than carried across TraceRay() calls.
     float3 hitPosition = HitWorldPosition();
     Ray shadowRay = { hitPosition, normalize(g_sceneCB.lightPosition.xyz - hitPosition) };
     bool shadowRayHit = TraceShadowRayAndReportIfHit(shadowRay, rayPayload.recursionDepth);
@@ -43,7 +42,6 @@ void MyClosestHitShader_Triangle(inout RayPayload rayPayload, in BuiltInTriangle
     float4 phongColor = CalculatePhongLighting(l_materialCB.albedo, triangleNormal, shadowRayHit, l_materialCB.diffuseCoef, l_materialCB.specularCoef, l_materialCB.specularPower);
     float4 color = checkers * (phongColor + reflectedColor);
 
-    // Apply visibility falloff.
     float t = RayTCurrent();
     color = lerp(color, BackgroundColor, 1.0 - exp(-0.000002*t*t*t));
 
@@ -70,7 +68,6 @@ void MyClosestHitShader_AABB(inout RayPayload rayPayload, in ProceduralPrimitive
     float4 phongColor = CalculatePhongLighting(l_materialCB.albedo, attr.normal, shadowRayHit, l_materialCB.diffuseCoef, l_materialCB.specularCoef, l_materialCB.specularPower);
     float4 color = phongColor + reflectedColor;
 
-    // Apply visibility falloff.
     float t = RayTCurrent();
     color = lerp(color, BackgroundColor, 1.0 - exp(-0.000002*t*t*t));
 

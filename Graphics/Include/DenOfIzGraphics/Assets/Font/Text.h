@@ -14,7 +14,7 @@ extern "C"
 {
 #endif
 
-    // Byte offset of the grapheme cluster boundary after or before byteOffset in UTF-8 text: the steps of a caret and what Backspace and Delete remove.
+    /** Byte offset of the grapheme cluster boundary after or before byteOffset in UTF-8 text: the steps of a caret and what Backspace and Delete remove. */
     DZ_API uint32_t DenOfIz_Text_NextGrapheme( DenOfIz_StringView text, uint32_t byteOffset );
     DZ_API uint32_t DenOfIz_Text_PreviousGrapheme( DenOfIz_StringView text, uint32_t byteOffset );
 

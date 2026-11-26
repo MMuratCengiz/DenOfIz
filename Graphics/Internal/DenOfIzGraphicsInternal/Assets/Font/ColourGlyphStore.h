@@ -15,7 +15,6 @@ namespace DenOfIz
 {
     class Font;
 
-    // Premultiplied RGBA8 with red in the low byte, rows top to bottom. Left and Top place the top left corner relative to the pen in pixels, y down.
     struct ColourBitmap
     {
         int32_t               Left           = 0;
@@ -26,10 +25,8 @@ namespace DenOfIz
         std::vector<uint32_t> Pixels;
     };
 
-    // A COLR, sbix or CBDT glyph painted at ppem pixels per em, false when the glyph has no colour data. Palette index 0xFFFF paints foreground.
     bool RasteriseColourGlyph( const Font &font, uint32_t glyphId, uint32_t ppem, hb_color_t foreground, ColourBitmap &out );
 
-    // Offset is the width | height << 16 header in the pixel stream, the texels follow row by row. Ppem is the size the bitmap was painted at.
     struct ColourGlyph
     {
         int32_t  Left     = 0;
@@ -41,8 +38,6 @@ namespace DenOfIz
         uint64_t LastUsed = 0;
     };
 
-    // Colour glyphs are painted on first use at the smallest size bucket covering the requested size, bitmap glyphs at most at their largest strike.
-    // The pixel stream grows until it passes a budget, then BeginFrame drops the bitmaps no frame drew for a while and packs the rest.
     class ColourGlyphStore
     {
         struct Source
@@ -65,12 +60,9 @@ namespace DenOfIz
     public:
         static constexpr uint32_t None = UINT32_MAX;
 
-        // The source of a glyph's colour data, None when it has none and is drawn from its outline.
-        uint32_t Find( const Font *font, uint32_t glyphId );
-        // foreground is RGBA8 with red in the high byte, it only keys glyphs that paint with it.
+        uint32_t           Find( const Font *font, uint32_t glyphId );
         const ColourGlyph &Get( uint32_t source, float pixelsPerEm, uint32_t foreground );
 
-        // Before the frame's Get calls. Packing moves bitmaps and changes Generation, offsets from earlier frames are stale then.
         void     BeginFrame( );
         uint32_t Generation( ) const;
 

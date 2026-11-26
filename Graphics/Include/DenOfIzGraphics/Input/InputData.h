@@ -292,7 +292,8 @@ extern "C"
         DENOFIZ_EVENT_TYPE_AUDIO_DEVICE_REMOVED       = 0x1101,
         DENOFIZ_EVENT_TYPE_SENSOR_UPDATE              = 0x1200,
         DENOFIZ_EVENT_TYPE_RENDER_TARGETS_RESET       = 0x2000,
-        DENOFIZ_EVENT_TYPE_RENDER_DEVICE_RESET        = 0x2001
+        DENOFIZ_EVENT_TYPE_RENDER_DEVICE_RESET        = 0x2001,
+        DENOFIZ_EVENT_TYPE_WAKE                       = 0x8000 /**< Queued by DenOfIz_InputSystem_Wake, only Common.Timestamp is set. */
     } DenOfIz_EventType;
 
     typedef enum

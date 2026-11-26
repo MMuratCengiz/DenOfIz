@@ -18,8 +18,6 @@ namespace DenOfIz
         uint32_t              Set;
     };
 
-    // Vulkan merges the local root signatures into one in VulkanPipeline::CreateRayTracingPipeline( ), a layout created here with create = true
-    // is never used.
     class VulkanLocalRootSignature final : public ILocalRootSignature
     {
         VulkanContext                 *m_context;

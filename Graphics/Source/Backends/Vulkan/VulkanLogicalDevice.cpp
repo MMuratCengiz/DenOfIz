@@ -33,8 +33,8 @@ Licensed under the MIT License. See LICENSE in the project root.
 using namespace DenOfIz;
 
 // ReSharper disable once CppParameterMayBeConst
-static VKAPI_ATTR VkBool32 VKAPI_CALL g_DebugCallback( VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity, VkDebugUtilsMessageTypeFlagsEXT /*messageType*/,
-                                                       const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void * /*pUserData*/ )
+static VKAPI_ATTR VkBool32 VKAPI_CALL g_DebugCallback( VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity, VkDebugUtilsMessageTypeFlagsEXT,
+                                                       const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void * )
 {
     switch ( messageSeverity )
     {
@@ -104,12 +104,10 @@ const std::vector<const char *> VulkanLogicalDevice::g_requiredDeviceExtensions 
     VK_KHR_MAINTENANCE1_EXTENSION_NAME,
     VK_KHR_MAINTENANCE2_EXTENSION_NAME,
     VK_KHR_MAINTENANCE3_EXTENSION_NAME,
-    // Required, render passes are not supported.
     VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
     VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
     VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
     VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
-    // Viewport and scissor counts are dynamic state.
     VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
 #if __APPLE_CC__
     "VK_KHR_portability_subset"
@@ -119,7 +117,6 @@ const std::vector<const char *> VulkanLogicalDevice::g_requiredDeviceExtensions 
 const std::vector<const char *> VulkanLogicalDevice::g_optionalDeviceExtensions =
 {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    // Bindless textures
     VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
     VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
     VK_KHR_RAY_QUERY_EXTENSION_NAME,
@@ -473,7 +470,6 @@ void VulkanLogicalDevice::SetupQueueFamilies( ) const
         }
         else if ( hasTransfer && !exists( VulkanQueueType::Copy ) )
         {
-            // Try to fetch a unique transfer queue
             m_context->QueueFamilies[ VulkanQueueType::Copy ] = QueueFamily{ index, { static_cast<VkQueueFlags>( property.queueFlags ) } };
         }
         else if ( hasCompute && !exists( VulkanQueueType::Compute ) )

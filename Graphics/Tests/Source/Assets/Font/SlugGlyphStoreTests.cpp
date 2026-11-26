@@ -38,7 +38,6 @@ namespace
     const std::string FontAwesomeOtf = DZ_TEST_DATA_SRC_DIR "/../../../Examples/Assets/Fonts/FontAwesome7.otf";
     const std::string OutDir         = DZ_TEST_DATA_DEST_DIR "/Slug/";
 
-    // Same maths over every curve of the glyph with no bands and no early-out; banded results must match it.
     float SlugRenderUnbanded( const std::vector<DenOfIz_Float4> &curveData, const std::vector<uint32_t> &curveLocs, const float2 sampleCoord, const float2 emsPerPixel,
                               const int flags )
     {
@@ -128,7 +127,6 @@ namespace
         return result;
     }
 
-    // Independent copy of the outline straight from HarfBuzz: exact segments (incl. cubics) for winding, and the quads the store should contain.
     struct Segment
     {
         int    Degree;
@@ -230,7 +228,6 @@ namespace
         return p[ 0 ];
     }
 
-    // Nonzero winding of the exact outline by casting a +x ray, splitting segments into y-monotonic pieces.
     int Winding( const std::vector<Segment> &segments, const double x, const double y )
     {
         int winding = 0;
@@ -323,7 +320,6 @@ namespace
         return std::hypot( px - ( ax + t * dx ), py - ( ay + t * dy ) );
     }
 
-    // True when no point of the exact outline lies within `margin` of (x, y): coverage must then be exactly 0 or 1.
     bool FarFromOutline( const std::vector<Segment> &segments, const double x, const double y, const double margin )
     {
         constexpr int Steps = 16;
@@ -341,7 +337,6 @@ namespace
             {
                 continue;
             }
-            // Chord error bound of the polyline: |B''| h^2 / 8.
             double secondDiff = 0.0;
             for ( int i = 0; i + 2 <= s.Degree; ++i )
             {
@@ -430,7 +425,6 @@ namespace
 
     constexpr float AxisLineEpsilon = 1.0f / 1048576.0f;
 
-    // Structural invariants of the band data; every failure is reported with the glyph id from SCOPED_TRACE.
     GlyphStats ValidateGlyph( const SlugGlyphStore &store, const SlugGlyph &glyph, const Outline &outline )
     {
         GlyphStats stats;
@@ -518,7 +512,6 @@ namespace
                 {
                     continue;
                 }
-                // Every band whose em range (as the shader computes it) touches the curve must list it.
                 for ( uint32_t b = 0; b < lists[ axis ].size( ); ++b )
                 {
                     float lo = -INFINITY, hi = INFINITY;
@@ -557,7 +550,6 @@ namespace
         int    FarSamples = 0;
     };
 
-    // Samples the glyph on a pixel-centre grid and checks the banded oracle against the unbanded one and the exact winding.
     CoverageResult CheckCoverage( const SlugGlyphStore &store, const SlugGlyph &glyph, const GlyphStats &stats, const Outline &outline, const float ppem )
     {
         CoverageResult result;
@@ -655,7 +647,6 @@ namespace
                 {
                     const SlugGlyph &g = store.GetGlyph( index );
                     const float2     p{ ex - placed.X, ey - placed.Y };
-                    // Mimics the 1 px dilated quad the renderer will draw.
                     if ( IsEmpty( g ) || p.x < g.Bounds.X - emsPerPixel.x || p.x > g.Bounds.Z + emsPerPixel.x || p.y < g.Bounds.Y - emsPerPixel.y ||
                          p.y > g.Bounds.W + emsPerPixel.y )
                     {
@@ -693,7 +684,6 @@ namespace
                      s.MaxH, s.MaxV, s.BandEntries, s.Bytes( ) );
     }
 
-    // Compiles, validates and renders a shaped run; returns the store indices for further checks.
     std::vector<std::pair<uint32_t, PlacedGlyph>> ExerciseRun( SlugGlyphStore &store, const uint32_t fontKey, const HbFont &font, const char *label,
                                                                const std::vector<PlacedGlyph> &run )
     {
@@ -759,8 +749,6 @@ namespace
         }
     }
 
-    // Samples on a pixel-snapped origin whose coverage changes by more than 0.1 when moved 1e-6 em along x or y. At these sizes rows and columns
-    // often land exactly level with the outline's points, where coverage steps, unless SlugRender biases its samples.
     int CountCoverageFlips( const HbFont &font, const std::vector<uint32_t> &glyphIds )
     {
         SlugGlyphStore store;
@@ -969,7 +957,6 @@ TEST( SlugGlyphStore, InterAllGlyphs )
     std::printf( "\n" );
 }
 
-// Without the sample bias these glyphs flip 52 (Inter) and 845 (Font Awesome) times.
 TEST( SlugGlyphStore, StableOnOutlinePoints )
 {
     const HbFont inter( FontDir + "Inter-Regular.ttf", 0 );

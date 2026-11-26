@@ -5,9 +5,6 @@ Copyright (c) 2020-2024 Muhammed Murat Cengiz
 Licensed under the MIT License. See LICENSE in the project root.
 */
 
-// Embeds the default font: FontToEmbeddedInl Graphics/Tests/TestData/Fonts/JetBrainsMono-Regular.ttf
-//                          Graphics/Internal/DenOfIzGraphicsInternal/Assets/Font/Embedded/DefaultFontCompressed.inl
-
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -32,7 +29,6 @@ int main( const int argc, char *argv[] )
     }
     const std::vector<uint8_t> font( ( std::istreambuf_iterator<char>( input ) ), std::istreambuf_iterator<char>( ) );
 
-    // Layout read by Font.cpp: uncompressed size (uint32, little endian) followed by the zlib stream.
     mz_ulong             compressedSize = mz_compressBound( static_cast<mz_ulong>( font.size( ) ) );
     std::vector<uint8_t> data( sizeof( uint32_t ) + compressedSize );
     const auto           fontSize = static_cast<uint32_t>( font.size( ) );

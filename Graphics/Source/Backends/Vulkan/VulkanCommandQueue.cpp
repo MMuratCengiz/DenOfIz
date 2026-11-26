@@ -181,7 +181,6 @@ void VulkanCommandQueue::FindQueueFamilyIndex( const VkQueueFlags requiredFlags 
         }
     }
 
-    // Fall back to any family with one of the required flags.
     for ( uint32_t i = 0; i < queueFamilyCount; ++i )
     {
         if ( queueFamilies[ i ].queueFlags & requiredFlags )

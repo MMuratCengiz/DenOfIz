@@ -11,7 +11,7 @@ cbuffer PerFrameConstants : register(b1)
 {
     float4x4 g_ViewProjection;
     float4 g_CameraPosition;
-    float4 g_Time; // x = total time, y = delta time, z,w = unused
+    float4 g_Time;
 };
 
 static const float3 g_LightDirection = float3(0.577f, -0.577f, 0.577f);

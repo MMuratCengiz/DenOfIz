@@ -23,7 +23,6 @@ using Microsoft::WRL::ComPtr;
 
 namespace
 {
-    // MapCharacters reads the text through this interface. It lives on the stack for one call, so it is not reference counted.
     class TextSource final : public IDWriteTextAnalysisSource
     {
         const WCHAR *m_text;
@@ -90,7 +89,6 @@ namespace
         }
     };
 
-    // Kept for the process, SystemFallbackFont serialises the calls.
     struct DirectWrite
     {
         IDWriteFactory2     *Factory  = nullptr;
@@ -160,7 +158,6 @@ namespace
         return found;
     }
 
-    // Like Font::Covers: default ignorables other than tags may be missing.
     bool Covers( IDWriteFont *font, const char *text, const uint32_t length )
     {
         for ( SBUInteger i = 0; i < length; )
@@ -176,7 +173,6 @@ namespace
         return true;
     }
 
-    // Up to limit fonts of the system collection covering the text. Simulated bold and oblique fonts share a real font's file and are skipped.
     void Search( const char *text, const uint32_t length, const size_t limit, std::vector<DenOfIz::SystemFontFile> &out )
     {
         const DirectWrite            &directWrite = Instance( );
@@ -231,7 +227,6 @@ bool DenOfIz::FindSystemFont( const char *text, const uint32_t length, SystemFon
     {
         return FileOf( font.Get( ), out );
     }
-    // The fallback mapped only the start of the cluster, or nothing because none of the fonts it lists has it: any installed font covering it all.
     std::vector<SystemFontFile> found;
     Search( text, length, 1, found );
     if ( found.empty( ) )

@@ -17,8 +17,8 @@ struct DenOfIz_ShaderReflectDesc
     DenOfIz_InputLayoutDesc              InputLayout;
     DenOfIz_BindGroupLayoutDescArray     BindGroupLayouts;
     DenOfIz_RootConstantBindingDescArray RootConstants;
-    /// One per stage, indexed like DenOfIz_ShaderProgramDesc::ShaderStages.
+    /** One per stage, indexed like DenOfIz_ShaderProgramDesc::ShaderStages. */
     DenOfIz_LocalRootSignatureDescArray LocalRootSignatures;
-    /// One per stage, indexed like DenOfIz_ShaderProgramDesc::ShaderStages. Set for compute, mesh and task stages, zero for others.
+    /** One per stage, indexed like DenOfIz_ShaderProgramDesc::ShaderStages. Set for compute, mesh and task stages, zero for others. */
     DenOfIz_ThreadGroupDescArray ThreadGroups;
 };

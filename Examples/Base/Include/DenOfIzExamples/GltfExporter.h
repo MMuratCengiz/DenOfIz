@@ -27,7 +27,6 @@ typedef enum DenOfIz_GltfExportResultCode
     DENOFIZ_GLTF_EXPORT_RESOURCE_UNAVAILABLE
 } DenOfIz_GltfExportResultCode;
 
-// Always writes conformant right-handed, Y-up glTF; GltfLoader converts to left-handed on load.
 typedef struct DenOfIz_GltfExportDesc
 {
     DenOfIz_StringView SourceFilePath;

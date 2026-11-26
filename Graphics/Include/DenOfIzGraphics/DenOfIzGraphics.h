@@ -12,13 +12,11 @@ Licensed under the MIT License. See LICENSE in the project root.
 #include "DenOfIzGraphics/Data/Geometry.h"
 #include "DenOfIzGraphics/Utilities/OS.h"
 
-// Audio System
 #include "DenOfIzGraphics/Input/AudioData.h"
 #include "DenOfIzGraphics/Input/AudioMixer.h"
 #include "DenOfIzGraphics/Input/AudioSource.h"
 #include "DenOfIzGraphics/Input/AudioTrack.h"
 
-// Input System
 #include "DenOfIzGraphics/Input/Clipboard.h"
 #include "DenOfIzGraphics/Input/Controller.h"
 #include "DenOfIzGraphics/Input/Display.h"

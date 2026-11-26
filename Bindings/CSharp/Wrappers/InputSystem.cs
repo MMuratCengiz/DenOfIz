@@ -101,6 +101,11 @@ namespace DenOfIz
             Methods.DenOfIz_InputSystem_PushEvent(in ev);
         }
 
+        public static void Wake()
+        {
+            Methods.DenOfIz_InputSystem_Wake();
+        }
+
         public static KeyState GetKeyState(KeyCode key)
         {
             return Methods.DenOfIz_InputSystem_GetKeyState(key);

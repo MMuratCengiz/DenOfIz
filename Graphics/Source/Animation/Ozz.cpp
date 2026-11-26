@@ -30,7 +30,6 @@ Licensed under the MIT License. See LICENSE in the project root.
 #include "DenOfIzGraphicsInternal/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
-// Include last due to DirectXMath
 #include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
 
 namespace DenOfIz

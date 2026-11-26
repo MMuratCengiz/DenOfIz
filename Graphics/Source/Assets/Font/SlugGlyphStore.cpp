@@ -20,7 +20,7 @@ namespace
     constexpr float    BandEpsilon     = 1.0f / 1024.0f;
     constexpr float    AxisLineEpsilon = 1.0f / 1048576.0f;
     constexpr double   CubicTolerance  = 1.0 / 4096.0;
-    constexpr double   CubicErrorScale = 0.0481125224324688; // sqrt(3) / 36
+    constexpr double   CubicErrorScale = 0.0481125224324688;
     constexpr int      MaxCubicDepth   = 6;
 
     struct Quad
@@ -72,7 +72,6 @@ namespace
             Quads.push_back( { p1, p2, p3 } );
         }
 
-        // Endpoints stay the exact input floats so neighbouring curves still share texels.
         void AddCubic( const DenOfIz_Float2 &p0, const Double2 &c1, const Double2 &c2, const DenOfIz_Float2 &p3, const int depth )
         {
             const Double2 a  = ToDouble( p0 );
@@ -99,7 +98,6 @@ namespace
         }
     };
 
-    // HarfBuzz closes every contour with an explicit line_to, so move_to/close_path are not needed.
     void LineTo( hb_draw_funcs_t *, void *data, hb_draw_state_t *st, const float x, const float y, void * )
     {
         auto                *ctx = static_cast<DrawContext *>( data );
@@ -126,7 +124,6 @@ namespace
         float    Max[ 2 ];
     };
 
-    // Band b lists the curves Curves[ Starts[ b ] .. Starts[ b + 1 ] ).
     struct BandSet
     {
         uint32_t              Count  = 1;
@@ -141,13 +138,11 @@ namespace
         return curve.Max[ axis ] >= lo && curve.Min[ axis ] <= hi;
     }
 
-    // axis 1 builds horizontal bands (partition y, sorted by max x), axis 0 vertical bands (partition x, sorted by max y).
     BandSet BuildBands( const std::vector<CurveInfo> &curves, const int axis, const float lo, const float hi )
     {
         std::vector<uint32_t> candidates;
         for ( uint32_t i = 0; i < curves.size( ); ++i )
         {
-            // Straight lines parallel to the band's rays never change the winding number.
             if ( curves[ i ].Max[ axis ] - curves[ i ].Min[ axis ] > AxisLineEpsilon )
             {
                 candidates.push_back( i );
@@ -158,7 +153,6 @@ namespace
         const float size = hi - lo;
         if ( size > 0.0f && !candidates.empty( ) )
         {
-            // A curve overlaps [bandLo, bandHi] unless it ends below bandLo or starts above bandHi, and one ending below starts below too.
             std::vector<float> mins, maxs;
             for ( const uint32_t c : candidates )
             {
@@ -218,7 +212,6 @@ namespace
         return set;
     }
 
-    // A band's curve locations are packed two per entry, its header's offset counts entries from the glyph's first header.
     void AppendBands( std::vector<DenOfIz_UInt2> &bands, const BandSet &set, const std::vector<CurveInfo> &curves, const uint32_t glyphStart, const uint32_t firstHeader )
     {
         const auto list = [ &set ]( const uint32_t b ) { return std::span<const uint32_t>( set.Curves.data( ) + set.Starts[ b ], set.Starts[ b + 1 ] - set.Starts[ b ] ); };
@@ -312,7 +305,6 @@ void SlugGlyphStore::MarkUploaded( )
 SlugGlyph DenOfIz::CompileSlugGlyph( hb_font_t *font, const uint32_t glyphId, const SlugTransform &transform, std::vector<DenOfIz_Float4> &curveData,
                                      std::vector<DenOfIz_UInt2> &bandData )
 {
-    // The tolerance is in em, scaled to the units the curves are stored in.
     const double upem  = hb_face_get_upem( hb_font_get_face( font ) );
     const double scale = std::sqrt( std::fabs( static_cast<double>( transform.Xx ) * transform.Yy - static_cast<double>( transform.Xy ) * transform.Yx ) ) / transform.Divisor;
     DrawContext  ctx{ transform, CubicTolerance * upem * scale, {} };
@@ -329,7 +321,6 @@ SlugGlyph DenOfIz::CompileSlugGlyph( hb_font_t *font, const uint32_t glyphId, co
     for ( size_t i = 0; i < ctx.Quads.size( ); ++i )
     {
         const Quad &q = ctx.Quads[ i ];
-        // A curve starting where the previous one ended reuses that texel: its .xy is p1, .zw becomes p2.
         if ( i > 0 && Equal( ctx.Quads[ i - 1 ].P3, q.P1 ) )
         {
             curveData.back( ).Z = q.P2.X;

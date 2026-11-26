@@ -70,7 +70,6 @@ namespace DenOfIz
             NumStreams
         };
 
-        // Persistently mapped, replaced by a larger buffer keeping what the frame wrote so far when it fills up.
         struct FrameStream
         {
             DenOfIz_Buffer Buffer   = DENOFIZ_NULL_HANDLE;

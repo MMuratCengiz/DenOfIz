@@ -7,7 +7,6 @@ Licensed under the MIT License. See LICENSE in the project root.
 
 #pragma once
 
-// Include all graphics headers, and supporting code such as animation and font
 #include "Assets/Assets.h"
 #include "DenOfIzGraphics.h"
 #include "DenOfIzGraphics/Assets/Font/TextRenderer.h"

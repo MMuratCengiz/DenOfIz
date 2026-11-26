@@ -23,7 +23,7 @@ float4 main(PSInput input) : SV_TARGET {
     float diffuseFactor = saturate(dot(input.normal, lightDirection));
     float ambientFactor = 0.3;
 
-    float3 viewDir = normalize(float3(0, 0, -5) - input.worldPos); // Assume camera at (0,0,-5)
+    float3 viewDir = normalize(float3(0, 0, -5) - input.worldPos);
     float3 halfVec = normalize(lightDirection + viewDir);
     float specFactor = pow(saturate(dot(input.normal, halfVec)), 32.0) * 0.5;
     

@@ -58,10 +58,6 @@ namespace
         }
     }
 
-    // The first font of the chain covering every code point of the cluster, else the system font covering it, else the first covering its base
-    // character, else the primary font. Emoji presentation clusters prefer colour fonts and VS15 text presentation ones the others, a font of the
-    // other kind only takes them when no font of their kind covers them. System fonts are appended after the chain, the cache behind
-    // SystemFallbackFont picks them per script.
     uint8_t SelectFont( std::vector<Font *> &fonts, const std::span<const uint8_t> chain, const char *text, const uint32_t length, const uint32_t start, const uint32_t end,
                         const SBScript script )
     {
@@ -117,7 +113,6 @@ namespace
         return true;
     }
 
-    // The bytes of the sequence at i: a whole character when wellFormed, else the maximal subpart of an ill-formed one, at least one byte.
     uint32_t Sequence( const uint8_t *bytes, const uint32_t length, const uint32_t i, bool &wellFormed )
     {
         const uint8_t lead = bytes[ i ];
@@ -167,7 +162,6 @@ namespace
         }
     }
 
-    // One per byte of text plus one for the end, non zero where a grapheme cluster starts. A maximal subpart of ill-formed UTF-8 is one cluster.
     const std::vector<uint8_t> &Graphemes( const char *text, const uint32_t length )
     {
         thread_local std::string           valid;
@@ -218,7 +212,6 @@ void TextShaper::Shape( const char *text, const uint32_t length, const std::span
         ShapeWellFormed( text, length, fonts, segments, chains, baseLevel, out );
         return;
     }
-    // Segment ends move with the replacement, onto the first byte that came from at or after them.
     m_segments.assign( segments.begin( ), segments.end( ) );
     for ( TextSegment &segment : m_segments )
     {
@@ -308,8 +301,6 @@ void TextShaper::ShapeWellFormed( const char *text, const uint32_t length, const
         const uint32_t       contentEnd = end - static_cast<uint32_t>( separatorLength );
         TextParagraph        info{ start, contentEnd, static_cast<uint32_t>( out.Glyphs.size( ) ), 0, SBParagraphGetBaseLevel( paragraph ) };
 
-        // Items are maximal runs of grapheme clusters with the same level, script, font and segment, shaped with the whole paragraph as context. A
-        // cluster of default ignorables keeps the font before it, so a joiner or bidi control never splits an item by font.
         uint32_t itemStart   = start;
         uint8_t  level       = levels[ 0 ];
         SBScript script      = scriptAt( start );
@@ -411,7 +402,6 @@ void TextShaper::ShapeWellFormed( const char *text, const uint32_t length, const
             {
                 continue;
             }
-            // Break data sits on the last byte of each character, so the last byte of the cluster tells whether a line may end after it.
             const uint32_t clusterEnd = i + 1 < count ? out.Glyphs[ i + 1 ].Cluster : length;
             const char     lineBreak  = m_breaks[ clusterEnd - 1 ];
             glyph.Flags |= lineBreak == LINEBREAK_ALLOWBREAK ? TextGlyphFlags::BreakAfter : lineBreak == LINEBREAK_MUSTBREAK ? TextGlyphFlags::MustBreak : 0;
@@ -441,7 +431,6 @@ void TextShaper::ShapeItem( const char *paragraph, const uint32_t paragraphLengt
     hb_buffer_add_utf8( m_buffer, paragraph, static_cast<int>( paragraphLength ), start - paragraphStart, static_cast<int>( end - start ) );
     hb_buffer_guess_segment_properties( m_buffer );
     hb_shape( font->HbFont( ), m_buffer, nullptr, 0 );
-    // HarfBuzz returns right to left runs in visual order, reversing them keeps every glyph array in logical order.
     if ( rtl )
     {
         hb_buffer_reverse( m_buffer );
@@ -471,7 +460,6 @@ void TextShaper::Reshape( const char *text, const uint32_t length, const ShapedT
     const TextGlyph &first        = glyphs[ start ];
     auto             byteAt       = [ & ]( const uint32_t glyph ) { return glyph < itemEnd ? glyphs[ glyph ].Cluster : item->ByteEnd; };
 
-    // HarfBuzz sees the paragraph as Shape gave it, ill-formed sequences replaced. Offsets below are relative to the paragraph.
     const bool     remap    = TextReplaceIllFormed( text + paragraphStart, paragraphEnd - paragraphStart, m_valid, m_origins );
     const char    *source   = remap ? m_valid.data( ) : text + paragraphStart;
     const uint32_t size     = remap ? static_cast<uint32_t>( m_valid.size( ) ) : paragraphEnd - paragraphStart;
@@ -494,7 +482,6 @@ void TextShaper::Reshape( const char *text, const uint32_t length, const ShapedT
         out[ i ].Cluster = paragraphStart + ( remap ? m_origins[ out[ i ].Cluster ] : out[ i ].Cluster );
     }
 
-    // The glyph replaced is the last one of the cluster holding the new glyph's first byte. Break flags stay where a cluster still ends.
     for ( size_t i = firstNew; i < out.size( ); ++i )
     {
         TextGlyph &glyph = out[ i ];
@@ -546,7 +533,6 @@ void DenOfIz::TextVisualOrder( const TextGlyph *glyphs, const uint32_t count, co
             lowestOdd = std::min<int>( lowestOdd, levels[ i ] );
         }
     }
-    // L2: from the highest level down to the lowest odd one, reverse every run at that level or above.
     for ( int level = highest; level >= lowestOdd; --level )
     {
         for ( uint32_t i = 0; i < count; )
@@ -589,7 +575,6 @@ uint32_t DenOfIz::TextPreviousGrapheme( const char *text, const uint32_t length,
     {
         return 0;
     }
-    // Boundaries before the offset only depend on the text before it.
     const std::vector<uint8_t> &starts   = Graphemes( text, end );
     uint32_t                    previous = end - 1;
     while ( previous > 0 && !starts[ previous ] )

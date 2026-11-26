@@ -20,7 +20,6 @@
 #define ALIGN64_STRUCT
 #else
 using namespace DirectX;
-// Shader will use byte encoding to access vertex indices.
 typedef uint16_t Index;
 
 #define ALIGN16_FIELD alignas( 16 )
@@ -29,13 +28,8 @@ typedef uint16_t Index;
 #define ALIGN64_STRUCT __declspec( align( 64 ) )
 #endif
 
-#define N_METABALLS 3 // = {3, 5}
+#define N_METABALLS 3
 
-// Limitting calculations only to metaballs a ray intersects can speed up raytracing
-// dramatically particularly when there is a higher number of metaballs used.
-// Use of dynamic loops can have detrimental effects to performance for low iteration counts
-// and outweighing any potential gains from avoiding redundant calculations.
-// Requires: USE_DYNAMIC_LOOPS set to 1 to take effect.
 #if N_METABALLS >= 5
 #define USE_DYNAMIC_LOOPS 1
 #define LIMIT_TO_ACTIVE_METABALLS 1
@@ -44,11 +38,9 @@ typedef uint16_t Index;
 #define LIMIT_TO_ACTIVE_METABALLS 0
 #endif
 
-#define N_FRACTAL_ITERATIONS 4 // = <1,...>
+#define N_FRACTAL_ITERATIONS 4
 
-// PERFORMANCE TIP: Set max recursion depth as low as needed
-// as drivers may apply optimization strategies for low recursion depths.
-#define MAX_RAY_RECURSION_DEPTH 3 // ~ primary rays + reflections + shadow rays from reflected geometry.
+#define MAX_RAY_RECURSION_DEPTH 3
 
 struct ProceduralPrimitiveAttributes
 {
@@ -77,7 +69,6 @@ struct SceneConstantBuffer
     float    elapsedTime;
 };
 
-// Attributes per primitive type.
 struct PrimitiveConstantBuffer
 {
     XMFLOAT4 albedo;
@@ -122,8 +113,8 @@ namespace RayType
 {
     enum Enum
     {
-        Radiance = 0, // ~ Primary, reflected camera/view rays calculating color for each hit.
-        Shadow,       // ~ Shadow/visibility rays, only testing for occlusion
+        Radiance = 0,
+        Shadow,
         Count
     };
 } // namespace RayType
@@ -134,16 +125,16 @@ namespace TraceRayParameters
     namespace HitGroup
     {
         static const UINT Offset[ RayType::Count ] = {
-            0, // Radiance ray
-            1  // Shadow ray
+            0,
+            1
         };
         static const UINT GeometryStride = RayType::Count;
     } // namespace HitGroup
     namespace MissShader
     {
         static const UINT Offset[ RayType::Count ] = {
-            0, // Radiance ray
-            1  // Shadow ray
+            0,
+            1
         };
     }
 } // namespace TraceRayParameters
@@ -188,4 +179,4 @@ namespace SignedDistancePrimitive
     };
 } // namespace SignedDistancePrimitive
 
-#endif // RAYTRACINGHLSLCOMPAT_H
+#endif

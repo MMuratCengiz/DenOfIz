@@ -23,8 +23,6 @@ struct Metaball
     float  radius;
 };
 
-// Return metaball potential range: <0,1>
-// blob.radius - largest possible area of metaball contribution - AKA its bounding sphere.
 float CalculateMetaballPotential(in float3 position, in Metaball blob, out float distance)
 {
     distance = length(position - blob.center);
@@ -33,11 +31,6 @@ float CalculateMetaballPotential(in float3 position, in Metaball blob, out float
     {
         float d = distance;
 
-        // Quintic polynomial field function.
-        // The advantage of this polynomial is having smooth second derivative. Not having a smooth
-        // second derivative may result in a sharp and visually unpleasant normal vector jump.
-        // The field function should return 1 at distance 0 from a center, and 0 at radius distance,
-        // but this one gives f(0) = 0, f(radius) = 1, so we use the distance to radius instead.
         d = blob.radius - d;
 
         float r = blob.radius;
@@ -63,7 +56,6 @@ float CalculateMetaballsPotential(in float3 position, in Metaball blobs[N_METABA
     return sumFieldPotential;
 }
 
-// Calculate a normal via central differences.
 float3 CalculateMetaballsNormal(in float3 position, in Metaball blobs[N_METABALLS], in UINT nActiveMetaballs)
 {
     float e = 0.5773 * 0.00001;
@@ -78,7 +70,6 @@ float3 CalculateMetaballsNormal(in float3 position, in Metaball blobs[N_METABALL
 
 void InitializeAnimatedMetaballs(out Metaball blobs[N_METABALLS], in float elapsedTime, in float cycleDuration)
 {
-    // Metaball centers at t0 and t1 key frames.
 #if N_METABALLS == 5
     float3 keyFrameCenters[N_METABALLS][2] =
     {
@@ -107,10 +98,8 @@ void InitializeAnimatedMetaballs(out Metaball blobs[N_METABALLS], in float elaps
     }
 }
 
-// The passed in array is sorted to the first nActiveMetaballs.
 void FindIntersectingMetaballs(in Ray ray, out float tmin, out float tmax, inout Metaball blobs[N_METABALLS], out UINT nActiveMetaballs)
 {
-    // Find the entry and exit points for all metaball bounding spheres combined.
     tmin = INFINITY;
     tmax = -INFINITY;
 
@@ -133,14 +122,12 @@ void FindIntersectingMetaballs(in Ray ray, out float tmin, out float tmax, inout
     tmax = min(tmax, RayTCurrent());
 }
 
-// Test if a ray with RayFlags and segment <RayTMin(), RayTCurrent()> intersects metaball field.
-// The test sphere traces through the metaball field until it hits a threshold isosurface.
 bool RayMetaballsIntersectionTest(in Ray ray, out float thit, out ProceduralPrimitiveAttributes attr, in float elapsedTime)
 {
     Metaball blobs[N_METABALLS];
     InitializeAnimatedMetaballs(blobs, elapsedTime, 12.0f);
     
-    float tmin, tmax;   // Ray extents to first and last metaball intersections.
+    float tmin, tmax;
     UINT nActiveMetaballs = 0;
     FindIntersectingMetaballs(ray, tmin, tmax, blobs, nActiveMetaballs);
 
@@ -166,8 +153,6 @@ bool RayMetaballsIntersectionTest(in Ray ray, out float thit, out ProceduralPrim
             sumFieldPotential += fieldPotentials[j];
          }
 
-        // Field potential threshold defining the isosurface.
-        // Threshold - valid range is (0, 1>, the larger the threshold the smaller the blob.
         const float Threshold = 0.25f;
 
         if (sumFieldPotential >= Threshold)
@@ -186,4 +171,4 @@ bool RayMetaballsIntersectionTest(in Ray ray, out float thit, out ProceduralPrim
     return false;
 }
 
-#endif // VOLUMETRICPRIMITIVESLIBRARY_H
+#endif

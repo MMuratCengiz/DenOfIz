@@ -34,7 +34,6 @@ namespace DenOfIz
         std::string ClassOpenFormat;
         std::string ClassCloseFormat = "};";
 
-        // Placeholders: return type, name, parameters.
         std::string FunctionDeclFormat;
         std::string FunctionDefOpenFormat;
 

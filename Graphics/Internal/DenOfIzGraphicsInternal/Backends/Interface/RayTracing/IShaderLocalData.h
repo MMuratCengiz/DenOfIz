@@ -18,8 +18,7 @@ namespace DenOfIz
     class IShaderLocalData : public IDeviceObject
     {
     public:
-        virtual void Begin( ) = 0;
-        // Non-const: Vulkan only supports inline data and maps the buffer's memory to read it.
+        virtual void Begin( )                                                   = 0;
         virtual void Cbv( uint32_t binding, IBuffer *bufferResource )           = 0;
         virtual void Cbv( uint32_t binding, const DenOfIz_ByteArrayView &data ) = 0;
         virtual void Srv( uint32_t binding, const IBuffer *textureResource )    = 0;

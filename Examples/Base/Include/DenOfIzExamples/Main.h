@@ -10,7 +10,6 @@ Licensed under the MIT License. See LICENSE in the project root.
 
 namespace DenOfIz
 {
-    // Takes ownership of example and deletes it before leaked objects are reported.
     DZ_EXAMPLES_API int Main( IExample *example );
 } // namespace DenOfIz
 

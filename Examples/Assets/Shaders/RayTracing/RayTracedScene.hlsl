@@ -205,10 +205,10 @@ float4 TraceRadianceRay( float3 origin, float3 direction, uint currentRayRecursi
     rayPayload.RayHitT        = FLT_MAX;
 
     TraceRay( g_scene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
-              ~0, // InstanceInclusionMask
-              0,  // RayContributionToHitGroupIndex
-              1,  // MultiplierForGeometryContributionToHitGroupIndex
-              0,  // MissShaderIndex
+              ~0,
+              0,
+              1,
+              0,
               rayDesc, rayPayload );
 
     return rayPayload.color;
@@ -226,10 +226,10 @@ bool TraceShadowRay( float3 origin, float3 direction, float maxT )
     shadowPayload.hit = false;
 
     TraceRay( g_scene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
-              ~0, // InstanceInclusionMask
-              0,  // RayContributionToHitGroupIndex
-              1,  // MultiplierForGeometryContributionToHitGroupIndex
-              1,  // MissShaderIndex for shadow rays
+              ~0,
+              0,
+              1,
+              1,
               rayDesc, shadowPayload );
 
     return shadowPayload.hit;

@@ -17,8 +17,6 @@ namespace DenOfIz
 {
     class UITextLayout;
 
-    // Structured buffer elements shared with the UI shaders. Every member sits at its std430 alignment and the size is a multiple of 16, so the
-    // DX layout the shaders are compiled with is also valid Vulkan std430 without scalar block layout.
     struct UIVertex
     {
         DenOfIz_Float4 Color;
@@ -31,8 +29,6 @@ namespace DenOfIz
     static_assert( sizeof( UIVertex ) == 48 && offsetof( UIVertex, Position ) == 16 && offsetof( UIVertex, TextureIndex ) == 28 && offsetof( UIVertex, TexCoord ) == 32 &&
                    offsetof( UIVertex, Glyph ) == 40 );
 
-    // A rectangle the vertex shader expands into four vertices, drawn by the indices UIQuadIndexBit | quad * 4 + corner with the corners clockwise from
-    // the top left. Shapes are drawn by indices of their UIVertex. Rect and UV are (left, top, right, bottom).
     struct UIQuad
     {
         DenOfIz_Float4 Rect;
@@ -45,7 +41,6 @@ namespace DenOfIz
     static_assert( sizeof( UIQuad ) == 64 && offsetof( UIQuad, UV ) == 16 && offsetof( UIQuad, Color ) == 32 && offsetof( UIQuad, TextureIndex ) == 48 &&
                    offsetof( UIQuad, Glyph ) == 52 );
 
-    // Below 2^24, the largest index value Vulkan guarantees without fullDrawIndexUint32.
     constexpr uint32_t UIQuadIndexBit = 1u << 23;
     constexpr uint32_t UIMaxQuads     = UIQuadIndexBit / 4;
 

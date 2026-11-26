@@ -51,8 +51,6 @@ void MyRaygenShader()
         RayDesc ray;
         ray.Origin = origin;
         ray.Direction = rayDir;
-        // Set TMin to a non-zero small value to avoid aliasing issues due to floating - point errors.
-        // TMin should be kept small to prevent missing geometry at close contact areas.
         ray.TMin = 0.001;
         ray.TMax = 10000.0;
         RayPayload payload = { float4(0, 0, 0, 0) };
@@ -62,7 +60,6 @@ void MyRaygenShader()
     }
     else
     {
-        // Render interpolated DispatchRaysIndex outside the stencil window
         RenderTarget[DispatchRaysIndex().xy] = float4(lerpValues, 0, 1);
     }
 }
@@ -84,4 +81,4 @@ void MyMissShader(inout RayPayload payload)
     payload.color = float4(0, 1, 0, 1);
 }
 
-#endif // RAYTRACING_HLSL
+#endif

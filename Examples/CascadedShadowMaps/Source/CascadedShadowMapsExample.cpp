@@ -148,7 +148,6 @@ float4 main(PSInput input) : SV_TARGET {
     float3 lightDir = normalize(-LightDir.xyz);
     float NdotL = max(dot(normal, lightDir), 0.0);
 
-    // Checkerboard pattern for ground plane
     float3 baseColor = float3(0.8, 0.8, 0.8);
     float checker = step(0.0, sin(input.WorldPos.x * 3.14159) * sin(input.WorldPos.z * 3.14159));
     if (abs(input.Normal.y) > 0.9) {
@@ -159,7 +158,6 @@ float4 main(PSInput input) : SV_TARGET {
     float3 diffuse = baseColor * NdotL * shadow;
     float3 color = ambient + diffuse;
 
-    // Cascade debug tint
     float3 cascadeColors[4] = {
         float3(0.05, 0.0, 0.0),
         float3(0.0, 0.05, 0.0),
@@ -209,7 +207,6 @@ void CascadedShadowMapsExample::CreateGeometry( )
     DenOfIz_GeometryData_GetVertexData( boxGeometry, boxVerts.data( ) );
     DenOfIz_GeometryData_GetIndexData( boxGeometry, boxIndices.data( ) );
 
-    // Pack into single buffer: ground (obj 0) + 5 cubes (obj 1-5)
     std::vector<SceneVertex> allVertices;
     std::vector<uint32_t>    allIndices;
 
@@ -460,7 +457,6 @@ void CascadedShadowMapsExample::CreateMainResources( )
 
 void CascadedShadowMapsExample::ComputeCascades( )
 {
-    // Practical split scheme (blend of logarithmic and linear)
     m_cascadeSplits[ 0 ] = CAMERA_NEAR;
     for ( uint32_t i = 1; i <= NUM_CASCADES; ++i )
     {
@@ -497,7 +493,6 @@ void CascadedShadowMapsExample::UpdateUniforms( )
         const float ndcNear = 0.0f;
         const float ndcFar  = 1.0f;
 
-        // Perspective depth: z_ndc = (far * (z - near)) / (z * (far - near))
         float ndcNearSlice, ndcFarSlice;
         {
             const float n = CAMERA_NEAR;
@@ -535,7 +530,6 @@ void CascadedShadowMapsExample::UpdateUniforms( )
             const float dist = XMVectorGetX( XMVector3Length( XMVectorSubtract( frustumCorners[ i ], center ) ) );
             radius           = std::max( radius, dist );
         }
-        // Round up to reduce shadow shimmer
         radius = std::ceil( radius * 16.0f ) / 16.0f;
 
         const XMVECTOR lightUp   = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f );
@@ -543,7 +537,6 @@ void CascadedShadowMapsExample::UpdateUniforms( )
         const XMMATRIX lightView = XMMatrixLookAtLH( lightEye, center, lightUp );
         XMMATRIX       lightProj = XMMatrixOrthographicLH( radius * 2.0f, radius * 2.0f, 0.0f, radius * 2.0f );
 
-        // Snap to shadow map texels to reduce shadow shimmer
         const XMMATRIX shadowMatrix = lightView * lightProj;
         XMVECTOR       origin       = XMVector4Transform( XMVectorSet( 0.0f, 0.0f, 0.0f, 1.0f ), shadowMatrix );
         origin                      = XMVectorScale( origin, SHADOW_MAP_SIZE / 2.0f );

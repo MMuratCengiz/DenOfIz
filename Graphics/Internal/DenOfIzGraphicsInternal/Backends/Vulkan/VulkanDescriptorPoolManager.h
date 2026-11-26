@@ -39,9 +39,7 @@ namespace DenOfIz
         explicit VulkanDescriptorPoolManager( const VkDevice &device, const VkPhysicalDevice &physicalDevice );
         ~VulkanDescriptorPoolManager( ) = default;
 
-        // Ignores allocateInfo.descriptorPool. Returns the pool the sets came from, which FreeDescriptorSet needs, VK_NULL_HANDLE on failure.
         VkDescriptorPool AllocateDescriptorSets( const VkDescriptorSetAllocateInfo &allocateInfo, VkDescriptorSet *sets );
-        // A pool that is no longer allocated from is destroyed when its last set is freed.
-        void FreeDescriptorSet( VkDescriptorPool pool, VkDescriptorSet set );
+        void             FreeDescriptorSet( VkDescriptorPool pool, VkDescriptorSet set );
     };
 } // namespace DenOfIz

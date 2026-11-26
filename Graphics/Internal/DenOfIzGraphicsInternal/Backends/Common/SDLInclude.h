@@ -7,7 +7,7 @@ Licensed under the MIT License. See LICENSE in the project root.
 
 #pragma once
 
-#define WINDOW_MANAGER_SDL // SDL is the only window manager for now
+#define WINDOW_MANAGER_SDL
 
 #ifdef WINDOW_MANAGER_SDL
 
@@ -18,7 +18,6 @@ Licensed under the MIT License. See LICENSE in the project root.
 #endif
 #include <SDL3/SDL_system.h>
 
-// Cleanup X11 macro pollution
 #undef Bool
 #undef None
 #undef Success

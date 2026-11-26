@@ -14,7 +14,6 @@ Licensed under the MIT License. See LICENSE in the project root.
 
 namespace
 {
-    // fontconfig is loaded at run time with only the entry points used here: linking it would pull in FreeType, and a system without it simply has no fallback.
     struct FcPattern;
     struct FcCharSet;
     struct FcConfig;
@@ -70,7 +69,6 @@ namespace
         }
     };
 
-    // A scalable font covering the code points, of the kind asked for unless colour < 0. Colour bitmap fonts are kept whatever their scalable flag says.
     bool Accept( const Fontconfig &fc, const FcPattern *font, const FcCharSet *codePoints, const int colour, DenOfIz::SystemFontFile &out )
     {
         FcBool         scalable = 0;
@@ -88,12 +86,10 @@ namespace
         fc.PatternGetInteger( font, "index", 0, &index );
         out.Path = reinterpret_cast<const char *>( file );
         out.PostScriptName.clear( );
-        // The high bits select a named instance of a variable font, the default instance is used.
         out.FaceIndex = static_cast<uint32_t>( index ) & 0xFFFF;
         return true;
     }
 
-    // colour < 0 takes fontconfig's pick, otherwise it asks for a colour or an outline font.
     bool Match( const char *text, const uint32_t length, const int colour, DenOfIz::SystemFontFile &out )
     {
         static const Fontconfig fc;
@@ -101,7 +97,6 @@ namespace
         {
             return false;
         }
-        // Like Font::Covers: default ignorables other than tags may be missing.
         FcCharSet *codePoints = fc.CharSetCreate( );
         for ( SBUInteger i = 0; i < length; )
         {
@@ -120,7 +115,6 @@ namespace
         }
         fc.ConfigSubstitute( nullptr, pattern, FcMatchPattern );
         fc.DefaultSubstitute( pattern );
-        // The best match can miss part of the text or be of the other kind, the fonts are tried in fontconfig's order instead.
         int        result = FcResultMatch;
         FcFontSet *fonts  = fc.FontSort( nullptr, pattern, 0, nullptr, &result );
         bool       found  = false;
@@ -143,7 +137,6 @@ bool DenOfIz::FindSystemFont( const char *text, const uint32_t length, SystemFon
     return Match( text, length, -1, out );
 }
 
-// The best colour and the best outline font covering the text.
 void DenOfIz::FindSystemFonts( const char *text, const uint32_t length, std::vector<SystemFontFile> &out )
 {
     for ( const int colour : { 1, 0 } )

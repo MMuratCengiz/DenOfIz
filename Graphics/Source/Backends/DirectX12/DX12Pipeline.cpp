@@ -195,7 +195,7 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     DenOfIz_ShaderProgramDesc shaderProgramDesc;
     DenOfIz_ShaderProgram_Desc( m_desc.ShaderProgram, &shaderProgramDesc );
     Storage storage{ };
-    storage.Reserve( compiledShaders.NumElements * 2 ); // A local root signature and an exports association per shader
+    storage.Reserve( compiledShaders.NumElements * 2 );
     std::vector<D3D12_STATE_SUBOBJECT> subObjects;
     subObjects.reserve( 256 );
     m_hitGroups.reserve( m_desc.RayTracing.HitGroups.NumElements );
@@ -211,7 +211,6 @@ void DX12Pipeline::CreateRayTracingPipeline( )
 
     std::vector<D3D12_DXIL_LIBRARY_DESC> dxilLibs;
     dxilLibs.reserve( compiledShaders.NumElements );
-    // Reserved up front: the exports point into these strings.
     std::vector<std::wstring> entryPoints;
     entryPoints.reserve( compiledShaders.NumElements * 2 );
 
@@ -553,7 +552,7 @@ void DX12Pipeline::CreateMeshPipeline( )
     {
         CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE        RootSignature;
         CD3DX12_PIPELINE_STATE_STREAM_PS                    PS;
-        CD3DX12_PIPELINE_STATE_STREAM_AS                    AS; // Task shader
+        CD3DX12_PIPELINE_STATE_STREAM_AS                    AS;
         CD3DX12_PIPELINE_STATE_STREAM_MS                    MS;
         CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC            BlendState;
         CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_MASK           SampleMask;

@@ -5,10 +5,10 @@ struct PSInput {
 };
 
 struct MaterialParams {
-    float4 color;       // RGB = base color, A = opacity multiplier
+    float4 color;
     float refractionIndex;
     float fresnelPower;
-    float2 padding; // for 16-byte alignment
+    float2 padding;
 };
 
 cbuffer ConstantBuffer : register(b0, space1)
@@ -19,7 +19,7 @@ cbuffer ConstantBuffer : register(b0, space1)
 cbuffer AnimationParams : register(b1, space1)
 {
     float alphaValue;
-    float3 padding; // for 16-byte alignment
+    float3 padding;
 };
 
 float4 main(PSInput input) : SV_TARGET {
@@ -29,12 +29,11 @@ float4 main(PSInput input) : SV_TARGET {
     float fresnelPower = materialParams.fresnelPower;
 
     float3 lightDirection = normalize(float3(1.0, 1.0, -1.0));
-    float3 viewDir = normalize(float3(0, 0, -5) - input.worldPos); // Assume camera at (0,0,-5)
+    float3 viewDir = normalize(float3(0, 0, -5) - input.worldPos);
 
     float diffuseFactor = saturate(dot(input.normal, lightDirection));
     float ambientFactor = 0.2;
 
-    // Fresnel effect - more reflective at glancing angles
     float fresnel = pow(1.0 - saturate(dot(viewDir, input.normal)), fresnelPower);
 
     float3 halfVec = normalize(lightDirection + viewDir);
@@ -47,8 +46,6 @@ float4 main(PSInput input) : SV_TARGET {
     finalColor += fresnel * 0.3;
     finalColor += edgeHighlight;
 
-    // Glass opacity - more transparent in the center, more opaque at edges
-    // Ensure minimum opacity doesn't go below 0.2 to prevent objects from completely disappearing
     float opacity = max(0.2, baseOpacity * (fresnel * 0.5 + 0.5));
     return float4(finalColor, opacity);
 }

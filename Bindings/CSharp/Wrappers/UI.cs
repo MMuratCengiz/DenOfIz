@@ -10,7 +10,6 @@ namespace DenOfIz
     {
         private const int StackTextBytes = 1024;
 
-        // Must match DENOFIZ_UI_MAX_ROUNDED_CLIPS.
         public const int MaxRoundedClips = 4;
 
         internal ulong Handle { get; private set; }
@@ -361,7 +360,6 @@ namespace DenOfIz
             return Methods.DenOfIz_UI_GetNode(Handle, index, out node);
         }
 
-        // UINodeInfo.Parent and FindNode's result for none.
         public const uint NoNode = uint.MaxValue;
 
         public uint FindNode(uint id)

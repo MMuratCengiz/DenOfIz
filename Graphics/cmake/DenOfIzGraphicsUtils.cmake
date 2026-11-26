@@ -1,4 +1,3 @@
-# Sets up a target with DenOfIzGraphics runtime dependencies, ie. copies all necessary DLLs/shared libraries
 function(denofiz_setup_target target)
     if(NOT TARGET DenOfIz::DenOfIzGraphics AND NOT TARGET DenOfIzGraphics)
         message(WARNING "DenOfIzGraphics target not found")

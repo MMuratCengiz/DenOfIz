@@ -44,7 +44,6 @@ namespace DenOfIz
             return status == MTLCommandBufferStatusCompleted || status == MTLCommandBufferStatusError;
         }
 
-        // Call right after committing a command buffer.
         void TrackCommandBuffer( const id<MTLCommandBuffer> &commandBuffer )
         {
             if ( commandBuffer == nil )
@@ -72,7 +71,6 @@ namespace DenOfIz
             }
         }
 
-        // InFlightMutex must be held.
         void RemoveFinishedLocked( )
         {
             std::vector<id<MTLCommandBuffer>> remaining;

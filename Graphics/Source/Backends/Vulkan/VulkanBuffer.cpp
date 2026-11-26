@@ -77,7 +77,7 @@ VulkanBuffer::VulkanBuffer( VulkanContext *context, DenOfIz_BufferDesc desc ) :
         return;
     }
 
-    m_offset   = 0; // allocationInfo.offset is the buffer's place in its VkDeviceMemory, offsets into the buffer start at 0
+    m_offset   = 0;
     m_numBytes = allocationInfo.size;
 
     VkBufferDeviceAddressInfo bufferDeviceAddressInfo{ };

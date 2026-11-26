@@ -67,11 +67,10 @@ void VulkanPipeline::CreateGraphicsPipeline( )
     dynamicStateCreateInfo.dynamicStateCount = g_dynamicStates.size( );
     dynamicStateCreateInfo.pDynamicStates    = g_dynamicStates.data( );
     pipelineCreateInfo.pDynamicState         = &dynamicStateCreateInfo;
-    // Dynamic rendering through pNext, no render pass.
-    pipelineCreateInfo.renderPass         = nullptr;
-    pipelineCreateInfo.subpass            = 0;
-    pipelineCreateInfo.basePipelineHandle = nullptr;
-    pipelineCreateInfo.basePipelineIndex  = -1;
+    pipelineCreateInfo.renderPass            = nullptr;
+    pipelineCreateInfo.subpass               = 0;
+    pipelineCreateInfo.basePipelineHandle    = nullptr;
+    pipelineCreateInfo.basePipelineIndex     = -1;
 
     pipelineCreateInfo.pVertexInputState   = &inputStateCreateInfo;
     pipelineCreateInfo.pTessellationState  = &tessellationStateCreateInfo;
@@ -334,7 +333,6 @@ void VulkanPipeline::CreateMeshPipeline( )
     dynamicStateCreateInfo.pDynamicStates    = g_dynamicStates.data( );
     pipelineCreateInfo.pDynamicState         = &dynamicStateCreateInfo;
 
-    // Must be null for mesh pipelines.
     pipelineCreateInfo.pVertexInputState   = nullptr;
     pipelineCreateInfo.pInputAssemblyState = nullptr;
     pipelineCreateInfo.pTessellationState  = nullptr;
@@ -501,7 +499,6 @@ VkPipelineMultisampleStateCreateInfo VulkanPipeline::ConfigureMultisampling( ) c
 
 VkPipelineViewportStateCreateInfo VulkanPipeline::ConfigureViewport( ) const
 {
-    // Viewports and scissors are dynamic state.
     VkPipelineViewportStateCreateInfo viewportStateCreateInfo{ };
     viewportStateCreateInfo.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewportStateCreateInfo.viewportCount = 0;
@@ -591,7 +588,6 @@ VkPipelineColorBlendStateCreateInfo VulkanPipeline::ConfigureColorBlend( std::ve
         }
     }
 
-    // An enabled logic op disables the attachments' blending.
     VkPipelineColorBlendStateCreateInfo colorBlending{ };
     colorBlending.sType               = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable       = m_desc.Graphics.BlendLogicOpEnable;

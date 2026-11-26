@@ -408,7 +408,6 @@ void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
         aabbInstanceDesc.ContributionToHitGroupIndex = 2;
         aabbInstanceDesc.ID                          = 1;
 
-        // Move all AABBs above the ground plane (the AABB grid is centred on y = 0).
         const XMMATRIX   mAabbTranslation = XMMatrixTranslation( 0.0f, c_aabbWidth / 2.0f, 0.0f );
         DenOfIz_Float4x4 aabbTransform{ };
         XMStoreFloat3x4( reinterpret_cast<XMFLOAT3X4 *>( &aabbTransform._11 ), mAabbTranslation );

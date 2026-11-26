@@ -35,11 +35,9 @@ namespace DenOfIz
     class ILogicalDevice
     {
     protected:
-        DenOfIz_PhysicalDevice m_selectedDeviceInfo{ };
-        // Null for backends that don't defer destruction, objects are then deleted as soon as they are destroyed.
+        DenOfIz_PhysicalDevice                m_selectedDeviceInfo{ };
         std::unique_ptr<DeferredDestroyQueue> m_destroyQueue;
 
-        // Every backend calls this first thing in its destructor, the queued objects need the device to release what they own.
         void ReleaseDestroyedObjects( )
         {
             if ( m_destroyQueue )

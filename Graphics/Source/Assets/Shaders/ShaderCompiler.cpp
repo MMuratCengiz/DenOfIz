@@ -17,7 +17,7 @@ Licensed under the MIT License. See LICENSE in the project root.
 
 #ifdef _WIN32
 #include <wrl/client.h>
-#include "DenOfIzGraphics/Utilities/Common_Windows.h" // Include this before to make sure NOMINMAX is defined
+#include "DenOfIzGraphics/Utilities/Common_Windows.h"
 #else
 #define __EMULATE_UUID
 #include "WinAdapter.h"
@@ -36,21 +36,21 @@ using namespace DenOfIz;
 #if defined( __linux__ ) || defined( __APPLE__ )
 namespace
 {
-    // The LLVM inside DXC installs its own handlers for these signals on the first compile (llvm::sys::RemoveFileOnSignal) and never removes them
     class DxcSignalHandlerScope
     {
-        static constexpr int s_signals[] = { SIGHUP, SIGINT, SIGPIPE, SIGTERM, SIGUSR1, SIGUSR2, SIGILL, SIGTRAP, SIGABRT, SIGFPE, SIGBUS, SIGSEGV, SIGQUIT,
+        static constexpr int s_signals[] = {
+            SIGHUP,  SIGINT, SIGPIPE, SIGTERM, SIGUSR1, SIGUSR2, SIGILL, SIGTRAP, SIGABRT, SIGFPE, SIGBUS, SIGSEGV, SIGQUIT,
 #ifdef SIGSYS
-                                             SIGSYS,
+            SIGSYS,
 #endif
 #ifdef SIGXCPU
-                                             SIGXCPU,
+            SIGXCPU,
 #endif
 #ifdef SIGXFSZ
-                                             SIGXFSZ,
+            SIGXFSZ,
 #endif
 #ifdef SIGEMT
-                                             SIGEMT,
+            SIGEMT,
 #endif
         };
 
@@ -285,7 +285,7 @@ DenOfIz_CompileResult ShaderCompiler::CompileHLSL( const DenOfIz_CompileDesc &co
         break;
     case DENOFIZ_CODE_PAGE_UTF32:
 #ifndef DXC_CP_UTF32
-#define DXC_CP_UTF32 12000 // Undefined on CI for some reason
+#define DXC_CP_UTF32 12000
 #endif
         codePage = DXC_CP_UTF32;
         break;
@@ -377,7 +377,7 @@ DenOfIz_CompileResult ShaderCompiler::CompileHLSL( const DenOfIz_CompileDesc &co
     arguments.push_back( L"-T" );
     std::wstring wsTargetProfile( targetProfile.begin( ), targetProfile.end( ) );
     arguments.push_back( wsTargetProfile.c_str( ) );
-    arguments.push_back( L"-Zpr" ); // Row-major packing
+    arguments.push_back( L"-Zpr" );
     arguments.push_back( L"-all_resources_bound" );
     if ( compileDesc.TargetIL == DENOFIZ_TARGET_IL_SPIRV )
     {
@@ -401,7 +401,6 @@ DenOfIz_CompileResult ShaderCompiler::CompileHLSL( const DenOfIz_CompileDesc &co
         }
 
         arguments.push_back( L"-Wno-parameter-usage" );
-        // Vulkan needs a unique binding per descriptor while HLSL registers are per resource type, so each type is shifted to its own range.
         static const std::wstring VkShiftCbvWs     = std::to_wstring( DENOFIZ_VK_SHIFT_CBV );
         static const std::wstring VkShiftSrvWs     = std::to_wstring( DENOFIZ_VK_SHIFT_SRV );
         static const std::wstring VkShiftUavWs     = std::to_wstring( DENOFIZ_VK_SHIFT_UAV );
@@ -455,7 +454,6 @@ DenOfIz_CompileResult ShaderCompiler::CompileHLSL( const DenOfIz_CompileDesc &co
     }
 #endif
 
-    // Libraries export only the entry point, which keeps them compatible with Vulkan and Metal.
     arguments.push_back( L"-E" );
     std::string  entryPoint( compileDesc.EntryPoint.Chars, compileDesc.EntryPoint.NumChars );
     std::wstring wsEntryPoint( entryPoint.begin( ), entryPoint.end( ) );

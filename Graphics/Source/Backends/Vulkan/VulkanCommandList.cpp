@@ -285,8 +285,7 @@ void VulkanCommandList::BindViewport( const float offsetX, const float offsetY, 
         return;
     }
 
-    m_viewport.x = offsetX;
-    // Vulkan has inverted y-axis
+    m_viewport.x      = offsetX;
     m_viewport.y      = newY;
     m_viewport.height = newHeight;
 
@@ -779,13 +778,11 @@ void VulkanCommandList::BeginQuery( IQueryPool *queryPool, const DenOfIz_QueryDe
 
     if ( vkQueryPool->GetType( ) == DENOFIZ_QUERY_TYPE_TIMESTAMP )
     {
-        // As in The Forge: timestamps are written with vkCmdWriteTimestamp, the begin at the even index and the end at the odd one.
         const uint32_t actualIndex = queryDesc.Index * 2;
         vkCmdWriteTimestamp( m_commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, vkQueryPool->GetVkQueryPool( ), actualIndex );
     }
     else if ( vkQueryPool->GetType( ) == DENOFIZ_QUERY_TYPE_OCCLUSION || vkQueryPool->GetType( ) == DENOFIZ_QUERY_TYPE_PIPELINE_STATISTICS )
     {
-        // No VK_QUERY_CONTROL_PRECISE_BIT, it raises validation errors.
         VkQueryControlFlags flags = 0;
 
         vkCmdBeginQuery( m_commandBuffer, vkQueryPool->GetVkQueryPool( ), queryDesc.Index, flags );
@@ -819,7 +816,6 @@ void VulkanCommandList::ResolveQuery( IQueryPool *queryPool, const uint32_t star
     {
         spdlog::error( "VulkanCommandList::ResolveQuery: Invalid query pool" );
     }
-    // Noop
 }
 
 void VulkanCommandList::ResetQuery( IQueryPool *queryPool, const uint32_t startQuery, const uint32_t queryCount )

@@ -17,7 +17,6 @@ VulkanShaderLocalData::VulkanShaderLocalData( VulkanContext *context, const DenO
     m_context( context ), m_desc( desc ), m_layout( dynamic_cast<VulkanLocalRootSignature *>( DENOFIZ_FROM_HANDLE( ILocalRootSignature, desc.Layout ) ) )
 {
     m_inlineData.resize( m_layout->InlineDataNumBytes( ) );
-    // It is possible that the layout only contains push constants
     if ( m_layout->DescriptorSetLayout( ) != nullptr )
     {
         VkDescriptorSetAllocateInfo setAllocateInfo{ };

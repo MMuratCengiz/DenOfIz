@@ -20,7 +20,7 @@ namespace DenOfIz
         DenOfIz_BottomLevelASDesc                                     m_desc;
         std::vector<VkAccelerationStructureGeometryKHR>               m_geometryDescs;
         std::vector<VkAccelerationStructureBuildRangeInfoKHR>         m_buildRangeInfos;
-        std::vector<const VkAccelerationStructureBuildRangeInfoKHR *> m_buildRangeInfoPtrs; // vkCmdBuildAccelerationStructuresKHR takes an array of pointers
+        std::vector<const VkAccelerationStructureBuildRangeInfoKHR *> m_buildRangeInfoPtrs;
         std::unique_ptr<VulkanBuffer>                                 m_asBuffer;
         std::unique_ptr<VulkanBuffer>                                 m_scratchBuffer;
         VkBuildAccelerationStructureFlagsKHR                          m_flags;

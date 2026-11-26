@@ -138,7 +138,6 @@ DX12Texture::~DX12Texture( )
                 m_context->DsvDescriptorHeap->FreeDescriptors( handle, 1 );
             }
         }
-        // Released by hand rather than by com_ptr because swap chain textures wrap a resource the swap chain owns.
         m_allocation->Release( );
         m_resource->Release( );
     }

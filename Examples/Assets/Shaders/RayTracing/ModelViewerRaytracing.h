@@ -31,10 +31,9 @@ static const float FLT_MAX = asfloat( 0x7F7FFFFF );
 
 inline void GenerateCameraRay( uint2 index, out float3 origin, out float3 direction, float4x4 projectionToWorld, float3 cameraPosition )
 {
-    float2 xy        = index + 0.5f; // center in the middle of the pixel
+    float2 xy        = index + 0.5f;
     float2 screenPos = xy / DispatchRaysDimensions( ).xy * 2.0 - 1.0;
 
-    // Invert Y for DirectX-style coordinates
     screenPos.y = -screenPos.y;
 
     float4 world = mul( float4( screenPos, 0, 1 ), projectionToWorld );
@@ -75,7 +74,6 @@ inline void AntiAliasSpecular( inout float3 texNormal, inout float gloss )
     gloss = lerp( 1, gloss, rcp( invNormalLen ) );
 }
 
-// Apply fresnel to modulate the specular albedo
 inline void FSchlick( inout float3 specular, inout float3 diffuse, float3 lightDir, float3 halfVec )
 {
     float fresnel = pow( 1.0 - saturate( dot( lightDir, halfVec ) ), 5.0 );
@@ -83,14 +81,14 @@ inline void FSchlick( inout float3 specular, inout float3 diffuse, float3 lightD
     diffuse       = lerp( diffuse, 0, fresnel );
 }
 
-inline float3 ApplyLightCommon( float3 diffuseColor,  // Diffuse albedo
-                                float3 specularColor, // Specular albedo
-                                float  specularMask,  // Where is it shiny or dingy?
-                                float  gloss,         // Specular power
-                                float3 normal,        // World-space normal
-                                float3 viewDir,       // World-space vector from eye to point
-                                float3 lightDir,      // World-space vector from point to light
-                                float3 lightColor     // Radiance of directional light
+inline float3 ApplyLightCommon( float3 diffuseColor,
+                                float3 specularColor,
+                                float  specularMask,
+                                float  gloss,
+                                float3 normal,
+                                float3 viewDir,
+                                float3 lightDir,
+                                float3 lightColor
 )
 {
     float3 halfVec = normalize( lightDir - viewDir );
@@ -105,6 +103,6 @@ inline float3 ApplyLightCommon( float3 diffuseColor,  // Diffuse albedo
     return nDotL * lightColor * ( diffuseColor + specularFactor * specularColor );
 }
 
-#endif // HLSL
+#endif
 
-#endif // MODEL_VIEWER_RAYTRACING_H
+#endif

@@ -33,13 +33,11 @@ namespace DenOfIz
         VkImageAspectFlags       m_aspect{ };
         VmaAllocation            m_allocation{ };
         uint32_t                 m_mipLevels{ };
-        // Mutable: the layout is changed by recorded barriers, NotifyLayoutChange only lets the state tracker know.
-        mutable VkImageLayout m_layout{ };
+        mutable VkImageLayout    m_layout{ };
 
     public:
         VulkanTexture( VulkanContext *context, const DenOfIz_TextureDesc &desc );
 
-        // Swap chain images
         VulkanTexture( const VkImage &image, const VkImageView &imageView, const VkFormat format, const VkImageAspectFlags imageAspect, const DenOfIz_TextureDesc &desc );
         void NotifyLayoutChange( const VkImageLayout newLayout ) const;
         void UpdateExternal( const VkImage &image, const VkImageView &imageView, const DenOfIz_TextureDesc &desc );

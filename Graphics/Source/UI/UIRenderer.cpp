@@ -18,7 +18,6 @@ Licensed under the MIT License. See LICENSE in the project root.
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
-// Include last due to DirectXMath
 #include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
 
 using namespace DenOfIz;
@@ -35,7 +34,6 @@ namespace
         const char *Name;
     };
 
-    // Indexed by UIRenderer::Stream. Every stream but the index buffer is a structured buffer in the constants group.
     constexpr std::array<StreamInfo, 4> Streams = { { { sizeof( UIVertex ), 4096, "UI Vertices" },
                                                       { sizeof( UIQuad ), 4096, "UI Quads" },
                                                       { sizeof( uint32_t ), 24576, "UI Indices" },
@@ -343,8 +341,8 @@ void UIRenderer::PushState( const DrawState &state )
     next.Record    = 0;
     if ( next.ClipCount > 0 || !UIMath::IsIdentityLayer( next.Layer ) )
     {
-        next.Record = AllocateRecord( );
-        const UILayerCommand &layer = next.Layer;
+        next.Record                                       = AllocateRecord( );
+        const UILayerCommand &layer                       = next.Layer;
         *StreamData<UIStateRecord>( States, next.Record ) = UIStateRecord{ { layer.BiasR, layer.BiasG, layer.BiasB, layer.Scale },
                                                                            { layer.Opacity, static_cast<float>( next.ClipCount ), 0.0f, 0.0f },
                                                                            { static_cast<float>( next.Clips[ 0 ] ), static_cast<float>( next.Clips[ 1 ] ),
@@ -354,7 +352,6 @@ void UIRenderer::PushState( const DrawState &state )
     m_stateBits = next.Record << UITextureSlots::Bits;
 }
 
-// Quads are indexed above UIQuadIndexBit, so neither vertices nor quad corners may reach it.
 UIVertex *UIRenderer::AllocateVertices( const uint32_t count )
 {
     if ( m_vertexCount + count > UIQuadIndexBit )
@@ -540,18 +537,15 @@ void UIRenderer::EmitText( const UICommand &command )
     const float          pixel      = 1.0f / m_pixelsPerPoint;
     const float          clipTop    = m_clipPoints.Y;
     const float          clipBottom = m_clipPoints.Y + m_clipPoints.Height;
-    // Colour glyphs keep their own colours, only the text's alpha fades them. Their foreground layers use the text colour.
-    auto pack = []( const DenOfIz_UIColor &c )
-    { return static_cast<uint32_t>( c.R ) << 24 | static_cast<uint32_t>( c.G ) << 16 | static_cast<uint32_t>( c.B ) << 8 | c.A; };
+    auto pack = []( const DenOfIz_UIColor &c ) { return static_cast<uint32_t>( c.R ) << 24 | static_cast<uint32_t>( c.G ) << 16 | static_cast<uint32_t>( c.B ) << 8 | c.A; };
     const uint32_t       textForeground = pack( command.Text.Color );
     const DenOfIz_Float4 textTint       = { 1.0f, 1.0f, 1.0f, color.W };
     const uint32_t       colourIndex    = UITextureSlots::ColourGlyph | m_stateBits;
     const auto          &styles         = layout.Run->Styles;
-    // Rich text glyphs take the colour of their run, looked up again only when the run changes.
-    uint32_t       style      = UINT32_MAX;
-    DenOfIz_Float4 glyphColor = color;
-    DenOfIz_Float4 tint       = textTint;
-    uint32_t       foreground = textForeground;
+    uint32_t             style          = UINT32_MAX;
+    DenOfIz_Float4       glyphColor     = color;
+    DenOfIz_Float4       tint           = textTint;
+    uint32_t             foreground     = textForeground;
 
     auto addQuad = [ this ]( const UIQuad &quad )
     {
@@ -608,7 +602,6 @@ void UIRenderer::EmitText( const UICommand &command )
             {
                 continue;
             }
-            // Bitmap pixels to points, the top left corner on a device pixel so a bitmap drawn at its own size stays crisp.
             const float k  = pixelsPerEm / static_cast<float>( bitmap.Ppem ) * pixel;
             const float x0 = std::round( ( lineX + quad.X0 * s + static_cast<float>( bitmap.Left ) * k ) * m_pixelsPerPoint ) * pixel;
             const float y0 = std::round( ( lineY + quad.Y0 * s + static_cast<float>( bitmap.Top ) * k ) * m_pixelsPerPoint ) * pixel;
@@ -627,7 +620,6 @@ void UIRenderer::EmitText( const UICommand &command )
         {
             continue;
         }
-        // Pixels whose centers lie just outside the outline still get coverage, so grow the quad by a pixel and extend the em coordinates to match.
         const float du = ( quad.U1 - quad.U0 ) / ( x1 - x0 ) * pixel;
         const float dv = ( quad.V1 - quad.V0 ) / ( y1 - y0 ) * pixel;
         const float u0 = quad.U0 - du;
@@ -649,7 +641,6 @@ void UIRenderer::Build( const std::vector<UICommand> &commands, const uint32_t f
     m_recordCount    = 1;
     m_stateBits      = 0;
     m_desc.Text->ColourGlyphs( ).BeginFrame( );
-    // Record 0 leaves colours and coverage alone.
     *StreamData<UIStateRecord>( States, 0 ) = UIStateRecord{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } };
     m_batches.clear( );
     m_clipStack.clear( );
@@ -1001,7 +992,6 @@ bool UIRenderer::Capture( const std::vector<UICommand> &commands, const uint32_t
         return false;
     }
 
-    // Rows of a multiple of 64 pixels are 256 byte aligned, which every backend lays out the same way in the readback buffer.
     const uint32_t paddedWidth = ( pixelWidth + 63u ) & ~63u;
     DenOfIz_LogicalDevice_WaitIdle( m_device );
     EnsureCaptureTarget( paddedWidth, pixelHeight );
@@ -1063,16 +1053,15 @@ bool UIRenderer::Capture( const std::vector<UICommand> &commands, const uint32_t
         uint8_t       *dst = outPixels->Elements + static_cast<size_t>( y ) * pixelWidth * 4;
         for ( uint32_t x = 0; x < pixelWidth; ++x, src += 4, dst += 4 )
         {
-            const uint8_t a = src[ 3 ];
-            const uint8_t r = bgra ? src[ 2 ] : src[ 0 ];
-            const uint8_t g = src[ 1 ];
-            const uint8_t b = bgra ? src[ 0 ] : src[ 2 ];
-            // The blend state accumulates premultiplied colour over the transparent clear.
-            const auto straight = [ a ]( const uint8_t c ) { return a == 0 ? uint8_t{ 0 } : static_cast<uint8_t>( std::min( 255, ( c * 255 + a / 2 ) / a ) ); };
-            dst[ 0 ]            = a == 255 ? r : straight( r );
-            dst[ 1 ]            = a == 255 ? g : straight( g );
-            dst[ 2 ]            = a == 255 ? b : straight( b );
-            dst[ 3 ]            = a;
+            const uint8_t a        = src[ 3 ];
+            const uint8_t r        = bgra ? src[ 2 ] : src[ 0 ];
+            const uint8_t g        = src[ 1 ];
+            const uint8_t b        = bgra ? src[ 0 ] : src[ 2 ];
+            const auto    straight = [ a ]( const uint8_t c ) { return a == 0 ? uint8_t{ 0 } : static_cast<uint8_t>( std::min( 255, ( c * 255 + a / 2 ) / a ) ); };
+            dst[ 0 ]               = a == 255 ? r : straight( r );
+            dst[ 1 ]               = a == 255 ? g : straight( g );
+            dst[ 2 ]               = a == 255 ? b : straight( b );
+            dst[ 3 ]               = a;
         }
     }
     DenOfIz_Buffer_UnmapMemory( m_captureReadback );

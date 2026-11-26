@@ -7,7 +7,6 @@
     <Nullable>enable</Nullable>
     <LangVersion>12.0</LangVersion>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    <!-- NuGet Package Metadata -->
     <PackageId>DenOfIzGraphics</PackageId>
     <Version>0.6.1-alpha</Version>
     <Authors>Den Of Iz</Authors>
@@ -19,7 +18,6 @@
     <PackageProjectUrl>https://github.com/MartinJespersen/DenOfIz</PackageProjectUrl>
     <RepositoryUrl>https://github.com/MartinJespersen/DenOfIz.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <!-- Build settings -->
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>

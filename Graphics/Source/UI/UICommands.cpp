@@ -350,7 +350,6 @@ void UIContext::EmitText( const UINode &node )
                 continue;
             }
             const float align = layout->AlignOffset( line, boxWidth, desc.Align );
-            // Mixed directions split a logical range into several visual pieces.
             layout->SelectionSpans( line, a, b, l.Height * 0.3f, m_selectionSpans );
             for ( const DenOfIz_Float2 &span : m_selectionSpans )
             {
@@ -388,7 +387,6 @@ void UIContext::EmitText( const UINode &node )
     }
 }
 
-// Run backgrounds go under the glyphs, decorations and inline images over them, one rectangle per visual piece of the run on each line.
 void UIContext::EmitTextRuns( const UINode &node, const bool foreground )
 {
     const UITextLayout       &layout   = *node.State->Layout;
@@ -401,9 +399,9 @@ void UIContext::EmitTextRuns( const UINode &node, const bool foreground )
     auto                      snap     = [ this ]( const float v ) { return std::round( v * m_pixelsPerPoint ) / m_pixelsPerPoint; };
     for ( const UIRunStyle &style : layout.Run->Styles )
     {
-        const bool image  = style.Object && DENOFIZ_HANDLE_IS_VALID( style.Image );
-        const bool wanted = foreground ? style.Decoration != 0 || image : style.Background.A > 0;
-        const Font *font  = m_text.GetFace( style.FontId )->FontPtr;
+        const bool  image  = style.Object && DENOFIZ_HANDLE_IS_VALID( style.Image );
+        const bool  wanted = foreground ? style.Decoration != 0 || image : style.Background.A > 0;
+        const Font *font   = m_text.GetFace( style.FontId )->FontPtr;
         if ( !wanted || font == nullptr )
         {
             continue;

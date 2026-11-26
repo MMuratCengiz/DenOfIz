@@ -40,19 +40,16 @@
 
 float GetDistanceFromSignedDistancePrimitive(in float3 position, in SignedDistancePrimitive::Enum sdPrimitive);
 
-// Subtract: Obj1 - Obj2
 float opS(float d1, float d2)
 {
     return max(d1, -d2);
 }
 
-// Union: Obj1 + Obj2
 float opU(float d1, float d2)
 {
     return min(d1, d2);
 }
 
-// Intersection: Obj1 & Obj2
 float opI(float d1, float d2)
 {
     return max(d1, d2);
@@ -63,7 +60,6 @@ float3 opRep(float3 p, float3 c)
     return fmod(p, c) - 0.5 * c;
 } 
 
-// Polynomial smooth min/union (k = 0.1)
 // Ref: http://www.iquilezles.org/www/articles/smin/smin.htm
 float smin(float a, float b, float k)
 {
@@ -71,20 +67,17 @@ float smin(float a, float b, float k)
     return lerp(b, a, h) - k * h*(1.0 - h);
 }
 
-// Polynomial smooth max/intersection (k = 0.1)
 float smax(float a, float b, float k)
 {
     float h = clamp(0.5 + 0.5*(b - a) / k, 0.0, 1.0);
     return lerp(a, b, h) + k * h*(1.0 - h);
 }
 
-// Smooth blend as union
 float opBlendU(float d1, float d2)
 {
     return smin(d1, d2, 0.1);
 }
 
-// Smooth blend as intersect
 float opBlendI(float d1, float d2)
 {
     return smax(d1, d2, 0.1);
@@ -108,7 +101,6 @@ float sdSphere(float3 p, float s)
     return length(p) - s;
 }
 
-// Box extents: <-b,b>
 float sdBox(float3 p, float3 b)
 {
     float3 d = abs(p) - b;
@@ -125,7 +117,6 @@ float udRoundBox(float3 p, float3 b, float r)
     return length(max(abs(p) - b, 0.0)) - r;
 }
 
-// t: {radius, tube radius}
 float sdTorus(float3 p, float2 t)
 {
     float2 q = float2(length(p.xz) - t.x, p.y);
@@ -149,7 +140,7 @@ float sdCapsule(float3 p, float3 a, float3 b, float r)
 
 float sdEquilateralTriangle(in float2 p)
 {
-    const float k = 1.73205;    //sqrt(3.0);
+    const float k = 1.73205;
     p.x = abs(p.x) - 1.0;
     p.y = p.y + 1.0 / k;
     if (p.x + k * p.y > 0.0) p = float2(p.x - k * p.y, -k * p.x - p.y) / 2.0;
@@ -162,10 +153,8 @@ float sdTriPrism(float3 p, float2 h)
     float3 q = abs(p);
     float d1 = q.z - h.y;
 #if 1
-    // distance bound
     float d2 = max(q.x * 0.866025 + p.y * 0.5, -p.y) - h.x * 0.5;
 #else
-    // correct distance
     h.x *= 0.866025;
     float d2 = sdEquilateralTriangle(p.xy / h.x) * h.x;
 #endif
@@ -196,30 +185,20 @@ float sdConeSection(in float3 p, in float h, in float r1, in float r2)
 }
 
 
-// h = { sin a, cos a, height of a pyramid }
-// a = pyramid's inner angle between its side plane and a ground plane.
-// Octahedron position - ground plane intersecting in the middle.
 float sdOctahedron(float3 p, float3 h)
 {
     float d = 0.0;
 
-    // Get distance against pyramid's sides going through origin.
-    // Test: d = p.x * sin a + p.y * cos a
     d = dot(float2(max(abs(p.x), abs(p.z)), abs(p.y)), 
             float2(h.x, h.y));
 
-    // Subtract distance to a side when at height h.z from the origin.
     return d - h.y * h.z;
 }
 
-// h = { sin a, cos a, height of a pyramid}
-// a = pyramid's inner angle between its side plane and a ground plane.
-// Pyramid position - sitting on a ground plane.
 float sdPyramid(float3 p, float3 h)
 {
     float octa = sdOctahedron(p, h);
 
-    // Subtract bottom half
     return opS(octa, p.y);
 }
 
@@ -271,7 +250,6 @@ bool RaySignedDistancePrimitiveTest(in Ray ray, in SignedDistancePrimitive::Enum
     float t = RayTMin();
     const UINT MaxSteps = 512;
 
-    // Do sphere tracing through the AABB.
     UINT i = 0;
     while (i++ < MaxSteps && t <= RayTCurrent())
     {
@@ -289,29 +267,22 @@ bool RaySignedDistancePrimitiveTest(in Ray ray, in SignedDistancePrimitive::Enum
             }
         }
 
-        // Since distance is the minimum distance to the primitive,
-        // we can safely jump by that amount without intersecting the primitive.
-        // We allow for scaling of steps per primitive type due to any pre-applied
-        // transformations that don't preserve true distances.
         t += stepScale * distance;
     }
     return false;
 }
 
-// Analytically integrated checkerboard grid (box filter).
 // Ref: http://iquilezles.org/www/articles/filterableprocedurals/filterableprocedurals.htm
-// ratio - Center fill to border ratio.
 float CheckersTextureBoxFilter(in float2 uv, in float2 dpdx, in float2 dpdy, in UINT ratio)
 {
-    float2 w = max(abs(dpdx), abs(dpdy));   // Filter kernel
+    float2 w = max(abs(dpdx), abs(dpdy));
     float2 a = uv + 0.5*w;
     float2 b = uv - 0.5*w;
 
-    // Analytical integral (box filter).
     float2 i = (floor(a) + min(frac(a)*ratio, 1.0) -
         floor(b) - min(frac(b)*ratio, 1.0)) / (ratio*w);
     return (1.0 - i.x)*(1.0 - i.y);
 }
 
 
-#endif // SIGNEDDISTANCEPRIMITIVES_H
+#endif

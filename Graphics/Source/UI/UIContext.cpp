@@ -964,17 +964,16 @@ void UIContext::ResolveTexts( )
         {
             continue;
         }
-        const UITextNode   &text   = m_frame->Texts[ node.Data ];
-        UIElementState     &state  = *node.State;
-        const char         *chars  = m_frame->TextArena.data( ) + text.Offset;
-        const UITextParams  params = UITextParams::From( text.Desc );
-        const UIShapedRun  *run    = state.Run;
-        const bool          rich   = text.RunCount > 0;
+        const UITextNode  &text   = m_frame->Texts[ node.Data ];
+        UIElementState    &state  = *node.State;
+        const char        *chars  = m_frame->TextArena.data( ) + text.Offset;
+        const UITextParams params = UITextParams::From( text.Desc );
+        const UIShapedRun *run    = state.Run;
+        const bool         rich   = text.RunCount > 0;
         if ( rich )
         {
             ResolveStyles( text, params );
         }
-        // Unchanged text is recognised by comparing it with the run it was shaped into, only new text is hashed to look its run up.
         const bool cached = run != nullptr && state.TextEpoch == m_text.Epoch( ) && run->Text.size( ) == text.Length && run->FontId == m_text.ResolveFontId( params.FontId ) &&
                             ( rich ? std::ranges::equal( run->Styles, m_styles ) : run->Styles.empty( ) ) &&
                             ( text.Length == 0 || std::memcmp( run->Text.data( ), chars, text.Length ) == 0 );
@@ -1015,7 +1014,6 @@ void UIContext::ResolveTexts( )
     }
 }
 
-// Runs clamped to the text and to each other, text past the last run takes the leaf's style.
 void UIContext::ResolveStyles( const UITextNode &text, const UITextParams &params )
 {
     m_styles.clear( );

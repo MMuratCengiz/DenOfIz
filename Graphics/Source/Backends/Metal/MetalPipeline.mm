@@ -317,9 +317,8 @@ void MetalPipeline::CreateRayTracingPipeline( )
     DenOfIz_ShaderProgram_Desc( m_desc.ShaderProgram, &shaderProgramDesc );
 
     MTLComputePipelineDescriptor    *pipelineStateDescriptor = [[MTLComputePipelineDescriptor alloc] init];
-    NSMutableArray<id<MTLFunction>> *functionHandles = [NSMutableArray arrayWithCapacity:compiledShaders.NumElements + 2]; // +2 for triangle and procedural intersection shaders
+    NSMutableArray<id<MTLFunction>> *functionHandles = [NSMutableArray arrayWithCapacity:compiledShaders.NumElements + 2];
 
-    // Operations done in the visible function table need to skip the first entry, which is reserved for the null function.
     constexpr uint32_t nullFunctionOffset = 1;
     m_visibleFunctions[ "Null" ]          = 0;
 
@@ -374,8 +373,6 @@ void MetalPipeline::CreateRayTracingPipeline( )
 
     [pipelineStateDescriptor setLabel:@"RayTracing Pipeline"];
     [pipelineStateDescriptor setComputeFunction:dispatchFunction];
-    // Each TraceRay level costs two visible-function calls (intersection/any-hit + closest-hit/miss)
-    // on top of the ray generation function itself, so size the call stack accordingly.
     [pipelineStateDescriptor setMaxCallStackDepth:( rtDesc.MaxRecursionDepth * 2 ) + 2];
 
     if ( DENOFIZ_HANDLE_IS_VALID( m_desc.PipelineCache ) )
@@ -632,7 +629,7 @@ const id<MTLVisibleFunctionTable> &MetalPipeline::VisibleFunctionTable( ) const
 
 void MetalPipeline::CreateMeshPipeline( )
 {
-    id<MTLFunction> objectFunction = nullptr; // Task (amplification) shader
+    id<MTLFunction> objectFunction = nullptr;
     id<MTLFunction> meshFunction = nullptr;
     id<MTLFunction> fragmentFunction = nullptr;
     m_usedMeshShaderStages = {};

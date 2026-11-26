@@ -26,6 +26,6 @@ void MyIntersectionShader_VolumetricPrimitive()
         attr.normal = mul(attr.normal, (float3x3) aabbAttribute.localSpaceToBottomLevelAS);
         attr.normal = normalize(mul((float3x3) ObjectToWorld3x4(), attr.normal));
 
-        ReportHit(thit, /*hitKind*/ 0, attr);
+        ReportHit(thit, 0, attr);
     }
 }

@@ -25,7 +25,6 @@ void MetalFence::Wait( )
 
 void MetalFence::Reset( )
 {
-    // Nothing to do: like DX12Fence, the next submission simply signals a newer value and Wait() waits for it.
 }
 
 void MetalFence::Notify( )

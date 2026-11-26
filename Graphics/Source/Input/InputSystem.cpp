@@ -7,6 +7,7 @@ Licensed under the MIT License. See LICENSE in the project root.
 
 #include "DenOfIzGraphics/Input/InputSystem.h"
 
+#include <atomic>
 #include <cstring>
 #include <string>
 
@@ -458,9 +459,33 @@ SDL_Keymod InputSystem::ConvertToSdlKeyMod( const uint32_t modifiers )
     return static_cast<SDL_Keymod>( sdlMods );
 }
 
+namespace
+{
+    std::atomic<uint32_t> s_wakeEventType{ 0 };
+
+    uint32_t WakeEventType( )
+    {
+        static const uint32_t type = []
+        {
+            const uint32_t registered = SDL_RegisterEvents( 1 );
+            s_wakeEventType.store( registered, std::memory_order_release );
+            return registered;
+        }( );
+        return type;
+    }
+} // namespace
+
 void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, DenOfIz_Event &outEvent )
 {
     outEvent.Type = static_cast<DenOfIz_EventType>( sdlEvent.type );
+
+    if ( sdlEvent.type >= SDL_EVENT_USER && sdlEvent.type == s_wakeEventType.load( std::memory_order_acquire ) )
+    {
+        outEvent.Type             = DENOFIZ_EVENT_TYPE_WAKE;
+        outEvent.Common.Timestamp = static_cast<uint32_t>( sdlEvent.user.timestamp );
+        outEvent.Common.WindowID  = 0;
+        return;
+    }
 
     switch ( sdlEvent.type )
     {
@@ -1126,10 +1151,27 @@ extern "C"
             sdlEvent.quit.timestamp = ev->Quit.Common.Timestamp;
             break;
 
+        case DENOFIZ_EVENT_TYPE_WAKE:
+            DenOfIz_InputSystem_Wake( );
+            return;
+
         default:
             return;
         }
 
+        SDL_PushEvent( &sdlEvent );
+    }
+
+    void DenOfIz_InputSystem_Wake( )
+    {
+        const uint32_t type = WakeEventType( );
+        if ( type == 0 || SDL_HasEvent( type ) )
+        {
+            return;
+        }
+
+        SDL_Event sdlEvent = { };
+        sdlEvent.type      = type;
         SDL_PushEvent( &sdlEvent );
     }
 

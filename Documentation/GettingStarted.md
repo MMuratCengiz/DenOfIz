@@ -8,7 +8,7 @@ DenOfIz is used through its C API in `Graphics/Include/DenOfIzGraphics`, include
 
 - **Graphics**: the library, public headers in `Graphics/Include`, tests in `Graphics/Tests`, tools in `Graphics/Tools`
 - **Bindings**: the C# binding generator, the generated sources and hand written wrappers
-- **Examples**: examples featuring common use cases, `Examples/Base` holds the shared framework (`IExample.h`, `Main.cpp`)
+- **Examples**: the examples, `Examples/Base` holds the shared framework (`IExample.h`, `Main.cpp`)
 - **Documentation**: this documentation
 
 ## Setup
@@ -216,16 +216,38 @@ while ( running )
 On shutdown call `DenOfIz_FrameSync_WaitIdle`, then the `Destroy` function of every object you created, `DenOfIz_LogicalDevice_Destroy`, `DenOfIz_GraphicsApi_Destroy`,
 `DenOfIz_Window_Destroy` and `DenOfIz_Engine_Shutdown`.
 
-## Example Projects
+### Rendering on demand
 
-The best way to learn is to explore the example projects:
+A game renders every frame. A tool or editor that only changes on input can sleep in the event loop instead: block for the first event, drain the rest, render once.
+Keep rendering while `DenOfIz_UI_IsAnimating` is true. When data the frame shows changes, call `DenOfIz_InputSystem_Wake` from any thread: the wait returns with a
+`DENOFIZ_EVENT_TYPE_WAKE` event. Use `DENOFIZ_PRESENT_MODE_FIFO` so the frames that are drawn are paced by the display.
+
+```cpp
+bool redraw = true;
+while ( running )
+{
+    DenOfIz_Event event;
+    if ( !redraw && DenOfIz_InputSystem_WaitEvent( &event ) ) // or WaitEventTimeout, for a caret blink
+    {
+        HandleEvent( &event ); // DENOFIZ_EVENT_TYPE_WAKE: only redraw
+    }
+    while ( DenOfIz_InputSystem_PollEvent( &event ) )
+    {
+        HandleEvent( &event );
+    }
+
+    RenderFrame( );
+    redraw = DenOfIz_UI_IsAnimating( ui );
+}
+```
+
+## Example Projects
 
 1. `SimpleTriangle` is the code above in the example framework
 2. `RootConstants` and `Bindless` are small examples of resource binding, `Transparency` a bigger one
-3. `Examples/Base` holds the framework code: `IExample.h`, `Main.cpp`
-4. `RayTracedTriangle` is a good ray tracing starting point
+3. `RayTracedTriangle` is a good ray tracing starting point
 
 ## Next Steps
 
-- [Compiling Shaders](CompilingShaders.md) on how to compile shaders
-- [Resource Binding](ResourceBinding.md) for understanding the resource binding model
+- [Compiling Shaders](CompilingShaders.md)
+- [Resource Binding](ResourceBinding.md)

@@ -22,7 +22,7 @@ extern "C"
 
     typedef struct DenOfIz_BinaryReaderDesc
     {
-        uint64_t NumBytes; // 0 means reads the whole contents
+        uint64_t NumBytes; /**< Zero reads everything. */
     } DenOfIz_BinaryReaderDesc;
 
     DZ_API DenOfIz_BinaryReader DenOfIz_BinaryReader_CreateFromContainer( DenOfIz_BinaryContainer container, const DenOfIz_BinaryReaderDesc *desc );

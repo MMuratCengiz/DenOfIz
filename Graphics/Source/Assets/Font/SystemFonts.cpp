@@ -22,17 +22,11 @@ namespace
 {
     struct SystemFonts
     {
-        std::mutex Mutex;
-        // Keyed by the file and face the OS named, null when the font cannot be drawn.
+        std::mutex                                             Mutex;
         std::unordered_map<std::string, std::unique_ptr<Font>> Files;
-        // Keyed by the cluster's bytes and the kind asked for, null when no system font covers it.
-        std::unordered_map<std::string, Font *> Clusters;
-        // Fonts already picked for a script are tried before asking the OS, so a new character of a script seen before costs a cmap lookup.
-        // Emoji fonts are kept apart under EmojiScript, whatever script the emoji sit in.
-        std::unordered_map<uint32_t, std::vector<Font *>> Scripts;
-        // Keyed like Files: the installed fonts found standing in for an OS pick that cannot be drawn or misses part of a cluster, such as a combining
-        // mark. A cluster none of them covers searches again, a miss is cached with the cluster.
-        std::unordered_map<std::string, std::vector<Font *>> Replacements;
+        std::unordered_map<std::string, Font *>                Clusters;
+        std::unordered_map<uint32_t, std::vector<Font *>>      Scripts;
+        std::unordered_map<std::string, std::vector<Font *>>   Replacements;
     };
 
     constexpr uint32_t EmojiScript = UINT32_MAX;
@@ -66,8 +60,6 @@ namespace
         return file.Path + '\n' + file.PostScriptName + '\n' + std::to_string( file.FaceIndex );
     }
 
-    // Outlines HarfBuzz can draw, or colour glyphs. A colour bitmap font's glyf outlines only box its images, fonts with other outline tables,
-    // such as the hvgl of recent Apple CJK fonts, cannot be drawn.
     bool Drawable( const Font &font )
     {
         hb_face_t *face  = hb_font_get_face( font.HbFont( ) );
@@ -156,7 +148,6 @@ Font *DenOfIz::SystemFallbackFont( const char *text, const uint32_t length, cons
     {
         return nullptr;
     }
-    // The OS can pick an emoji font for a symbol asked for as text, or a text font for an emoji: another installed font of the wanted kind wins.
     if ( font->IsColour( ) != colour )
     {
         std::vector<SystemFontFile> candidates;

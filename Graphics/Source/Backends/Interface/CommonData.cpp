@@ -72,7 +72,6 @@ uint32_t DenOfIz_Format_NumBytes( const DenOfIz_Format format )
     case DENOFIZ_FORMAT_R8_SINT:
     case DENOFIZ_FORMAT_R8_TYPELESS:
         return 1;
-        // Block compressed formats: bytes per 4x4 block.
     case DENOFIZ_FORMAT_BC1_UNORM:
     case DENOFIZ_FORMAT_BC1_UNORM_SRGB:
         return 8;

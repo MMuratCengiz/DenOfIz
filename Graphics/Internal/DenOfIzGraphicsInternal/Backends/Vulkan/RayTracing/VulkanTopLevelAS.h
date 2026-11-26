@@ -21,7 +21,7 @@ namespace DenOfIz
         VkBuildAccelerationStructureFlagsKHR                            m_flags;
         std::vector<VkAccelerationStructureInstanceKHR>                 m_instances;
         VkAccelerationStructureBuildRangeInfoKHR                        m_buildRangeInfo;
-        std::array<const VkAccelerationStructureBuildRangeInfoKHR *, 1> m_buildRangeInfoPtr; // vkCmdBuildAccelerationStructuresKHR takes an array of pointers
+        std::array<const VkAccelerationStructureBuildRangeInfoKHR *, 1> m_buildRangeInfoPtr;
         std::unique_ptr<VulkanBuffer>                                   m_instanceBuffer;
         std::unique_ptr<VulkanBuffer>                                   m_buffer;
         std::unique_ptr<VulkanBuffer>                                   m_scratch;

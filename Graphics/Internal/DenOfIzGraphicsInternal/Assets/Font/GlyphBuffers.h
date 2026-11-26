@@ -15,8 +15,6 @@ Licensed under the MIT License. See LICENSE in the project root.
 
 namespace DenOfIz
 {
-    // The glyph stores mirrored into persistently mapped structured buffers: Slug curves, bands and glyph records, then colour glyph pixels,
-    // bound in that order.
     class GlyphBuffers
     {
         struct Stream

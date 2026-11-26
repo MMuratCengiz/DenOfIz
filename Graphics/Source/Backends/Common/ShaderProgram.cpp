@@ -69,10 +69,10 @@ namespace DenOfIz
     class ShaderProgram
     {
     public:
-        DenOfIz_ShaderCompiler m_compiler = DENOFIZ_NULL_HANDLE;
+        DenOfIz_ShaderCompiler                                     m_compiler = DENOFIZ_NULL_HANDLE;
         std::vector<std::unique_ptr<DenOfIz_CompiledShaderStage>>  m_compiledShaders;
         std::vector<DenOfIz_CompiledShaderStage *>                 m_compiledShaderPtrs;
-        std::vector<DenOfIz_ShaderStageDesc>                       m_shaderDescs; // Index matched with m_compiledShaders
+        std::vector<DenOfIz_ShaderStageDesc>                       m_shaderDescs;
         DenOfIz_ShaderReflectDesc                                  m_reflectDesc;
         DenOfIz_ShaderProgramDesc                                  m_desc;
         std::vector<DenOfIz_ByteArray>                             m_dataToClean;
@@ -283,7 +283,6 @@ DenOfIz_ShaderProgramDesc &ShaderProgram::Desc( )
     return m_desc;
 }
 
-// MSL is converted from the DXIL, whose reflection provides the root signature the conversion needs.
 void ShaderProgram::Compile( )
 {
     std::vector<DenOfIz_CompiledShaderStage *> dxilShaders;
@@ -331,7 +330,7 @@ void ShaderProgram::Compile( )
         compiledShader->Reflection = reflection;
         compiledShader->DXIL       = dxil;
         compiledShader->SPIRV      = spirv;
-        compiledShader->MSL        = { }; // Set below
+        compiledShader->MSL        = { };
 
         m_shaderDescs.push_back( stage );
     }
@@ -520,7 +519,7 @@ DenOfIz_Format MaskToFormat( const D3D_REGISTER_COMPONENT_TYPE componentType, co
         default:
             return DENOFIZ_FORMAT_UNDEFINED;
         }
-#ifdef D3D_READY // The DXC version used lacks these component types, they came from the DirectX headers
+#ifdef D3D_READY
     case D3D_REGISTER_COMPONENT_UINT16:
         switch ( mask )
         {
@@ -598,7 +597,6 @@ void ShaderProgram::ReflectLibrary( ReflectionState &state )
         DXC_CHECK_RESULT( functionReflection->GetDesc( &functionDesc ) );
 
         {
-            // Only the entry point's function, its name may be mangled.
             std::string_view mangledName( functionDesc.Name );
             const bool       isMangled = mangledName.starts_with( "\01?" ) || mangledName.starts_with( "\x1?" );
             std::string      entryPoint( state.CompiledShader->EntryPoint.Chars, state.CompiledShader->EntryPoint.NumChars );
@@ -655,7 +653,6 @@ void ShaderProgram::ProcessInputBindingDesc( ReflectionState &state, const D3D12
         }
     }
 
-    // Bindless arrays are bound separately.
     if ( isBindlessArray )
     {
         return;

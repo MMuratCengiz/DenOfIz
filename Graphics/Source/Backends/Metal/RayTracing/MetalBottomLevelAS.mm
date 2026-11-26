@@ -91,7 +91,6 @@ MTLAccelerationStructureTriangleGeometryDescriptor *MetalBottomLevelAS::Initiali
     triangleDesc.vertexStride                    = triangle.VertexStride;
     triangleDesc.vertexFormat                    = DenOfIz_MetalEnumConverter_ConvertFormatToAttributeFormat( triangle.VertexFormat );
 
-    // Overwrite below if the geometry has indices
     triangleDesc.triangleCount = triangle.NumVertices / 3;
     if ( triangle.NumIndices > 0 )
     {

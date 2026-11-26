@@ -7,7 +7,6 @@ Licensed under the MIT License. See LICENSE in the project root.
 
 #pragma once
 
-// Include first because DirectXMath breaks NULL on third party libraries
 #include "DenOfIzExamples/GltfLoader.h"
 #include "DenOfIzExamples/IExample.h"
 #include "DenOfIzGraphics/Assets/Import/OzzExporter.h"

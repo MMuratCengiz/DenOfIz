@@ -29,8 +29,7 @@ namespace
     const char       *MonoPath       = DZ_TEST_DATA_SRC_DIR "/Fonts/JetBrainsMono-Regular.ttf";
     const char       *ColrTestPath   = DZ_TEST_DATA_SRC_DIR "/Fonts/test_glyphs-glyf_colr_1.ttf";
     const std::string OutDir         = DZ_TEST_DATA_DEST_DIR "/Colour/";
-    // Painted with the foreground for palette index 0xFFFF: #204080.
-    const hb_color_t Foreground = HB_COLOR( 0x80, 0x40, 0x20, 0xFF );
+    const hb_color_t  Foreground     = HB_COLOR( 0x80, 0x40, 0x20, 0xFF );
 
     struct FontFile
     {
@@ -61,7 +60,6 @@ namespace
         int R, G, B, A;
     };
 
-    // Straight colour of the pixel covering a point given in font units.
     Rgba ColourAt( const ColourBitmap &bitmap, const Font &font, const uint32_t ppem, const float x, const float y )
     {
         const float scale = static_cast<float>( ppem ) / static_cast<float>( font.Upem( ) );
@@ -110,7 +108,6 @@ namespace
         return glyph;
     }
 
-    // The first glyph HarfBuzz shapes the text to, ligatures included.
     uint32_t Shaped( const Font &font, const char *text )
     {
         hb_buffer_t *buffer = hb_buffer_create( );
@@ -161,21 +158,20 @@ TEST( EmojiPresentation, Clusters )
 {
     auto presentation = []( const char *cluster ) { return ClusterPresentation( cluster, static_cast<uint32_t>( std::strlen( cluster ) ) ); };
     EXPECT_EQ( presentation( "a" ), TextPresentation::Default );
-    EXPECT_EQ( presentation( "\xF0\x9F\x98\x80" ), TextPresentation::Emoji );                                   // 😀
-    EXPECT_EQ( presentation( "\xE2\x98\xBA" ), TextPresentation::Default );                                     // ☺
-    EXPECT_EQ( presentation( "\xE2\x98\xBA\xEF\xB8\x8F" ), TextPresentation::Emoji );                           // ☺ VS16
-    EXPECT_EQ( presentation( "\xE2\x9D\xA4\xEF\xB8\x8E" ), TextPresentation::Text );                            // ❤ VS15
-    EXPECT_EQ( presentation( "\xF0\x9F\x98\x80\xEF\xB8\x8E" ), TextPresentation::Text );                        // 😀 VS15
-    EXPECT_EQ( presentation( "1\xEF\xB8\x8F\xE2\x83\xA3" ), TextPresentation::Emoji );                          // 1️⃣
-    EXPECT_EQ( presentation( "\xF0\x9F\x91\x8D\xF0\x9F\x8F\xBD" ), TextPresentation::Emoji );                   // 👍🏽
-    EXPECT_EQ( presentation( "\xF0\x9F\x87\xB3\xF0\x9F\x87\xB1" ), TextPresentation::Emoji );                   // 🇳🇱
-    EXPECT_EQ( presentation( "\xE2\x9C\x8C\xF0\x9F\x8F\xBB" ), TextPresentation::Emoji );                       // ✌🏻, a text default base with a modifier
-    EXPECT_EQ( presentation( "\xE0\xA4\x95\xE0\xA5\x8D\xE2\x80\x8D\xE0\xA4\xB7" ), TextPresentation::Default ); // क्‍ष joins without emoji
+    EXPECT_EQ( presentation( "\xF0\x9F\x98\x80" ), TextPresentation::Emoji );
+    EXPECT_EQ( presentation( "\xE2\x98\xBA" ), TextPresentation::Default );
+    EXPECT_EQ( presentation( "\xE2\x98\xBA\xEF\xB8\x8F" ), TextPresentation::Emoji );
+    EXPECT_EQ( presentation( "\xE2\x9D\xA4\xEF\xB8\x8E" ), TextPresentation::Text );
+    EXPECT_EQ( presentation( "\xF0\x9F\x98\x80\xEF\xB8\x8E" ), TextPresentation::Text );
+    EXPECT_EQ( presentation( "1\xEF\xB8\x8F\xE2\x83\xA3" ), TextPresentation::Emoji );
+    EXPECT_EQ( presentation( "\xF0\x9F\x91\x8D\xF0\x9F\x8F\xBD" ), TextPresentation::Emoji );
+    EXPECT_EQ( presentation( "\xF0\x9F\x87\xB3\xF0\x9F\x87\xB1" ), TextPresentation::Emoji );
+    EXPECT_EQ( presentation( "\xE2\x9C\x8C\xF0\x9F\x8F\xBB" ), TextPresentation::Emoji );
+    EXPECT_EQ( presentation( "\xE0\xA4\x95\xE0\xA5\x8D\xE2\x80\x8D\xE0\xA4\xB7" ), TextPresentation::Default );
 }
 
 TEST_F( ColrTest, LayersOfColrV0 )
 {
-    // colored_circles_v0: concentric rings 50 units apart around ( 500, 600 ), red outside to violet inside.
     const uint32_t     ppem   = 200;
     const ColourBitmap bitmap = Paint( 0xF0E00, ppem, "colr0_circles" );
     ASSERT_GT( bitmap.Width, 0u );
@@ -192,19 +188,16 @@ TEST_F( ColrTest, LayersOfColrV0 )
 
 TEST_F( ColrTest, GradientsOfColrV1 )
 {
-    const uint32_t ppem = 100;
-    // linear_repeat_0_1: red to blue from x 100 to 900, repeated.
+    const uint32_t     ppem   = 100;
     const ColourBitmap linear = Paint( 0xF0100, ppem, "colr1_linear_repeat" );
     ExpectColour( At( linear, ppem, 500.0f, 600.0f ), { 128, 0, 128, 255 }, 4, "linear middle" );
     ExpectColour( At( linear, ppem, 300.0f, 600.0f ), { 191, 0, 64, 255 }, 4, "linear quarter" );
 
-    // radial_contained_gradient_extend_mode_pad: green at ( 166, 768 ), white 128 units out, red from 256 on.
     const ColourBitmap radial = Paint( 0xF0503, ppem, "colr1_radial_pad" );
     ExpectColour( At( radial, ppem, 166.0f, 768.0f ), { 0, 128, 0, 255 }, 12, "radial centre" );
     ExpectColour( At( radial, ppem, 166.0f + 128.0f, 768.0f ), { 255, 255, 255, 255 }, 12, "radial half" );
     ExpectColour( At( radial, ppem, 900.0f, 100.0f ), { 255, 0, 0, 255 }, 2, "radial padded" );
 
-    // sweep_0_360_pad_narrow around ( 500, 600 ): linen up to 90 degrees, blue to red, dark slate gray from 270.
     const ColourBitmap sweep = Paint( 0xF0200, ppem, "colr1_sweep_pad" );
     ExpectColour( At( sweep, ppem, 800.0f, 610.0f ), { 250, 240, 230, 255 }, 2, "sweep 0" );
     ExpectColour( At( sweep, ppem, 500.0f, 900.0f ), { 250, 240, 230, 255 }, 12, "sweep 90" );
@@ -214,7 +207,6 @@ TEST_F( ColrTest, GradientsOfColrV1 )
 
 TEST_F( ColrTest, CompositesOfColrV1 )
 {
-    // A yellow square over a black cross with a blue square composited onto it, the squares overlap around ( 500, 500 ).
     const uint32_t     ppem   = 100;
     const ColourBitmap over   = Paint( 0xF0A03, ppem, "colr1_composite_src_over" );
     const ColourBitmap screen = Paint( 0xF0A0D, ppem, "colr1_composite_screen" );
@@ -232,13 +224,11 @@ TEST_F( ColrTest, CompositesOfColrV1 )
 
 TEST_F( ColrTest, ForegroundPalette )
 {
-    // foreground_color_solid_alpha_0.3: palette index 0xFFFF at 30 % alpha.
     const uint32_t     ppem   = 64;
     const ColourBitmap bitmap = Paint( 0xF0B07, ppem, "colr1_foreground" );
     EXPECT_TRUE( bitmap.UsesForeground );
     ExpectColour( At( bitmap, ppem, 500.0f, 600.0f ), { 0x20, 0x40, 0x80, 77 }, 3, "foreground" );
 
-    // Only glyphs painting with the foreground get a bitmap per text colour.
     ColourGlyphStore store;
     const uint32_t   fg    = store.Find( m_font.Get( ), Nominal( *m_font.Get( ), 0xF0B07 ) );
     const uint32_t   fixed = store.Find( m_font.Get( ), Nominal( *m_font.Get( ), 0xF0E00 ) );
@@ -250,7 +240,6 @@ TEST_F( ColrTest, ForegroundPalette )
     EXPECT_EQ( store.Get( fixed, 30.0f, 0 ).Ppem, 32u );
     EXPECT_EQ( store.Get( fixed, 300.0f, 0 ).Ppem, 384u );
     EXPECT_EQ( store.Get( fixed, 700.0f, 0 ).Ppem, 512u );
-    // The test font's outline glyphs have no colour data and stay on the Slug path.
     EXPECT_EQ( store.Find( m_font.Get( ), Nominal( *m_font.Get( ), 0xFE003 ) ), ColourGlyphStore::None );
 }
 
@@ -264,8 +253,7 @@ TEST( ColourGlyph, AppleColorEmojiBitmaps )
     const Font &font = *emoji.Get( );
     ASSERT_TRUE( font.IsColour( ) );
     const uint32_t grinning = Nominal( font, 0x1F600 );
-    // 👨‍👩‍👧 has no image in the 40, 48 and 52 ppem strikes, the largest strike stands in.
-    const uint32_t family = Shaped( font, "\xF0\x9F\x91\xA8\xE2\x80\x8D\xF0\x9F\x91\xA9\xE2\x80\x8D\xF0\x9F\x91\xA7" );
+    const uint32_t family   = Shaped( font, "\xF0\x9F\x91\xA8\xE2\x80\x8D\xF0\x9F\x91\xA9\xE2\x80\x8D\xF0\x9F\x91\xA7" );
     ASSERT_NE( grinning, 0u );
     ASSERT_NE( family, grinning );
 
@@ -277,7 +265,6 @@ TEST( ColourGlyph, AppleColorEmojiBitmaps )
             const double ms = Rasterise( font, glyph, ppem, bitmap );
             Save( bitmap, ( glyph == grinning ? "apple_grinning_" : "apple_family_" ) + std::to_string( ppem ) );
             std::printf( "Apple Color Emoji glyph %u at %u ppem: %ux%u, %zu bytes, %.2f ms\n", glyph, ppem, bitmap.Width, bitmap.Height, bitmap.Pixels.size( ) * 4, ms );
-            // Inside the em square standing on the baseline, with a pixel of border.
             EXPECT_LE( bitmap.Width, ppem + 2 );
             EXPECT_GE( bitmap.Width, ppem * 3 / 4 );
             EXPECT_GE( bitmap.Top, -static_cast<int32_t>( ppem ) - 1 );
@@ -290,21 +277,18 @@ TEST( ColourGlyph, AppleColorEmojiBitmaps )
                 coloured += a > 200 && std::max( { r, g, b } ) - std::min( { r, g, b } ) > 60;
             }
             EXPECT_GT( opaque, bitmap.Pixels.size( ) / 4 ) << ppem;
-            // The face is yellow, the family a grey and white sign.
             if ( glyph == grinning )
             {
                 EXPECT_GT( coloured, bitmap.Pixels.size( ) / 4 ) << ppem;
             }
         }
     }
-    // Above its largest strike, 160 ppem, a bitmap glyph is kept at the strike's size and scaled up when drawn.
     ColourGlyphStore store;
     const uint32_t   source = store.Find( &font, grinning );
     EXPECT_EQ( store.Get( source, 100.0f, 0 ).Ppem, 128u );
     EXPECT_EQ( store.Get( source, 150.0f, 0 ).Ppem, 160u );
     EXPECT_EQ( store.Get( source, 400.0f, 0 ).Offset, store.Get( source, 150.0f, 0 ).Offset );
 
-    // The grinning face is yellow.
     ColourBitmap bitmap;
     Rasterise( font, grinning, 64, bitmap );
     const Rgba cheek = ColourAt( bitmap, font, 64, 160.0f, 400.0f );
@@ -315,7 +299,6 @@ TEST( ColourGlyph, AppleColorEmojiBitmaps )
 
 namespace
 {
-    // JetBrains Mono has no emoji, so emoji come from the system font the OS picks.
     class EmojiFallbackTest : public testing::Test
     {
     protected:
@@ -342,7 +325,6 @@ namespace
             m_shaper.Shape( text.data( ), static_cast<uint32_t>( text.size( ) ), fonts, TextAutoLevel, m_shaped );
         }
 
-        // Every glyph of the text is one cluster drawn with one visible glyph of a colour font.
         void ExpectOneColourCluster( const std::string &text )
         {
             Shape( text );
@@ -392,7 +374,6 @@ TEST_F( EmojiFallbackTest, PresentationPicksTheFont )
 
 TEST_F( EmojiFallbackTest, ChainColourFontsComeFirst )
 {
-    // An emoji takes the chain's colour font before the system's, a VS15 heart a system text font before the chain's colour font.
     Font *const       emojiFirst[] = { m_mono.Get( ), m_emoji.Get( ) };
     const std::string grinning     = "\xF0\x9F\x98\x80";
     m_shaper.Shape( grinning.data( ), static_cast<uint32_t>( grinning.size( ) ), emojiFirst, TextAutoLevel, m_shaped );
@@ -402,19 +383,18 @@ TEST_F( EmojiFallbackTest, ChainColourFontsComeFirst )
     const std::string heart        = "\xE2\x9D\xA4\xEF\xB8\x8E";
     m_shaper.Shape( heart.data( ), static_cast<uint32_t>( heart.size( ) ), colourOnly, TextAutoLevel, m_shaped );
     EXPECT_FALSE( m_shaped.Fonts[ m_shaped.Glyphs[ 0 ].Font ]->IsColour( ) );
-    // Without a selector the chain's order decides, like CSS font-family.
     m_shaper.Shape( heart.data( ), 3, colourOnly, TextAutoLevel, m_shaped );
     EXPECT_EQ( m_shaped.Fonts[ m_shaped.Glyphs[ 0 ].Font ], m_emoji.Get( ) );
 }
 
 TEST_F( EmojiFallbackTest, SequencesAreOneCluster )
 {
-    ExpectOneColourCluster( "\xF0\x9F\x98\x80" );                                                                                                 // 😀
-    ExpectOneColourCluster( "\xF0\x9F\x91\x8D\xF0\x9F\x8F\xBD" );                                                                                 // 👍🏽
-    ExpectOneColourCluster( "\xF0\x9F\x91\xA8\xE2\x80\x8D\xF0\x9F\x91\xA9\xE2\x80\x8D\xF0\x9F\x91\xA7" );                                         // 👨‍👩‍👧
-    ExpectOneColourCluster( "\xF0\x9F\x87\xB3\xF0\x9F\x87\xB1" );                                                                                 // 🇳🇱
-    ExpectOneColourCluster( "1\xEF\xB8\x8F\xE2\x83\xA3" );                                                                                        // 1️⃣
-    ExpectOneColourCluster( "\xF0\x9F\x8F\xB4\xF3\xA0\x81\xA7\xF3\xA0\x81\xA2\xF3\xA0\x81\xA5\xF3\xA0\x81\xAE\xF3\xA0\x81\xA7\xF3\xA0\x81\xBF" ); // 🏴 England
+    ExpectOneColourCluster( "\xF0\x9F\x98\x80" );
+    ExpectOneColourCluster( "\xF0\x9F\x91\x8D\xF0\x9F\x8F\xBD" );
+    ExpectOneColourCluster( "\xF0\x9F\x91\xA8\xE2\x80\x8D\xF0\x9F\x91\xA9\xE2\x80\x8D\xF0\x9F\x91\xA7" );
+    ExpectOneColourCluster( "\xF0\x9F\x87\xB3\xF0\x9F\x87\xB1" );
+    ExpectOneColourCluster( "1\xEF\xB8\x8F\xE2\x83\xA3" );
+    ExpectOneColourCluster( "\xF0\x9F\x8F\xB4\xF3\xA0\x81\xA7\xF3\xA0\x81\xA2\xF3\xA0\x81\xA5\xF3\xA0\x81\xAE\xF3\xA0\x81\xA7\xF3\xA0\x81\xBF" );
 }
 
 TEST_F( EmojiFallbackTest, UITextDrawsEmojiAsColourQuads )

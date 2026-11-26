@@ -355,7 +355,6 @@ bool DzirLibrary::IsHandleTypedef( const CXCursor &cursor ) const
     const CXType    canonical      = clang_getCanonicalType( underlyingType );
     const long long size           = clang_Type_getSizeOf( canonical );
 
-    // C API handles are declared as typedef uint64_t X.
     std::string underlyingSpelling = ToString( clang_getTypeSpelling( underlyingType ) );
 
     if ( underlyingSpelling == "uint64_t" || size == 8 )

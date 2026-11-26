@@ -19,7 +19,6 @@
 #include "SignedDistancePrimitives.hlsli"
 #include "SignedDistanceFractals.hlsli"
 
-// AABB local space dimensions: <-1,1>.
 bool RayAnalyticGeometryIntersectionTest(in Ray ray, in AnalyticPrimitive::Enum analyticPrimitive, out float thit, out ProceduralPrimitiveAttributes attr)
 {
     float3 aabb[2] = {
@@ -36,7 +35,6 @@ bool RayAnalyticGeometryIntersectionTest(in Ray ray, in AnalyticPrimitive::Enum 
     }
 }
 
-// AABB local space dimensions: <-1,1>.
 bool RayVolumetricGeometryIntersectionTest(in Ray ray, in VolumetricPrimitive::Enum volumetricPrimitive, out float thit, out ProceduralPrimitiveAttributes attr, in float elapsedTime)
 {
     switch (volumetricPrimitive)
@@ -46,9 +44,6 @@ bool RayVolumetricGeometryIntersectionTest(in Ray ray, in VolumetricPrimitive::E
     }
 }
 
-// Signed distance functions use a shared ray signed distance test.
-// The test, instead, calls into this function to retrieve a distance for a primitive.
-// AABB local space dimensions: <-1,1>.
 // Ref: http://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
 float GetDistanceFromSignedDistancePrimitive(in float3 position, in SignedDistancePrimitive::Enum signedDistancePrimitive)
 {
@@ -79,11 +74,10 @@ float GetDistanceFromSignedDistancePrimitive(in float3 position, in SignedDistan
                    sdBox(position + float3(1, 1, 1), float3(2, 2, 2)));
     
     case SignedDistancePrimitive::FractalPyramid: 
-         // Base at y == -1 of the AABB, 63.435 degrees at the base, height 2.
          return sdFractalPyramid(position + float3(0, 1, 0), float3(0.894, 0.447, 2.0), 2.0f);
     
     default: return 0;
     }
 }
 
-#endif // PROCEDURALPRIMITIVESLIBRARY_H
+#endif

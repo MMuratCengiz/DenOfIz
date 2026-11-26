@@ -38,7 +38,6 @@ Licensed under the MIT License. See LICENSE in the project root.
     while ( false )
 #endif
 
-// D3D12MA members trigger C4251 (needs dll-interface) when building a shared library.
 #pragma warning( push )
 #pragma warning( disable : 4251 )
 #include <D3D12MemAlloc.h>
@@ -75,7 +74,6 @@ namespace DenOfIz
     {
         bool IsDeviceLost = false;
 
-        // Release Last
         wil::com_ptr<IDXGIAdapter1>      Adapter;
         wil::com_ptr<IDXGIFactory7>      DXGIFactory;
         wil::com_ptr<ID3D12Device9>      D3DDevice;
@@ -86,11 +84,11 @@ namespace DenOfIz
         wil::com_ptr<ID3D12Fence1>       ComputeCommandQueueFence;
         wil::com_ptr<ID3D12CommandQueue> CopyCommandQueue;
         wil::com_ptr<ID3D12Fence1>       CopyCommandQueueFence;
-        std::atomic<uint64_t> GraphicsCommandQueueFenceValue{ 0 };
-        std::atomic<uint64_t> ComputeCommandQueueFenceValue{ 0 };
-        std::atomic<uint64_t> CopyCommandQueueFenceValue{ 0 };
-        std::mutex                      CommandQueuesMutex;
-        std::vector<DX12CommandQueue *> CommandQueues;
+        std::atomic<uint64_t>            GraphicsCommandQueueFenceValue{ 0 };
+        std::atomic<uint64_t>            ComputeCommandQueueFenceValue{ 0 };
+        std::atomic<uint64_t>            CopyCommandQueueFenceValue{ 0 };
+        std::mutex                       CommandQueuesMutex;
+        std::vector<DX12CommandQueue *>  CommandQueues;
 
         wil::com_ptr<ID3D12CommandAllocator>     CopyCommandListAllocator;
         wil::com_ptr<ID3D12GraphicsCommandList4> CopyCommandList;

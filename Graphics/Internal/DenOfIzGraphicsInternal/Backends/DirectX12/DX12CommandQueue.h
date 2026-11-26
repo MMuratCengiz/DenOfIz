@@ -28,7 +28,6 @@ namespace DenOfIz
         void WaitIdle( ) override;
         void ExecuteCommandLists( const DenOfIz_ExecuteCommandListsDesc &executeCommandListsDesc ) override;
 
-        // 0 when the queue could not be signaled.
         uint64_t      SignalFence( );
         ID3D12Fence1 *GetFence( ) const;
 

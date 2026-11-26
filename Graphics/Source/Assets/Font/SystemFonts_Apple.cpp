@@ -19,7 +19,6 @@ namespace
         return CFStringCreateWithBytes( kCFAllocatorDefault, reinterpret_cast<const UInt8 *>( text ), length, kCFStringEncodingUTF8, false );
     }
 
-    // Releases url and name.
     bool FileOf( const CFURLRef url, const CFStringRef name, DenOfIz::SystemFontFile &out )
     {
         char path[ PATH_MAX ];
@@ -34,7 +33,6 @@ namespace
         {
             CFRelease( name );
         }
-        // LastResort maps every code point to a placeholder, cached for a script it would hide the real fonts.
         found = found && std::strcmp( postScriptName, "LastResort" ) != 0;
         if ( found )
         {

@@ -269,16 +269,13 @@ DenOfIz_ByteArray BindlessExample::PixelShader( )
             float time;
         };
 
-        // Bindless texture array
         Texture2D<float4> g_Textures[] : register(t0, space0);
         SamplerState g_Sampler : register(s0, space0);
 
         float4 PSMain(PSInput input) : SV_TARGET
         {
-            // Use dynamic indexing with the bindless texture array
             float4 color = g_Textures[textureIndex].Sample(g_Sampler, input.TexCoord);
 
-            // Add a pulsing effect based on time
             float pulse = sin(time * 3.0) * 0.2 + 0.8;
             color.rgb *= pulse;
 
@@ -332,12 +329,11 @@ namespace
                 const float     dx     = static_cast<float>( x ) - cx;
                 const float     dy     = static_cast<float>( y ) - cy;
                 const float     dist   = std::sqrt( dx * dx + dy * dy );
-                // Five pointed star: the boundary radius oscillates between the outer and inner radius over each 36 degree sector.
-                float angle = std::atan2( dy, dx ) + 3.14159f / 2.0f;
-                angle       = std::fmod( angle + 2.0f * 3.14159f, 2.0f * 3.14159f );
-                const float sector    = std::fmod( angle, 2.0f * 3.14159f / 5.0f ) / ( 2.0f * 3.14159f / 5.0f );
-                const float w         = std::abs( sector - 0.5f ) * 2.0f;
-                const float threshold = inner + ( radius - inner ) * w;
+                float           angle  = std::atan2( dy, dx ) + 3.14159f / 2.0f;
+                angle                  = std::fmod( angle + 2.0f * 3.14159f, 2.0f * 3.14159f );
+                const float sector     = std::fmod( angle, 2.0f * 3.14159f / 5.0f ) / ( 2.0f * 3.14159f / 5.0f );
+                const float w          = std::abs( sector - 0.5f ) * 2.0f;
+                const float threshold  = inner + ( radius - inner ) * w;
                 if ( dist <= threshold )
                 {
                     return dist >= threshold - 3.0f ? Rgba{ 255, 140, 0, 255 } : Rgba{ 255, 215, 0, 255 };

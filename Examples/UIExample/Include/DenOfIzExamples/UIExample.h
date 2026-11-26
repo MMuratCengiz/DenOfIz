@@ -18,7 +18,6 @@ Licensed under the MIT License. See LICENSE in the project root.
 
 namespace DenOfIz
 {
-    // Inactive pages stay declared with Display NONE so they keep their scroll positions.
     class UIExample final : public IExample
     {
         enum class Page : uint32_t
@@ -42,7 +41,6 @@ namespace DenOfIz
             bool        Reveal    = false;
         };
 
-        // The download thread fills Bytes, Error, Size and DownloadMs, then sets Done. Everything else belongs to the UI thread.
         struct WebFont
         {
             std::string          Family;

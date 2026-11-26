@@ -29,7 +29,7 @@ namespace DenOfIz
         D3D12_CPU_DESCRIPTOR_HANDLE m_rtvHandle{ };
         D3D12_CPU_DESCRIPTOR_HANDLE m_dsvHandle{ };
         D3D12_RESOURCE_DESC         m_resourceDesc{ };
-        bool                        isExternalResource       = false; // Swap chain render targets, the swap chain owns the resource
+        bool                        isExternalResource       = false;
         bool                        m_useTypelessDepthFormat = false;
         bool                        m_useDepthSrvCasting     = false;
 

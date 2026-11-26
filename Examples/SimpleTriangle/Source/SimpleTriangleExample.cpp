@@ -131,12 +131,7 @@ void SimpleTriangleExample::HandleEvent( DenOfIz_Event &event )
 
 void SimpleTriangleExample::CreateVertexBuffer( )
 {
-    constexpr std::array vertices = {
-        // Position (XYZ)    // Color (RGBA)
-        0.0f,  0.5f,  0.0f, 1.0f, 0.0f, 0.0f, 1.0f, // Top vertex (red)
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, // Bottom left (green)
-        0.5f,  -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f  // Bottom right (blue)
-    };
+    constexpr std::array vertices = { 0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f };
 
     DenOfIz_BufferDesc bufferDesc{ };
     bufferDesc.Usage     = DENOFIZ_BUFFER_USAGE_VERTEX_BIT | DENOFIZ_BUFFER_USAGE_COPY_DST_BIT;

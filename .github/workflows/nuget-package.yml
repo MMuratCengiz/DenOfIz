@@ -111,13 +111,11 @@ jobs:
       - name: Package artifacts
         shell: pwsh
         run: |
-          # Install directory structure: install/DenOfIz/${presetName}
           $installDir = "install/DenOfIz/Install_Windows"
 
           mkdir -p artifacts/runtimes/win-x64/native
           mkdir -p artifacts/generated
 
-          # Copy main library from install dir
           if (Test-Path "$installDir/bin/DenOfIzGraphics.dll") {
               Copy-Item "$installDir/bin/DenOfIzGraphics.dll" artifacts/runtimes/win-x64/native/
               Write-Host "Copied DenOfIzGraphics.dll"
@@ -128,8 +126,6 @@ jobs:
               exit 1
           }
 
-          # Copy additional DLLs from install/bin
-          # Note: WinPixEventRuntime.dll is not available with static CRT (x64-windows-static)
           $additionalDlls = @(
               "dxcompiler.dll",
               "dxil.dll",
@@ -145,7 +141,6 @@ jobs:
               }
           }
 
-          # Copy generated C# files
           if (Test-Path "Bindings/CSharp/Generated") {
               Copy-Item -Recurse Bindings/CSharp/Generated/* artifacts/generated/
               Write-Host "Copied generated C# files"
@@ -154,14 +149,12 @@ jobs:
               exit 1
           }
 
-          # Copy Runtime folder
           if (Test-Path "Bindings/CSharp/Runtime") {
               mkdir -p artifacts/runtime
               Copy-Item -Recurse Bindings/CSharp/Runtime/* artifacts/runtime/
               Write-Host "Copied Runtime C# files"
           }
 
-          # List what was packaged
           Write-Host "Artifacts packaged:"
           Get-ChildItem -Recurse artifacts | Select-Object FullName
 
@@ -240,12 +233,10 @@ jobs:
 
       - name: Package artifacts
         run: |
-          # Install directory: install/DenOfIz/${presetName}
           INSTALL_DIR="install/DenOfIz/Install_Linux"
 
           mkdir -p artifacts/runtimes/linux-x64/native
 
-          # Copy main library from install dir
           if [ -f "$INSTALL_DIR/lib/libDenOfIzGraphics.so" ]; then
               cp "$INSTALL_DIR/lib/libDenOfIzGraphics.so" artifacts/runtimes/linux-x64/native/
               echo "Copied libDenOfIzGraphics.so"
@@ -256,7 +247,6 @@ jobs:
               exit 1
           fi
 
-          # Copy additional libraries from install dir
           for lib in libdxcompiler.so libdxil.so; do
               if [ -f "$INSTALL_DIR/lib/$lib" ]; then
                   cp "$INSTALL_DIR/lib/$lib" artifacts/runtimes/linux-x64/native/
@@ -344,12 +334,10 @@ jobs:
 
       - name: Package artifacts
         run: |
-          # Install directory from CMakePresets.json Base preset: install/DenOfIz/${presetName}
           INSTALL_DIR="install/DenOfIz/Install_OSX"
 
           mkdir -p artifacts/runtimes/osx-arm64/native
 
-          # Copy main library from install dir
           if [ -f "$INSTALL_DIR/lib/libDenOfIzGraphics.dylib" ]; then
               cp "$INSTALL_DIR/lib/libDenOfIzGraphics.dylib" artifacts/runtimes/osx-arm64/native/
               echo "Copied libDenOfIzGraphics.dylib"
@@ -360,7 +348,6 @@ jobs:
               exit 1
           fi
 
-          # Copy additional libraries from install dir
           for lib in libdxcompiler.dylib libmetalirconverter.dylib; do
               if [ -f "$INSTALL_DIR/lib/$lib" ]; then
                   cp "$INSTALL_DIR/lib/$lib" artifacts/runtimes/osx-arm64/native/
@@ -450,26 +437,22 @@ jobs:
         run: |
           $nugetDir = "Bindings/CSharp/NuGet"
 
-          # Create necessary directories
           New-Item -Path "$nugetDir/lib/net8.0" -ItemType Directory -Force
           New-Item -Path "$nugetDir/runtimes/win-x64/native" -ItemType Directory -Force
           New-Item -Path "$nugetDir/runtimes/linux-x64/native" -ItemType Directory -Force
           New-Item -Path "$nugetDir/runtimes/osx-arm64/native" -ItemType Directory -Force
 
-          # Copy generated C# files from Windows artifacts
           Write-Host "Copying generated C# source files..."
           if (Test-Path "windows-artifacts/generated") {
               New-Item -Path "Bindings/CSharp/Generated" -ItemType Directory -Force
               Copy-Item -Recurse -Force windows-artifacts/generated/* Bindings/CSharp/Generated/
           }
 
-          # Copy Runtime files if present
           if (Test-Path "windows-artifacts/runtime") {
               New-Item -Path "Bindings/CSharp/Runtime" -ItemType Directory -Force
               Copy-Item -Recurse -Force windows-artifacts/runtime/* Bindings/CSharp/Runtime/
           }
 
-          # Copy runtimes from each platform
           Write-Host "Copying Windows runtime files..."
           Copy-Item windows-artifacts/runtimes/win-x64/native/* $nugetDir/runtimes/win-x64/native/
 
@@ -490,7 +473,6 @@ jobs:
         run: |
           $csprojFile = "Bindings/CSharp/NuGet/DenOfIzGraphics.csproj"
 
-          # Update version in csproj
           [xml]$csproj = Get-Content $csprojFile
           $versionNode = $csproj.SelectSingleNode("//PropertyGroup/Version")
           if ($versionNode) {
@@ -521,7 +503,6 @@ jobs:
 
           New-Item -Path $outputDir -ItemType Directory -Force | Out-Null
 
-          # Update version in main nuspec
           $nuspecFile = "$nugetDir/DenOfIzGraphics.nuspec"
           [xml]$nuspec = Get-Content $nuspecFile
           $nuspec.package.metadata.version = "${{ env.VERSION }}"

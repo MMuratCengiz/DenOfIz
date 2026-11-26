@@ -45,10 +45,9 @@ namespace DenOfIz
         struct BoundGroup
         {
             const MetalBindGroup *Group;
-            uint32_t              Version; // Of the group when it was last encoded into the top level argument buffer.
+            uint32_t              Version;
         };
         std::vector<BoundGroup> m_boundGroups;
-        // Groups whose resources were made resident in the current encoder.
         struct ResidentGroup
         {
             const MetalBindGroup       *Group;
@@ -56,9 +55,8 @@ namespace DenOfIz
             const MetalBindGroupTables *Tables;
         };
         std::vector<ResidentGroup> m_residentGroups;
-        // The top level argument buffer is only encoded again when a binding changed, and into a new slice once a command read the current one.
-        bool m_bindingsDirty  = true;
-        bool m_argumentsInUse = false;
+        bool                       m_bindingsDirty  = true;
+        bool                       m_argumentsInUse = false;
         struct BoundRootConstant
         {
             uint32_t             Binding;
@@ -72,9 +70,9 @@ namespace DenOfIz
         uint64_t                             m_indexBufferOffset   = 0;
         std::unique_ptr<MetalArgumentBuffer> m_argumentBuffer;
         size_t                               m_boundArgumentSegment = 0;
-        const MetalShaderLayout             *m_shaderLayout = nullptr;
+        const MetalShaderLayout             *m_shaderLayout         = nullptr;
         MetalPipeline                       *m_pipeline;
-        const MetalPipeline                 *m_encoderPipeline  = nullptr; // Whose state the current encoder has, encoders start without any.
+        const MetalPipeline                 *m_encoderPipeline  = nullptr;
         bool                                 m_computeTlasBound = false;
         bool                                 m_meshTlasBound    = false;
         bool                                 m_renderTlasBound  = false;
@@ -143,7 +141,6 @@ namespace DenOfIz
         void BatchResource( const id<MTLResource> &resource, MTLResourceUsage usage = MTLResourceUsageRead,
                             MTLRenderStages stages = MTLRenderStageVertex | MTLRenderStageFragment );
         void FlushBatchedResources( );
-        // Vulkan and DX12 graphics command lists also record compute and copy work, Metal needs an encoder per kind of work.
         void SwitchEncoder( MetalEncoderType encoderType, bool crossQueueBarrier = false );
     };
 

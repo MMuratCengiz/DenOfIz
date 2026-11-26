@@ -26,4 +26,4 @@ struct RayGenConstantBuffer
     DenOfIz_Viewport stencil;
 };
 
-#endif // RAYTRACINGHLSLCOMPAT_H
+#endif

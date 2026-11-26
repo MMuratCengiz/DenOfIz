@@ -19,7 +19,7 @@ namespace DenOfIz
         std::vector<std::unique_ptr<VulkanCommandList>> m_commandLists;
         std::vector<VulkanCommandList *>                m_commandListPtrs;
         DenOfIz_CommandListPoolDesc                     m_desc;
-        std::vector<VkCommandPool>                      m_commandPools; // One per command list for thread safety
+        std::vector<VkCommandPool>                      m_commandPools;
         VulkanCommandQueue                             *m_commandQueue;
 
     public:

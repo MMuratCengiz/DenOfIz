@@ -264,18 +264,15 @@ if (TARGET_PLATFORM_LINUX)
             PRIVATE
             dxcompiler
             ${CMAKE_DL_LIBS}
-            # Microsoft::DirectX-Headers # Can't use this because it conflicts with Dxc
     )
 
     target_include_directories(DenOfIzGraphics
             PRIVATE
-            # Use DirectX-Headers from DirecXShaderCompiler even though we use prebuilt dxc, see note above on Dxc
             _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include
             _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include/wsl/stubs
             _ThirdParty/dxc/linux/include/dxc
     )
 
-    #/usr/bin/ld: relocation R_X86_64_PC32 against symbol `_ZNSt6ranges5views4keysE' can not be used when making a shared object; recompile with -fPIC
     set_target_properties(DenOfIzGraphics PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif ()
 
@@ -296,7 +293,6 @@ FetchContent_Declare(
         GIT_TAG prerelease-3.1.2
 )
 FetchContent_MakeAvailable(SDL3_mixer)
-# SDL_mixer's cmake_dependent_option writes the temporary OFF into the cache, where an automatic reconfigure would pick it up.
 set(BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS_TEMP_MIXER} CACHE BOOL "Build shared libraries" FORCE)
 set(BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS_TEMP_MIXER})
 target_link_libraries(DenOfIzGraphics PRIVATE $<BUILD_INTERFACE:SDL3_mixer::SDL3_mixer>)

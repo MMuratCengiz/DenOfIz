@@ -17,13 +17,10 @@ using namespace DenOfIz;
 
 namespace
 {
-    // Pixels per em a glyph is painted at, the smallest one covering the requested size. Larger sizes scale the largest bucket up.
-    constexpr uint32_t Buckets[] = { 16, 20, 24, 32, 40, 48, 64, 96, 128, 192, 256, 384, 512 };
-    // The key of a bitmap glyph drawn above its largest strike, which is kept at the strike's own size.
+    constexpr uint32_t Buckets[]    = { 16, 20, 24, 32, 40, 48, 64, 96, 128, 192, 256, 384, 512 };
     constexpr uint32_t StrikeBucket = std::size( Buckets );
-    // 16 MiB of texels, and the frames a bitmap is kept without being drawn once they are passed.
-    constexpr size_t   PixelBudget = 4u << 20;
-    constexpr uint64_t MaxAge      = 300;
+    constexpr size_t   PixelBudget  = 4u << 20;
+    constexpr uint64_t MaxAge       = 300;
 
     uint32_t BucketOf( const float pixelsPerEm )
     {
@@ -48,7 +45,6 @@ namespace
         return bitmap;
     }
 
-    // Pixels per em of the glyph's largest bitmap strike, from its PNG width and the extents HarfBuzz scales it to. COLR glyphs have no limit.
     uint32_t LargestStrike( const Font &font, const uint32_t glyphId )
     {
         hb_blob_t         *png    = hb_ot_color_glyph_reference_png( font.HbFont( ), glyphId );
@@ -56,7 +52,6 @@ namespace
         const auto        *data   = reinterpret_cast<const uint8_t *>( hb_blob_get_data( png, &length ) );
         hb_glyph_extents_t extents{ };
         uint32_t           ppem = UINT32_MAX;
-        // The width is big endian in the IHDR chunk, after the 8 byte signature and the chunk's length and type.
         if ( length >= 24 && hb_font_get_glyph_extents( font.HbFont( ), glyphId, &extents ) && extents.width > 0 )
         {
             const uint32_t width = static_cast<uint32_t>( data[ 16 ] ) << 24 | static_cast<uint32_t>( data[ 17 ] ) << 16 | static_cast<uint32_t>( data[ 18 ] ) << 8 | data[ 19 ];
@@ -101,12 +96,10 @@ const ColourGlyph &ColourGlyphStore::Get( const uint32_t source, const float pix
         return it->second;
     }
 
-    // The text colour's alpha is applied when drawing, foreground layers are painted opaque.
     ColourBitmap bitmap;
     if ( RasteriseColourGlyph( *glyph.FontPtr, glyph.GlyphId, ppem, HB_COLOR( opaque >> 8 & 0xFF, opaque >> 16 & 0xFF, opaque >> 24, 0xFF ), bitmap ) && bitmap.UsesForeground &&
          !glyph.UsesForeground )
     {
-        // Only known after the first paint: from now on every colour gets its own bitmap.
         glyph.UsesForeground = true;
         m_glyphs.erase( it );
         it = m_glyphs.try_emplace( key( opaque ) ).first;
@@ -123,7 +116,6 @@ const ColourGlyph &ColourGlyphStore::Get( const uint32_t source, const float pix
     return entry;
 }
 
-// Packs only when it at least halves the stream, so a stream mostly in use just grows to the next threshold.
 void ColourGlyphStore::BeginFrame( )
 {
     ++m_frame;

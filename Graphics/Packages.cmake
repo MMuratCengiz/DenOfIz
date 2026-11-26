@@ -20,7 +20,6 @@ endif ()
 find_package(SDL3 CONFIG REQUIRED)
 find_package(directxmath CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
-# vcpkg's harfbuzzConfig.cmake requires freetype even when the port is built without it, so the target is declared here.
 find_path(HARFBUZZ_INCLUDE_DIR hb.h PATH_SUFFIXES harfbuzz REQUIRED)
 find_library(HARFBUZZ_LIBRARY_RELEASE NAMES harfbuzz PATHS "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib" NO_DEFAULT_PATH REQUIRED)
 find_library(HARFBUZZ_LIBRARY_DEBUG NAMES harfbuzz PATHS "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/lib" NO_DEFAULT_PATH)

@@ -29,7 +29,6 @@ namespace SlugReference
         float w;
     };
 
-    // HLSL saturate/max return the non-NaN operand; mirror that so degenerate roots behave like on the GPU.
     inline float saturate( const float v )
     {
         return v > 0.0f ? ( v < 1.0f ? v : 1.0f ) : 0.0f;
@@ -162,10 +161,8 @@ namespace SlugReference
         }
     }
 
-    // Added to both coordinates of every sample, see the shader's SlugRender.
     constexpr float SampleBias = 1.0f / 32768.0f;
 
-    // emsPerPixel replaces fwidth(renderCoord).
     inline float SlugRender( const std::vector<DenOfIz_Float4> &curveData, const std::vector<DenOfIz_UInt2> &bandData, const float2 sampleCoord, const float2 emsPerPixel,
                              const DenOfIz::SlugGlyph &glyph )
     {

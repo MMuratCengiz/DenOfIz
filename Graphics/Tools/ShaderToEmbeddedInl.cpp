@@ -45,8 +45,6 @@ float2 SlugDilate(float4 pos, float4 tex, float4 jac, float4 m0, float4 m1, floa
     return (float2(tex.x + dot(d, jac.xy), tex.y + dot(d, jac.zw)));
 }
 
-// Four vertices per quad, the static index buffer's vertex ids pick the quad and its corner. Rect is the quad in object space, Bounds its corners in
-// em space or bitmap texels (left, top, right, bottom), EmsPerUnit the em units per object unit along x and y.
 struct TextQuad
 {
     float4 Rect;
@@ -76,7 +74,7 @@ struct SlugGlyph
 cbuffer TextUniforms : register(b0)
 {
     float4x4 Projection;
-    float4 Viewport; // xy: viewport size in pixels
+    float4 Viewport;
 };
 
 StructuredBuffer<SlugGlyph> SlugGlyphs : register(t2);
@@ -89,14 +87,11 @@ VSOutput main(uint vertexId : SV_VertexID)
     TextQuad quad = Quads[vertexId >> 2];
     bool right = ((vertexId + 1u) & 2u) != 0u;
     bool bottom = (vertexId & 2u) != 0u;
-    // xy: object space, zw: outward normal of the quad corner
     float4 position = float4(right ? quad.Rect.z : quad.Rect.x, bottom ? quad.Rect.w : quad.Rect.y, right ? 1.0 : -1.0, bottom ? 1.0 : -1.0);
-    // xy: em space, zw: em units per object unit along x and y
     float4 texCoord = float4(right ? quad.Bounds.z : quad.Bounds.x, bottom ? quad.Bounds.w : quad.Bounds.y, quad.EmsPerUnit);
 
     VSOutput output;
     output.Color = quad.Color;
-    // A colour glyph quad covers its bitmap's transparent border, TexCoord.xy are texel coordinates and Glyph the bitmap with ColourGlyphBit set.
     if ((quad.Glyph & ColourGlyphBit) != 0u)
     {
         output.Position = mul(float4(position.xy, 0.0, 1.0), Projection);
@@ -105,7 +100,6 @@ VSOutput main(uint vertexId : SV_VertexID)
         output.Glyph = uint4(quad.Glyph & ~ColourGlyphBit, 0u, 0u, ColourGlyphBit);
         return output;
     }
-    // SlugDilate takes the rows of a matrix applied to column vectors, Projection is applied to row vectors.
     float4x4 m = transpose(Projection);
     float2 dilated;
     output.TexCoord = SlugDilate(position, texCoord, float4(texCoord.z, 0.0, 0.0, texCoord.w), m[0], m[1], m[3], Viewport.xy, dilated);
@@ -202,7 +196,6 @@ float4 main(PSInput input) : SV_TARGET
 })";
 
 static auto UIVertexShaderSource = R"(
-// Ordered so the DX layout matches std430, see UITypes.h.
 struct UIVertex
 {
     float4 Color;
@@ -213,7 +206,6 @@ struct UIVertex
     uint Padding;
 };
 
-// Drawn by the indices QuadIndexBit | quad * 4 + corner, corners clockwise from the top left. Rect and UV are (left, top, right, bottom).
 struct UIQuad
 {
     float4 Rect;
@@ -244,7 +236,7 @@ struct SlugGlyph
 cbuffer UIUniforms : register(b0, space1)
 {
     float4x4 Projection;
-    float4 ScreenSize; // xy: screen dimensions, z: pixels per point
+    float4 ScreenSize;
 };
 
 StructuredBuffer<SlugGlyph> SlugGlyphs : register(t3, space1);
@@ -294,7 +286,6 @@ VSOutput main(uint vertexId : SV_VertexID)
     return output;
 })";
 
-// Shared by both pixel shader variants: inputs, clip/layer state and the glyph buffers read by SlugPixelShaderSource and ColourGlyphShaderSource.
 static auto UIPixelShaderCommon = R"(
 struct PSInput
 {
@@ -360,7 +351,6 @@ float4 applyState(float4 color, uint state, float2 position)
 }
 )";
 
-// Expects StructuredBuffer<float4> SlugCurves and StructuredBuffer<uint2> SlugBands in the layout written by SlugGlyphStore.
 static auto SlugPixelShaderSource = R"(
 // ===================================================
 // Reference pixel shader for the Slug algorithm, ported from 4096-wide textures to structured buffers.
@@ -370,9 +360,6 @@ static auto SlugPixelShaderSource = R"(
 
 uint CalcRootCode(float y1, float y2, float y3)
 {
-    // Calculate the root eligibility code for a sample-relative quadratic Bezier curve.
-    // Extract the signs of the y coordinates of the three control points.
-
     uint i1 = asuint(y1) >> 31U;
     uint i2 = asuint(y2) >> 30U;
     uint i3 = asuint(y3) >> 29U;
@@ -380,16 +367,11 @@ uint CalcRootCode(float y1, float y2, float y3)
     uint shift = (i2 & 2U) | (i1 & ~2U);
     shift = (i3 & 4U) | (shift & ~4U);
 
-    // Eligibility is returned in bits 0 and 8.
-
     return ((0x2E74U >> shift) & 0x0101U);
 }
 
 float2 SolveHorizPoly(float4 p12, float2 p3)
 {
-    // Solve for the values of t where the curve crosses y = 0. Imaginary roots are
-    // treated as a double root at the global minimum where t = b / a.
-
     float2 a = p12.xy - p12.zw * 2.0 + p3;
     float2 b = p12.xy - p12.zw;
     float ra = 1.0 / a.y;
@@ -399,19 +381,13 @@ float2 SolveHorizPoly(float4 p12, float2 p3)
     float t1 = (b.y - d) * ra;
     float t2 = (b.y + d) * ra;
 
-    // If the polynomial is nearly linear, then solve -2b t + c = 0.
-
     if (abs(a.y) < 1.0 / 65536.0) t1 = t2 = p12.y * rb;
-
-    // Return the x coordinates where C(t) = 0.
 
     return (float2((a.x * t1 - b.x * 2.0) * t1 + p12.x, (a.x * t2 - b.x * 2.0) * t2 + p12.x));
 }
 
 float2 SolveVertPoly(float4 p12, float2 p3)
 {
-    // Solve for the values of t where the curve crosses x = 0.
-
     float2 a = p12.xy - p12.zw * 2.0 + p3;
     float2 b = p12.xy - p12.zw;
     float ra = 1.0 / a.x;
@@ -423,41 +399,29 @@ float2 SolveVertPoly(float4 p12, float2 p3)
 
     if (abs(a.x) < 1.0 / 65536.0) t1 = t2 = p12.x * rb;
 
-    // Return the y coordinates where C(t) = 0.
-
     return (float2((a.y * t1 - b.y * 2.0) * t1 + p12.y, (a.y * t2 - b.y * 2.0) * t2 + p12.y));
 }
 
 float CalcCoverage(float xcov, float ycov, float xwgt, float ywgt, int flags)
 {
-    // Combine coverages from the horizontal and vertical rays using their weights.
-    // Absolute values ensure that either winding direction convention works.
-
     float coverage = max(abs(xcov * xwgt + ycov * ywgt) / max(xwgt + ywgt, 1.0 / 65536.0), min(abs(xcov), abs(ycov)));
 
     if ((flags & 0x1000) == 0)
     {
-        // Using nonzero fill rule here.
-
         coverage = saturate(coverage);
     }
     else
     {
-        // Using even-odd fill rule here.
-
         coverage = 1.0 - abs(1.0 - frac(coverage * 0.5) * 2.0);
     }
 
     return (coverage);
 }
 
-// emsPerPixel is fwidth(renderCoord), taken by the caller in uniform control flow.
 float SlugRender(float2 renderCoord, float2 emsPerPixel, float4 bandTransform, uint4 glyphData)
 {
     uint curveIndex;
 
-    // Not in the reference: coverage can step by up to a half where a sample row or column passes a curve endpoint or extremum, and pixel
-    // snapped baselines put samples exactly level with them. The same tiny em-space offset for every sample keeps them off. Matches SlugReference.h.
     renderCoord += 1.0 / 32768.0;
 
     float2 pixelsPerEm = 1.0 / emsPerPixel;
@@ -465,42 +429,27 @@ float SlugRender(float2 renderCoord, float2 emsPerPixel, float4 bandTransform, u
     int2 bandMax = int2(glyphData.zw);
     bandMax.y &= 0x00FF;
 
-    // Determine what bands the current pixel lies in by applying a scale and offset
-    // to the render coordinates. Band indexes are clamped to [0, bandMax.xy].
-
     int2 bandIndex = clamp(int2(renderCoord * bandTransform.xy + bandTransform.zw), int2(0, 0), bandMax);
     uint glyphLoc = glyphData.x;
 
     float xcov = 0.0;
     float xwgt = 0.0;
 
-    // The number of curves intersecting the horizontal band is in x, the
-    // glyph-relative offset to the list of their locations is in y. The
-    // locations are packed two per entry.
-
     uint2 hbandData = SlugBands[glyphLoc + uint(bandIndex.y)];
     uint hbandLoc = glyphLoc + hbandData.y;
 
     for (curveIndex = 0; curveIndex < hbandData.x; curveIndex++)
     {
-        // The first texel holds p1 and p2, the next one holds p3. Subtracting the render
-        // coordinates makes the curve relative to the sample position.
-
         uint2 curveLocs = SlugBands[hbandLoc + (curveIndex >> 1)];
         uint curveLoc = (curveIndex & 1U) != 0U ? curveLocs.y : curveLocs.x;
         float4 p12 = SlugCurves[curveLoc] - float4(renderCoord, renderCoord);
         float2 p3 = SlugCurves[curveLoc + 1].xy - renderCoord;
-
-        // Curves are sorted by descending max x, so once one falls left of the pixel no later one contributes.
 
         if (max(max(p12.x, p12.z), p3.x) * pixelsPerEm.x < -0.5) break;
 
         uint code = CalcRootCode(p12.y, p12.w, p3.y);
         if (code != 0U)
         {
-            // At least one root makes a contribution. Calculate them and scale so
-            // that the current pixel corresponds to the range [0,1].
-
             float2 r = SolveHorizPoly(p12, p3) * pixelsPerEm.x;
 
             if ((code & 1U) != 0U)
@@ -520,8 +469,6 @@ float SlugRender(float2 renderCoord, float2 emsPerPixel, float4 bandTransform, u
     float ycov = 0.0;
     float ywgt = 0.0;
 
-    // The vertical band headers follow the horizontal ones, so we have to add bandMax.y + 1.
-
     uint2 vbandData = SlugBands[glyphLoc + uint(bandMax.y) + 1 + uint(bandIndex.x)];
     uint vbandLoc = glyphLoc + vbandData.y;
 
@@ -531,8 +478,6 @@ float SlugRender(float2 renderCoord, float2 emsPerPixel, float4 bandTransform, u
         uint curveLoc = (curveIndex & 1U) != 0U ? curveLocs.y : curveLocs.x;
         float4 p12 = SlugCurves[curveLoc] - float4(renderCoord, renderCoord);
         float2 p3 = SlugCurves[curveLoc + 1].xy - renderCoord;
-
-        // Curves are sorted by descending max y, so once one falls below the pixel no later one contributes.
 
         if (max(max(p12.y, p12.w), p3.y) * pixelsPerEm.y < -0.5) break;
 
@@ -559,8 +504,6 @@ float SlugRender(float2 renderCoord, float2 emsPerPixel, float4 bandTransform, u
 }
 )";
 
-// Expects StructuredBuffer<uint> ColourGlyphs in the layout written by ColourGlyphStore: a width | height << 16 header, then premultiplied RGBA8
-// texels row by row, red in the low byte.
 static auto ColourGlyphShaderSource = R"(
 float4 ColourTexel(uint offset, uint width, int2 texel)
 {
@@ -568,7 +511,6 @@ float4 ColourTexel(uint offset, uint width, int2 texel)
     return float4(float(packed & 255u), float((packed >> 8) & 255u), float((packed >> 16) & 255u), float(packed >> 24)) / 255.0;
 }
 
-// Bilinear filtering in premultiplied space, returned with straight alpha. Every bitmap has a transparent border, so clamping fades out its edges.
 float4 SampleColourGlyph(uint offset, float2 texCoord)
 {
     uint header = ColourGlyphs[offset];

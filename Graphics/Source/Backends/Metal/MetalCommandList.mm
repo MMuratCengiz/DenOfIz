@@ -48,7 +48,6 @@ void MetalCommandList::Begin( )
             m_computeEncoder    = [m_commandBuffer computeCommandEncoder];
             break;
         case DENOFIZ_QUEUE_TYPE_GRAPHICS:
-            // Initialized in BeginRendering
             break;
         }
 
@@ -181,7 +180,6 @@ void MetalCommandList::BindPipeline( IPipeline *pipeline )
     }
 }
 
-// Also called before every draw and dispatch, so a pipeline bound in an earlier pass carries over to the next encoder like on DX12 and Vulkan.
 void MetalCommandList::ApplyPipeline( )
 {
     if ( m_pipeline == nullptr || m_encoderPipeline == m_pipeline )
@@ -338,7 +336,6 @@ void MetalCommandList::BindCommandResources( )
         return;
     }
 
-    // Commands recorded before read the current slice, so changes go into a copy of it.
     if ( m_shaderLayout != &shaderLayout )
     {
         m_shaderLayout        = &shaderLayout;
@@ -407,7 +404,6 @@ void MetalCommandList::ProcessBindGroup( const MetalBindGroup *metalBindGroup )
         m_argumentBuffer->EncodeAddress( m_currentBufferOffset + spaceLayout->SamplerTableOffset, tables->SamplerTable->Buffer( ).gpuAddress );
     }
 
-    // useResource lasts until the encoder ends.
     const uint32_t version  = metalBindGroup->Version( );
     const auto     resident = [ & ]( const ResidentGroup &r ) { return r.Group == metalBindGroup && r.Version == version && r.Tables == tables; };
     if ( std::any_of( m_residentGroups.begin( ), m_residentGroups.end( ), resident ) )
@@ -1036,7 +1032,6 @@ void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType, boo
             spdlog::error("Using metal, render encoder should be initialized in BeginRendering. This error means the order of your commands ");
             break;
         case MetalEncoderType::None:
-            // Simply end current encoder
             break;
         }
         m_waitForQueueFence = false;
@@ -1080,7 +1075,6 @@ void MetalCommandList::FlushBatchedResources( )
 
     @autoreleasepool
     {
-        // One useResources call per usage, and per set of stages on a render encoder.
         const bool render  = m_activeEncoderType == MetalEncoderType::Render;
         const auto keyOf   = [ render ]( const BatchedResource &r ) { return static_cast<uint64_t>( r.Usage ) << 32 | ( render ? static_cast<uint64_t>( r.Stages ) : 0 ); };
         std::sort( m_batchedResources.begin( ), m_batchedResources.end( ), [ &keyOf ]( const BatchedResource &a, const BatchedResource &b ) { return keyOf( a ) < keyOf( b ); } );

@@ -49,14 +49,13 @@ namespace DenOfIz
         MTLWinding               m_frontFaceWinding;
         id<MTLDepthStencilState> m_depthStencilState;
 
-        // Metal sets depth bias on the render encoder, not in the pipeline state.
         float m_depthBias;
         float m_depthBiasSlopeScale;
         float m_depthBiasClamp;
 
         MTLSize              m_computeThreadsPerThreadgroup;
         MTLSize              m_meshThreadsPerThreadgroup;
-        MTLSize              m_objectThreadsPerThreadgroup; // Task/amplification shaders
+        MTLSize              m_objectThreadsPerThreadgroup;
         MeshShaderUsedStages m_usedMeshShaderStages;
 
         std::unordered_map<std::string, uint64_t>       m_visibleFunctions;

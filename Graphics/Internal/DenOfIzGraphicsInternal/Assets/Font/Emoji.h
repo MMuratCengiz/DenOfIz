@@ -18,7 +18,5 @@ namespace DenOfIz
         Emoji
     };
 
-    // UTS #51 presentation of a grapheme cluster: VS15 after the base asks for text; VS16, a keycap, a skin tone modifier, a ZWJ sequence joining
-    // emoji or an Emoji_Presentation base (regional indicators among them) for emoji.
     TextPresentation ClusterPresentation( const char *cluster, uint32_t length );
 } // namespace DenOfIz

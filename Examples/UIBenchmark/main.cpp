@@ -5,8 +5,6 @@ Copyright (c) 2020-2024 Muhammed Murat Cengiz
 Licensed under the MIT License. See LICENSE in the project root.
 */
 
-// Usage: DenOfIzExamples-UIBenchmark [--frames N] [--capture DIR | --compare DIR]
-
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -264,7 +262,6 @@ namespace
             DenOfIz_GraphicsApi_Destroy( m_api );
         }
 
-        // Static draws the same frame every time, animated scrolls three views and changes numbers every frame.
         void Run( const char *name, const uint32_t frames, const bool animated )
         {
             Phase    declare, endFrame, render, gpu, total;
@@ -305,13 +302,11 @@ namespace
                          render.Mean( ), total.Mean( ), gpu.Mean( ) );
         }
 
-        // Draws every frame of the UI animation and a TextRenderer frame, writes the captured ones as PNGs or compares them with PNGs written before.
         int Capture( const std::string &dir, const bool compare )
         {
             int mismatches = 0;
             for ( uint32_t frame = 0; frame <= Captured[ std::size( Captured ) - 1 ]; ++frame )
             {
-                // The last frames are drawn at one and one and a half pixels per point.
                 DenOfIz_UI_SetDisplayScale( m_ui, frame < 250 ? Scale : frame < 270 ? 1.0f : 1.5f );
                 BuildFrame( frame, true );
                 DenOfIz_UI_EndFrame( m_ui );
@@ -396,7 +391,6 @@ namespace
             return maxDiff > 0 ? 1 : 0;
         }
 
-        // The log, the sidebar items and the multilingual lines through the immediate mode TextRenderer, in pixels.
         void DrawText( )
         {
             DenOfIz_TextRenderer_BeginBatch( m_text );

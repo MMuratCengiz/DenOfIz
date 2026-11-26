@@ -19,7 +19,6 @@ namespace
     constexpr int   MaxCanvas = 1024;
     constexpr float TwoPi     = 6.28318530717958647692f;
 
-    // Premultiplied.
     struct Rgba
     {
         float R = 0.0f;
@@ -56,7 +55,6 @@ namespace
         dst = src + dst * ( 1.0f - src.A );
     }
 
-    // Maps ( x, y ) to ( Xx * x + Xy * y + Dx, Yx * x + Yy * y + Dy ), the layout of hb_paint_push_transform_func_t.
     struct Affine
     {
         float Xx = 1.0f;
@@ -66,7 +64,6 @@ namespace
         float Dx = 0.0f;
         float Dy = 0.0f;
 
-        // This transform applied after inner.
         Affine Then( const Affine &inner ) const
         {
             return { Xx * inner.Xx + Xy * inner.Yx, Yx * inner.Xx + Yy * inner.Yx,      Xx * inner.Xy + Xy * inner.Yy,
@@ -92,7 +89,6 @@ namespace
         }
     };
 
-    // Half open pixel ranges.
     struct Box
     {
         int X0 = 0;
@@ -112,7 +108,6 @@ namespace
         Box                Bounds;
     };
 
-    // A colour line resolved to sorted, premultiplied stops over [0, 1] of its offset range, see the COLR spec on extend modes.
     class ColorLine
     {
         std::vector<float> m_offsets;
@@ -232,7 +227,6 @@ namespace
         return std::max( { c[ 0 ], c[ 1 ], c[ 2 ] } ) - std::min( { c[ 0 ], c[ 1 ], c[ 2 ] } );
     }
 
-    // W3C Compositing and Blending separable blend functions, cb is the backdrop and cs the source, both straight.
     float Blend( const hb_paint_composite_mode_t mode, const float cb, const float cs )
     {
         switch ( mode )
@@ -305,7 +299,6 @@ namespace
             break;
         }
 
-        // Blend modes: the blended colour where both are present, each one alone elsewhere.
         const float cs[ 3 ] = { s.A > 0.0f ? s.R / s.A : 0.0f, s.A > 0.0f ? s.G / s.A : 0.0f, s.A > 0.0f ? s.B / s.A : 0.0f };
         const float cb[ 3 ] = { d.A > 0.0f ? d.R / d.A : 0.0f, d.A > 0.0f ? d.G / d.A : 0.0f, d.A > 0.0f ? d.B / d.A : 0.0f };
         float       b[ 3 ];
@@ -341,7 +334,6 @@ namespace
                  s.B * ( 1.0f - d.A ) + d.B * ( 1.0f - s.A ) + both * b[ 2 ], s.A + d.A - both };
     }
 
-    // Paints into a canvas whose pixel ( x, y ) covers [x, x + 1] x [y, y + 1] with y up. The base transform maps font units onto it.
     class Painter
     {
         int                            m_width;
@@ -388,7 +380,6 @@ namespace
             const Affine &t = m_transforms.back( );
             m_curves.clear( );
             m_bands.clear( );
-            // In ems of the canvas rather than pixels, so SlugRender's em-space sample bias keeps samples off the outline's points like on the GPU.
             const float     ppem    = m_pixelsPerEm;
             const SlugGlyph outline = CompileSlugGlyph( font, glyph, SlugTransform{ t.Xx, t.Yx, t.Xy, t.Yy, t.Dx, t.Dy, ppem }, m_curves, m_bands );
             const Box       bounds{ static_cast<int>( std::floor( outline.Bounds.X * ppem ) ) - 1, static_cast<int>( std::floor( outline.Bounds.Y * ppem ) ) - 1,
@@ -425,7 +416,6 @@ namespace
                           } );
                 return;
             }
-            // Rotated or skewed: the share of 4x4 samples inside the rectangle.
             Affine inverse;
             if ( !t.Invert( inverse ) )
             {
@@ -460,7 +450,6 @@ namespace
 
         void PaintLinear( hb_color_line_t *line, const float x0, const float y0, const float x1, const float y1, const float x2, const float y2 )
         {
-            // The gradient runs along p0 p1 projected onto the normal of p0 p2.
             float       dx = x1 - x0, dy = y1 - y0;
             const float qx = x2 - x0, qy = y2 - y0;
             const float q2 = qx * qx + qy * qy;
@@ -477,7 +466,6 @@ namespace
             }
         }
 
-        // Two point conical: the largest t whose circle passes through the point with a radius of at least zero.
         void PaintRadial( hb_color_line_t *line, const float x0, const float y0, const float r0, const float x1, const float y1, const float r1 )
         {
             const float cdx = x1 - x0, cdy = y1 - y0, dr = r1 - r0;
@@ -505,7 +493,6 @@ namespace
                            } );
         }
 
-        // Angles run counter clockwise from the x axis in [0, 2 pi), stop 0 at the start angle and 1 at the end angle.
         void PaintSweep( hb_color_line_t *line, const float cx, const float cy, const float start, const float end )
         {
             PaintGradient( line,
@@ -549,7 +536,6 @@ namespace
             {
                 return true;
             }
-            // The image fills the extents, its first row at the top, y_bearing.
             const float left = static_cast<float>( extents->x_bearing ), top = static_cast<float>( extents->y_bearing );
             const float sx    = static_cast<float>( width ) / static_cast<float>( extents->width );
             const float sy    = static_cast<float>( height ) / static_cast<float>( -extents->height );
@@ -561,7 +547,6 @@ namespace
                 const float tx = fx - static_cast<float>( ix ), ty = fy - static_cast<float>( iy );
                 return Lerp( Lerp( texel( ix, iy ), texel( ix + 1, iy ), tx ), Lerp( texel( ix, iy + 1 ), texel( ix + 1, iy + 1 ), tx ), ty );
             };
-            // Downscaling averages n x n bilinear samples per pixel, n covering the image pixels one canvas pixel spans.
             const float span = std::max( std::hypot( inverse.Xx * sx, inverse.Yx * sy ), std::hypot( inverse.Xy * sx, inverse.Yy * sy ) );
             const int   n    = std::clamp( static_cast<int>( std::ceil( span ) ), 1, 8 );
             const float step = 1.0f / static_cast<float>( n );
@@ -610,7 +595,6 @@ namespace
             return { 0, 0, m_width, m_height };
         }
 
-        // coverageAt gets pixel centres and is only asked inside bounds, which is clipped to the current clip.
         template <typename CoverageAt>
         void PushClip( const Box &bounds, CoverageAt &&coverageAt )
         {
@@ -661,7 +645,6 @@ namespace
             ForEachPixel( [ & ]( const size_t i, const float coverage, const float x, const float y ) { Over( layer[ i ], colorAt( x, y ) * coverage ); } );
         }
 
-        // paramAt gets gradient space points and returns the colour line parameter, NaN where the gradient paints nothing.
         template <typename ParamAt>
         void PaintGradient( hb_color_line_t *line, ParamAt &&paramAt )
         {
@@ -743,7 +726,6 @@ namespace
         return channel( c.R ) | channel( c.G ) << 8 | channel( c.B ) << 16 | channel( c.A ) << 24;
     }
 
-    // ppem picks the bitmap strike, COLR glyphs are painted at any size.
     bool Paint( hb_font_t *font, const uint32_t glyphId, const uint32_t ppem, const float scale, const hb_color_t foreground, ColourBitmap &out )
     {
         hb_font_set_ppem( font, ppem, ppem );
@@ -752,7 +734,6 @@ namespace
         {
             return false;
         }
-        // A pixel of transparent border on every side, the GPU's bilinear filter fades the edges into it.
         const int x0    = static_cast<int>( std::floor( static_cast<float>( extents.x_bearing ) * scale ) ) - 1;
         const int y1    = static_cast<int>( std::ceil( static_cast<float>( extents.y_bearing ) * scale ) ) + 1;
         const int x1    = std::min( static_cast<int>( std::ceil( static_cast<float>( extents.x_bearing + extents.width ) * scale ) ) + 1, x0 + MaxCanvas );
@@ -766,7 +747,6 @@ namespace
             return false;
         }
 
-        // Crop to the painted pixels plus the border.
         const std::vector<Rgba> &pixels = painter.Result( );
         Box                      used{ width, height, 0, 0 };
         for ( int y = 0; y < height; ++y )
@@ -806,9 +786,8 @@ bool DenOfIz::RasteriseColourGlyph( const Font &font, const uint32_t glyphId, co
 {
     hb_font_t *paintFont = hb_font_create( hb_font_get_face( font.HbFont( ) ) );
     hb_font_set_scale( paintFont, static_cast<int>( font.Upem( ) ), static_cast<int>( font.Upem( ) ) );
-    const float scale = static_cast<float>( ppem ) / static_cast<float>( font.Upem( ) );
-    // A bitmap strike can lack the glyph, the largest strike is tried then.
-    const bool painted = Paint( paintFont, glyphId, ppem, scale, foreground, out ) || Paint( paintFont, glyphId, 0, scale, foreground, out );
+    const float scale   = static_cast<float>( ppem ) / static_cast<float>( font.Upem( ) );
+    const bool  painted = Paint( paintFont, glyphId, ppem, scale, foreground, out ) || Paint( paintFont, glyphId, 0, scale, foreground, out );
     hb_font_destroy( paintFont );
     return painted;
 }

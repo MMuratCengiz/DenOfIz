@@ -118,7 +118,6 @@ void TextRenderingExample::Render( const uint32_t frameIndex, DenOfIz_CommandLis
     text.Text     = DENOFIZ_STRING( "JetBrains Mono ligatures: -> => != === <= >= :: ||" );
     DenOfIz_TextRenderer_AddText( m_textRenderer, &text );
 
-    // Each line is its own paragraph: the first is LTR with a Hebrew run, the second RTL with digits and English kept left to right.
     text.Y        = 320.0f;
     text.FontSize = 26.0f;
     text.FontId   = InconsolataFont;
@@ -126,7 +125,6 @@ void TextRenderingExample::Render( const uint32_t frameIndex, DenOfIz_CommandLis
     text.Text     = DENOFIZ_STRING( "Bidi: the word שלום (peace) stays readable\nقرأت 3 كتب في Book World اليوم\nFallback: Ελληνικά · 日本語 · 한국어 · हिन्दी · ไทย" );
     DenOfIz_TextRenderer_AddText( m_textRenderer, &text );
 
-    // Emoji come from the system's colour font, painted once per size bucket.
     text.Y        = 440.0f;
     text.FontSize = 32.0f;
     text.Color    = { 1.0f, 1.0f, 1.0f, 1.0f };

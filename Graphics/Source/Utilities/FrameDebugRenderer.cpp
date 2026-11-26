@@ -13,7 +13,6 @@ Licensed under the MIT License. See LICENSE in the project root.
 #include <string>
 #include <vector>
 
-// Include last due to DirectXMath
 #include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
 
 #define FRAME_DEBUG_RENDERER_IMPL( handle ) DENOFIZ_FROM_HANDLE( DenOfIz::FrameDebugRenderer, handle )

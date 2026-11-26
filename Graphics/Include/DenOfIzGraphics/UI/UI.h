@@ -109,12 +109,11 @@ extern "C"
         DENOFIZ_UI_FLEX_WRAP_WRAP_REVERSE
     } DenOfIz_UIFlexWrap;
 
-    /** Type of a DenOfIz_UIValue. */
     typedef enum DenOfIz_UIValueType
     {
-        DENOFIZ_UI_VALUE_TYPE_AUTO,    /**< Yoga auto. For MinWidth, MinHeight, MaxWidth, MaxHeight and Insets it means unset. */
-        DENOFIZ_UI_VALUE_TYPE_POINTS,  /**< Value points. */
-        DENOFIZ_UI_VALUE_TYPE_PERCENT  /**< Value is a fraction (0..1), Yoga percent divided by 100. */
+        DENOFIZ_UI_VALUE_TYPE_AUTO, /**< Yoga auto. For MinWidth, MinHeight, MaxWidth, MaxHeight and Insets it means unset. */
+        DENOFIZ_UI_VALUE_TYPE_POINTS,
+        DENOFIZ_UI_VALUE_TYPE_PERCENT /**< Value is a fraction (0..1), Yoga percent divided by 100. */
     } DenOfIz_UIValueType;
 
     /** Width, Height, their minimum and maximum, Basis and Insets. */
@@ -124,10 +123,9 @@ extern "C"
         float               Value;
     } DenOfIz_UIValue;
 
-    /** Type of a DenOfIz_UILength. */
     typedef enum DenOfIz_UILengthType
     {
-        DENOFIZ_UI_LENGTH_TYPE_POINTS,  /**< Value points. */
+        DENOFIZ_UI_LENGTH_TYPE_POINTS,
         DENOFIZ_UI_LENGTH_TYPE_PERCENT, /**< Value is a fraction (0..1), Yoga percent divided by 100. */
         DENOFIZ_UI_LENGTH_TYPE_AUTO     /**< Yoga auto margin, takes free space. Padding, Gap and LineGap treat it as 0. */
     } DenOfIz_UILengthType;
@@ -146,7 +144,7 @@ extern "C"
         /**
          * The element and its whole subtree, floating descendants included, are not laid out, drawn or hit tested. Per id state such as
          * scroll offsets and transition values is kept, a focused element inside is unfocused at the next BeginFrame like SetFocus(0).
-         * Hiding is not disappearing: no exit transition plays and showing again plays no enter transition. GetElementRect and the text
+         * No exit transition plays when it is hidden and no enter transition when it is shown again. GetElementRect and the text
          * queries answer false or zero for hidden elements, GetScrollState keeps answering with the kept offsets.
          */
         DENOFIZ_UI_DISPLAY_NONE,
@@ -557,20 +555,20 @@ extern "C"
 
     /**
      * A styled range of a rich text leaf. Runs follow each other from byte 0, each ending at ByteEnd; text past the last run takes the leaf's
-     * font, size and colour. The whole text is shaped, bidi ordered and wrapped as one paragraph: runs only cut shaping where font or size change.
+     * font, size and color. The whole text is shaped, bidi ordered and wrapped as one paragraph: runs only cut shaping where font or size change.
      * A run with a non zero ObjectSize is an inline box of that size in points instead of text (one U+FFFC by convention), its bottom on the
      * baseline, Image drawn in it when set. Decorations are drawn from the metrics of the run's font.
      */
     typedef struct DenOfIz_UITextRun
     {
         uint32_t                      ByteEnd;
-        uint32_t                      Id;            /**< Reported by GetTextRunAtPoint, zero is none. */
+        uint32_t                      Id; /**< Reported by GetTextRunAtPoint, zero is none. */
         uint16_t                      FontId;
-        float                         FontSize;      /**< Points, zero is the leaf's FontSize. */
-        DenOfIz_UIColor               Color;         /**< Zero is the leaf's Color. */
+        float                         FontSize; /**< Points, zero is the leaf's FontSize. */
+        DenOfIz_UIColor               Color;    /**< Zero is the leaf's Color. */
         DenOfIz_UIColor               BackgroundColor;
         DenOfIz_UITextDecorationFlags Decoration;
-        DenOfIz_UIColor               DecorationColor; /**< Zero is the run's colour. */
+        DenOfIz_UIColor               DecorationColor; /**< Zero is the run's color. */
         float                         BaselineShift;   /**< Points the run is raised by, negative lowers it. */
         DenOfIz_Float2                ObjectSize;
         DenOfIz_Texture               Image;
@@ -650,7 +648,7 @@ extern "C"
         DenOfIz_UIRect      VisibleRect;
         DenOfIz_Float2      ContentSize; /**< The laid out text of a text leaf, the content of a scrollable element, zero otherwise. */
         DenOfIz_Float2      ScrollOffset;
-        DenOfIz_UIColor     BackgroundColor; /**< The colours drawn this frame, transitions applied. */
+        DenOfIz_UIColor     BackgroundColor; /**< The colors drawn this frame, transitions applied. */
         DenOfIz_UIColor     BorderColor;
         DenOfIz_UIColor     OverlayColor;
         DenOfIz_UIEdges     BorderWidth;
@@ -690,9 +688,7 @@ extern "C"
     DZ_API DenOfIz_UILength      DenOfIz_UILength_Points( float points );
     DZ_API DenOfIz_UILength      DenOfIz_UILength_Percent( float fraction );
     DZ_API DenOfIz_UILength      DenOfIz_UILength_Auto( );
-    /** Every edge in points. */
     DZ_API DenOfIz_UILengthEdges DenOfIz_UILengthEdges_All( float points );
-    /** Left and right, top and bottom in points. */
     DZ_API DenOfIz_UILengthEdges DenOfIz_UILengthEdges_Symmetric( float horizontal, float vertical );
     DZ_API DenOfIz_UIEdges       DenOfIz_UIEdges_All( float value );
     DZ_API DenOfIz_UIEdges       DenOfIz_UIEdges_Symmetric( float horizontal, float vertical );
@@ -796,7 +792,7 @@ extern "C"
     DZ_API uint32_t DenOfIz_UI_HitTest( DenOfIz_UI ui, DenOfIz_Float2 point, DenOfIz_UInt32Array *chain );
     /** A transition, enter or exit animation or smooth scroll is in progress: the next frame draws differently with the same declarations. */
     DZ_API bool DenOfIz_UI_IsAnimating( DenOfIz_UI ui );
-    /** The size of a capture. */
+    /** The viewport in pixels, the size of the image DenOfIz_UI_Capture writes. */
     DZ_API void DenOfIz_UI_GetViewportPixelSize( DenOfIz_UI ui, uint32_t *outWidth, uint32_t *outHeight );
     /**
      * Renders the most recent frame like RenderToTexture and reads it back, waiting for the device to be idle before and for the GPU after.

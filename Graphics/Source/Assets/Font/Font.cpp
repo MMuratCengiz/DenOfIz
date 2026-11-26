@@ -68,10 +68,9 @@ Font::Font( hb_blob_t *blob, const uint32_t faceIndex ) :
     LoadMetrics( );
 }
 
-// HarfBuzz applies the synthesis to advances, extents and drawn outlines, so shaping and the glyph stores see a face of its own.
 Font::Font( const Font &base, const DenOfIz_FontSynthesisDesc &synthesis ) :
-    m_blob( hb_blob_reference( base.m_blob ) ), m_face( hb_face_reference( base.m_face ) ), m_font( hb_font_create( m_face ) ), m_id( g_nextFontId++ ),
-    m_upem( base.m_upem ), m_colour( base.m_colour )
+    m_blob( hb_blob_reference( base.m_blob ) ), m_face( hb_face_reference( base.m_face ) ), m_font( hb_font_create( m_face ) ), m_id( g_nextFontId++ ), m_upem( base.m_upem ),
+    m_colour( base.m_colour )
 {
     hb_font_set_scale( m_font, static_cast<int>( m_upem ), static_cast<int>( m_upem ) );
     if ( synthesis.Bold > 0.0f )
@@ -157,8 +156,7 @@ bool Font::Covers( const char *text, const uint32_t length ) const
     for ( SBUInteger i = 0; i < length; )
     {
         const SBCodepoint codePoint = SBCodepointDecodeNextFromUTF8( reinterpret_cast<const SBUInt8 *>( text ), length, &i );
-        // HarfBuzz hides default ignorables a font lacks, but a tag sequence only shows as a flag in a font that has the tags.
-        const bool ignored = TextIsDefaultIgnorable( codePoint ) && ( codePoint < 0xE0020 || codePoint > 0xE007F );
+        const bool        ignored   = TextIsDefaultIgnorable( codePoint ) && ( codePoint < 0xE0020 || codePoint > 0xE007F );
         if ( !ignored && !HasCodePoint( codePoint ) )
         {
             return false;

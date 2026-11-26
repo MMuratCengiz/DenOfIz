@@ -68,7 +68,6 @@ namespace
             m_shaper.Shape( text.data( ), static_cast<uint32_t>( text.size( ) ), fonts, baseLevel, m_shaped );
         }
 
-        // Character indices in visual order for the glyphs [start, end) of the first paragraph, one entry per cluster.
         std::vector<uint32_t> Visual( const std::string &text, uint32_t start = 0, uint32_t end = UINT32_MAX ) const
         {
             std::vector<uint32_t> charOf( text.size( ) + 1, 0 );
@@ -147,7 +146,6 @@ TEST_F( TextShaperTest, LatinWithHebrewKeepsLtrParagraph )
 
 TEST_F( TextShaperTest, ArabicWithNumbersAndLatin )
 {
-    // The first strong character is Arabic, so the paragraph is RTL; the digits after Arabic become AN and stay left to right.
     const std::string text = "مرحبا 123 world";
     Shape( text );
     EXPECT_EQ( m_shaped.Paragraphs[ 0 ].Level, 1 );
@@ -173,7 +171,6 @@ TEST_F( TextShaperTest, ExplicitBaseLevel )
 
 TEST_F( TextShaperTest, NestedBracketsInRtl )
 {
-    // N0: the outer pair encloses R text, the inner one only L text but follows R context, so every bracket is R and gets mirrored.
     const std::string text = "אב (גד [ef] הו) זח";
     Shape( text );
     EXPECT_EQ( Visual( text ), ( Order{ 17, 16, 15, 14, 13, 12, 11, 10, 8, 9, 7, 6, 5, 4, 3, 2, 1, 0 } ) );
@@ -192,7 +189,6 @@ TEST_F( TextShaperTest, NestedBracketsInRtl )
 
 TEST_F( TextShaperTest, NestedBracketsInLtr )
 {
-    // The inner pair holds only R text but the preceding strong type is L, so it takes the embedding direction.
     const std::string text = "a (b [אב] c) d";
     Shape( text );
     EXPECT_EQ( Visual( text ), ( Order{ 0, 1, 2, 3, 4, 5, 7, 6, 8, 9, 10, 11, 12, 13 } ) );
@@ -200,7 +196,6 @@ TEST_F( TextShaperTest, NestedBracketsInLtr )
 
 TEST_F( TextShaperTest, TrailingWhitespaceTakesParagraphLevel )
 {
-    // Broken after "אב ", the space between two RTL words ends the line, so L1 moves it to the paragraph's end edge.
     const std::string text = "abc אב גד";
     Shape( text );
     EXPECT_EQ( Visual( text, 0, 7 ), ( Order{ 0, 1, 2, 3, 5, 4, 6 } ) );
@@ -283,7 +278,6 @@ TEST_F( TextShaperTest, GraphemeStarts )
 
 TEST_F( TextShaperTest, IllFormedUtf8IsOneReplacementPerMaximalSubpart )
 {
-    // Overlong, surrogate, truncated, stray continuations, above U+10FFFF and truncated at the end.
     const std::string     text = "a\xC0\xAF"
                                  "b\xED\xA0\x80"
                                  "c\xE2\x82"
@@ -330,7 +324,6 @@ TEST_F( TextShaperTest, IllFormedUtf8IsOneReplacementPerMaximalSubpart )
 
 TEST_F( TextShaperTest, DefaultIgnorablesNeverDraw )
 {
-    // Soft hyphen, ZWSP, word joiner, BOM, LRM, CGJ, ZWJ and VS1 outside any sequence, a bidi isolate and an embedding.
     const std::string text = "a\u00ADb\u200Bc\u2060d\uFEFFe\u200Ef\u034Fg\u200Dh\uFE00i\u2066j\u2069k\u202Al\u202Cm";
     Shape( text );
     hb_codepoint_t space = 0;
@@ -338,7 +331,6 @@ TEST_F( TextShaperTest, DefaultIgnorablesNeverDraw )
     uint32_t visible = 0;
     for ( const TextGlyph &glyph : m_shaped.Glyphs )
     {
-        // They stay in the font of the text around them, a fallback font would split the item.
         EXPECT_EQ( glyph.Font, 0 ) << glyph.Cluster;
         if ( glyph.GlyphId == NominalGlyph( text[ glyph.Cluster ] ) )
         {
@@ -354,7 +346,6 @@ TEST_F( TextShaperTest, DefaultIgnorablesNeverDraw )
 
 TEST_F( TextShaperTest, BidiControlsGiveTheBrowserOrder )
 {
-    // Visual order of the visible characters only, the controls take no space.
     auto visible = [ this ]( const std::string &text )
     {
         Shape( text );
@@ -383,7 +374,6 @@ TEST_F( TextShaperTest, BidiControlsGiveTheBrowserOrder )
     EXPECT_EQ( visible( "שלום \u2066abc def\u2069 עולם" ), ( Order{ 18, 17, 16, 15, 14, 6, 7, 8, 9, 10, 11, 12, 4, 3, 2, 1, 0 } ) );
     EXPECT_EQ( visible( "x \u2068שלום abc\u2069 y" ), ( Order{ 0, 1, 8, 9, 10, 7, 6, 5, 4, 3, 12, 13 } ) );
     EXPECT_EQ( visible( "\u202Dשלום\u202C" ), ( Order{ 1, 2, 3, 4 } ) );
-    // The space between RLM and the digits resolves to R and goes right of them.
     EXPECT_EQ( visible( "abc\u200F 123" ), ( Order{ 0, 1, 2, 5, 6, 7, 4 } ) );
 }
 
@@ -459,7 +449,6 @@ TEST_F( UITextLayoutTest, CaretMovesLeftForRtl )
 
 TEST_F( UITextLayoutTest, CaretAtDirectionBoundaries )
 {
-    // Visually "abc גבא def": a caret before an RTL letter sits at its right edge, so the start of the Hebrew run is where " def" begins.
     const std::string   text   = "abc אבג def";
     const UITextLayout *layout = Layout( text, 1 );
     EXPECT_FLOAT_EQ( layout->CaretX( 0, 4 ), layout->CaretX( 0, 10 ) );
@@ -467,7 +456,6 @@ TEST_F( UITextLayoutTest, CaretAtDirectionBoundaries )
     EXPECT_LT( layout->CaretX( 0, 6 ), layout->CaretX( 0, 4 ) );
     EXPECT_GT( layout->CaretX( 0, 8 ), layout->CaretX( 0, 3 ) );
 
-    // Selecting "c א" covers "c " on the left and the first Hebrew letter at the right end of the run.
     std::vector<DenOfIz_Float2> spans;
     layout->SelectionSpans( 0, 2, 6, 0.0f, spans );
     ASSERT_EQ( spans.size( ), 2u );
@@ -480,7 +468,6 @@ TEST_F( UITextLayoutTest, CaretAtDirectionBoundaries )
 
 TEST_F( UITextLayoutTest, LigatureSplitsCaretEvenly )
 {
-    // Lam alef is one glyph covering two grapheme clusters.
     const std::string   text   = "لا";
     const UITextLayout *layout = Layout( text, 1 );
     if ( layout->Run->Shaped.Glyphs.size( ) != 1 )
@@ -504,7 +491,6 @@ TEST_F( UITextLayoutTest, RtlParagraphWraps )
         const UITextLineLayout &line = layout->Lines[ i ];
         EXPECT_TRUE( line.Rtl );
         EXPECT_LE( line.Width, 160.01f );
-        // The first logical glyph is at the right end of the visible line, a trailing space hangs left of zero.
         EXPECT_NEAR( layout->CaretX( static_cast<uint32_t>( i ), line.ByteStart ), line.Width, 1e-3f );
         if ( i + 1 < layout->Lines.size( ) )
         {
@@ -573,7 +559,6 @@ TEST_F( UITextLayoutTest, KerningStopsAtAnEmergencyBreak )
     const float upem   = static_cast<float>( inter.Get( )->Upem( ) );
     for ( size_t i = 0; i + 1 < layout->Lines.size( ); ++i )
     {
-        // The last glyph of a line has no pair to kern with, the one shaped as a whole word does.
         const UITextLineLayout &line = layout->Lines[ i ];
         const TextGlyph        &last = glyphs[ line.GlyphEnd - 1 ];
         EXPECT_FLOAT_EQ( last.Advance, static_cast<float>( hb_font_get_glyph_h_advance( font, last.GlyphId ) ) / upem );
@@ -582,7 +567,6 @@ TEST_F( UITextLayoutTest, KerningStopsAtAnEmergencyBreak )
         EXPECT_EQ( glyphs[ line.GlyphStart ].Cluster, line.ByteStart );
     }
 
-    // In a later paragraph after ill-formed UTF-8 the pieces are shaped from the same replaced text and map back to the bytes given.
     const std::string   text  = "x\xC0\nAVAVAVAVAVAV\xE2\x82VAVAVAVAVAVAVAV";
     const UITextLayout *later = Layout( text, 3, 70.0f );
     ASSERT_GT( later->Lines.size( ), 3u );
@@ -603,7 +587,6 @@ TEST_F( UITextLayoutTest, KerningStopsAtAnEmergencyBreak )
 
 TEST_F( UITextLayoutTest, ArabicKeepsJoiningAcrossAnEmergencyBreak )
 {
-    // Joining forms stay as if the word were whole (CSS Text 3), only the pieces are shaped apart.
     const std::string   text   = "مستشفياتمستشفياتمستشفيات";
     const UITextLayout *layout = Layout( text, 1, 60.0f );
     ASSERT_GT( layout->Lines.size( ), 1u );
@@ -625,7 +608,6 @@ TEST_F( UITextLayoutTest, ArabicKeepsJoiningAcrossAnEmergencyBreak )
 
 TEST_F( UITextLayoutTest, LineHeightIsTheTallestFontOnTheLine )
 {
-    // JetBrains Mono has neither emoji nor Myanmar, both come from system fonts with taller metrics.
     const UITextLayout *layout = Layout( "abc\nabc\xF0\x9F\x98\x80\n\xE1\x80\x99\xE1\x80\xBC\xE1\x80\x94\xE1\x80\xBA\xE1\x80\x99\xE1\x80\xAC", 2 );
     ASSERT_EQ( layout->Lines.size( ), 3u );
     const float mono = m_mono.Get( )->Metrics( ).LineHeight * 20.0f;
@@ -652,7 +634,6 @@ TEST_F( UITextLayoutTest, LineHeightIsTheTallestFontOnTheLine )
         EXPECT_NEAR( line.Height, ( above + below ) * 20.0f, 1e-3f ) << i;
         EXPECT_NEAR( line.Baseline - line.Top, above * 20.0f, 1e-3f ) << i;
     }
-    // Myanmar MN is taller than JetBrains Mono, Apple Color Emoji is not.
     EXPECT_GT( layout->Lines[ 2 ].Height, mono );
 
     UITextParams params;
@@ -665,7 +646,6 @@ TEST_F( UITextLayoutTest, LineHeightIsTheTallestFontOnTheLine )
         EXPECT_FLOAT_EQ( line.Height, 30.0f );
     }
     EXPECT_FLOAT_EQ( fixed->Height, 90.0f );
-    // Hit testing finds the taller line.
     EXPECT_EQ( layout->LineAt( layout->Lines[ 1 ].Top + layout->Lines[ 1 ].Height - 0.5f ), 1u );
 }
 

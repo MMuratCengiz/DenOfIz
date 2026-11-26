@@ -30,7 +30,6 @@ namespace
         std::string Text;
     };
 
-    // Strings browsers draw without tofu on macOS. Invisible code points are escaped.
     const Sample Corpus[] = {
         { "emoji zwj family", "👨‍👩‍👧‍👦 👩🏽‍💻 🏳️‍🌈" },
         { "emoji modifiers", "👍🏽👋🏿🤝🏻" },
@@ -88,7 +87,6 @@ namespace
                            "f\xF0\x9F\x98" },
     };
 
-    // Outlines or colour glyphs the glyph stores can draw.
     bool Drawable( const Font &font )
     {
         hb_face_t *face  = hb_font_get_face( font.HbFont( ) );
@@ -102,7 +100,6 @@ namespace
         return font.IsColour( ) || table( HB_TAG( 'g', 'l', 'y', 'f' ) ) || table( HB_TAG( 'C', 'F', 'F', ' ' ) ) || table( HB_TAG( 'C', 'F', 'F', '2' ) );
     }
 
-    // An installed font that covers the cluster and can be drawn, empty when there is none.
     std::string CoveringFont( const std::string &cluster )
     {
         std::vector<SystemFontFile> files;
@@ -155,8 +152,6 @@ namespace
     }
 } // namespace
 
-// Every sample shapes to ascending clusters with sane advances, lays out at a narrow width and draws. A .notdef glyph is only accepted where no
-// installed font covers the cluster, so a browser shows tofu too.
 TEST( TextCorpus, DrawsLikeABrowser )
 {
 #ifndef __APPLE__

@@ -72,10 +72,15 @@ typedef struct DenOfIz_ShaderRayTracingDesc
 
 typedef struct DenOfIz_RayTracingShaderDesc
 {
-    // Metal compiles hit group shaders for one hit group type, intersection shaders do not work without it.
+    /**
+     * Read by Metal only, which compiles hit group shaders for one hit group type. Shaders of AABBS hit groups, intersection shaders
+     * included, need AABBS.
+     */
     DenOfIz_HitGroupType HitGroupType;
-    // Bindings of the shader's local root signature: left out of the global root signature and reflected into
-    // ShaderReflectDesc.LocalRootSignatures[i] instead, i being the stage's index in DenOfIz_ShaderProgramDesc::ShaderStages.
+    /**
+     * Bindings of the shader's local root signature: left out of the global root signature and reflected into
+     * ShaderReflectDesc.LocalRootSignatures[i] instead, i being the stage's index in DenOfIz_ShaderProgramDesc::ShaderStages.
+     */
     DenOfIz_ResourceBindingSlotArray LocalBindings;
 } DenOfIz_RayTracingShaderDesc;
 

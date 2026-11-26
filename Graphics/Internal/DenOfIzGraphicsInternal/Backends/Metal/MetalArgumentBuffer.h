@@ -23,48 +23,43 @@ namespace DenOfIz
 
     public:
         DescriptorTable( MetalContext *context, size_t numEntries );
-        void                        SetDebugName( const std::string &name );
-        void                        Reset( size_t newNumEntries );
-        void                        EncodeBuffer( id<MTLBuffer> buffer, uint32_t index, uint32_t offset = 0 );
-        void                        EncodeTexture( id<MTLTexture> texture, float minLodClamp, uint32_t index );
-        void                        EncodeSampler( id<MTLSamplerState> sampler, float lodBias, uint32_t index );
-        void                        EncodeAccelerationStructure( id<MTLBuffer> asHeader, uint32_t index );
-        [[nodiscard]] size_t        NumEntries( ) const
+        void                 SetDebugName( const std::string &name );
+        void                 Reset( size_t newNumEntries );
+        void                 EncodeBuffer( id<MTLBuffer> buffer, uint32_t index, uint32_t offset = 0 );
+        void                 EncodeTexture( id<MTLTexture> texture, float minLodClamp, uint32_t index );
+        void                 EncodeSampler( id<MTLSamplerState> sampler, float lodBias, uint32_t index );
+        void                 EncodeAccelerationStructure( id<MTLBuffer> asHeader, uint32_t index );
+        [[nodiscard]] size_t NumEntries( ) const
         {
             return m_numEntries;
         }
-        // Returned by reference on purpose: returning `id` by value makes ARC retain+autorelease the
-        // buffer, which leaks when the calling thread has no autorelease pool (e.g. a .NET host).
         [[nodiscard]] const id<MTLBuffer> &Buffer( ) const
         {
             return m_buffer;
         }
     };
 
-    // Grows in segments of capacity bytes instead of reallocating, because draws already encoded keep reading from earlier segments until
-    // Reset( ). Offsets are relative to the current segment.
     class MetalArgumentBuffer
     {
         MetalContext              *m_context;
         std::vector<id<MTLBuffer>> m_segments;
         size_t                     m_segment       = 0;
         uint64_t                   m_currentOffset = 0;
-        uint64_t      m_nextOffset    = 0;
-        uint64_t      m_capacity;
-        Byte         *m_contents;
-        std::mutex    m_reserveMutex;
+        uint64_t                   m_nextOffset    = 0;
+        uint64_t                   m_capacity;
+        Byte                      *m_contents;
+        std::mutex                 m_reserveMutex;
 
     public:
         MetalArgumentBuffer( MetalContext *context, size_t capacity );
-        void                        EncodeRootConstant( uint64_t offset, uint32_t numRootConstantBytes, const Byte *data ) const;
-        void                        EncodeAddress( uint64_t offset, uint64_t address ) const;
-        std::pair<Byte *, uint64_t> Reserve( size_t numBytes );
-        std::pair<Byte *, uint64_t> Duplicate( size_t numBytes );
-        void                        Reset( );
+        void                               EncodeRootConstant( uint64_t offset, uint32_t numRootConstantBytes, const Byte *data ) const;
+        void                               EncodeAddress( uint64_t offset, uint64_t address ) const;
+        std::pair<Byte *, uint64_t>        Reserve( size_t numBytes );
+        std::pair<Byte *, uint64_t>        Duplicate( size_t numBytes );
+        void                               Reset( );
         [[nodiscard]] uint64_t             Offset( ) const;
         [[nodiscard]] const id<MTLBuffer> &Buffer( ) const;
-        // A buffer bound to an encoder has to be bound again when this changes.
-        [[nodiscard]] size_t Segment( ) const;
+        [[nodiscard]] size_t               Segment( ) const;
 
     private:
         bool AddSegment( );
