@@ -7,6 +7,7 @@ Licensed under the MIT License. See LICENSE in the project root.
 
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <future>
@@ -37,6 +38,8 @@ namespace DenOfIz
         DenOfIz_Fence           m_syncWait;
         bool                    m_issueBarriers;
 
+        std::vector<DenOfIz_Texture> m_texturesToTransition;
+
         DenOfIz_CommandQueue m_copyQueue;
         DenOfIz_CommandQueue m_syncQueue;
 
@@ -44,7 +47,7 @@ namespace DenOfIz
         explicit BatchResourceCopy( const DenOfIz_BatchResourceCopyDesc &desc );
         ~BatchResourceCopy( );
 
-        void            Begin( ) const;
+        void            Begin( );
         void            CopyToGPUBuffer( const DenOfIz_CopyToGpuBufferDesc &copyDesc );
         void            CopyBufferRegion( const DenOfIz_CopyBufferRegionDesc &copyDesc ) const;
         void            CopyTextureRegion( const DenOfIz_CopyTextureRegionDesc &copyDesc ) const;
@@ -59,6 +62,7 @@ namespace DenOfIz
 
     private:
         void               CleanResources( );
+        void               TransitionOnSubmit( DenOfIz_Texture texture );
         void               LoadTextureInternal( DenOfIz_TextureData texture, DenOfIz_Texture dstTexture );
         void               AlignDataForTexture( const Byte *src, uint32_t width, uint32_t height, uint32_t bitsize, Byte *dst ) const;
         void               CopyTextureToMemoryAligned( DenOfIz_TextureData texture, const DenOfIz_TextureMip &mipData, Byte *dst ) const;
@@ -112,6 +116,11 @@ BatchResourceCopy::~BatchResourceCopy( )
         m_cleanResourcesFuture.wait( );
     }
 
+    if ( m_issueBarriers )
+    {
+        DenOfIz_Fence_Wait( m_syncWait );
+    }
+
     for ( auto &resource : m_resourcesToClean )
     {
         DenOfIz_Buffer_Destroy( resource );
@@ -151,11 +160,17 @@ BatchResourceCopy::~BatchResourceCopy( )
     }
 }
 
-void BatchResourceCopy::Begin( ) const
+void BatchResourceCopy::Begin( )
 {
+    if ( m_cleanResourcesFuture.valid( ) )
+    {
+        m_cleanResourcesFuture.wait( );
+    }
+
     DenOfIz_CommandList_Begin( m_copyCommandList );
     if ( m_issueBarriers )
     {
+        DenOfIz_Fence_Wait( m_syncWait );
         DenOfIz_CommandList_Begin( m_syncCommandList );
     }
 }
@@ -250,6 +265,7 @@ void BatchResourceCopy::CopyDataToTexture( const DenOfIz_CopyDataToTextureDesc &
     copyBufferToTextureDesc.MipLevel   = copyDesc.MipLevel;
     copyBufferToTextureDesc.ArrayLayer = copyDesc.ArrayLayer;
     DenOfIz_CommandList_CopyBufferToTexture( m_copyCommandList, &copyBufferToTextureDesc );
+    TransitionOnSubmit( copyDesc.DstTexture );
 
     std::lock_guard lock( m_resourceCleanLock );
     m_resourcesToClean.push_back( stagingBuffer );
@@ -419,6 +435,7 @@ void BatchResourceCopy::LoadTexture( const DenOfIz_LoadTextureDesc &loadDesc )
     const DenOfIz_TextureData texture = DenOfIz_TextureData_CreateFromPath( &createDesc );
     LoadTextureInternal( texture, loadDesc.DstTexture );
     DenOfIz_TextureData_Destroy( texture );
+    TransitionOnSubmit( loadDesc.DstTexture );
 }
 
 void BatchResourceCopy::LoadTextureFromData( const DenOfIz_LoadTextureFromDataDesc &loadDesc )
@@ -446,7 +463,7 @@ void BatchResourceCopy::Submit( DenOfIz_Semaphore notify )
     uint32_t                         numSignalSemaphores = 1;
     std::array<DenOfIz_Semaphore, 2> signalSemaphores    = { };
     signalSemaphores[ 0 ]                                = m_batchCopyWait;
-    if ( DENOFIZ_HANDLE_IS_VALID( notify ) )
+    if ( DENOFIZ_HANDLE_IS_VALID( notify ) && !m_issueBarriers )
     {
         signalSemaphores[ 1 ] = notify;
         ++numSignalSemaphores;
@@ -473,9 +490,38 @@ void BatchResourceCopy::Submit( DenOfIz_Semaphore notify )
         syncDesc.WaitSemaphores.NumElements = waitSemaphores.size( );
         syncDesc.CommandLists.Elements      = &m_syncCommandList;
         syncDesc.CommandLists.NumElements   = 1;
+        if ( DENOFIZ_HANDLE_IS_VALID( notify ) )
+        {
+            syncDesc.SignalSemaphores.Elements    = &notify;
+            syncDesc.SignalSemaphores.NumElements = 1;
+        }
+        for ( const DenOfIz_Texture texture : m_texturesToTransition )
+        {
+            DenOfIz_TextureBarrierDesc textureBarrier{ };
+            textureBarrier.Resource = texture;
+            textureBarrier.OldState = DENOFIZ_RESOURCE_USAGE_COMMON_BIT;
+            textureBarrier.NewState = DENOFIZ_RESOURCE_USAGE_SHADER_RESOURCE_BIT;
+
+            DenOfIz_PipelineBarrierDesc barrierDesc{ };
+            barrierDesc.TextureBarriers.Elements    = &textureBarrier;
+            barrierDesc.TextureBarriers.NumElements = 1;
+            DenOfIz_CommandList_PipelineBarrier( m_syncCommandList, &barrierDesc );
+        }
+        m_texturesToTransition.clear( );
         DenOfIz_CommandList_End( m_syncCommandList );
         DenOfIz_CommandQueue_ExecuteCommandLists( m_syncQueue, &syncDesc );
-        DenOfIz_Fence_Wait( m_syncWait );
+        if ( !DENOFIZ_HANDLE_IS_VALID( notify ) )
+        {
+            DenOfIz_Fence_Wait( m_syncWait );
+        }
+    }
+}
+
+void BatchResourceCopy::TransitionOnSubmit( DenOfIz_Texture texture )
+{
+    if ( m_issueBarriers && std::ranges::find( m_texturesToTransition, texture ) == m_texturesToTransition.end( ) )
+    {
+        m_texturesToTransition.push_back( texture );
     }
 }
 
@@ -589,14 +635,15 @@ void BatchResourceCopy::AlignDataForTexture( const Byte *src, const uint32_t wid
     const uint32_t alignedRowPitch   = Utilities::Align( width * bitsPerPixel, deviceInfo.Constants.BufferTextureRowAlignment );
     const uint32_t alignedSlicePitch = Utilities::Align( alignedRowPitch * height, GetSubresourceAlignment( bitsPerPixel ) );
 
+    const uint32_t     rowBytes  = width * bitsPerPixel;
     constexpr uint32_t arraySize = 1;
     for ( uint32_t z = 0; z < arraySize; ++z )
     {
         const auto dstSlice = dst + alignedSlicePitch * z;
-        const auto srcSlice = src + width * height * z;
+        const auto srcSlice = src + rowBytes * height * z;
         for ( uint32_t y = 0; y < height; ++y )
         {
-            memcpy( dstSlice + alignedRowPitch * y, srcSlice + width * y, width );
+            memcpy( dstSlice + alignedRowPitch * y, srcSlice + rowBytes * y, rowBytes );
         }
     }
 }

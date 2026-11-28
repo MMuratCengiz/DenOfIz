@@ -249,6 +249,7 @@ void ShaderAssetReader::ReadBinding( DenOfIz_BindingDesc &binding ) const
     binding.Stages     = DenOfIz_BinaryReader_ReadUInt32( m_reader );
     binding.ArraySize  = DenOfIz_BinaryReader_ReadUInt32( m_reader );
     binding.IsBindless = DenOfIz_BinaryReader_ReadByte( m_reader ) == 1;
+    binding.NumBytes   = DenOfIz_BinaryReader_ReadUInt32( m_reader );
 }
 
 void ShaderAssetReader::ReadLocalResourceBinding( DenOfIz_LocalResourceBindingDesc &binding ) const

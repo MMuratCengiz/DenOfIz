@@ -1,0 +1,120 @@
+name: Bake Shader Assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: 'Commit the baked assets to the branch'
+        required: false
+        default: true
+        type: boolean
+  push:
+    branches: [main]
+    paths:
+      - 'Graphics/Tools/ShaderToEmbeddedInl.cpp'
+      - 'Graphics/Source/Assets/Shaders/**'
+      - 'Graphics/Source/Assets/Serde/Shader/**'
+      - 'Graphics/Source/Assets/Stream/**'
+      - 'Graphics/Source/Backends/Common/ShaderProgram.cpp'
+      - 'Graphics/_ThirdParty/dxc/win32/**'
+      - 'Graphics/_ThirdParty/MetalShaderConverter/**'
+      - '.github/workflows/bake-shaders.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bake-shaders-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+
+jobs:
+  bake-shaders:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '[18.0,)'
+          msbuild-architecture: x64
+
+      - name: Setup Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          doNotCache: false
+
+      - name: Configure CMake
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: 'Install_Windows'
+          configurePresetAdditionalArgs: "['-DBUILD_TOOLS=ON', '-DBUILD_BINDINGS=OFF']"
+
+      - name: Build ShaderToEmbeddedInl
+        shell: pwsh
+        run: |
+          cmake --build build/DenOfIz/Install_Windows --target ShaderToEmbeddedInl --config Release
+
+      - name: Bake shader assets
+        shell: pwsh
+        run: |
+          ./build/DenOfIz/Install_Windows/ShaderToEmbeddedInl.exe --generate-all
+
+      - name: Check baked shader assets
+        shell: pwsh
+        run: |
+          ./build/DenOfIz/Install_Windows/ShaderToEmbeddedInl.exe --check
+
+      - name: Upload baked shader assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: baked-shader-assets
+          path: |
+            Graphics/Internal/DenOfIzGraphicsInternal/Assets/Shaders/Embedded/TextRendererShadersCompressed.inl
+            Graphics/Internal/DenOfIzGraphicsInternal/Assets/Shaders/Embedded/UIShadersCompressed.inl
+            ImGui/Embedded/ImGuiShadersCompressed.inl
+
+      - name: Commit baked shader assets
+        if: ${{ github.event_name == 'push' || github.event.inputs.commit == 'true' }}
+        shell: pwsh
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -- Graphics/Internal/DenOfIzGraphicsInternal/Assets/Shaders/Embedded/TextRendererShadersCompressed.inl Graphics/Internal/DenOfIzGraphicsInternal/Assets/Shaders/Embedded/UIShadersCompressed.inl ImGui/Embedded/ImGuiShadersCompressed.inl
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+              Write-Host "Baked shader assets are unchanged, nothing to commit"
+              exit 0
+          }
+
+          git commit -m "Bake built-in shader assets [skip ci]"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          git pull --rebase origin $env:BRANCH
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          git push origin "HEAD:$env:BRANCH"

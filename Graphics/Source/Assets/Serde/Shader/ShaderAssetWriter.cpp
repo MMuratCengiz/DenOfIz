@@ -221,6 +221,7 @@ void ShaderAssetWriter::WriteBinding( const DenOfIz_BindingDesc &binding ) const
     DenOfIz_BinaryWriter_WriteUInt32( m_writer, binding.Stages );
     DenOfIz_BinaryWriter_WriteUInt32( m_writer, binding.ArraySize );
     DenOfIz_BinaryWriter_WriteByte( m_writer, binding.IsBindless ? 1 : 0 );
+    DenOfIz_BinaryWriter_WriteUInt32( m_writer, binding.NumBytes );
 }
 
 void ShaderAssetWriter::WriteLocalResourceBinding( const DenOfIz_LocalResourceBindingDesc &resourceBinding ) const

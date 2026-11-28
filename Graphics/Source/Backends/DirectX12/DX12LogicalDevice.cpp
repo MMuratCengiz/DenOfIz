@@ -440,7 +440,13 @@ IBindGroupLayout *DX12LogicalDevice::CreateBindGroupLayout( const DenOfIz_BindGr
 
 IBindGroup *DX12LogicalDevice::CreateBindGroup( const DenOfIz_BindGroupDesc &descriptorTableDesc )
 {
-    return new DX12BindGroup( m_context.get( ), descriptorTableDesc );
+    auto *bindGroup = new DX12BindGroup( m_context.get( ), descriptorTableDesc );
+    if ( bindGroup->CbvSrvUavCount( ) != bindGroup->BindGroupLayout( )->CbvSrvUavCount( ) || bindGroup->SamplerCount( ) != bindGroup->BindGroupLayout( )->SamplerCount( ) )
+    {
+        delete bindGroup;
+        return nullptr;
+    }
+    return bindGroup;
 }
 
 IFence *DX12LogicalDevice::CreateFence( )

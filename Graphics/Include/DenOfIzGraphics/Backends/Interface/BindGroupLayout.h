@@ -29,6 +29,7 @@ extern "C"
         DenOfIz_ShaderStageFlags        Stages;
         uint32_t                        ArraySize;
         bool                            IsBindless;
+        uint32_t                        NumBytes;
     } DenOfIz_BindingDesc;
 
     typedef struct DenOfIz_BindingDescArray

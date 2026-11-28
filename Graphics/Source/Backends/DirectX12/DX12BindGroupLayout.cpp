@@ -67,6 +67,7 @@ void DX12BindGroupLayout::AddResourceBinding( const DenOfIz_BindingDesc &binding
         m_cbvSrvUavRanges.push_back( descriptorRange );
         uint32_t slotKey               = DenOfIz_ResourceBindingSlot_Key( &slot );
         m_resourceOffsetMap[ slotKey ] = m_cbvSrvUavCount;
+        m_numBytesMap[ slotKey ]       = binding.NumBytes;
         m_cbvSrvUavCount += binding.IsBindless ? binding.ArraySize : 1;
 
         D3D12_SHADER_VISIBILITY usedStage = DenOfIz_DX12EnumConverter_ConvertShaderStageToShaderVisibility( binding.Stages );
@@ -79,6 +80,12 @@ uint32_t DX12BindGroupLayout::GetResourceOffset( const DenOfIz_ResourceBindingSl
 {
     uint32_t slotKey = DenOfIz_ResourceBindingSlot_Key( &slot );
     return ContainerUtilities::SafeGetMapValue( m_resourceOffsetMap, slotKey, "Binding slot does not exist in bind group layout: " + ResourceBindingSlotToString( slot ) );
+}
+
+uint32_t DX12BindGroupLayout::GetNumBytes( const DenOfIz_ResourceBindingSlot &slot ) const
+{
+    const auto it = m_numBytesMap.find( DenOfIz_ResourceBindingSlot_Key( &slot ) );
+    return it != m_numBytesMap.end( ) ? it->second : 0;
 }
 
 const DenOfIz_BindGroupLayoutDesc &DX12BindGroupLayout::Desc( ) const

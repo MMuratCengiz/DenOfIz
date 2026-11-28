@@ -64,7 +64,7 @@ DX12Buffer::DX12Buffer( DX12Context *context, DenOfIz_BufferDesc desc ) :
     }
 }
 
-void DX12Buffer::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, const DenOfIz_ResourceBindingType type, const uint32_t offset )
+void DX12Buffer::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, const DenOfIz_ResourceBindingType type, const uint32_t offset, const uint32_t numBytes )
 {
     switch ( type )
     {
@@ -82,14 +82,14 @@ void DX12Buffer::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, const 
         }
         break;
     case DENOFIZ_RESOURCE_BINDING_TYPE_CONSTANT_BUFFER:
-        CreateView( cpuHandle, DX12BufferViewType::ConstantBuffer, offset );
+        CreateView( cpuHandle, DX12BufferViewType::ConstantBuffer, offset, numBytes );
         break;
     case DENOFIZ_RESOURCE_BINDING_TYPE_SAMPLER:
         break;
     }
 }
 
-void DX12Buffer::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type, uint32_t offset )
+void DX12Buffer::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type, uint32_t offset, uint32_t numBytes )
 {
     uint64_t stride          = std::max<uint64_t>( m_desc.StructureDesc.Stride, 1 );
     bool     isStructured    = m_desc.StructureDesc.Stride > 0;
@@ -165,7 +165,7 @@ void DX12Buffer::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferVi
         {
             D3D12_CONSTANT_BUFFER_VIEW_DESC desc = { };
             desc.BufferLocation                  = m_allocation->GetResource( )->GetGPUVirtualAddress( ) + offset;
-            desc.SizeInBytes                     = DX12DescriptorHeap::RoundUp( offset > 0 ? m_numBytes - offset : m_numBytes );
+            desc.SizeInBytes                     = DX12DescriptorHeap::RoundUp( numBytes != 0 ? std::min( numBytes, m_numBytes - offset ) : m_numBytes - offset );
             m_context->D3DDevice->CreateConstantBufferView( &desc, cpuHandle );
         }
         break;

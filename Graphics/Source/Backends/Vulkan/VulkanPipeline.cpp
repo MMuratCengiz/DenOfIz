@@ -274,10 +274,9 @@ const std::vector<std::pair<DenOfIz_ShaderStageFlags, uint32_t>> &VulkanPipeline
 }
 
 // clang-format off
-const std::array<VkDynamicState, 4> VulkanPipeline::g_dynamicStates =
+const std::array<VkDynamicState, 3> VulkanPipeline::g_dynamicStates =
 {
     VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
-    VK_DYNAMIC_STATE_DEPTH_BIAS,
     VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,
     VK_DYNAMIC_STATE_LINE_WIDTH
 };

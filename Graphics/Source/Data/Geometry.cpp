@@ -16,10 +16,12 @@ Licensed under the MIT License. See LICENSE in the project root.
 // http://go.microsoft.com/fwlink/?LinkID=615561
 //--------------------------------------------------------------------------------------
 #include "DenOfIzGraphics/Data/Geometry.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include <DirectXMath.h>
 #include <cstdlib>
 #include <cstring>
 #include <map>
+#include <memory>
 #include <stdexcept>
 #include <vector>
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
@@ -308,6 +310,7 @@ void DenOfIz_Geometry_BuildBox( const DenOfIz_BoxDesc *desc, DenOfIz_GeometryDat
 }
 
 void DenOfIz_Geometry_BuildSphere( const DenOfIz_SphereDesc *desc, DenOfIz_GeometryData *outGeometryData )
+try
 {
     const float  diameter      = desc->Diameter;
     const size_t tessellation  = desc->Tessellation;
@@ -319,7 +322,8 @@ void DenOfIz_Geometry_BuildSphere( const DenOfIz_SphereDesc *desc, DenOfIz_Geome
         throw std::invalid_argument( "tesselation parameter must be at least 3" );
     }
 
-    auto *result = new DenOfIz_GeometryData_T( );
+    auto  owner  = std::make_unique<DenOfIz_GeometryData_T>( );
+    auto *result = owner.get( );
 
     const size_t verticalSegments   = tessellation;
     const size_t horizontalSegments = tessellation * 2;
@@ -382,15 +386,22 @@ void DenOfIz_Geometry_BuildSphere( const DenOfIz_SphereDesc *desc, DenOfIz_Geome
         InvertNormals( result );
     }
 
-    *outGeometryData = DENOFIZ_TO_HANDLE( result );
+    *outGeometryData = DENOFIZ_TO_HANDLE( owner.release( ) );
+}
+catch ( const std::exception &e )
+{
+    spdlog::error( "DenOfIz_Geometry_BuildSphere failed: {}", e.what( ) );
+    *outGeometryData = DENOFIZ_NULL_HANDLE;
 }
 
 void DenOfIz_Geometry_BuildGeoSphere( const DenOfIz_GeoSphereDesc *desc, DenOfIz_GeometryData *outGeometryData )
+try
 {
     float  diameter     = desc->Diameter;
     size_t tessellation = desc->Tessellation;
     bool   rightHanded  = ( desc->BuildDesc & DENOFIZ_BUILD_DESC_RIGHT_HANDED ) == DENOFIZ_BUILD_DESC_RIGHT_HANDED;
-    auto  *result       = new DenOfIz_GeometryData_T( );
+    auto   owner        = std::make_unique<DenOfIz_GeometryData_T>( );
+    auto  *result       = owner.get( );
 
     using UndirectedEdge = std::pair<uint16_t, uint16_t>;
 
@@ -626,7 +637,12 @@ void DenOfIz_Geometry_BuildGeoSphere( const DenOfIz_GeoSphereDesc *desc, DenOfIz
         ReverseWinding( result );
     }
 
-    *outGeometryData = DENOFIZ_TO_HANDLE( result );
+    *outGeometryData = DENOFIZ_TO_HANDLE( owner.release( ) );
+}
+catch ( const std::exception &e )
+{
+    spdlog::error( "DenOfIz_Geometry_BuildGeoSphere failed: {}", e.what( ) );
+    *outGeometryData = DENOFIZ_NULL_HANDLE;
 }
 
 inline XMVECTOR GetCircleVector( const size_t i, const size_t tessellation ) noexcept
@@ -686,6 +702,7 @@ void CreateCylinderCap( DenOfIz_GeometryVertexData *vertices, size_t &vertexInde
 }
 
 void DenOfIz_Geometry_BuildCylinder( const DenOfIz_CylinderDesc *desc, DenOfIz_GeometryData *outGeometryData )
+try
 {
     const float  diameter     = desc->Diameter;
     float        height       = desc->Height;
@@ -697,7 +714,8 @@ void DenOfIz_Geometry_BuildCylinder( const DenOfIz_CylinderDesc *desc, DenOfIz_G
         throw std::invalid_argument( "tesselation parameter must be at least 3" );
     }
 
-    auto *result = new DenOfIz_GeometryData_T( );
+    auto  owner  = std::make_unique<DenOfIz_GeometryData_T>( );
+    auto *result = owner.get( );
 
     const size_t sideVertexCount = ( tessellation + 1 ) * 2;
     const size_t capVertexCount  = tessellation * 2;
@@ -747,10 +765,16 @@ void DenOfIz_Geometry_BuildCylinder( const DenOfIz_CylinderDesc *desc, DenOfIz_G
         ReverseWinding( result );
     }
 
-    *outGeometryData = DENOFIZ_TO_HANDLE( result );
+    *outGeometryData = DENOFIZ_TO_HANDLE( owner.release( ) );
+}
+catch ( const std::exception &e )
+{
+    spdlog::error( "DenOfIz_Geometry_BuildCylinder failed: {}", e.what( ) );
+    *outGeometryData = DENOFIZ_NULL_HANDLE;
 }
 
 void DenOfIz_Geometry_BuildCone( const DenOfIz_ConeDesc *desc, DenOfIz_GeometryData *outGeometryData )
+try
 {
     const float  diameter     = desc->Diameter;
     float        height       = desc->Height;
@@ -762,7 +786,8 @@ void DenOfIz_Geometry_BuildCone( const DenOfIz_ConeDesc *desc, DenOfIz_GeometryD
         throw std::invalid_argument( "tesselation parameter must be at least 3" );
     }
 
-    auto *result = new DenOfIz_GeometryData_T( );
+    auto  owner  = std::make_unique<DenOfIz_GeometryData_T>( );
+    auto *result = owner.get( );
 
     const size_t sideVertexCount = ( tessellation + 1 ) * 2;
     const size_t capVertexCount  = tessellation;
@@ -811,10 +836,16 @@ void DenOfIz_Geometry_BuildCone( const DenOfIz_ConeDesc *desc, DenOfIz_GeometryD
         ReverseWinding( result );
     }
 
-    *outGeometryData = DENOFIZ_TO_HANDLE( result );
+    *outGeometryData = DENOFIZ_TO_HANDLE( owner.release( ) );
+}
+catch ( const std::exception &e )
+{
+    spdlog::error( "DenOfIz_Geometry_BuildCone failed: {}", e.what( ) );
+    *outGeometryData = DENOFIZ_NULL_HANDLE;
 }
 
 void DenOfIz_Geometry_BuildTorus( const DenOfIz_TorusDesc *desc, DenOfIz_GeometryData *outGeometryData )
+try
 {
     const float  diameter     = desc->Diameter;
     const float  thickness    = desc->Thickness;
@@ -826,7 +857,8 @@ void DenOfIz_Geometry_BuildTorus( const DenOfIz_TorusDesc *desc, DenOfIz_Geometr
         throw std::invalid_argument( "tesselation parameter must be at least 3" );
     }
 
-    auto *result = new DenOfIz_GeometryData_T( );
+    auto  owner  = std::make_unique<DenOfIz_GeometryData_T>( );
+    auto *result = owner.get( );
 
     const size_t stride      = tessellation + 1;
     const size_t vertexCount = stride * stride;
@@ -877,7 +909,12 @@ void DenOfIz_Geometry_BuildTorus( const DenOfIz_TorusDesc *desc, DenOfIz_Geometr
         ReverseWinding( result );
     }
 
-    *outGeometryData = DENOFIZ_TO_HANDLE( result );
+    *outGeometryData = DENOFIZ_TO_HANDLE( owner.release( ) );
+}
+catch ( const std::exception &e )
+{
+    spdlog::error( "DenOfIz_Geometry_BuildTorus failed: {}", e.what( ) );
+    *outGeometryData = DENOFIZ_NULL_HANDLE;
 }
 
 void DenOfIz_Geometry_BuildTetrahedron( const DenOfIz_TetrahedronDesc *tetrahedronDesc, DenOfIz_GeometryData *outGeometryData )

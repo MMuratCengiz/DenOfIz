@@ -68,7 +68,13 @@ jobs:
           CMAKE_CXX_COMPILER_LAUNCHER: sccache
         with:
           configurePreset: 'Install_Windows'
+          configurePresetAdditionalArgs: "['-DBUILD_TOOLS=ON']"
           buildPreset: 'Install_Windows'
+
+      - name: Check baked shader assets
+        shell: pwsh
+        run: |
+          ./build/DenOfIz/Install_Windows/ShaderToEmbeddedInl.exe --check
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4

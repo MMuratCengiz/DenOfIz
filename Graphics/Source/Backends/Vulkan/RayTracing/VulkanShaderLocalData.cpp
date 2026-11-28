@@ -70,7 +70,7 @@ void VulkanShaderLocalData::Srv( const uint32_t binding, const IBuffer *bufferRe
     auto &bufferInfo               = m_storage.Store<VkDescriptorBufferInfo>( );
     bufferInfo.buffer              = vulkanBuffer->Instance( );
     bufferInfo.offset              = vulkanBuffer->Offset( );
-    bufferInfo.range               = vulkanBuffer->NumBytes( );
+    bufferInfo.range               = vulkanBuffer->BufferSize( );
     writeDescriptorSet.pBufferInfo = &bufferInfo;
 }
 
@@ -81,8 +81,8 @@ void VulkanShaderLocalData::Srv( const uint32_t binding, const ITexture *texture
     VkWriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor( binding, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE );
 
     auto &imageInfo               = m_storage.Store<VkDescriptorImageInfo>( );
-    imageInfo.imageLayout         = vulkanTexture->Layout( );
-    imageInfo.imageView           = vulkanTexture->ImageView( );
+    imageInfo.imageLayout         = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView           = vulkanTexture->SrvImageView( );
     writeDescriptorSet.pImageInfo = &imageInfo;
 }
 
@@ -95,7 +95,7 @@ void VulkanShaderLocalData::Uav( const uint32_t binding, const IBuffer *bufferRe
     auto &bufferInfo               = m_storage.Store<VkDescriptorBufferInfo>( );
     bufferInfo.buffer              = vulkanBuffer->Instance( );
     bufferInfo.offset              = vulkanBuffer->Offset( );
-    bufferInfo.range               = vulkanBuffer->NumBytes( );
+    bufferInfo.range               = vulkanBuffer->BufferSize( );
     writeDescriptorSet.pBufferInfo = &bufferInfo;
 }
 
@@ -106,7 +106,7 @@ void VulkanShaderLocalData::Uav( const uint32_t binding, const ITexture *texture
     VkWriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor( binding, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE );
 
     auto &imageInfo               = m_storage.Store<VkDescriptorImageInfo>( );
-    imageInfo.imageLayout         = vulkanTexture->Layout( );
+    imageInfo.imageLayout         = VK_IMAGE_LAYOUT_GENERAL;
     imageInfo.imageView           = vulkanTexture->ImageView( );
     writeDescriptorSet.pImageInfo = &imageInfo;
 }

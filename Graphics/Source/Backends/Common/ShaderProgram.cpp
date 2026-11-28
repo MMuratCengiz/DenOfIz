@@ -8,6 +8,7 @@ Licensed under the MIT License. See LICENSE in the project root.
 #include "DenOfIzGraphics/Backends/Common/ShaderProgram.h"
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
 
+#include <algorithm>
 #include <deque>
 #include <map>
 #include <ranges>
@@ -90,6 +91,7 @@ namespace DenOfIz
         std::vector<std::vector<DenOfIz_InputLayoutElementDesc>>   m_inputElements;
         DenOfIz_ShaderAsset                                        m_shaderAsset = DENOFIZ_NULL_HANDLE;
         std::unique_ptr<DenOfIz_CompiledShader>                    m_shaderAssetCompiled{ };
+        bool                                                       m_compileFailed = false;
 
         std::vector<DenOfIz_ShaderStageDesc>                  m_copiedShaderStages;
         std::vector<std::vector<DenOfIz_StringView>>          m_copiedDefines;
@@ -124,6 +126,10 @@ ShaderProgram::ShaderProgram( const DenOfIz_ShaderProgramDesc &desc ) : m_reflec
     DeepCopyDesc( desc );
     m_compiler = DenOfIz_ShaderCompiler_Create( );
     Compile( );
+    if ( m_compileFailed )
+    {
+        return;
+    }
     CreateReflectionData( );
 }
 
@@ -313,6 +319,11 @@ void ShaderProgram::Compile( )
 
         m_dataToClean.push_back( dxil );
         m_dataToClean.push_back( reflection );
+        if ( dxil.Elements == nullptr )
+        {
+            m_compileFailed = true;
+            return;
+        }
 
         compileDesc.TargetIL                   = DENOFIZ_TARGET_IL_SPIRV;
         compileDesc.SupportNonZeroBaseInstance = true;
@@ -320,6 +331,11 @@ void ShaderProgram::Compile( )
         DenOfIz_ShaderCompiler_CompileHLSL( m_compiler, &compileDesc, &spirvCompilation );
         auto [ spirv, _ ] = spirvCompilation;
         m_dataToClean.push_back( spirv );
+        if ( spirv.Elements == nullptr )
+        {
+            m_compileFailed = true;
+            return;
+        }
 
         const auto &compiledShader = m_compiledShaders.emplace_back( std::make_unique<DenOfIz_CompiledShaderStage>( ) );
         m_compiledShaderPtrs.push_back( compiledShader.get( ) );
@@ -680,6 +696,11 @@ void ShaderProgram::ProcessInputBindingDesc( ReflectionState &state, const D3D12
         resourceBindingDesc.ArraySize            = isBindless ? UINT_MAX : shaderInputBindDesc.BindCount;
         resourceBindingDesc.Descriptor           = DxcEnumConverter::ReflectTypeToRootSignatureType( shaderInputBindDesc.Type, shaderInputBindDesc.Dimension );
         resourceBindingDesc.Stages               = state.ShaderDesc->Stage;
+        resourceBindingDesc.NumBytes             = 0;
+        if ( shaderInputBindDesc.Type == D3D_SIT_CBUFFER )
+        {
+            resourceBindingDesc.NumBytes = static_cast<uint32_t>( ShaderReflectionHelper::GetConstantBufferSize( state.ShaderReflection, state.FunctionReflection, resourceIndex ) );
+        }
     }
 }
 
@@ -817,6 +838,8 @@ void ShaderProgram::FinalizeBindGroupLayouts( )
 
     for ( auto &[ space, bindings ] : m_bindGroupLayoutState.BindingsBySpace )
     {
+        std::ranges::sort( bindings, []( const DenOfIz_BindingDesc &a, const DenOfIz_BindingDesc &b )
+                           { return a.Descriptor != b.Descriptor ? a.Descriptor < b.Descriptor : a.Binding < b.Binding; } );
         m_bindingsBySpace.push_back( std::move( bindings ) );
     }
 
@@ -843,6 +866,11 @@ extern "C"
         }
 
         auto *shaderProgram = new ShaderProgram( *desc );
+        if ( shaderProgram->m_compileFailed )
+        {
+            delete shaderProgram;
+            return DENOFIZ_NULL_HANDLE;
+        }
         return DENOFIZ_TO_HANDLE( shaderProgram );
     }
 

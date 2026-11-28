@@ -58,6 +58,12 @@ extern "C"
         bool                  IssueBarriers;
     } DenOfIz_BatchResourceCopyDesc;
 
+    /**
+     * Records uploads between Begin and Submit and runs them on its own copy queue. With IssueBarriers a second submission on its own
+     * graphics queue follows the copies and moves the textures written by CopyDataToTexture and the Load functions, and the buffers made
+     * by the Create functions, to DENOFIZ_RESOURCE_USAGE_SHADER_RESOURCE_BIT. One instance serves any number of Begin and Submit cycles,
+     * Begin and Destroy wait for the previous submission.
+     */
     DENOFIZ_DEFINE_HANDLE( DenOfIz_BatchResourceCopy )
 
     DZ_API void            DenOfIz_BatchResourceCopy_Create( const DenOfIz_BatchResourceCopyDesc *desc, DenOfIz_BatchResourceCopy *outBatchResourceCopy );
@@ -72,6 +78,11 @@ extern "C"
     DZ_API DenOfIz_Buffer  DenOfIz_BatchResourceCopy_CreateUniformBuffer( DenOfIz_BatchResourceCopy batchResourceCopy, const DenOfIz_ByteArrayView *data, uint32_t numBytes );
     DZ_API DenOfIz_Buffer  DenOfIz_BatchResourceCopy_CreateGeometryVertexBuffer( DenOfIz_BatchResourceCopy batchResourceCopy, const DenOfIz_GeometryData *geometryData );
     DZ_API DenOfIz_Buffer  DenOfIz_BatchResourceCopy_CreateGeometryIndexBuffer( DenOfIz_BatchResourceCopy batchResourceCopy, const DenOfIz_GeometryData *geometryData );
+    /**
+     * notify is optional. Without it Submit returns once the uploads are finalised when IssueBarriers is set, and right after submitting
+     * the copies otherwise. With it Submit never waits: the last submission of the batch signals notify, the barrier submission when
+     * IssueBarriers is set and the copy submission otherwise, so work that waits on notify sees the uploaded data in its final state.
+     */
     DZ_API void            DenOfIz_BatchResourceCopy_Submit( DenOfIz_BatchResourceCopy batchResourceCopy, DenOfIz_Semaphore notify );
     DZ_API void            DenOfIz_BatchResourceCopy_Destroy( DenOfIz_BatchResourceCopy batchResourceCopy );
 

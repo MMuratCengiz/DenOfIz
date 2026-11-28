@@ -48,7 +48,7 @@ extern "C"
      * or from DenOfIz_GraphicsApi_CreateAndLoadOptimalLogicalDevice, which loads the best one.
      *
      * Create functions return DENOFIZ_ERROR_INVALID_HANDLE for an invalid device, and DENOFIZ_ERROR_INVALID_ARGUMENT for a null desc or
-     * output pointer or a desc rejected by validation, which logs the reason. CreateBuffer and CreateTexture return
+     * output pointer or a desc rejected by validation, which logs the reason. CreateBuffer, CreateTexture and CreateBindGroup return
      * DENOFIZ_ERROR_OUT_OF_DEVICE_MEMORY when the allocation fails.
      *
      * The caller owns every created object and releases it with its Destroy function. Buffers, textures, samplers, bind groups, bind group

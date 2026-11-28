@@ -33,6 +33,8 @@ Licensed under the MIT License. See LICENSE in the project root.
 
 using namespace DenOfIz;
 
+static thread_local std::string g_lastError;
+
 #if defined( __linux__ ) || defined( __APPLE__ )
 namespace
 {
@@ -260,6 +262,7 @@ ShaderCompiler::~ShaderCompiler( )
 
 DenOfIz_CompileResult ShaderCompiler::CompileHLSL( const DenOfIz_CompileDesc &compileDesc, IDxcIncludeHandler *customIncludeHandler ) const
 {
+    g_lastError.clear( );
     if ( compileDesc.TargetIL == DENOFIZ_TARGET_IL_MSL )
     {
         spdlog::critical(
@@ -309,11 +312,21 @@ DenOfIz_CompileResult ShaderCompiler::CompileHLSL( const DenOfIz_CompileDesc &co
         if ( FAILED( result ) )
         {
             spdlog::critical( "Could not load shader file: {} error code: {}", path, GetLastError( ) );
+            g_lastError = "Could not load shader file: " + path;
         }
     }
     else
     {
         spdlog::critical( "Neither Path nor Data provided for shader compilation" );
+    }
+
+    if ( sourceBlob == nullptr )
+    {
+        if ( g_lastError.empty( ) )
+        {
+            g_lastError = "Could not load the shader source";
+        }
+        return { };
     }
 
     std::string hlslVersion = "6_6";
@@ -496,9 +509,12 @@ DenOfIz_CompileResult ShaderCompiler::CompileHLSL( const DenOfIz_CompileDesc &co
         result = dxcResult->GetErrorBuffer( &errorBlob );
         if ( SUCCEEDED( result ) && errorBlob )
         {
-            spdlog::error( "Shader compilation failed :\n\n {}", static_cast<const char *>( errorBlob->GetBufferPointer( ) ) );
+            g_lastError = static_cast<const char *>( errorBlob->GetBufferPointer( ) );
+            spdlog::error( "Shader compilation failed :\n\n {}", g_lastError );
             errorBlob->Release( );
-            throw std::runtime_error( "Compilation failed" );
+            dxcResult->Release( );
+            sourceBlob->Release( );
+            return { };
         }
     }
 
@@ -606,6 +622,11 @@ extern "C"
         DenOfIz_CompileResult cppResult = SHADER_COMPILER_IMPL( compiler )->CompileHLSL( cppDesc, includeHandler );
         outResult->Code                 = cppResult.Code;
         outResult->Reflection           = cppResult.Reflection;
+    }
+
+    DenOfIz_StringView DenOfIz_ShaderCompiler_GetLastError( )
+    {
+        return DenOfIz_StringView{ g_lastError.c_str( ), static_cast<uint32_t>( g_lastError.size( ) ) };
     }
 
     void DenOfIz_ShaderCompiler_Destroy( DenOfIz_ShaderCompiler compiler )

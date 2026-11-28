@@ -115,7 +115,7 @@ VkImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier( const Vulk
     imageMemoryBarrier.subresourceRange.layerCount     = barrier.EnableSubresourceBarrier ? 1 : VK_REMAINING_ARRAY_LAYERS;
 
     imageMemoryBarrier.srcQueueFamilyIndex = GetQueueFamilyIndex( context, barrier.SourceQueue );
-    if ( barrier.EnableQueueBarrier && ( barrier.OldState & DENOFIZ_RESOURCE_USAGE_UNDEFINED_BIT ) == 0 )
+    if ( barrier.EnableQueueBarrier && ( barrier.OldState & DENOFIZ_RESOURCE_USAGE_UNDEFINED_BIT ) == 0 && context->SharedQueueFamilies.size( ) <= 1 )
     {
         imageMemoryBarrier.srcQueueFamilyIndex = GetQueueFamilyIndex( context, barrier.SourceQueue );
         imageMemoryBarrier.dstQueueFamilyIndex = GetQueueFamilyIndex( context, barrier.DestinationQueue );
@@ -140,6 +140,9 @@ VkBufferMemoryBarrier VulkanPipelineBarrierHelper::CreateBufferBarrier( const De
     memoryBarrier.buffer = VK_BUFFER_IMPL( barrier.Resource )->Instance( );
     memoryBarrier.offset = 0;
     memoryBarrier.size   = VK_WHOLE_SIZE;
+
+    memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
     if ( barrier.OldState & DENOFIZ_RESOURCE_USAGE_UNORDERED_ACCESS_BIT && barrier.NewState & DENOFIZ_RESOURCE_USAGE_UNORDERED_ACCESS_BIT )
     {

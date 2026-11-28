@@ -44,6 +44,8 @@ extern "C"
 
     DZ_API DenOfIz_ShaderCompiler DenOfIz_ShaderCompiler_Create( );
     DZ_API void                   DenOfIz_ShaderCompiler_CompileHLSL( DenOfIz_ShaderCompiler compiler, const DenOfIz_CompileDesc *compileDesc, DenOfIz_CompileResult *outResult );
+    /** The compiler diagnostics of the last compilation on the calling thread, empty when it succeeded. Valid until the next compilation on that thread. */
+    DZ_API DenOfIz_StringView     DenOfIz_ShaderCompiler_GetLastError( );
     DZ_API void                   DenOfIz_ShaderCompiler_Destroy( DenOfIz_ShaderCompiler compiler );
 
 #ifdef __cplusplus

@@ -62,15 +62,6 @@ static bool DenOfIz_ValidateBufferDesc( const DenOfIz_BufferDesc *desc )
         }
     }
 
-    constexpr uint64_t maxConstantBufferViewSize = 65536;
-    if ( ( desc->Usage & DENOFIZ_BUFFER_USAGE_UNIFORM_BIT ) && desc->NumBytes > maxConstantBufferViewSize )
-    {
-        spdlog::warn( "BufferDesc: Uniform buffer size ({} bytes) exceeds maximum constant buffer view size ({} bytes). "
-                      "When binding as CBV with offset, you must explicitly specify the view size. "
-                      "Consider using a structured buffer or multiple smaller uniform buffers instead.",
-                      desc->NumBytes, maxConstantBufferViewSize );
-    }
-
     return valid;
 }
 
@@ -656,7 +647,7 @@ extern "C"
             return DENOFIZ_ERROR_INVALID_ARGUMENT;
         }
         *outGroup = DENOFIZ_TO_HANDLE( Attach( LOGICAL_DEVICE_IMPL( device ), LOGICAL_DEVICE_IMPL( device )->CreateBindGroup( *desc ) ) );
-        return DENOFIZ_SUCCESS;
+        return DENOFIZ_HANDLE_IS_VALID( *outGroup ) ? DENOFIZ_SUCCESS : DENOFIZ_ERROR_OUT_OF_DEVICE_MEMORY;
     }
 
     DenOfIz_Result DenOfIz_LogicalDevice_CreateFence( DenOfIz_LogicalDevice device, DenOfIz_Fence *outFence )

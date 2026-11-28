@@ -343,10 +343,15 @@ void DX12CommandList::ProcessBindGroups( )
         }
     }
 
+    const std::vector<DX12BindGroupLayout *> &layouts = rootSignature->BindGroupLayouts( );
     for ( BoundGroup &bound : m_boundGroups )
     {
         const DX12BindGroup *dx12BindGroup = bound.Group;
         if ( !bound.Dirty && bound.Version == dx12BindGroup->Version( ) )
+        {
+            continue;
+        }
+        if ( bound.RegisterSpace >= layouts.size( ) || layouts[ bound.RegisterSpace ] == nullptr )
         {
             continue;
         }
@@ -364,9 +369,13 @@ void DX12CommandList::ProcessBindGroups( )
             BindResourceGroup( rootSignature->RegisterSpaceOffset( dx12BindGroup->RegisterSpace( ) ) + index, dx12BindGroup->SamplerHandle( ).Gpu );
         }
 
+        const DX12BindGroupLayout *layout               = layouts[ bound.RegisterSpace ];
+        const uint32_t             rootDescriptorOffset = rootSignature->RegisterSpaceOffset( bound.RegisterSpace ) + ( layout->CbvSrvUavRanges( ).empty( ) ? 0 : 1 ) + ( layout->SamplerRanges( ).empty( ) ? 0 : 1 );
         for ( const auto &rootDescriptor : dx12BindGroup->RootDescriptors( ) )
         {
-            BindRootDescriptors( rootDescriptor );
+            DX12RootDescriptor indexedDescriptor = rootDescriptor;
+            indexedDescriptor.RootParameterIndex += rootDescriptorOffset;
+            BindRootDescriptors( indexedDescriptor );
         }
     }
 

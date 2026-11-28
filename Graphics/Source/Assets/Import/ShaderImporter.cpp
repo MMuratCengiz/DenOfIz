@@ -8,6 +8,7 @@ Licensed under the MIT License. See LICENSE in the project root.
 #include "DenOfIzGraphics/Assets/Import/ShaderImporter.h"
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAsset.h"
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetWriter.h"
+#include "DenOfIzGraphics/Assets/Shaders/ShaderCompiler.h"
 #include "DenOfIzGraphics/Assets/Stream/BinaryContainer.h"
 #include "DenOfIzGraphics/Assets/Stream/BinaryWriter.h"
 #include "DenOfIzGraphics/Backends/Common/ShaderProgram.h"
@@ -197,6 +198,12 @@ namespace DenOfIz
 
             const DenOfIz_ShaderProgramDesc shaderProgramDesc = context.Desc.ProgramDesc;
             DenOfIz_ShaderProgram           shaderProgram     = DenOfIz_ShaderProgram_Create( &shaderProgramDesc );
+            if ( !DENOFIZ_HANDLE_IS_VALID( shaderProgram ) )
+            {
+                const DenOfIz_StringView compileError = DenOfIz_ShaderCompiler_GetLastError( );
+                m_errorMessage.assign( compileError.Chars, compileError.NumChars );
+                return DenOfIz_ImporterResult{ DENOFIZ_IMPORTER_RESULT_IMPORT_FAILED, DENOFIZ_STRING( m_errorMessage.c_str( ) ) };
+            }
 
             DenOfIz_CompiledShader compiledShader{ };
             compiledShader.RayTracing = shaderProgramDesc.RayTracing;

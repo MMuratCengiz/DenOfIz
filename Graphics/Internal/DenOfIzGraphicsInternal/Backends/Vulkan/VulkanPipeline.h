@@ -20,7 +20,7 @@ namespace DenOfIz
 
     class VulkanPipeline final : public IPipeline
     {
-        static const std::array<VkDynamicState, 4> g_dynamicStates;
+        static const std::array<VkDynamicState, 3> g_dynamicStates;
 
         VulkanContext       *m_context;
         VulkanRootSignature *m_rootSignature = nullptr;

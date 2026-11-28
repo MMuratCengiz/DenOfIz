@@ -230,6 +230,7 @@ namespace
         DenOfIz_ResourceTracking resourceTracking = DENOFIZ_NULL_HANDLE;
         DenOfIz_ResourceTracking_Create( &resourceTracking );
         DenOfIz_ResourceTracking_TrackTexture( resourceTracking, backend->FontTexture, DENOFIZ_QUEUE_TYPE_GRAPHICS );
+        DenOfIz_ResourceTracking_TrackTexture( resourceTracking, backend->NullTexture, DENOFIZ_QUEUE_TYPE_GRAPHICS );
         DenOfIz_ResourceTracking_TrackBuffer( resourceTracking, uploadBuffer, DENOFIZ_QUEUE_TYPE_GRAPHICS );
 
         DenOfIz_CommandListArray commandLists{ };
@@ -254,6 +255,7 @@ namespace
         DenOfIz_CommandList_CopyBufferToTexture( commandList, &copyDesc );
 
         DenOfIz_ResourceTracking_TransitionTexture( resourceTracking, commandList, backend->FontTexture, DENOFIZ_RESOURCE_USAGE_SHADER_RESOURCE_BIT, DENOFIZ_QUEUE_TYPE_GRAPHICS );
+        DenOfIz_ResourceTracking_TransitionTexture( resourceTracking, commandList, backend->NullTexture, DENOFIZ_RESOURCE_USAGE_SHADER_RESOURCE_BIT, DENOFIZ_QUEUE_TYPE_GRAPHICS );
 
         DenOfIz_CommandList_End( commandList );
 

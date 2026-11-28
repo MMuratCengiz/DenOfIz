@@ -39,6 +39,12 @@ VulkanBuffer::VulkanBuffer( VulkanContext *context, DenOfIz_BufferDesc desc ) :
     bufferCreateInfo.usage       = DenOfIz_VulkanEnumConverter_ConvertBufferUsageToVk( m_desc.Usage );
     bufferCreateInfo.size        = m_numBytes;
     bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    if ( m_context->SharedQueueFamilies.size( ) > 1 )
+    {
+        bufferCreateInfo.sharingMode           = VK_SHARING_MODE_CONCURRENT;
+        bufferCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>( m_context->SharedQueueFamilies.size( ) );
+        bufferCreateInfo.pQueueFamilyIndices   = m_context->SharedQueueFamilies.data( );
+    }
 
     if ( m_desc.StructureDesc.Stride > 0 )
     {
@@ -77,8 +83,9 @@ VulkanBuffer::VulkanBuffer( VulkanContext *context, DenOfIz_BufferDesc desc ) :
         return;
     }
 
-    m_offset   = 0;
-    m_numBytes = allocationInfo.size;
+    m_offset     = 0;
+    m_bufferSize = m_numBytes;
+    m_numBytes   = allocationInfo.size;
 
     VkBufferDeviceAddressInfo bufferDeviceAddressInfo{ };
     bufferDeviceAddressInfo.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
@@ -168,6 +175,11 @@ const void *VulkanBuffer::Data( ) const
 size_t VulkanBuffer::Offset( ) const
 {
     return m_offset;
+}
+
+size_t VulkanBuffer::BufferSize( ) const
+{
+    return m_bufferSize;
 }
 
 const VkBuffer &VulkanBuffer::Instance( ) const

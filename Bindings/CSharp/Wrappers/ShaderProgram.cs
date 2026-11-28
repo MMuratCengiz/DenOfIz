@@ -4,6 +4,13 @@ using DenOfIz.Native;
 
 namespace DenOfIz
 {
+    public sealed class ShaderCompilationException : Exception
+    {
+        public ShaderCompilationException(string diagnostics) : base(diagnostics)
+        {
+        }
+    }
+
     public sealed partial class ShaderProgram : IDisposable
     {
         internal ulong Handle { get; private set; }
@@ -14,6 +21,10 @@ namespace DenOfIz
         public ShaderProgram(in ShaderProgramDesc desc)
         {
             Handle = Methods.DenOfIz_ShaderProgram_Create(in desc);
+            if (Handle == 0)
+            {
+                throw new ShaderCompilationException(Methods.DenOfIz_ShaderCompiler_GetLastError().ToString());
+            }
             _ownsHandle = true;
         }
 

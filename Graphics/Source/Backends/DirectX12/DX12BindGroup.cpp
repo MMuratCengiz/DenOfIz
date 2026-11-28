@@ -37,8 +37,7 @@ DX12BindGroup::DX12BindGroup( DX12Context *context, const DenOfIz_BindGroupDesc 
         default:
             continue;
         }
-        ContainerUtilities::EnsureSize( m_rootDescriptors, rootRange.Range.BaseShaderRegister + 1 );
-        m_rootDescriptors[ rootRange.Range.BaseShaderRegister ] = { 0, paramType, 0 };
+        m_rootDescriptors.push_back( { static_cast<uint32_t>( m_rootDescriptors.size( ) ), paramType, 0 } );
     }
 
     if ( numCbvSrvUav > 0 )
@@ -87,8 +86,7 @@ IBindGroup *DX12BindGroup::BeginUpdate( )
 
 IBindGroup *DX12BindGroup::Cbv( const uint32_t binding, IBuffer *resource )
 {
-    BindBuffer( GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_CONSTANT_BUFFER ), resource );
-    return this;
+    return Cbv( binding, resource, 0 );
 }
 
 IBindGroup *DX12BindGroup::Cbv( const uint32_t binding, IBuffer *resource, size_t resourceOffset )
@@ -108,7 +106,7 @@ IBindGroup *DX12BindGroup::Cbv( const uint32_t binding, IBuffer *resource, size_
     }
 
     const uint32_t offset = m_bindGroupLayout->GetResourceOffset( slot );
-    dx12Buffer->CreateView( CpuHandleCbvSrvUav( offset ), slot.Type, resourceOffset );
+    dx12Buffer->CreateView( CpuHandleCbvSrvUav( offset ), slot.Type, resourceOffset, m_bindGroupLayout->GetNumBytes( slot ) );
 
     return this;
 }
@@ -238,12 +236,14 @@ bool DX12BindGroup::UpdateRootDescriptor( const DenOfIz_ResourceBindingSlot &slo
 {
     if ( slot.RegisterSpace == DENOFIZ_ROOT_LEVEL_BUFFER_REGISTER_SPACE )
     {
-        if ( slot.Binding >= m_rootDescriptors.size( ) )
+        const uint32_t index = m_bindGroupLayout->GetResourceOffset( slot );
+        if ( index >= m_rootDescriptors.size( ) )
         {
             spdlog::error( "Root descriptor binding [ {} ] is out of range.", slot.Binding );
+            return true;
         }
 
-        m_rootDescriptors[ slot.Binding ].GpuAddress = gpuAddress;
+        m_rootDescriptors[ index ].GpuAddress = gpuAddress;
         m_version++;
         return true;
     }

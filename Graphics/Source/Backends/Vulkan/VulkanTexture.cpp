@@ -54,6 +54,12 @@ VulkanTexture::VulkanTexture( VulkanContext *context, const DenOfIz_TextureDesc 
     imageCreateInfo.mipLevels     = desc.MipLevels;
     imageCreateInfo.arrayLayers   = desc.ArraySize;
     imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    if ( context->SharedQueueFamilies.size( ) > 1 )
+    {
+        imageCreateInfo.sharingMode           = VK_SHARING_MODE_CONCURRENT;
+        imageCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>( context->SharedQueueFamilies.size( ) );
+        imageCreateInfo.pQueueFamilyIndices   = context->SharedQueueFamilies.data( );
+    }
 
     if ( m_desc.Usage & DENOFIZ_TEXTURE_USAGE_CUBE_BIT )
     {
@@ -147,11 +153,15 @@ void VulkanTexture::CreateImageView( )
         viewCreateInfo.subresourceRange.baseMipLevel = j;
         VK_CHECK_RESULT( vkCreateImageView( m_context->LogicalDevice, &viewCreateInfo, nullptr, &m_imageViews[ j ] ) );
     }
+
+    viewCreateInfo.subresourceRange.baseMipLevel = 0;
+    viewCreateInfo.subresourceRange.levelCount   = m_desc.MipLevels;
+    VK_CHECK_RESULT( vkCreateImageView( m_context->LogicalDevice, &viewCreateInfo, nullptr, &m_srvImageView ) );
 }
 
 VulkanTexture::VulkanTexture( VkImage const &image, VkImageView const &imageView, const VkFormat format, const VkImageAspectFlags imageAspect, const DenOfIz_TextureDesc &desc ) :
-    m_desc( desc ), m_debugName( StringViewToStdString( desc.DebugName ) ), m_image( image ), m_imageViews( { imageView } ), m_vkFormat( format ), m_aspect( imageAspect ),
-    m_layout( VK_IMAGE_LAYOUT_UNDEFINED )
+    m_desc( desc ), m_debugName( StringViewToStdString( desc.DebugName ) ), m_image( image ), m_imageViews( { imageView } ), m_srvImageView( imageView ), m_vkFormat( format ),
+    m_aspect( imageAspect ), m_layout( VK_IMAGE_LAYOUT_UNDEFINED )
 {
     if ( !m_debugName.empty( ) )
     {
@@ -173,6 +183,7 @@ void VulkanTexture::UpdateExternal( const VkImage &image, const VkImageView &ima
 {
     m_image      = image;
     m_imageViews = { imageView };
+    m_srvImageView = imageView;
     m_layout     = VK_IMAGE_LAYOUT_UNDEFINED;
     m_width      = desc.Width;
     m_height     = desc.Height;
@@ -244,7 +255,7 @@ void VulkanTexture::TransitionToInitialLayout( ) const
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers    = &commandBuffer;
 
-    result = vkQueueSubmit( m_context->Queues.at( VulkanQueueType::Graphics ), 1, &submitInfo, nullptr );
+    result = vkQueueSubmit( m_context->TextureSetupQueue, 1, &submitInfo, nullptr );
     if ( m_context->CheckDeviceLost( result, "vkQueueSubmit" ) )
     {
         vkFreeCommandBuffers( m_context->LogicalDevice, m_context->GraphicsQueueCommandPool, 1, &commandBuffer );
@@ -257,7 +268,7 @@ void VulkanTexture::TransitionToInitialLayout( ) const
         return;
     }
 
-    result = vkQueueWaitIdle( m_context->Queues.at( VulkanQueueType::Graphics ) );
+    result = vkQueueWaitIdle( m_context->TextureSetupQueue );
     if ( !m_context->CheckDeviceLost( result, "vkQueueWaitIdle" ) && result != VK_SUCCESS )
     {
         spdlog::error( "[VulkanTexture] Failed to wait for initial layout transition" );
@@ -278,6 +289,7 @@ VulkanTexture::~VulkanTexture( )
         {
             vkDestroyImageView( m_context->LogicalDevice, imageView, nullptr );
         }
+        vkDestroyImageView( m_context->LogicalDevice, m_srvImageView, nullptr );
     }
 }
 
@@ -319,6 +331,11 @@ VkImageLayout VulkanTexture::Layout( ) const
 VkImageView VulkanTexture::ImageView( uint32_t mipLevel ) const
 {
     return m_imageViews[ mipLevel ];
+}
+
+VkImageView VulkanTexture::SrvImageView( ) const
+{
+    return m_srvImageView;
 }
 
 VkImage VulkanTexture::Image( ) const

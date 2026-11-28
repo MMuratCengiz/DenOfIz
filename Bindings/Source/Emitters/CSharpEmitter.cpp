@@ -322,12 +322,17 @@ void CSharpEmitter::EmitHelpersFile( )
 
             bool        hasElements     = false;
             bool        hasNumElements  = false;
+            bool        isPointerArray  = false;
             std::string numElementsType = "ulong";
             for ( const DzirField *field : structType->Fields )
             {
                 if ( field->Name == "Elements" )
                 {
                     hasElements = true;
+                    if ( const auto *ptr = std::get_if<std::unique_ptr<DzirPointer>>( &field->Type ) )
+                    {
+                        isPointerArray = *ptr && ( *ptr )->Pointee && std::holds_alternative<std::unique_ptr<DzirPointer>>( *( *ptr )->Pointee );
+                    }
                 }
                 if ( field->Name == "NumElements" )
                 {
@@ -508,6 +513,26 @@ void CSharpEmitter::EmitHelpersFile( )
                 stream.WriteLine( "~Pinned() => Dispose();" );
                 stream.WriteLine( "public void Dispose() {{ if (_handle.IsAllocated) {{ _handle.Free(); GC.SuppressFinalize(this); }} }}" );
                 stream.CloseBlock( );
+            }
+            else if ( isPointerArray )
+            {
+                stream.WriteLine( "public readonly {}[] ToArray()", csElementType );
+                stream.OpenBlock( );
+                stream.WriteLine( "if (Elements == IntPtr.Zero || NumElements == 0) return Array.Empty<{}>();", csElementType );
+                stream.WriteLine( "var result = new {}[NumElements];", csElementType );
+                stream.WriteLine( "unsafe" );
+                stream.OpenBlock( );
+                stream.WriteLine( "var ptr = (IntPtr*)Elements.ToPointer();" );
+                stream.WriteLine( "for (int i = 0; i < (int)NumElements; i++)" );
+                stream.OpenBlock( );
+                stream.WriteLine( "result[i] = Marshal.PtrToStructure<{}>(ptr[i]);", csElementType );
+                stream.CloseBlock( );
+                stream.CloseBlock( );
+                stream.WriteLine( "return result;" );
+                stream.CloseBlock( );
+                stream.WriteLine( );
+
+                stream.WriteLine( "public readonly unsafe ref {} this[int index] => ref *(({}**)Elements.ToPointer())[index];", csElementType, csElementType );
             }
             else
             {

@@ -95,13 +95,18 @@ jobs:
           LLVM_DIR: ${{ env.LLVM_DIR }}
         with:
           configurePreset: 'Install_Windows'
-          configurePresetAdditionalArgs: "['-DBUILD_EXAMPLES=OFF', '-DLLVM_DIR=${{ env.LLVM_DIR }}']"
+          configurePresetAdditionalArgs: "['-DBUILD_EXAMPLES=OFF', '-DBUILD_TOOLS=ON', '-DLLVM_DIR=${{ env.LLVM_DIR }}']"
 
       - name: Build and Install Native Library
         uses: lukka/run-cmake@v10
         with:
           configurePreset: 'Install_Windows'
           buildPreset: 'Install_Windows'
+
+      - name: Check baked shader assets
+        shell: pwsh
+        run: |
+          ./build/DenOfIz/Install_Windows/ShaderToEmbeddedInl.exe --check
 
       - name: Generate C# Bindings
         shell: pwsh

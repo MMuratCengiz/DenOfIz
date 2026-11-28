@@ -38,8 +38,8 @@ namespace DenOfIz
 
     public:
         DX12Buffer( DX12Context *context, DenOfIz_BufferDesc desc );
-        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DenOfIz_ResourceBindingType type, uint32_t offset = 0 );
-        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type, uint32_t offset = 0 );
+        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DenOfIz_ResourceBindingType type, uint32_t offset = 0, uint32_t numBytes = 0 );
+        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type, uint32_t offset = 0, uint32_t numBytes = 0 );
 
         [[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE CPUHandle( DX12BufferViewType type ) const;
         [[nodiscard]] ID3D12Resource2            *Resource( ) const;

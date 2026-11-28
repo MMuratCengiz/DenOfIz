@@ -22,6 +22,7 @@ namespace DenOfIz
         VkBuffer           m_instance{ };
         size_t             m_offset{ };
         size_t             m_numBytes{ };
+        size_t             m_bufferSize{ };
         const void        *m_data         = nullptr;
         void              *m_mappedMemory = nullptr;
         VkDeviceAddress    m_deviceAddress{ };
@@ -38,6 +39,7 @@ namespace DenOfIz
         [[nodiscard]] const void *Data( ) const override;
 
         [[nodiscard]] size_t                 Offset( ) const;
+        [[nodiscard]] size_t                 BufferSize( ) const;
         [[nodiscard]] const VkBuffer        &Instance( ) const;
         [[nodiscard]] const VkDeviceAddress &DeviceAddress( ) const;
 

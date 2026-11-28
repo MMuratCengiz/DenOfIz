@@ -32,6 +32,7 @@ namespace DenOfIz
         std::vector<CD3DX12_DESCRIPTOR_RANGE>     m_samplerRanges;
 
         std::unordered_map<uint32_t, uint32_t> m_resourceOffsetMap;
+        std::unordered_map<uint32_t, uint32_t> m_numBytesMap;
         uint32_t                               m_rootLevelBufferCount = 0;
         uint32_t                               m_cbvSrvUavCount       = 0;
         uint32_t                               m_samplerCount         = 0;
@@ -47,6 +48,7 @@ namespace DenOfIz
         [[nodiscard]] const DenOfIz_BindGroupLayoutDesc &Desc( ) const;
 
         [[nodiscard]] uint32_t GetResourceOffset( const DenOfIz_ResourceBindingSlot &slot ) const;
+        [[nodiscard]] uint32_t GetNumBytes( const DenOfIz_ResourceBindingSlot &slot ) const;
         [[nodiscard]] uint32_t RegisterSpace( ) const;
         [[nodiscard]] uint32_t CbvSrvUavCount( ) const;
         [[nodiscard]] uint32_t SamplerCount( ) const;

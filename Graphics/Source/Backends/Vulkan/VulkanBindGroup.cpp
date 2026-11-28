@@ -44,8 +44,7 @@ IBindGroup *VulkanBindGroup::BeginUpdate( )
 
 IBindGroup *VulkanBindGroup::Cbv( const uint32_t binding, IBuffer *resource )
 {
-    BindBuffer( GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_CONSTANT_BUFFER ), resource );
-    return this;
+    return Cbv( binding, resource, 0 );
 }
 
 IBindGroup *VulkanBindGroup::Cbv( const uint32_t binding, IBuffer *resource, size_t resourceOffset )
@@ -53,11 +52,12 @@ IBindGroup *VulkanBindGroup::Cbv( const uint32_t binding, IBuffer *resource, siz
     const auto *vulkanResource = dynamic_cast<VulkanBuffer *>( resource );
 
     const DenOfIz_ResourceBindingSlot slot               = GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_CONSTANT_BUFFER );
+    const uint32_t                    numBytes           = m_bindGroupLayout->GetVkShiftedBinding( slot ).NumBytes;
     VkWriteDescriptorSet             &writeDescriptorSet = CreateWriteDescriptor( slot );
     auto                             &bufferInfo         = m_storage.Store<VkDescriptorBufferInfo>( );
     bufferInfo.buffer                                    = vulkanResource->Instance( );
     bufferInfo.offset                                    = vulkanResource->Offset( ) + resourceOffset;
-    bufferInfo.range                                     = VK_WHOLE_SIZE;
+    bufferInfo.range                                     = numBytes != 0 && resourceOffset + numBytes <= vulkanResource->BufferSize( ) ? numBytes : VK_WHOLE_SIZE;
     writeDescriptorSet.pBufferInfo                       = &bufferInfo;
     return this;
 }
@@ -100,8 +100,8 @@ IBindGroup *VulkanBindGroup::SrvArray( const uint32_t binding, const DenOfIz_Tex
     for ( uint32_t i = 0; i < resources.NumElements; ++i )
     {
         const auto *vulkanResource  = dynamic_cast<VulkanTexture *>( DENOFIZ_FROM_HANDLE( DenOfIz::ITexture, resources.Elements[ i ] ) );
-        imageInfos[ i ].imageLayout = vulkanResource->Layout( );
-        imageInfos[ i ].imageView   = vulkanResource->ImageView( );
+        imageInfos[ i ].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfos[ i ].imageView   = vulkanResource->SrvImageView( );
         imageInfos[ i ].sampler     = VK_NULL_HANDLE;
     }
     writeDescriptorSet.pImageInfo = imageInfos;
@@ -118,8 +118,8 @@ IBindGroup *VulkanBindGroup::SrvArrayIndex( const uint32_t binding, const uint32
     writeDescriptorSet.descriptorCount       = 1;
 
     auto &imageInfo       = m_storage.Store<VkDescriptorImageInfo>( );
-    imageInfo.imageLayout = vulkanResource->Layout( );
-    imageInfo.imageView   = vulkanResource->ImageView( );
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView   = vulkanResource->SrvImageView( );
     imageInfo.sampler     = VK_NULL_HANDLE;
 
     writeDescriptorSet.pImageInfo = &imageInfo;
@@ -166,7 +166,7 @@ IBindGroup *VulkanBindGroup::Uav( const uint32_t binding, IBuffer *resource, siz
 
 IBindGroup *VulkanBindGroup::Uav( const uint32_t binding, ITexture *resource, uint32_t mipLevel )
 {
-    BindTexture( GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_UNORDERED_ACCESS ), resource, mipLevel );
+    BindTexture( GetSlot( binding, DENOFIZ_RESOURCE_BINDING_TYPE_UNORDERED_ACCESS ), resource, mipLevel == DZ_ALL_MIP_LEVELS ? 0 : mipLevel );
     return this;
 }
 
@@ -187,8 +187,8 @@ void VulkanBindGroup::BindTexture( const DenOfIz_ResourceBindingSlot &slot, ITex
 
     VkWriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor( slot );
     auto                 &imageInfo          = m_storage.Store<VkDescriptorImageInfo>( );
-    imageInfo.imageLayout                    = vulkanResource->Layout( );
-    imageInfo.imageView                      = mipLevel == DZ_ALL_MIP_LEVELS ? vulkanResource->ImageView( ) : vulkanResource->ImageView( mipLevel );
+    imageInfo.imageLayout                    = slot.Type == DENOFIZ_RESOURCE_BINDING_TYPE_UNORDERED_ACCESS ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView                      = mipLevel == DZ_ALL_MIP_LEVELS ? vulkanResource->SrvImageView( ) : vulkanResource->ImageView( mipLevel );
     writeDescriptorSet.pImageInfo            = &imageInfo;
 }
 

@@ -28,6 +28,7 @@ namespace DenOfIz
 
         VkImage                  m_image{ };
         std::vector<VkImageView> m_imageViews{ };
+        VkImageView              m_srvImageView{ };
         VkFormat                 m_vkFormat{ };
         VkSampler                m_sampler{ };
         VkImageAspectFlags       m_aspect{ };
@@ -45,6 +46,7 @@ namespace DenOfIz
         ~VulkanTexture( ) override;
         [[nodiscard]] VkImage            Image( ) const;
         [[nodiscard]] VkImageView        ImageView( uint32_t mipLevel = 0 ) const;
+        [[nodiscard]] VkImageView        SrvImageView( ) const;
         [[nodiscard]] VkImageLayout      Layout( ) const;
         [[nodiscard]] VkImageAspectFlags Aspect( ) const;
 

@@ -147,6 +147,7 @@ uint32_t DX12RootSignature::RegisterSpaceOffset( const uint32_t registerSpace ) 
     if ( registerSpace >= m_registerSpaceOffsets.size( ) )
     {
         spdlog::error( "Register space {} does not exists in any binding.", registerSpace );
+        return 0;
     }
 
     return m_registerSpaceOffsets[ registerSpace ];

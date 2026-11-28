@@ -466,7 +466,7 @@ void VulkanLogicalDevice::SetupQueueFamilies( ) const
 
         if ( hasGraphics && !exists( VulkanQueueType::Graphics ) )
         {
-            m_context->QueueFamilies[ VulkanQueueType::Graphics ] = QueueFamily{ index, { static_cast<VkQueueFlags>( property.queueFlags ) } };
+            m_context->QueueFamilies[ VulkanQueueType::Graphics ] = QueueFamily{ index, property };
         }
         else if ( hasTransfer && !exists( VulkanQueueType::Copy ) )
         {
@@ -620,8 +620,21 @@ bool VulkanLogicalDevice::CreateLogicalDevice( )
     vkGetDeviceQueue( m_context->LogicalDevice, m_context->QueueFamilies[ VulkanQueueType::Compute ].Index, 0, &m_context->Queues[ VulkanQueueType::Compute ] );
     vkGetDeviceQueue( m_context->LogicalDevice, m_context->QueueFamilies[ VulkanQueueType::Presentation ].Index, 0, &m_context->Queues[ VulkanQueueType::Presentation ] );
     vkGetDeviceQueue( m_context->LogicalDevice, m_context->QueueFamilies[ VulkanQueueType::Copy ].Index, 0, &m_context->Queues[ VulkanQueueType::Copy ] );
+    m_context->TextureSetupQueue = m_context->Queues[ VulkanQueueType::Graphics ];
+    if ( m_context->QueueFamilies.at( VulkanQueueType::Graphics ).Properties.queueCount > 1 )
+    {
+        vkGetDeviceQueue( m_context->LogicalDevice, m_context->QueueFamilies.at( VulkanQueueType::Graphics ).Index, 1, &m_context->TextureSetupQueue );
+    }
+    m_context->RegisterSubmitQueue( m_context->TextureSetupQueue );
     m_context->SelectedDeviceInfo.Capabilities.DedicatedCopyQueue =
         m_context->QueueFamilies.at( VulkanQueueType::Copy ).Index != m_context->QueueFamilies.at( VulkanQueueType::Graphics ).Index;
+    for ( const auto &[ type, family ] : m_context->QueueFamilies )
+    {
+        if ( std::ranges::find( m_context->SharedQueueFamilies, family.Index ) == m_context->SharedQueueFamilies.end( ) )
+        {
+            m_context->SharedQueueFamilies.push_back( family.Index );
+        }
+    }
     m_context->DescriptorPoolManager = std::make_unique<VulkanDescriptorPoolManager>( m_context->LogicalDevice, m_context->PhysicalDevice );
     for ( const auto &queue : m_context->Queues )
     {
@@ -782,20 +795,24 @@ void VulkanLogicalDevice::InitializeVma( ) const
 
 std::vector<VkDeviceQueueCreateInfo> VulkanLogicalDevice::CreateUniqueDeviceQueueCreateInfos( ) const
 {
+    static constexpr float highPriorities[ 2 ] = { 1.0f, 1.0f };
+    static constexpr float lowPriorities[ 2 ]  = { 0.9f, 0.9f };
+
     std::unordered_map<uint32_t, bool>   uniqueIndexes;
     std::vector<VkDeviceQueueCreateInfo> result;
 
+    const QueueFamily &graphicsFamily = m_context->QueueFamilies.at( VulkanQueueType::Graphics );
     for ( std::pair<VulkanQueueType, QueueFamily> key : m_context->QueueFamilies )
     {
         if ( !uniqueIndexes.contains( key.second.Index ) )
         {
-            float priority = key.first == VulkanQueueType::Graphics || key.first == VulkanQueueType::Presentation ? 1.0f : 0.9f;
+            const bool highPriority = key.first == VulkanQueueType::Graphics || key.first == VulkanQueueType::Presentation;
 
             VkDeviceQueueCreateInfo &queueCreateInfo = result.emplace_back( VkDeviceQueueCreateInfo{ } );
             queueCreateInfo.sType                    = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             queueCreateInfo.queueFamilyIndex         = key.second.Index;
-            queueCreateInfo.queueCount               = 1;
-            queueCreateInfo.pQueuePriorities         = &priority;
+            queueCreateInfo.queueCount               = key.second.Index == graphicsFamily.Index && graphicsFamily.Properties.queueCount > 1 ? 2 : 1;
+            queueCreateInfo.pQueuePriorities         = highPriority ? highPriorities : lowPriorities;
             uniqueIndexes[ key.second.Index ]        = true;
         }
     }

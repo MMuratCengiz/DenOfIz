@@ -20,7 +20,8 @@ extern "C"
     /**
      * The shader stages of one pipeline, compiled and reflected together: the reflection gives the input layout, bind group layouts, root
      * constants and local root signatures of the whole pipeline. Create copies the desc. Arrays and descs returned by the getters are owned
-     * by the program and valid until it is destroyed.
+     * by the program and valid until it is destroyed. Create returns DENOFIZ_NULL_HANDLE when a stage fails to compile, the diagnostics are
+     * then in DenOfIz_ShaderCompiler_GetLastError.
      */
     DENOFIZ_DEFINE_HANDLE( DenOfIz_ShaderProgram )
 

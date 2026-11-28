@@ -52,6 +52,8 @@ namespace DenOfIz
         std::unique_ptr<VulkanDescriptorPoolManager>     DescriptorPoolManager;
         std::unordered_map<VulkanQueueType, QueueFamily> QueueFamilies;
         std::unordered_map<VulkanQueueType, VkQueue>     Queues;
+        std::vector<uint32_t>                            SharedQueueFamilies;
+        VkQueue                                          TextureSetupQueue = VK_NULL_HANDLE;
 
         InternalAutoSync *AutoSync;
 

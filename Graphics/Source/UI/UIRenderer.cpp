@@ -121,6 +121,26 @@ UIRenderer::UIRenderer( const UIRendererDesc &desc ) : m_desc( desc ), m_device(
     DenOfIz_LogicalDevice_CreateCommandListPool( m_device, &poolDesc, &m_commandListPool );
 
     CreateFrameResources( );
+
+    DenOfIz_TextureBarrierDesc nullBarrier{ };
+    nullBarrier.Resource = m_nullTexture;
+    nullBarrier.OldState = DENOFIZ_RESOURCE_USAGE_COMMON_BIT;
+    nullBarrier.NewState = DENOFIZ_RESOURCE_USAGE_SHADER_RESOURCE_BIT;
+    DenOfIz_PipelineBarrierDesc barrierDesc{ };
+    barrierDesc.TextureBarriers.Elements    = &nullBarrier;
+    barrierDesc.TextureBarriers.NumElements = 1;
+
+    FrameData &frame = m_frames[ 0 ];
+    DenOfIz_CommandList_Begin( frame.CommandList );
+    DenOfIz_CommandList_PipelineBarrier( frame.CommandList, &barrierDesc );
+    DenOfIz_CommandList_End( frame.CommandList );
+
+    DenOfIz_ExecuteCommandListsDesc executeDesc{ };
+    executeDesc.CommandLists.Elements    = &frame.CommandList;
+    executeDesc.CommandLists.NumElements = 1;
+    executeDesc.Signal                   = frame.Fence;
+    DenOfIz_CommandQueue_ExecuteCommandLists( m_queue, &executeDesc );
+    DenOfIz_Fence_Wait( frame.Fence );
 }
 
 UIRenderer::~UIRenderer( )

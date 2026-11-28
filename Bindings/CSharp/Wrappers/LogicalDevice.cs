@@ -136,7 +136,8 @@ namespace DenOfIz
         {
             ThrowIfDisposed();
             ulong outGroup = 0;
-            Methods.DenOfIz_LogicalDevice_CreateBindGroup(Handle, in desc, out outGroup);
+            var __result = Methods.DenOfIz_LogicalDevice_CreateBindGroup(Handle, in desc, out outGroup);
+            if (__result != Result.Success) throw new DenOfIzException(__result);
             return new BindGroup(outGroup, ownsHandle: true);
         }
 
